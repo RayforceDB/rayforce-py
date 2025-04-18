@@ -11,3 +11,5 @@
 *.exp
 *.def
 *.manifest
+rayforce_wrap.c
+rayforce.py
