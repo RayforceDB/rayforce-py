@@ -1,0 +1,13 @@
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.dylib
+*.so
+*.dll
+*.lib
+*.exp
+*.def
+*.manifest
