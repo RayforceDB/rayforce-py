@@ -11,5 +11,11 @@
 *.exp
 *.def
 *.manifest
+tmp/
 rayforce_wrap.c
 rayforce.py
+__pycache__/
+build
+dist
+raypy.*
+.DS_Store
