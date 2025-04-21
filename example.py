@@ -1,16 +1,16 @@
-from rayforce import *
+import raypy
 
 if __name__ == "__main__":
-    ray_init()
-    
-    x = i64(10)
-    y = i64(20)
-    z = ray_add(x, y)
+    raypy.ray_init()
 
-    drop_obj(x)
-    drop_obj(y)
-    drop_obj(z)
+    x = raypy.i64(10)
+    y = raypy.i64(20)
+    z = raypy.ray_add(x, y)
 
-    ray_clean()
+    raypy.drop_obj(x)
+    raypy.drop_obj(y)
+    raypy.drop_obj(z)
+
+    raypy.ray_clean()
 
     print("Done")

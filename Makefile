@@ -69,3 +69,9 @@ rebuild_wheel: rebuild importability_test
 		python3 setup.py sdist bdist_wheel > /dev/null 2>&1 \
 	) && echo "✅ Python wheel successfully built - tar.gz is in dist/ directory." \
 	|| echo "❌ Error during wheel build"
+
+
+lint:
+	ruff format ./raypy
+	ruff check ./raypy
+
