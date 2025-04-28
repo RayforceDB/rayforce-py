@@ -75,3 +75,5 @@ lint:
 	ruff format ./raypy
 	ruff check ./raypy
 
+test:
+	pytest tests/

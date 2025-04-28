@@ -15,47 +15,36 @@ try:
 except Exception as e:
     print(f"Warning: Could not pre-load librayforce.dylib: {e}")
 
-from .rayforce import *  # noqa: E402
+from .obj import (  # noqa: E402
+    # Main atomic object
+    RayforceObject,
+)
+from .misc import (  # noqa: E402
+    initialize,
+)
+from .types import (  # noqa: E402
+    # Rayforce data types
+    b8,
+    i16,
+    i32,
+    i64,
+    f64,
+)
+from .operations import (  # noqa: E402
+    # Mathematical operations
+    add,
+)
+
+# Initialize runtime
+initialize()
 
 __all__ = [
-    "ray_init",
-    "ray_clean",
-    "ray_add",
-    "ray_sub",
-    "ray_mul",
-    "ray_div",
-    "ray_mod",
-    "ray_fdiv",
-    "ray_xbar",
-    "ray_round",
-    "ray_floor",
-    "ray_sum",
-    "ray_cnt",
-    "ray_avg",
-    "ray_min",
-    "ray_max",
-    "ray_ceil",
-    "ray_med",
-    "ray_dev",
-    "vary_call",
-    "ray_do",
-    "ray_apply",
-    "ray_gc",
-    "ray_format",
-    "ray_print",
-    "ray_println",
-    "ray_args",
-    "ray_set_splayed",
-    "ray_get_splayed",
-    "ray_set_parted",
-    "ray_get_parted",
-    # Data types
-    "i64",
-    "i32",
-    "i16",
-    "u8",
+    "RayforceObject",
     "b8",
+    "i16",
+    "i32",
+    "i64",
     "f64",
-    "symbol",
-    "obj_t",
+    "add",
+    "initialize",
 ]
