@@ -1,7 +1,7 @@
 from typing import Any
 
 from . import rayforce
-from .types import RayforceObject
+from .obj import RayforceObject
 
 _INTEGER_UNICODE_SURROGATE = "\udcfb"
 _FLOAT_UNICODE_SURROGATE = "\udcf6"
