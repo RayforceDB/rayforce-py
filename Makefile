@@ -72,8 +72,8 @@ rebuild_wheel: rebuild importability_test
 
 
 lint:
-	ruff format ./raypy
-	ruff check ./raypy
+	ruff format ./raypy ./tests
+	ruff check ./raypy ./tests
 
 test:
 	pytest tests/

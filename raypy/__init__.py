@@ -34,6 +34,9 @@ from .operations import (  # noqa: E402
     # Mathematical operations
     add,
     sub,
+    mul,
+    div,
+    fdiv,
 )
 
 # Initialize runtime
@@ -48,5 +51,8 @@ __all__ = [
     "f64",
     "add",
     "sub",
+    "mul",
+    "div",
+    "fdiv",
     "initialize",
 ]

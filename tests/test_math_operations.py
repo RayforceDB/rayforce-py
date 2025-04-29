@@ -1,6 +1,6 @@
 import pytest
 
-from raypy import i64, f64, add, sub
+from raypy import i64, f64, add, sub, fdiv, mul, div
 
 
 class TestAdd:
@@ -56,4 +56,86 @@ class TestSub:
     )
     def test_sub(self, x, y, expected):
         result = sub(x, y)
-        assert result == expected, f"Expected {expected}, got {result}" 
+        assert result == expected, f"Expected {expected}, got {result}"
+
+
+class TestFdiv:
+    @pytest.mark.parametrize(
+        "x, y, expected",
+        [
+            (10.0, 2.0, 5.0),
+            (5.5, 2.0, 2.75),
+            (-8.4, 2.0, -4.2),
+            (f64(10.0), 2.0, 5.0),
+            (f64(6.0), f64(3.0), 2.0),
+            (10, 2, 5),
+            (20, 4, 5),
+            (1, 3, 0.3333333333333333),
+            (-21, 3, -7),
+            (i64(30), 3, 10),
+            (i64(50), i64(5), 10),
+            ([10, 20, 30], 2, [5, 10, 15]),
+            ([10.5, 21.0, 31.5], 3.0, [3.5, 7.0, 10.5]),
+            (10, [1, 2, 5], [10, 5, 2]),
+            (30.0, [3.0, 6.0, 10.0], [10.0, 5.0, 3.0]),
+            ([10, 20, 30], [2, 4, 5], [5, 5, 6]),
+            ([10.0, 20.0, 30.0], [2.0, 5.0, 10.0], [5.0, 4.0, 3.0]),
+        ],
+    )
+    def test_fdiv(self, x, y, expected):
+        result = fdiv(x, y)
+        assert result == expected, f"Expected {expected}, got {result}"
+
+
+class TestMul:
+    @pytest.mark.parametrize(
+        "x, y, expected",
+        [
+            (5.5, 2.0, 11.0),
+            (10.5, 0.5, 5.25),
+            (-7.2, 2.0, -14.4),
+            (f64(3.0), 2.5, 7.5),
+            (f64(1.5), f64(2.0), 3.0),
+            (5, 2, 10),
+            (10, 5, 50),
+            (-7, 3, -21),
+            (i64(10), 2, 20),
+            (i64(5), i64(3), 15),
+            ([1, 2, 3], 2, [2, 4, 6]),
+            ([1.5, 2.5, 3.5], 2.0, [3.0, 5.0, 7.0]),
+            (3, [1, 2, 3], [3, 6, 9]),
+            (2.5, [1.0, 2.0, 3.0], [2.5, 5.0, 7.5]),
+            ([1, 2, 3], [4, 5, 6], [4, 10, 18]),
+            ([1.5, 2.5, 3.5], [2.0, 3.0, 4.0], [3.0, 7.5, 14.0]),
+        ],
+    )
+    def test_mul(self, x, y, expected):
+        result = mul(x, y)
+        assert result == expected, f"Expected {expected}, got {result}"
+
+
+class TestDiv:
+    @pytest.mark.parametrize(
+        "x, y, expected",
+        [
+            (10, 2, 5),
+            (11, 2, 5),
+            (5, 2, 2),
+            (1, 2, 0),
+            (0, 2, 0),
+            (-5, 2, -2),
+            (i64(10), 3, 3),
+            (i64(20), i64(6), 3),
+            (10.0, 2.0, 5),
+            (5.5, 2.0, 2),
+            (f64(10.0), 3.0, 3),
+            ([10, 11, 12], 3, [3, 3, 4]),
+            ([10.5, 11.5, 12.5], 2, [5, 5, 6]),
+            (10, [1, 2, 5], [10, 5, 2]),
+            (20, [2, 5, 10], [10, 4, 2]),
+            ([20, 30, 40], [2, 6, 8], [10, 5, 5]),
+        ],
+    )
+    def test_div(self, x, y, expected):
+        result = div(x, y)
+        assert result == expected, f"Expected {expected}, got {result}"
