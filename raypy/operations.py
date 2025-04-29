@@ -397,3 +397,74 @@ def div(
     raise ValueError(
         f"Could not convert result to int or float (type: {getattr(result_obj, 'type', 'unknown')})"
     )
+
+
+def mod(
+    x: int | float | list[int | float] | RayforceObject,
+    y: int | float | list[int | float] | RayforceObject,
+) -> int | float | list[int | float]:
+    """
+    Calculate x modulo y.
+    Handles integers, floats, and lists.
+
+    Returns:
+        - int | float | list result of a modulo operation.
+    """
+
+    if isinstance(x, list):
+        if isinstance(y, (int, float)):
+            # Handle modulo of each element of the X list by a scalar
+            return [mod(item, y) for item in x]
+        elif isinstance(y, list):
+            # Handle element-wise modulo of two lists
+            if len(x) != len(y):
+                raise ValueError(
+                    f"Lists must have the same length for modulo operation: {len(x)} != {len(y)}"
+                )
+            return [mod(x[i], y[i]) for i in range(len(x))]
+
+    elif isinstance(y, list):
+        # Handle modulo of a scalar by each element of the Y list
+        if isinstance(x, (int, float)):
+            return [mod(x, item) for item in y]
+
+    if isinstance(x, RayforceObject):
+        x_obj = x.obj
+    elif isinstance(x, int):
+        x_obj = rayforce.i64(x)
+    elif isinstance(x, float):
+        x_obj = rayforce.f64(x)
+    else:
+        raise TypeError(
+            f"Expected int, float, list, or RayforceObject, got {type(x).__name__}"
+        )
+
+    if isinstance(y, RayforceObject):
+        y_obj = y.obj
+    elif isinstance(y, int):
+        y_obj = rayforce.i64(y)
+    elif isinstance(y, float):
+        y_obj = rayforce.f64(y)
+    else:
+        raise TypeError(
+            f"Expected int, float, list, or RayforceObject, got {type(y).__name__}"
+        )
+
+    result_obj = rayforce.ray_mod(x_obj, y_obj)
+
+    if hasattr(result_obj, "type"):
+        # Integer results
+        if result_obj.type == _INTEGER_UNICODE_SURROGATE and hasattr(result_obj, "i64"):
+            return result_obj.i64
+        elif isinstance(result_obj.type, int) and result_obj.type == -rayforce.TYPE_I64:
+            return result_obj.i64
+
+        # Float results
+        elif result_obj.type == _FLOAT_UNICODE_SURROGATE and hasattr(result_obj, "f64"):
+            return result_obj.f64
+        elif isinstance(result_obj.type, int) and result_obj.type == -rayforce.TYPE_F64:
+            return result_obj.f64
+
+    raise ValueError(
+        f"Could not convert result to int or float (type: {getattr(result_obj, 'type', 'unknown')})"
+    )

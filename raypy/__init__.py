@@ -37,6 +37,7 @@ from .operations import (  # noqa: E402
     mul,
     div,
     fdiv,
+    mod,
 )
 
 # Initialize runtime
@@ -54,5 +55,6 @@ __all__ = [
     "mul",
     "div",
     "fdiv",
+    "mod",
     "initialize",
 ]

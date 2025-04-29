@@ -1,6 +1,6 @@
 import pytest
 
-from raypy import i64, f64, add, sub, fdiv, mul, div
+from raypy import i64, f64, add, sub, fdiv, mul, div, mod
 
 
 class TestAdd:
@@ -139,3 +139,43 @@ class TestDiv:
     def test_div(self, x, y, expected):
         result = div(x, y)
         assert result == expected, f"Expected {expected}, got {result}"
+
+
+class TestMod:
+    @pytest.mark.parametrize(
+        "x, y, expected",
+        [
+            (10, 3, 1),
+            (5, 2, 1),
+            (7, 3, 1),
+            (0, 5, 0),
+            (-7, 3, -1),  # RayForce modulo: -7 % 3 = -1 (not 2 like in python)
+            (1.2, 2.2, 1.2),
+            (5.5, 3.0, 2.5),
+            (2.0, 3.4, 2.0),
+            (i64(10), 3, 1),
+            (i64(7), i64(3), 1),
+            (f64(5.5), 3, 2.5),
+            ([1, 2, 3], 3, [1, 2, 0]),
+            ([1, 2, 3], 2.1, [1.0, 2.0, 0.9]),
+            (3.1, [1, 2, 3], [0.1, 1.1, 0.1]),
+            (10, [3, 4, 5], [1, 2, 0]),
+            ([10, 11, 12], [3, 4, 5], [1, 3, 2]),
+        ],
+    )
+    def test_mod(self, x, y, expected):
+        result = mod(x, y)
+
+        if isinstance(result, float) and isinstance(expected, float):
+            assert abs(result - expected) < 0.1, f"Expected {expected}, got {result}"
+        elif isinstance(result, list) and isinstance(expected, list):
+            assert len(result) == len(expected), f"Expected {expected}, got {result}"
+            for r, e in zip(result, expected):
+                if isinstance(r, float) and isinstance(e, float):
+                    assert abs(r - e) < 0.1, (
+                        f"Expected {e}, got {r} in {expected} vs {result}"
+                    )
+                else:
+                    assert r == e, f"Expected {e}, got {r} in {expected} vs {result}"
+        else:
+            assert result == expected, f"Expected {expected}, got {result}"
