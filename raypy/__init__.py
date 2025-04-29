@@ -30,9 +30,14 @@ from .types import (  # noqa: E402
     i64,
     f64,
 )
-from .operations import (  # noqa: E402
+from .math_operations import (  # noqa: E402
     # Mathematical operations
     add,
+    sub,
+    mul,
+    div,
+    fdiv,
+    mod,
 )
 
 # Initialize runtime
@@ -46,5 +51,10 @@ __all__ = [
     "i64",
     "f64",
     "add",
+    "sub",
+    "mul",
+    "div",
+    "fdiv",
+    "mod",
     "initialize",
 ]
