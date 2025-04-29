@@ -25,5 +25,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: C",
         "Topic :: Database",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS :: MacOS X",
     ],
 )
