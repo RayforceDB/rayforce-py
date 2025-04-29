@@ -1,5 +1,9 @@
 CC = clang
 
+ifeq ($(OS),)
+OS := $(shell uname -s | tr "[:upper:]" "[:lower:]")
+endif
+
 ARCH = $(shell uname -m)
 PYTHON_VERSION := $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 PYTHON_INCLUDE := $(shell python3 -c "from sysconfig import get_paths; print(get_paths()['include'])")
@@ -12,9 +16,17 @@ TEMP_DIR = $(EXEC_DIR)/tmp
 LIBRARY_DIR = $(EXEC_DIR)/raypy
 
 ORIGINAL_RAYFORCE_DIR = $(TEMP_DIR)/rayforce-c
-DYLIB_FILE_NAME = librayforce.dylib
 
-.PHONY: pull_and_build_rayforce_wrapper clean rebuild
+ifeq ($(OS),darwin)
+BUILT_RAYFORCE_C_LIB = librayforce.dylib
+endif
+
+ifeq ($(OS),linux)
+BUILT_RAYFORCE_C_LIB = rayforce.so
+endif
+
+
+.PHONY: pull_and_build_rayforce_wrapper clean rebuild lint test
 
 
 pull_and_build_rayforce_wrapper:
@@ -23,7 +35,7 @@ pull_and_build_rayforce_wrapper:
 	git clone git@github.com:singaraiona/rayforce.git $(ORIGINAL_RAYFORCE_DIR) && \
 	echo "👷  Building rayforce shared lib..." && \
 	cd $(ORIGINAL_RAYFORCE_DIR) && make shared && cd $(EXEC_DIR) && \
-	cp $(ORIGINAL_RAYFORCE_DIR)/$(DYLIB_FILE_NAME) $(LIBRARY_DIR)/$(DYLIB_FILE_NAME) && \
+	cp $(ORIGINAL_RAYFORCE_DIR)/$(BUILT_RAYFORCE_C_LIB) $(LIBRARY_DIR)/$(BUILT_RAYFORCE_C_LIB) && \
 	swig -python -I$(ORIGINAL_RAYFORCE_DIR)/core $(LIBRARY_DIR)/rayforce.i && \
 	echo "🟡 Rayforce library ready"
 
@@ -33,7 +45,7 @@ clean:
 	@rm -rf \
 		$(LIBRARY_DIR)/_rayforce.so  \
 		$(LIBRARY_DIR)/rayforce_wrap.c  \
-		$(LIBRARY_DIR)/$(DYLIB_FILE_NAME)  \
+		$(LIBRARY_DIR)/$(BUILT_RAYFORCE_C_LIB)  \
 		$(LIBRARY_DIR)/rayforce.py  \
 		$(TEMP_DIR)  \
 		build/  \
