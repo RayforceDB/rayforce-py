@@ -1,9 +1,5 @@
 CC = clang
 
-ifeq ($(OS),)
-OS := $(shell uname -s | tr "[:upper:]" "[:lower:]")
-endif
-
 ARCH = $(shell uname -m)
 PYTHON_VERSION := $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 PYTHON_INCLUDE := $(shell python3 -c "from sysconfig import get_paths; print(get_paths()['include'])")
@@ -15,66 +11,49 @@ EXEC_DIR = $(shell pwd)
 TEMP_DIR = $(EXEC_DIR)/tmp
 LIBRARY_DIR = $(EXEC_DIR)/raypy
 
-ORIGINAL_RAYFORCE_DIR = $(TEMP_DIR)/rayforce-c
-
-ifeq ($(OS),darwin)
+# MacOS-specific file
 BUILT_RAYFORCE_C_LIB = librayforce.dylib
-endif
 
-ifeq ($(OS),linux)
-BUILT_RAYFORCE_C_LIB = rayforce.so
-endif
+.PHONY: pull_from_gh build_shared_lib compile_lib wheel build rebuild clean lint test
 
-
-.PHONY: pull_and_build_rayforce_wrapper clean rebuild lint test
-
-
-pull_and_build_rayforce_wrapper:
-	@rm -rf $(ORIGINAL_RAYFORCE_DIR) && \
+pull_from_gh:
+	@rm -rf $(EXEC_DIR)/tmp/rayforce-c && \
 	echo "⬇️  Cloning rayforce repo from github..."; \
-	git clone git@github.com:singaraiona/rayforce.git $(ORIGINAL_RAYFORCE_DIR) && \
-	echo "👷  Building rayforce shared lib..." && \
-	cd $(ORIGINAL_RAYFORCE_DIR) && make shared && cd $(EXEC_DIR) && \
-	cp $(ORIGINAL_RAYFORCE_DIR)/$(BUILT_RAYFORCE_C_LIB) $(LIBRARY_DIR)/$(BUILT_RAYFORCE_C_LIB) && \
-	swig -python -I$(ORIGINAL_RAYFORCE_DIR)/core $(LIBRARY_DIR)/rayforce.i && \
-	echo "🟡 Rayforce library ready"
+	git clone git@github.com:singaraiona/rayforce.git $(EXEC_DIR)/tmp/rayforce-c \
 
+build_shared_lib:
+	@echo "👷  Building rayforce shared lib..." && \
+	cd $(EXEC_DIR)/tmp/rayforce-c && make shared && cd $(EXEC_DIR) && \
+	cp $(EXEC_DIR)/tmp/rayforce-c/$(BUILT_RAYFORCE_C_LIB) $(EXEC_DIR)/raypy/$(BUILT_RAYFORCE_C_LIB) && \
+	swig -python -I$(EXEC_DIR)/tmp/rayforce-c/core $(EXEC_DIR)/raypy/rayforce.i && \
+	echo "🟡 Rayforce library ready"
 
 clean:
 	@echo "🧹 Cleaning generated files..."
-	@rm -rf \
-		$(LIBRARY_DIR)/_rayforce.so  \
-		$(LIBRARY_DIR)/rayforce_wrap.c  \
-		$(LIBRARY_DIR)/$(BUILT_RAYFORCE_C_LIB)  \
-		$(LIBRARY_DIR)/rayforce.py  \
-		$(TEMP_DIR)  \
+	@cd $(EXEC_DIR) && rm -rf \
+		raypy/_rayforce.so  \
+		raypy/rayforce_wrap.c  \
+		raypy/librayforce.dylib  \
+		raypy/rayforce.py  \
+		raypy/rayforce.so  \
+		raypy/librayforce.so  \
+		$(EXEC_DIR)/tmp  \
 		build/  \
 		temp/  \
 		dist/  \
-		raypy.egg-info/  \
+		raypy.egg-info/
 
-
-rebuild: clean pull_and_build_rayforce_wrapper
+compile_lib: 
 	@echo "⚙️  Compiling Python extension..."; \
 	$(CC) -x c -shared -fPIC -std=c99 -arch $(ARCH) \
-		-I$(PYTHON_INCLUDE) -I$(ORIGINAL_RAYFORCE_DIR)/core \
-		$(LIBRARY_DIR)/rayforce_wrap.c -o $(LIBRARY_DIR)/_rayforce.so \
-		-L$(LIBRARY_DIR) -lrayforce -L$(PYTHON_LIB) \
+		-I$(PYTHON_INCLUDE) -I$(EXEC_DIR)/tmp/rayforce-c/core \
+		$(EXEC_DIR)/raypy/rayforce_wrap.c -o $(EXEC_DIR)/raypy/_rayforce.so \
+		-L$(EXEC_DIR)/raypy -lrayforce -L$(PYTHON_LIB) \
 		-lpython$(PYTHON_VERSION) -ldl -framework CoreFoundation \
 		-Wno-implicit-function-declaration && \
-		echo "✅ Extension compiled" || echo "❌ Error during build"; \
-	rm -rf $(TEMP_DIR)
+		echo "✅ Extension compiled" || echo "❌ Error during build";
 
-
-importability_test:
-	@cd $(LIBRARY_DIR) && \
-	python3 -c "import rayforce; \
-		rayforce.ray_init(); \
-		assert rayforce.ray_add(rayforce.i64(2), rayforce.i64(3)).i64 == 5, 'Invalid calculation result';" && \
-	echo "✅ Test passed" || echo "❌ Test failed"; \
-
-
-rebuild_wheel: rebuild importability_test
+wheel:
 	@echo "⚙️  Building python wheel..."; \
 	( \
 		cd $(EXEC_DIR) && \
@@ -82,6 +61,11 @@ rebuild_wheel: rebuild importability_test
 	) && echo "✅ Python wheel successfully built - tar.gz is in dist/ directory." \
 	|| echo "❌ Error during wheel build"
 
+# Builds without cleaning the pulled repository
+build: build_shared_lib compile_lib wheel
+
+# Pulls the latest repo and rebuilds all from scratch
+rebuild: clean pull_from_gh build_shared_lib compile_lib wheel
 
 lint:
 	ruff format ./raypy ./tests
