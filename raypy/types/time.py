@@ -68,11 +68,6 @@ class Time:
 
     @property
     def __ms_since_midnight(self) -> int:
-        if not self.ray_extr_method:
-            raise AttributeError(
-                "Rayforce value extraction is not defined for date type"
-            )
-
         try:
             return getattr(self.ptr, self.ray_extr_method)()
         except TypeError as e:

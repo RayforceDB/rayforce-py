@@ -28,11 +28,6 @@ class b8:
         except ValueError as e:
             raise ValueError(f"Expected value of type bool, got {type(value)}") from e
 
-        if not self.ray_init_method:
-            raise AttributeError(
-                "Rayforce value init method is not defined for boolean type"
-            )
-
         try:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
             assert self.ptr is not None, "RayObject should not be empty"
@@ -41,11 +36,6 @@ class b8:
 
     @property
     def value(self) -> bool:
-        if not self.ray_extr_method:
-            raise AttributeError(
-                "Rayforce value extraction is not defined for boolean type"
-            )
-
         try:
             return getattr(self.ptr, self.ray_extr_method)()
         except TypeError as e:

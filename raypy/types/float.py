@@ -28,11 +28,6 @@ class f64:
         except ValueError as e:
             raise ValueError(f"Expected value of type float, got {type(value)}") from e
 
-        if not self.ray_init_method:
-            raise AttributeError(
-                "Rayforce value init method is not defined for float type"
-            )
-
         try:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
             assert self.ptr is not None, "RayObject should not be empty"
@@ -41,11 +36,6 @@ class f64:
 
     @property
     def value(self) -> float:
-        if not self.ray_extr_method:
-            raise AttributeError(
-                "Rayforce value extraction is not defined for float type"
-            )
-
         try:
             return getattr(self.ptr, self.ray_extr_method)()
         except TypeError as e:

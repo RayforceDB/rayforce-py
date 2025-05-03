@@ -54,11 +54,6 @@ class Date:
 
     @property
     def __days_since_epoch(self) -> int:
-        if not self.ray_extr_method:
-            raise AttributeError(
-                "Rayforce value extraction is not defined for date type"
-            )
-
         try:
             return getattr(self.ptr, self.ray_extr_method)()
         except TypeError as e:

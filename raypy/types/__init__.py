@@ -5,6 +5,7 @@ from .date import Date
 from .time import Time
 from .timestamp import Timestamp
 from .unsigned import u8
+from .guid import GUID
 
 __all__ = [
     "i16",
@@ -17,4 +18,5 @@ __all__ = [
     "Time",
     "Timestamp",
     "u8",
+    "GUID",
 ]
