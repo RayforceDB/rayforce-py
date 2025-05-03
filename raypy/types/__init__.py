@@ -8,6 +8,7 @@ from .unsigned import u8
 from .guid import GUID
 from .char import c8
 from .symbol import Symbol
+from .list import List
 
 __all__ = [
     "i16",
@@ -23,4 +24,5 @@ __all__ = [
     "GUID",
     "c8",
     "Symbol",
+    "List",
 ]
