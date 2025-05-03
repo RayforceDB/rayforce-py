@@ -3,6 +3,7 @@ from .float import f64, from_python_float
 from .bool import b8, from_python_boolean
 from .date import Date, from_python_date
 from .time import Time, from_python_time
+from .timestamp import Timestamp, from_python_timestamp
 
 __all__ = [
     "i16",
@@ -17,4 +18,6 @@ __all__ = [
     "from_python_date",
     "Time",
     "from_python_time",
+    "Timestamp",
+    "from_python_timestamp",
 ]
