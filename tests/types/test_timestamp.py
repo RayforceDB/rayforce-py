@@ -3,7 +3,7 @@ import datetime as dt
 import time
 
 from raypy import _rayforce as r
-from raypy.types.timestamp import Timestamp, from_python_timestamp, EPOCH_DATE
+from raypy.types.timestamp import Timestamp, EPOCH_DATE
 from raypy.types.date import Date
 from raypy.types.time import Time
 
@@ -113,31 +113,6 @@ class TestTimestampType:
             
         with pytest.raises(TypeError):
             Timestamp(1.5)  # Float is not a valid input
-    
-    def test_from_python_timestamp(self):
-        """Test the from_python_timestamp function."""
-        # Test with explicit datetime
-        test_dt = dt.datetime(2023, 5, 15, 12, 34, 56, 789000)
-        timestamp_obj = from_python_timestamp(test_dt)
-        
-        assert timestamp_obj.value.year == test_dt.year
-        assert timestamp_obj.value.month == test_dt.month
-        assert timestamp_obj.value.day == test_dt.day
-        assert timestamp_obj.value.hour == test_dt.hour
-        assert timestamp_obj.value.minute == test_dt.minute
-        assert timestamp_obj.value.second == test_dt.second
-        assert timestamp_obj.value.microsecond == test_dt.microsecond
-        
-        # Test with forced type
-        forced_timestamp_obj = from_python_timestamp(test_dt, force_type="Timestamp")
-        
-        assert forced_timestamp_obj.value.year == test_dt.year
-        assert forced_timestamp_obj.value.month == test_dt.month
-        assert forced_timestamp_obj.value.day == test_dt.day
-        
-        # Test with invalid force_type
-        with pytest.raises(ValueError):
-            from_python_timestamp(test_dt, force_type="invalid")
     
     def test_timestamp_string_representation(self):
         """Test string representations of Timestamp objects."""

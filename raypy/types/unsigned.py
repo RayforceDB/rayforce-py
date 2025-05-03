@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 
 from raypy import _rayforce as r
 
@@ -11,6 +11,7 @@ class u8:
     """
 
     ptr: r.RayObject
+
     ray_type_code = r.TYPE_U8
     ray_init_method = "from_u8"
     ray_extr_method = "get_u8_value"
@@ -106,17 +107,3 @@ class u8:
             raise ZeroDivisionError("modulo by zero")
         result = self.value % other
         return u8(result)
-
-
-def from_python_unsigned(
-    value: int,
-    force_type: Literal["u8"] | None = None,
-) -> u8:
-    if force_type:
-        match force_type:
-            case "u8":
-                return u8(value)
-            case _:
-                raise ValueError(f"Unknown type: {force_type}")
-
-    return u8(value)

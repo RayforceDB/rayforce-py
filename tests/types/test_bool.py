@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.bool import b8, from_python_boolean
+from raypy.types.bool import b8
 
 
 class TestBoolTypes:
@@ -42,26 +42,6 @@ class TestBoolTypes:
 
         non_empty_string = b8("Hello")
         assert non_empty_string.value is True
-
-    def test_from_python_boolean(self):
-        """Test conversion from Python boolean to Rayforce boolean."""
-        # Test basic conversion
-        true_value = from_python_boolean(True)
-        assert isinstance(true_value, b8)
-        assert true_value.value is True
-
-        false_value = from_python_boolean(False)
-        assert isinstance(false_value, b8)
-        assert false_value.value is False
-
-        # Test with forced type
-        forced_b8 = from_python_boolean(True, force_type="b8")
-        assert isinstance(forced_b8, b8)
-        assert forced_b8.value is True
-
-        # Test invalid force_type
-        with pytest.raises(ValueError):
-            from_python_boolean(True, force_type="invalid")
 
     def test_bool_conversions(self):
         """Test conversion of boolean types to Python types."""

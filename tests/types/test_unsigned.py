@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.unsigned import u8, from_python_unsigned
+from raypy.types.unsigned import u8
 
 
 class TestUnsignedTypes:
@@ -37,22 +37,6 @@ class TestUnsignedTypes:
             
         with pytest.raises(ValueError):
             u8("not an integer")
-    
-    def test_from_python_unsigned(self):
-        """Test the from_python_unsigned function."""
-        # Test basic conversion
-        value = from_python_unsigned(42)
-        assert isinstance(value, u8)
-        assert value.value == 42
-        
-        # Test with forced type
-        forced_u8 = from_python_unsigned(42, force_type="u8")
-        assert isinstance(forced_u8, u8)
-        assert forced_u8.value == 42
-        
-        # Test invalid force_type
-        with pytest.raises(ValueError):
-            from_python_unsigned(42, force_type="invalid")
     
     def test_u8_conversions(self):
         """Test conversion of u8 to Python types."""

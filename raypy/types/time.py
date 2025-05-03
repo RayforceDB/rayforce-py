@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Any, Literal
+from typing import Any
 
 from raypy import _rayforce as r
 
@@ -10,6 +10,7 @@ class Time:
     """
 
     ptr: r.RayObject
+
     ray_type_code = r.TYPE_TIME
     ray_init_method = "from_time"
     ray_extr_method = "get_time_value"
@@ -109,17 +110,3 @@ class Time:
         if isinstance(other, int):
             return self.raw_value == other
         return False
-
-
-def from_python_time(
-    value: dt.time | None = None,
-    force_type: Literal["Time"] | None = None,
-) -> Time:
-    if force_type:
-        match force_type:
-            case "Time":
-                return Time(value)
-            case _:
-                raise ValueError(f"Unknown type: {force_type}")
-
-    return Time(value)

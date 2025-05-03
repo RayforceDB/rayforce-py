@@ -14,6 +14,7 @@ class Timestamp:
     """
 
     ptr: r.RayObject
+
     ray_type_code = r.TYPE_TIMESTAMP
     ray_init_method = "from_timestamp"
     ray_extr_method = "get_timestamp_value"
@@ -107,17 +108,3 @@ class Timestamp:
         if isinstance(other, int):
             return self.raw_value == other
         return False
-
-
-def from_python_timestamp(
-    value: dt.datetime | None = None,
-    force_type: Literal["Timestamp"] | None = None,
-) -> Timestamp:
-    if force_type:
-        match force_type:
-            case "Timestamp":
-                return Timestamp(value)
-            case _:
-                raise ValueError(f"Unknown type: {force_type}")
-
-    return Timestamp(value)

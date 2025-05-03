@@ -8,10 +8,11 @@ EPOCH_DATE = dt.date(1970, 1, 1)
 
 class Date:
     """
-    Rayforce Date clase
+    Rayforce Date class
     """
 
     ptr: r.RayObject
+
     ray_type_code = r.TYPE_DATE
     ray_init_method = "from_date"
     ray_extr_method = "get_date_value"
@@ -88,17 +89,3 @@ class Date:
         if isinstance(other, int):
             return self.raw_value == other
         return False
-
-
-def from_python_date(
-    value: dt.date | None = None,
-    force_type: Literal["Date"] | None = None,
-) -> Date:
-    if force_type:
-        match force_type:
-            case "Date":
-                return Date(value)
-            case _:
-                raise ValueError(f"Unknown type: {force_type}")
-
-    return Date(value)

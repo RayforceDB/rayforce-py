@@ -2,7 +2,7 @@ import pytest
 import datetime as dt
 
 from raypy import _rayforce as r
-from raypy.types.date import Date, from_python_date, EPOCH_DATE
+from raypy.types.date import Date, EPOCH_DATE
 
 
 class TestDateType:
@@ -78,29 +78,6 @@ class TestDateType:
             
         with pytest.raises(TypeError):
             Date(1.5)  # Float is not a valid input
-    
-    def test_from_python_date(self):
-        """Test the from_python_date function."""
-        # Test with default parameter (today)
-        today = dt.date.today()
-        date_obj = from_python_date()
-        
-        assert date_obj.value == today
-        
-        # Test with explicit date
-        test_date = dt.date(2023, 5, 15)
-        date_obj = from_python_date(test_date)
-        
-        assert date_obj.value == test_date
-        
-        # Test with forced type
-        forced_date_obj = from_python_date(test_date, force_type="Date")
-        
-        assert forced_date_obj.value == test_date
-        
-        # Test with invalid force_type
-        with pytest.raises(ValueError):
-            from_python_date(test_date, force_type="invalid")
     
     def test_date_string_representation(self):
         """Test string representations of Date objects."""

@@ -1,17 +1,18 @@
-from typing import Any, Literal
+from typing import Any
 
 from raypy import _rayforce as r
 
 
-class _RayBool:
+class b8:
     """
-    Base class for Rayforce bool
+    8-bit Rayforce boolean
     """
 
     ptr: r.RayObject
-    ray_type_code: int
-    ray_init_method: str
-    ray_extr_method: str
+
+    ray_type_code = r.TYPE_B8
+    ray_init_method = "from_b8"
+    ray_extr_method = "get_b8_value"
 
     def __init__(self, value: bool, ray_obj: r.RayObject | None = None) -> None:
         if ray_obj is not None:
@@ -62,32 +63,8 @@ class _RayBool:
         return f"B8({self.value})"
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, _RayBool):
+        if isinstance(other, b8):
             return self.value == other.value
         if isinstance(other, bool):
             return self.value == other
         return False
-
-
-class b8(_RayBool):
-    """
-    8-bit Rayforce boolean
-    """
-
-    ray_type_code = r.TYPE_B8
-    ray_init_method = "from_b8"
-    ray_extr_method = "get_b8_value"
-
-
-def from_python_boolean(
-    value: bool,
-    force_type: Literal["b8"] | None = None,
-) -> b8:
-    if force_type:
-        match force_type:
-            case "b8":
-                return b8(value)
-            case _:
-                raise ValueError(f"Unknown type: {force_type}")
-
-    return b8(value)

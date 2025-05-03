@@ -2,7 +2,7 @@ import pytest
 import datetime as dt
 
 from raypy import _rayforce as r
-from raypy.types.time import Time, from_python_time
+from raypy.types.time import Time
 
 
 class TestTimeType:
@@ -97,23 +97,6 @@ class TestTimeType:
 
         with pytest.raises(TypeError):
             Time(1.5)  # Float is not a valid input
-
-    def test_from_python_time(self):
-        """Test the from_python_time function."""
-        # Test with explicit time
-        test_time = dt.time(12, 34, 56, 789000)
-        time_obj = from_python_time(test_time)
-
-        assert time_obj.value == test_time
-
-        # Test with forced type
-        forced_time_obj = from_python_time(test_time, force_type="Time")
-
-        assert forced_time_obj.value == test_time
-
-        # Test with invalid force_type
-        with pytest.raises(ValueError):
-            from_python_time(test_time, force_type="invalid")
 
     def test_time_string_representation(self):
         """Test string representations of Time objects."""

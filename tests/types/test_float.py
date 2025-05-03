@@ -2,7 +2,7 @@ import pytest
 import math
 
 from raypy import _rayforce as r
-from raypy.types.float import f64, from_python_float
+from raypy.types.float import f64
 
 
 class TestFloatTypes:
@@ -39,21 +39,6 @@ class TestFloatTypes:
         # Test invalid values
         with pytest.raises(ValueError):
             f64("not a float")
-
-    def test_from_python_float(self):
-        # Test basic conversion
-        value = from_python_float(42.5)
-        assert isinstance(value, f64)
-        assert value.value == 42.5
-
-        # Test with forced type
-        forced_f64 = from_python_float(42.5, force_type="f64")
-        assert isinstance(forced_f64, f64)
-        assert forced_f64.value == 42.5
-
-        # Test invalid force_type
-        with pytest.raises(ValueError):
-            from_python_float(42.5, force_type="invalid")
 
     def test_float_conversions(self):
         # Test float() conversion
