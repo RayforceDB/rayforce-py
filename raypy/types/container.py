@@ -183,16 +183,18 @@ class Dict:
         return getattr(self.ptr, self.ray_length)()
 
 
-def from_pythonic_to_raypy_type(value: Any) -> (
-    scalar.Symbol |
-    List |
-    Dict |
-    scalar.i64 |
-    scalar.b8 |
-    scalar.Date |
-    scalar.Time |
-    scalar.Timestamp |
-    scalar.GUID
+def from_pythonic_to_raypy_type(
+    value: Any,
+) -> (
+    scalar.Symbol
+    | List
+    | Dict
+    | scalar.i64
+    | scalar.b8
+    | scalar.Date
+    | scalar.Time
+    | scalar.Timestamp
+    | scalar.GUID
 ):
     """
     Convert a python type to Rayforce type.
@@ -233,10 +235,10 @@ def from_pythonic_to_raypy_type(value: Any) -> (
     elif isinstance(value, uuid.UUID):
         return scalar.GUID(value)
     elif isinstance(value, list):
-        l = List()
+        ll = List()
         for item in value:
-            l.append(from_pythonic_to_raypy_type(item))
-        return l
+            ll.append(from_pythonic_to_raypy_type(item))
+        return ll
     elif isinstance(value, dict):
         dict_keys = List()
         dict_values = List()
@@ -251,16 +253,18 @@ def from_pythonic_to_raypy_type(value: Any) -> (
     raise ValueError("Value type is not supported")
 
 
-def from_pointer_to_raypy_type(ptr: r.RayObject) -> (
-    scalar.Symbol |
-    List |
-    Dict |
-    scalar.i64 |
-    scalar.b8 |
-    scalar.Date |
-    scalar.Time |
-    scalar.Timestamp |
-    scalar.GUID
+def from_pointer_to_raypy_type(
+    ptr: r.RayObject,
+) -> (
+    scalar.Symbol
+    | List
+    | Dict
+    | scalar.i64
+    | scalar.b8
+    | scalar.Date
+    | scalar.Time
+    | scalar.Timestamp
+    | scalar.GUID
 ):
     """
     Convert a raw Rayforce type (RayObject) to one of the raypy types.
@@ -298,5 +302,5 @@ def from_pointer_to_raypy_type(ptr: r.RayObject) -> (
         return List(ray_obj=ptr)
     elif ptr_type == r.TYPE_DICT:
         return Dict(ray_obj=ptr)
-    
+
     raise ValueError(f"RayObject type of {ptr_type} is not supported")

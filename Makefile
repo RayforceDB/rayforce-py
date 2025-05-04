@@ -33,3 +33,10 @@ clean:
 
 
 all: clean pull_from_gh shared lib
+
+test:
+	pytest tests/
+
+lint:
+	ruff format tests/ raypy/
+	ruff check raypy/ --fix

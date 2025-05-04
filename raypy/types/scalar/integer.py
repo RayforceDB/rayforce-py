@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Literal
+from typing import Any
 
 from raypy import _rayforce as r
 
