@@ -105,29 +105,3 @@ class i64(_RayInteger):
     ray_type_code = r.TYPE_I64
     ray_init_method = "from_i64"
     ray_extr_method = "get_i64_value"
-
-
-def from_python_integer(
-    value: int,
-    force_type: Literal["i16", "i32", "i64"] | None = None,
-) -> i16 | i32 | i64:
-    if force_type:
-        match force_type:
-            case "i16":
-                return i16(value)
-            case "i32":
-                return i32(value)
-            case "i64":
-                return i64(value)
-            case _:
-                raise ValueError(f"Unknown type: {force_type}")
-
-    try:
-        if -32768 <= value <= 32767:
-            return i16(value)
-        elif -2147483648 <= value <= 2147483647:
-            return i32(value)
-        else:
-            return i64(value)
-    except (OverflowError, TypeError):
-        return i64(value)

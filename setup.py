@@ -1,31 +1,21 @@
-from setuptools import setup
+import os
+from setuptools import setup, Extension
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+lib_path = os.path.join(current_dir, 'raypy')
+
+rayforce_module = Extension(
+    'raypy._rayforce',
+    sources=['raypy/rayforce.c'],
+    libraries=['rayforce'],
+    library_dirs=['raypy/'],
+    include_dirs=['raypy/core'],
+    extra_compile_args=['-fPIC'],
+    extra_link_args=['-Wl,-rpath,' + lib_path]
+)
 
 setup(
-    name="raypy",
-    version="0.1.0",
-    description="Python library for RayforceDB",
-    author="Karim",
-    author_email="",
-    url="https://github.com/singaraiona/raypy",
-    packages=["raypy"],
-    package_data={
-        "raypy": ["*.so", "*.dylib", "*.dll", "*.py", "*.i"],
-    },
-    python_requires=">=3.6",
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: C",
-        "Topic :: Database",
-        "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS :: MacOS X",
-    ],
+    name='raypy',
+    version='0.1',
+    ext_modules=[rayforce_module],
 )

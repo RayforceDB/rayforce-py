@@ -1,4 +1,4 @@
-from .integer import i16, i32, i64, from_python_integer
+from .integer import i16, i32, i64
 from .float import f64
 from .bool import b8
 from .date import Date
@@ -14,7 +14,6 @@ __all__ = [
     "i16",
     "i32",
     "i64",
-    "from_python_integer",
     "f64",
     "b8",
     "Date",

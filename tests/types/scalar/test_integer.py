@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.scalar.integer import i16, i32, i64, from_python_integer
+from raypy.types.scalar.integer import i16, i32, i64
 
 
 class TestIntegerTypes:
@@ -92,37 +92,6 @@ class TestIntegerTypes:
         # Test invalid values
         with pytest.raises(ValueError):
             i64("not an integer")
-
-    def test_from_python_integer(self):
-        """Test automatic selection of integer type based on value."""
-        # Small value should be i16
-        small = from_python_integer(100)
-        assert isinstance(small, i16)
-        assert small.value == 100
-
-        # Medium value should be i32
-        medium = from_python_integer(100000)
-        assert isinstance(medium, i32)
-        assert medium.value == 100000
-
-        # Large value should be i64
-        large = from_python_integer(10000000000)
-        assert isinstance(large, i64)
-        assert large.value == 10000000000
-
-        # Test forced types
-        forced_i16 = from_python_integer(1000, force_type="i16")
-        assert isinstance(forced_i16, i16)
-
-        forced_i32 = from_python_integer(100000, force_type="i32")
-        assert isinstance(forced_i32, i32)
-
-        forced_i64 = from_python_integer(100, force_type="i64")
-        assert isinstance(forced_i64, i64)
-
-        # Test invalid force_type
-        with pytest.raises(ValueError):
-            from_python_integer(100, force_type="invalid")
 
     def test_integer_conversions(self):
         """Test conversion of integer types to Python types."""
