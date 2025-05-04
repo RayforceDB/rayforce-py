@@ -1,21 +1,18 @@
-
-
-
-
 from typing import Any, Iterable
+import uuid
+import datetime as dt
 
 from raypy import _rayforce as r
 
-from .scalar.symbol import Symbol
+from . import scalar
 
 
 class List:
     """
     Rayforce list type
-    """
 
-    # TODO: Add support for initialising the list with python values
-    # TODO: Add serialisation when extracting values from list
+    List is a container of items which can be of any Rayforce type
+    """
 
     ptr: r.RayObject
 
@@ -28,30 +25,68 @@ class List:
     ray_set_item_method = "list_set_item"
     ray_remove_item_method = "list_remove_item"
 
-    def __init__(self, items: Iterable[r.RayObject] | None = None) -> None:
+    def __init__(
+        self,
+        items: Iterable[Any] | None = None,
+        ray_obj: r.RayObject | None = None,
+    ) -> None:
+        if ray_obj is not None:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
+                raise ValueError(
+                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                )
+            self.ptr = ray_obj
+            return
+
+        if not isinstance(items, Iterable):
+            raise ValueError("Value should be iterable")
+
         self.ptr = getattr(r.RayObject, self.ray_create_method)()
 
         if items:
             for item in items:
                 self.append(item)
 
-    def append(self, item: r.RayObject) -> None:
-        getattr(self.ptr, self.ray_append_method)(item)
+    @staticmethod
+    def __get_ptr_from_list_item(item: Any) -> r.RayObject:
+        if getattr(item, "ptr", None) is not None:  # If item is one of Raypy types
+            return item.ptr
+        elif isinstance(item, r.RayObject):
+            return item
+        return from_pythonic_to_raypy_type(value=item).ptr
+
+    def append(self, item: Any) -> None:
+        """
+        Item can be one of the following:
+            - Pythonic type value
+            - Raw RayObject pointer
+            - One of Raypy types
+        """
+        ptr = self.__get_ptr_from_list_item(item)
+        getattr(self.ptr, self.ray_append_method)(ptr)
 
     def __len__(self) -> int:
         return getattr(self.ptr, self.ray_length_method)()
 
-    def get(self, index: int) -> r.RayObject:
+    def get(self, index: int) -> Any:
+        if index < 0 or index >= len(self):
+            raise IndexError("List index out of range")
+        return from_pointer_to_raypy_type(
+            ptr=getattr(self.ptr, self.ray_get_item_method)(index)
+        )
+
+    def set(self, index: int, item: Any) -> None:
+        """
+        Item can be one of the following:
+            - Pythonic type value
+            - Raw RayObject pointer
+            - One of Raypy types
+        """
         if index < 0 or index >= len(self):
             raise IndexError("List index out of range")
 
-        return getattr(self.ptr, self.ray_get_item_method)(index)
-
-    def set(self, index: int, item: r.RayObject) -> None:
-        if index < 0 or index >= len(self):
-            raise IndexError("List index out of range")
-
-        getattr(self.ptr, self.ray_set_item_method)(index, item)
+        ptr = self.__get_ptr_from_list_item(item)
+        getattr(self.ptr, self.ray_set_item_method)(index, ptr)
 
     def remove(self, index: int) -> None:
         if index < 0 or index >= len(self):
@@ -59,10 +94,10 @@ class List:
 
         getattr(self.ptr, self.ray_remove_item_method)(index)
 
-    def __getitem__(self, index: int) -> r.RayObject:
+    def __getitem__(self, index: int) -> Any:
         return self.get(index)
 
-    def __setitem__(self, index: int, item: r.RayObject):
+    def __setitem__(self, index: int, item: Any) -> None:
         self.set(index, item)
 
     def __iter__(self) -> Any:
@@ -70,7 +105,7 @@ class List:
             yield self.get(i)
 
     def __str__(self) -> str:
-        items = [str(self.get(i)) for i in range(len(self))]
+        items = [self.get(i).__repr__() for i in range(len(self))]
         return f"[{', '.join(items)}]"
 
     def __repr__(self) -> str:
@@ -95,7 +130,7 @@ class Dict:
     # TODO: Add support for Strings (vectors of C8)
     def __init__(
         self,
-        value: dict[Symbol, Any] | None = None,
+        value: dict[scalar.Symbol, Any] | None = None,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
@@ -111,7 +146,7 @@ class Dict:
 
         dict_keys = List()
         for item in value.keys():
-            if not isinstance(item, Symbol):
+            if not isinstance(item, scalar.Symbol):
                 raise ValueError(
                     "All keys should be either Symbols or Strings (vector of C8)"
                 )
@@ -132,7 +167,7 @@ class Dict:
     def keys(self) -> List:
         return List(
             items=[
-                Symbol(ray_obj=ptr).ptr
+                scalar.Symbol(ray_obj=ptr).ptr
                 for ptr in getattr(self.ptr, self.ray_get_keys)()
             ]
         )
@@ -142,7 +177,126 @@ class Dict:
         return List(items=getattr(self.ptr, self.ray_get_values)())
 
     def get(self, key: str) -> Any:
-        return getattr(self.ptr, self.ray_get)(Symbol(value=key).ptr)
+        return getattr(self.ptr, self.ray_get)(scalar.Symbol(value=key).ptr)
 
     def __len__(self) -> int:
         return getattr(self.ptr, self.ray_length)()
+
+
+def from_pythonic_to_raypy_type(value: Any) -> (
+    scalar.Symbol |
+    List |
+    Dict |
+    scalar.i64 |
+    scalar.b8 |
+    scalar.Date |
+    scalar.Time |
+    scalar.Timestamp |
+    scalar.GUID
+):
+    """
+    Convert a python type to Rayforce type.
+    Supported python types:
+        - str -> Symbol
+        - int -> i64 (Always use i64 when converting from Python)
+        - bool -> b8
+        - datetime.date -> Date
+        - datetime.time -> Time
+        - datetime.datetime -> Timestamp
+        - uuid.UUID -> GUID
+        - list -> List
+        - dict -> Dict
+
+    Note that this function is automatically decides which Rayforce type to convert to,
+    but it's also possible to initialise Rayforce type directly from python function.
+
+    Since there are certain Rayforce types which do not have similar Python alternative,
+    The following types can only be created directly interfacing the type:
+        - char.py::c8
+        - unsigned.py::u8
+    """
+    if value is None:
+        raise ValueError("Value can not be None")
+
+    if isinstance(value, str):
+        return scalar.Symbol(value)
+    elif isinstance(value, int) and not isinstance(value, bool):
+        return scalar.i64(value)
+    elif isinstance(value, bool):
+        return scalar.b8(value)
+    elif isinstance(value, dt.date):
+        return scalar.Date(value)
+    elif isinstance(value, dt.time):
+        return scalar.Time(value)
+    elif isinstance(value, dt.datetime):
+        return scalar.Timestamp(value)
+    elif isinstance(value, uuid.UUID):
+        return scalar.GUID(value)
+    elif isinstance(value, list):
+        l = List()
+        for item in value:
+            l.append(from_pythonic_to_raypy_type(item))
+        return l
+    elif isinstance(value, dict):
+        dict_keys = List()
+        dict_values = List()
+        for item in value.keys():
+            if not isinstance(item, str):
+                raise ValueError("Dict keys should be of type str")
+            dict_keys.append(scalar.Symbol(item))
+        for item in value.values():
+            dict_values.append(from_pythonic_to_raypy_type(item))
+        return Dict(value=zip(dict_keys, dict_values))
+
+    raise ValueError("Value type is not supported")
+
+
+def from_pointer_to_raypy_type(ptr: r.RayObject) -> (
+    scalar.Symbol |
+    List |
+    Dict |
+    scalar.i64 |
+    scalar.b8 |
+    scalar.Date |
+    scalar.Time |
+    scalar.Timestamp |
+    scalar.GUID
+):
+    """
+    Convert a raw Rayforce type (RayObject) to one of the raypy types.
+    """
+    if ptr is None:
+        raise ValueError("Pointer can not be None")
+
+    ptr_type = ptr.get_type()
+
+    if ptr_type == -r.TYPE_I16:
+        return scalar.i16(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_I32:
+        return scalar.i32(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_I64:
+        return scalar.i64(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_F64:
+        return scalar.f64(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_B8:
+        return scalar.b8(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_C8:
+        return scalar.c8(ray_obj=ptr)
+    elif ptr_type == r.TYPE_GUID:
+        return scalar.GUID(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_SYMBOL:
+        return scalar.Symbol(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_TIME:
+        return scalar.Time(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_TIMESTAMP:
+        return scalar.Timestamp(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_DATE:
+        return scalar.Date(ray_obj=ptr)
+    elif ptr_type == -r.TYPE_U8:
+        return scalar.u8(ray_obj=ptr)
+    elif ptr_type == r.TYPE_LIST:
+        return List(ray_obj=ptr)
+    elif ptr_type == r.TYPE_DICT:
+        return Dict(ray_obj=ptr)
+    
+    raise ValueError(f"RayObject type of {ptr_type} is not supported")
