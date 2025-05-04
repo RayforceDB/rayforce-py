@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.symbol import Symbol
+from raypy.types.scalar.symbol import Symbol
 
 
 class TestSymbolType:

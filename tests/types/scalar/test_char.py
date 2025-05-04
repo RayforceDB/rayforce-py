@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.char import c8
+from raypy.types.scalar.char import c8
 
 
 class TestCharType:

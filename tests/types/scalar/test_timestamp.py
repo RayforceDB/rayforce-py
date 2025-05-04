@@ -3,9 +3,9 @@ import datetime as dt
 import time
 
 from raypy import _rayforce as r
-from raypy.types.timestamp import Timestamp, EPOCH_DATE
-from raypy.types.date import Date
-from raypy.types.time import Time
+from raypy.types.scalar.timestamp import Timestamp, EPOCH_DATE
+from raypy.types.scalar.date import Date
+from raypy.types.scalar.time import Time
 
 
 class TestTimestampType:

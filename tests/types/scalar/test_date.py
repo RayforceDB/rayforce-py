@@ -2,7 +2,7 @@ import pytest
 import datetime as dt
 
 from raypy import _rayforce as r
-from raypy.types.date import Date, EPOCH_DATE
+from raypy.types.scalar.date import Date, EPOCH_DATE
 
 
 class TestDateType:

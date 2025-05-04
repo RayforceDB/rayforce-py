@@ -2,8 +2,8 @@ import datetime as dt
 from typing import Any, Literal
 
 from raypy import _rayforce as r
-from raypy.types.date import Date
-from raypy.types.time import Time
+from raypy.types.scalar.date import Date
+from raypy.types.scalar.time import Time
 
 EPOCH_DATE = dt.date(1970, 1, 1)
 

@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.bool import b8
+from raypy.types.scalar.bool import b8
 
 
 class TestBoolTypes:

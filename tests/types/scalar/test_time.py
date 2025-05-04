@@ -2,7 +2,7 @@ import pytest
 import datetime as dt
 
 from raypy import _rayforce as r
-from raypy.types.time import Time
+from raypy.types.scalar.time import Time
 
 
 class TestTimeType:

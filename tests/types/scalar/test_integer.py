@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.integer import i16, i32, i64, from_python_integer
+from raypy.types.scalar.integer import i16, i32, i64, from_python_integer
 
 
 class TestIntegerTypes:

@@ -2,7 +2,7 @@ import pytest
 import math
 
 from raypy import _rayforce as r
-from raypy.types.float import f64
+from raypy.types.scalar.float import f64
 
 
 class TestFloatTypes:

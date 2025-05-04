@@ -1,9 +1,9 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.list import List
-from raypy.types.symbol import Symbol
-from raypy.types.integer import i64
+from raypy.types.container import List
+from raypy.types.scalar.symbol import Symbol
+from raypy.types.scalar.integer import i64
 
 
 class TestListType:

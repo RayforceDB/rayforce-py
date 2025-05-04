@@ -99,7 +99,7 @@ class u8:
         # Wrap around on overflow
         result = result & 0xFF
         return u8(result)
-    
+
     def __floordiv__(self, other: Any) -> u8:
         if isinstance(other, u8):
             other = other.value

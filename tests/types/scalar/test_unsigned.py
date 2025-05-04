@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.unsigned import u8
+from raypy.types.scalar.unsigned import u8
 
 
 class TestUnsignedTypes:
