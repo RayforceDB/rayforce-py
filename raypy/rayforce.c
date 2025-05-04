@@ -841,6 +841,255 @@ RayObject_is_table(RayObject* self, PyObject* args)
     }
 }
 
+/*
+ * DICT type handling functions
+ */
+
+// Create a dictionary from keys and values lists
+static PyObject *
+RayObject_create_dict(PyTypeObject* type, PyObject* args)
+{
+    RayObject* keys_obj;
+    RayObject* vals_obj;
+    
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj)) {
+        return NULL;
+    }
+    
+    // Check that inputs are lists
+    if (keys_obj->obj == NULL || keys_obj->obj->type != TYPE_LIST) {
+        PyErr_SetString(PyExc_TypeError, "Keys must be a list");
+        return NULL;
+    }
+    
+    if (vals_obj->obj == NULL || vals_obj->obj->type != TYPE_LIST) {
+        PyErr_SetString(PyExc_TypeError, "Values must be a list");
+        return NULL;
+    }
+    
+    // Check that lists have the same length
+    if (keys_obj->obj->len != vals_obj->obj->len) {
+        PyErr_SetString(PyExc_ValueError, "Keys and values lists must have the same length");
+        return NULL;
+    }
+    
+    // Make sure all keys are either symbols or strings
+    for (u64_t i = 0; i < keys_obj->obj->len; i++) {
+        obj_p key = at_idx(keys_obj->obj, i);
+        if (key == NULL) {
+            PyErr_SetString(PyExc_ValueError, "Invalid key at index");
+            return NULL;
+        }
+        
+        if (key->type != -TYPE_SYMBOL && key->type != TYPE_C8) {
+            PyErr_SetString(PyExc_TypeError, "Keys must be symbols or strings");
+            return NULL;
+        }
+    }
+    
+    RayObject* self = (RayObject*)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->obj = dict(keys_obj->obj, vals_obj->obj);
+        if (self->obj == NULL) {
+            Py_DECREF(self);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create dictionary");
+            return NULL;
+        }
+    }
+    
+    return (PyObject*)self;
+}
+
+// Get the number of items in a dictionary
+static PyObject *
+RayObject_dict_length(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL || self->obj->type != TYPE_DICT) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
+        return NULL;
+    }
+    
+    // Словарь содержит список ключей в AS_LIST(self->obj)[0]
+    obj_p keys_list = AS_LIST(self->obj)[0];
+    if (keys_list == NULL) {
+        return PyLong_FromLong(0);
+    }
+    
+    // Возвращаем длину списка ключей
+    return PyLong_FromUnsignedLongLong(keys_list->len);
+}
+
+// Get all keys from a dictionary
+static PyObject *
+RayObject_dict_keys(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL || self->obj->type != TYPE_DICT) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
+        return NULL;
+    }
+    
+    // Словарь содержит список ключей в AS_LIST(self->obj)[0]
+    obj_p keys_list = AS_LIST(self->obj)[0];
+    if (keys_list == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Dictionary has no keys list");
+        return NULL;
+    }
+    
+    // Создаем новый Python-список для хранения ключей
+    PyObject* py_list = PyList_New(keys_list->len);
+    if (py_list == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to create Python list for keys");
+        return NULL;
+    }
+    
+    // Копируем каждый ключ в новый список
+    for (u64_t i = 0; i < keys_list->len; i++) {
+        obj_p key = at_idx(keys_list, i);
+        if (key == NULL) {
+            Py_DECREF(py_list);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve key at index");
+            return NULL;
+        }
+        
+        // Создаем RayObject для каждого ключа
+        RayObject* key_obj = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+        if (key_obj == NULL) {
+            Py_DECREF(py_list);
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate key object");
+            return NULL;
+        }
+        
+        key_obj->obj = clone_obj(key);
+        if (key_obj->obj == NULL) {
+            Py_DECREF(key_obj);
+            Py_DECREF(py_list);
+            PyErr_SetString(PyExc_MemoryError, "Failed to clone key");
+            return NULL;
+        }
+        
+        PyList_SET_ITEM(py_list, i, (PyObject*)key_obj);
+    }
+    
+    return py_list;
+}
+
+// Get all values from a dictionary
+static PyObject *
+RayObject_dict_values(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL || self->obj->type != TYPE_DICT) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
+        return NULL;
+    }
+    
+    // Словарь содержит список значений в AS_LIST(self->obj)[1]
+    obj_p values_list = AS_LIST(self->obj)[1];
+    if (values_list == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Dictionary has no values list");
+        return NULL;
+    }
+    
+    // Словарь содержит список ключей в AS_LIST(self->obj)[0]
+    obj_p keys_list = AS_LIST(self->obj)[0];
+    if (keys_list == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Dictionary has no keys list");
+        return NULL;
+    }
+    
+    // Создаем новый Python-список для хранения значений
+    PyObject* py_list = PyList_New(values_list->len);
+    if (py_list == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to create Python list for values");
+        return NULL;
+    }
+    
+    // Копируем каждое значение в новый список
+    for (u64_t i = 0; i < values_list->len; i++) {
+        obj_p value = at_idx(values_list, i);
+        if (value == NULL) {
+            Py_DECREF(py_list);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve value at index");
+            return NULL;
+        }
+        
+        // Создаем RayObject для каждого значения
+        RayObject* val_obj = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+        if (val_obj == NULL) {
+            Py_DECREF(py_list);
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate value object");
+            return NULL;
+        }
+        
+        val_obj->obj = clone_obj(value);
+        if (val_obj->obj == NULL) {
+            Py_DECREF(val_obj);
+            Py_DECREF(py_list);
+            PyErr_SetString(PyExc_MemoryError, "Failed to clone value");
+            return NULL;
+        }
+        
+        PyList_SET_ITEM(py_list, i, (PyObject*)val_obj);
+    }
+    
+    return py_list;
+}
+
+// Check if object is a dictionary
+static PyObject* 
+RayObject_is_dict(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL) {
+        Py_RETURN_FALSE;
+    }
+    
+    if (self->obj->type == TYPE_DICT) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+// Get a value from a dictionary by key
+static PyObject *
+RayObject_dict_get(RayObject* self, PyObject* args)
+{
+    RayObject* key_obj;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &key_obj)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || self->obj->type != TYPE_DICT) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
+        return NULL;
+    }
+    
+    // Check that key is a symbol or string
+    if (key_obj->obj->type != -TYPE_SYMBOL && key_obj->obj->type != TYPE_C8) {
+        PyErr_SetString(PyExc_TypeError, "Key must be a symbol or string");
+        return NULL;
+    }
+    
+    obj_p result = at_obj(self->obj, key_obj->obj);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_KeyError, "Key not found in dictionary");
+        return NULL;
+    }
+    
+    // Create a new RayObject to wrap the result
+    RayObject* ray_result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (ray_result != NULL) {
+        ray_result->obj = clone_obj(result);
+        if (ray_result->obj == NULL) {
+            Py_DECREF(ray_result);
+            PyErr_SetString(PyExc_MemoryError, "Failed to clone dictionary value");
+            return NULL;
+        }
+    }
+    
+    return (PyObject*)ray_result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -959,6 +1208,20 @@ static PyMethodDef RayObject_methods[] = {
     {"is_table", (PyCFunction)RayObject_is_table, METH_NOARGS,
      "Check if the object is a TABLE"},
      
+    // DICT methods
+    {"create_dict", (PyCFunction)RayObject_create_dict, METH_VARARGS | METH_CLASS,
+     "Create a new DICT object from keys and values lists"},
+    {"dict_keys", (PyCFunction)RayObject_dict_keys, METH_NOARGS,
+     "Get all keys from a DICT"},
+    {"dict_values", (PyCFunction)RayObject_dict_values, METH_NOARGS,
+     "Get all values from a DICT"},
+    {"is_dict", (PyCFunction)RayObject_is_dict, METH_NOARGS,
+     "Check if the object is a DICT"},
+    {"dict_get", (PyCFunction)RayObject_dict_get, METH_VARARGS,
+     "Get a value from a DICT by key"},
+    {"dict_length", (PyCFunction)RayObject_dict_length, METH_NOARGS,
+     "Get the number of items in a DICT"},
+      
     {NULL, NULL, 0, NULL}
 };
 
