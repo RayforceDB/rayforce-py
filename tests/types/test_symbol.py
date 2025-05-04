@@ -38,10 +38,6 @@ class TestSymbolType:
         symbol_obj = Symbol(True)
         assert symbol_obj.value == "True"
 
-        # Test with None
-        symbol_obj = Symbol(None)
-        assert symbol_obj.value == "None"
-
     def test_symbol_properties(self):
         """Test Symbol properties and methods."""
         symbol_obj = Symbol("test_symbol")

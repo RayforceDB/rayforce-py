@@ -20,6 +20,7 @@ class Date:
     def __init__(
         self,
         value: dt.date | int | str | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:

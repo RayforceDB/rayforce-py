@@ -22,6 +22,7 @@ class Timestamp:
     def __init__(
         self,
         value: dt.datetime | int | str | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:

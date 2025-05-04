@@ -16,7 +16,15 @@ class u8:
     ray_init_method = "from_u8"
     ray_extr_method = "get_u8_value"
 
-    def __init__(self, value: bool, ray_obj: r.RayObject | None = None) -> None:
+    def __init__(
+        self,
+        value: int | None = None,
+        *,
+        ray_obj: r.RayObject | None = None,
+    ) -> None:
+        if value is None and ray_obj is None:
+            raise ValueError("At least one argument is required")
+
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != -self.ray_type_code:
                 raise ValueError(

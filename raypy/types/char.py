@@ -16,9 +16,13 @@ class c8:
 
     def __init__(
         self,
-        value: str | int,
+        value: str | int | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
+        if value is None and ray_obj is None:
+            raise ValueError("At least one argument is required")
+
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != -self.ray_type_code:
                 raise ValueError(

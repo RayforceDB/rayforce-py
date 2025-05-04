@@ -18,6 +18,7 @@ class GUID:
     def __init__(
         self,
         value: str | uuid.UUID | bytes | bytearray | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:

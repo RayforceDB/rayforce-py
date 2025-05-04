@@ -54,8 +54,8 @@ class TestBoolTypes:
         assert str(b8(False)) == "False"
 
         # Test repr() format
-        assert repr(b8(True)) == "B8(True)"
-        assert repr(b8(False)) == "B8(False)"
+        assert repr(b8(True)) == "b8(True)"
+        assert repr(b8(False)) == "b8(False)"
 
     def test_bool_comparisons(self):
         """Test comparison operations between boolean types."""

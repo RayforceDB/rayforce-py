@@ -15,7 +15,15 @@ class _RayInteger(abc.ABC):
     ray_init_method: str
     ray_extr_method: str
 
-    def __init__(self, value: int | None = None, ray_obj: r.RayObject | None = None) -> None:
+    def __init__(
+        self,
+        value: int | None = None,
+        *,
+        ray_obj: r.RayObject | None = None,
+    ) -> None:
+        if value is None and ray_obj is None:
+            raise ValueError("At least one argument is required")
+
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != -self.ray_type_code:
                 raise ValueError(

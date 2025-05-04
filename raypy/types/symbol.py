@@ -16,9 +16,13 @@ class Symbol:
 
     def __init__(
         self,
-        value: str,
+        value: str | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
+        if value is None and ray_obj is None:
+            raise ValueError("At least one argument is required")
+
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != -self.ray_type_code:
                 raise ValueError(
@@ -58,3 +62,6 @@ class Symbol:
         if isinstance(other, str):
             return self.value == other
         return False
+
+    def __hash__(self):
+        return hash(self.value)

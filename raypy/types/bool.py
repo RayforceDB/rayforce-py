@@ -14,7 +14,15 @@ class b8:
     ray_init_method = "from_b8"
     ray_extr_method = "get_b8_value"
 
-    def __init__(self, value: bool, ray_obj: r.RayObject | None = None) -> None:
+    def __init__(
+        self,
+        value: bool | None = None,
+        *,
+        ray_obj: r.RayObject | None = None,
+    ) -> None:
+        if value is None and ray_obj is None:
+            raise ValueError("At least one argument is required")
+
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != -self.ray_type_code:
                 raise ValueError(
@@ -50,7 +58,7 @@ class b8:
         return str(self.value)
 
     def __repr__(self) -> str:
-        return f"B8({self.value})"
+        return f"b8({self.value})"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, b8):

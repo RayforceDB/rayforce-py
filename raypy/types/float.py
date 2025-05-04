@@ -14,7 +14,15 @@ class f64:
     ray_init_method = "from_f64"
     ray_extr_method = "get_f64_value"
 
-    def __init__(self, value: float, ray_obj: r.RayObject | None = None) -> None:
+    def __init__(
+        self,
+        value: float | None = None,
+        *,
+        ray_obj: r.RayObject | None = None,
+    ) -> None:
+        if value is None and ray_obj is None:
+            raise ValueError("At least one argument is required")
+
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != -self.ray_type_code:
                 raise ValueError(
