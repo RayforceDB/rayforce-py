@@ -8,3 +8,5 @@ _rayforce.c*.so
 .ruff_cache
 tmp/
 .DS_Store
+rayforce.so
+librayforce.so

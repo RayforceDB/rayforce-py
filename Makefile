@@ -1,8 +1,18 @@
+UNAME_S := $(shell uname -s)
+
 RAYFORCE_GITHUB = git@github.com:singaraiona/rayforce.git
 EXEC_DIR = $(shell pwd)
 
-# For now, only supports MacOS
-COMPILED_LIB_NAME = librayforce.dylib
+
+ifeq ($(UNAME_S),Darwin)
+  COMPILED_LIB_NAME = librayforce.dylib
+  TARGET_LIB_NAME = $(COMPILED_LIB_NAME)
+else ifeq ($(UNAME_S),Linux)
+  COMPILED_LIB_NAME = rayforce.so
+  TARGET_LIB_NAME = librayforce.so
+else
+  $(error Unsupported platform: $(UNAME_S))
+endif
 
 pull_from_gh:
 	@rm -rf $(EXEC_DIR)/tmp/rayforce-c && \
@@ -13,7 +23,7 @@ pull_from_gh:
 
 shared:
 	@cd $(EXEC_DIR)/tmp/rayforce-c/ && make shared && cd $(EXEC_DIR) && \
-	cp $(EXEC_DIR)/tmp/rayforce-c/$(COMPILED_LIB_NAME) $(EXEC_DIR)/raypy/
+	cp $(EXEC_DIR)/tmp/rayforce-c/$(COMPILED_LIB_NAME) $(EXEC_DIR)/raypy/$(TARGET_LIB_NAME)
 
 
 lib:
@@ -25,6 +35,7 @@ clean:
 	@cd $(EXEC_DIR) && rm -rf \
 		raypy/_rayforce.c*.so  \
 		raypy/librayforce.dylib  \
+		raypy/librayforce.so  \
 		raypy/core/ \
 		tmp/ \
 		build/ \
