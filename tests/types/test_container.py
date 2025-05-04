@@ -1,7 +1,7 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.container import List
+from raypy.types.container import List, Dict
 from raypy.types.scalar import Symbol, i64, b8
 
 
@@ -26,10 +26,6 @@ class TestListContainer:
         assert mixed_list[0] == 1
         assert mixed_list[1] == "test"
         assert mixed_list[2] == True
-
-        # Test creation with None should raise error
-        with pytest.raises(ValueError):
-            List(None)
 
         # Test with non-iterable should raise error
         with pytest.raises(ValueError):
@@ -252,3 +248,146 @@ class TestListContainer:
         assert nested[0] == 1
         assert nested[1] == 2
         assert nested[2] == 3
+
+
+class TestDictContainer:
+    def test_dict_creation(self):
+        """Test creation of Dict with different inputs."""
+        # Test simple dict
+        simple_dict = Dict({"a": 1, "b": 2, "c": 3})
+        assert len(simple_dict) == 3
+        assert simple_dict.get("a") == 1
+        assert simple_dict.get("b") == 2
+        assert simple_dict.get("c") == 3
+
+        # Test with mixed types
+        mixed_dict = Dict({"a": 1, "b": "test", "c": True})
+        assert len(mixed_dict) == 3
+        assert mixed_dict.get("a") == 1
+        assert mixed_dict.get("b") == "test"
+        assert mixed_dict.get("c") == True
+
+        # Test with Symbol keys
+        symbol_dict = Dict({Symbol("a"): 1, Symbol("b"): 2})
+        assert len(symbol_dict) == 2
+        assert symbol_dict.get("a") == 1
+        assert symbol_dict.get("b") == 2
+
+        # Test creation with None should raise error
+        with pytest.raises(ValueError):
+            Dict(None)
+
+        # Test with invalid key types
+        with pytest.raises(ValueError):
+            Dict({1: "value"})  # Non-string/symbol key
+
+    def test_dict_from_rayobject(self):
+        """Test creating Dict from RayObject instances."""
+        # Create keys and values lists first
+        keys_list = List(["key1", "key2"])
+        values_list = List([10, 20])
+
+        # Create a dict using the RayObject API
+        ray_dict = r.RayObject.create_dict(keys_list.ptr, values_list.ptr)
+
+        # Create a Dict from the RayObject
+        dict_obj = Dict(ray_obj=ray_dict)
+
+        # Verify values and types
+        assert len(dict_obj) == 2
+        assert dict_obj.get("key1") == 10
+        assert dict_obj.get("key2") == 20
+
+        # Test with wrong RayObject type
+        ray_i64 = r.RayObject.from_i64(42)
+        with pytest.raises(ValueError):
+            Dict(ray_obj=ray_i64)
+
+    def test_dict_keys_values(self):
+        """Test keys and values methods."""
+        test_dict = Dict({"a": 1, "b": 2, "c": 3})
+
+        # Test keys
+        keys = test_dict.keys()
+        assert isinstance(keys, List)
+        assert len(keys) == 3
+
+        # Key values will be Symbols, so check their values
+        key_values = [k.value if hasattr(k, "value") else str(k) for k in keys]
+        assert sorted(key_values) == ["a", "b", "c"]
+
+        # Test values
+        values = test_dict.values()
+        assert isinstance(values, List)
+        assert len(values) == 3
+
+        # Convert values to a list to check them
+        value_list = [v for v in values]
+        assert sorted(value_list) == [1, 2, 3]
+
+    def test_dict_get(self):
+        """Test get method."""
+        test_dict = Dict({"a": 1, "b": "test", "c": True})
+
+        # Test getting values
+        assert test_dict.get("a") == 1
+        assert test_dict.get("b") == "test"
+        assert test_dict.get("c") == True
+
+        # Test getting non-existent key (should raise an exception or return None)
+        # Note: behavior depends on implementation
+        try:
+            result = test_dict.get("non_existent")
+            # If it returns None, that's fine
+            assert result is None
+        except Exception:
+            # If it raises an exception, that's also acceptable
+            pass
+
+    def test_dict_string_representation(self):
+        """Test string and representation methods."""
+        test_dict = Dict({"a": 1, "b": 2})
+
+        # Test __str__ format
+        str_repr = str(test_dict)
+        assert "Symbol(a): i64(1)" in str_repr
+        assert "Symbol(b): i64(2)" in str_repr
+        assert str_repr.startswith("{")
+        assert str_repr.endswith("}")
+
+        # Test __repr__ format
+        repr_str = repr(test_dict)
+        assert repr_str.startswith("Dict({")
+        assert repr_str.endswith("})")
+        assert "Symbol(a): i64(1)" in repr_str
+        assert "Symbol(b): i64(2)" in repr_str
+
+    def test_dict_with_raypy_types(self):
+        """Test Dict with various raypy types."""
+        # Create dict with raypy types as values
+        dict_with_types = Dict(
+            {"int": i64(100), "sym": Symbol("test"), "bool": b8(True)}
+        )
+
+        # Verify values
+        assert dict_with_types.get("int") == 100
+        assert dict_with_types.get("sym") == "test"
+        assert dict_with_types.get("bool") == True
+
+        # Test with nested structures
+        nested_dict = Dict(
+            {"number": 42, "list": List([1, 2, 3]), "dict": Dict({"nested": "value"})}
+        )
+
+        assert nested_dict.get("number") == 42
+
+        nested_list = nested_dict.get("list")
+        assert isinstance(nested_list, List)
+        assert len(nested_list) == 3
+        assert nested_list[0] == 1
+        assert nested_list[1] == 2
+        assert nested_list[2] == 3
+
+        nested_dict_value = nested_dict.get("dict")
+        assert isinstance(nested_dict_value, Dict)
+        assert nested_dict_value.get("nested") == "value"

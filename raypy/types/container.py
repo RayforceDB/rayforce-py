@@ -28,6 +28,7 @@ class List:
     def __init__(
         self,
         items: Iterable[Any] | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
@@ -38,12 +39,11 @@ class List:
             self.ptr = ray_obj
             return
 
-        if not isinstance(items, Iterable):
-            raise ValueError("Value should be iterable")
-
         self.ptr = getattr(r.RayObject, self.ray_create_method)()
 
         if items:
+            if not isinstance(items, Iterable):
+                raise ValueError("Value should be iterable")
             for item in items:
                 self.append(item)
 
@@ -126,11 +126,10 @@ class Dict:
     ray_get = "dict_get"
     ray_length = "dict_length"
 
-    # TODO: Add support for regular python types
-    # TODO: Add support for Strings (vectors of C8)
     def __init__(
         self,
-        value: dict[scalar.Symbol, Any] | None = None,
+        value: dict[str | scalar.Symbol, Any] | None = None,
+        *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
@@ -146,15 +145,13 @@ class Dict:
 
         dict_keys = List()
         for item in value.keys():
-            if not isinstance(item, scalar.Symbol):
-                raise ValueError(
-                    "All keys should be either Symbols or Strings (vector of C8)"
-                )
-            dict_keys.append(item.ptr)
+            if not isinstance(item, (str, scalar.Symbol)):
+                raise ValueError("All keys should be either str or Symbols")
+            dict_keys.append(item)
 
         dict_values = List()
         for item in value.values():
-            dict_values.append(item.ptr)
+            dict_values.append(item)
 
         try:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(
@@ -172,15 +169,27 @@ class Dict:
             ]
         )
 
-    # TODO: Add deserealisation
     def values(self) -> List:
         return List(items=getattr(self.ptr, self.ray_get_values)())
 
     def get(self, key: str) -> Any:
-        return getattr(self.ptr, self.ray_get)(scalar.Symbol(value=key).ptr)
+        return from_pointer_to_raypy_type(
+            getattr(self.ptr, self.ray_get)(scalar.Symbol(value=key).ptr)
+        )
 
     def __len__(self) -> int:
         return getattr(self.ptr, self.ray_length)()
+
+    def __str__(self) -> str:
+        result = []
+        keys_list = self.keys()
+        for i in keys_list:
+            value = self.get(str(i))
+            result.append(f"{repr(i)}: {repr(value)}")
+        return "{" + ", ".join(result) + "}"
+
+    def __repr__(self) -> str:
+        return f"Dict({str(self)})"
 
 
 def from_pythonic_to_raypy_type(
@@ -240,15 +249,7 @@ def from_pythonic_to_raypy_type(
             ll.append(from_pythonic_to_raypy_type(item))
         return ll
     elif isinstance(value, dict):
-        dict_keys = List()
-        dict_values = List()
-        for item in value.keys():
-            if not isinstance(item, str):
-                raise ValueError("Dict keys should be of type str")
-            dict_keys.append(scalar.Symbol(item))
-        for item in value.values():
-            dict_values.append(from_pythonic_to_raypy_type(item))
-        return Dict(value=zip(dict_keys, dict_values))
+        return Dict(value)
 
     raise ValueError("Value type is not supported")
 

@@ -76,6 +76,26 @@ class _RayInteger(abc.ABC):
             return self.value == other.value
         return self.value == other
 
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, _RayInteger):
+            return self.value < other.value
+        return self.value < other
+
+    def __le__(self, other: Any) -> bool:
+        if isinstance(other, _RayInteger):
+            return self.value <= other.value
+        return self.value <= other
+
+    def __gt__(self, other: Any) -> bool:
+        if isinstance(other, _RayInteger):
+            return self.value > other.value
+        return self.value > other
+
+    def __ge__(self, other: Any) -> bool:
+        if isinstance(other, _RayInteger):
+            return self.value >= other.value
+        return self.value >= other
+
 
 class i16(_RayInteger):
     """
