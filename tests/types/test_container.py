@@ -484,3 +484,131 @@ class TestVectorContainer:
 
         assert vs[0].value == "test1"
         assert vs[1].value == "test2"
+
+
+class TestTableContainer:
+    """Test suite for Table container."""
+
+    def test_table_simple_creation(self):
+        """Test simple creation of Table with minimal inputs."""
+        from raypy.types.container import Table, List, Vector
+        from raypy.types.scalar import Symbol
+
+        # Создаем минимальный набор данных для таблицы
+        # Один ключ и одно значение
+        columns = List()
+        columns.append(Symbol("id"))
+
+        row = List()
+        row.append(Symbol("value"))
+
+        values = List()
+        values.append(row)
+
+        # Создаем таблицу
+        table = Table(columns, values)
+
+        # Проверяем доступ к values() - это должно работать
+        table_values = table.values()
+        assert len(table_values) == 1
+        assert len(table_values[0]) == 1
+        assert str(table_values[0][0]) == "value"
+
+    def test_table_creation(self):
+        """Test creation of Table with different inputs."""
+        from raypy.types.container import Table, List, Vector
+        from raypy.types.scalar import Symbol, i64, f64
+
+        # Создаем колонки и значения для таблицы
+        columns = List()  # Используем List вместо Vector для колонок
+        columns.append(Symbol("id"))
+        columns.append(Symbol("value"))
+
+        row1 = List()
+        row1.append(i64(1))
+        row1.append(f64(4.5))
+
+        row2 = List()
+        row2.append(i64(2))
+        row2.append(f64(5.5))
+
+        values = List()
+        values.append(row1)
+        values.append(row2)
+
+        # Создаем таблицу
+        table = Table(columns, values)
+
+        # Проверяем, что объект таблицы был создан правильно
+        table_values = table.values()
+        assert len(table_values) == 2
+
+        # Проверяем access к значениям вместо ключей
+        assert len(table_values[0]) == 2
+        assert str(table_values[0][0]) == "1"
+        assert str(table_values[0][1]) == "4.5"
+
+    def test_table_values_access(self):
+        """Test values access to Table."""
+        from raypy.types.container import Table, List
+        from raypy.types.scalar import Symbol, i64, f64
+
+        # Создаем колонки и значения для таблицы
+        columns = List()
+        columns.append(Symbol("id"))
+        columns.append(Symbol("value"))
+
+        row1 = List()
+        row1.append(i64(1))
+        row1.append(f64(4.5))
+
+        row2 = List()
+        row2.append(i64(2))
+        row2.append(f64(5.5))
+
+        values = List()
+        values.append(row1)
+        values.append(row2)
+
+        # Создаем таблицу
+        table = Table(columns, values)
+
+        # Проверяем доступ к строкам через values()
+        rows = table.values()
+        assert len(rows) == 2
+
+        # Проверяем первую строку
+        first_row = rows[0]
+        assert len(first_row) == 2
+        assert str(first_row[0]) == "1"
+        assert str(first_row[1]) == "4.5"
+
+        # Проверяем вторую строку
+        second_row = rows[1]
+        assert len(second_row) == 2
+        assert str(second_row[0]) == "2"
+        assert str(second_row[1]) == "5.5"
+
+    def test_table_len_check(self):
+        """Test that Table requires keys and values lists to have the same length."""
+        from raypy.types.container import Table, List
+        from raypy.types.scalar import Symbol
+        import pytest
+
+        # Создаем колонки и значения разной длины
+        columns = List()
+        columns.append(Symbol("id"))
+        columns.append(Symbol("value"))
+
+        row1 = List()
+        row1.append(Symbol("only one value"))
+
+        values = List()
+        values.append(row1)
+
+        # Создаем таблицу - должна быть ошибка из-за несовпадения длин
+        with pytest.raises(ValueError) as excinfo:
+            table = Table(columns, values)
+
+        # Проверка сообщения об ошибке
+        assert "Keys and values lists must have the same length" in str(excinfo.value)

@@ -1,5 +1,5 @@
 from .scalar import Symbol, i16, i32, i64, f64, b8, c8, u8, Date, Time, Timestamp, GUID
-from .container import List, Dict, Vector
+from .container import List, Dict, Vector, Table
 
 __all__ = [
     "i16",
@@ -17,4 +17,5 @@ __all__ = [
     "List",
     "Dict",
     "Vector",
+    "Table",
 ]

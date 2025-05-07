@@ -751,6 +751,71 @@ static PyObject* RayObject_is_guid(RayObject* self, PyObject* args)
     }
 }
 
+// Check if object is a vector (has a positive type)
+static PyObject* RayObject_is_vector(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL) {
+        Py_RETURN_FALSE;
+    }
+    
+    // Настоящие векторы имеют положительные типы, но исключаем специальные типы:
+    // - TYPE_LIST=0 не является вектором
+    // - TYPE_GUID=11 не является вектором (хотя формально является)
+    // - TYPE_DICT=99 не является вектором
+    // - TYPE_TABLE=98 не является вектором
+    // - TYPE_LAMBDA=100 и другие специальные типы не являются векторами
+    if (self->obj->type > 0 && 
+        self->obj->type != TYPE_GUID &&
+        self->obj->type != TYPE_DICT && 
+        self->obj->type != TYPE_TABLE &&
+        self->obj->type != TYPE_LAMBDA &&
+        self->obj->type != TYPE_UNARY &&
+        self->obj->type != TYPE_BINARY &&
+        self->obj->type != TYPE_VARY &&
+        self->obj->type != TYPE_TOKEN) {
+        
+        // Проверяем, что у объекта есть длина
+        if (self->obj->len >= 0) {
+            Py_RETURN_TRUE;
+        }
+    }
+    
+    Py_RETURN_FALSE;
+}
+
+// Get vector type code (for vectors with positive type)
+static PyObject* RayObject_get_vector_type(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+    
+    // Проверяем, что это вектор - положительный тип, исключая специальные типы
+    if (self->obj->type <= 0 || 
+        self->obj->type == TYPE_GUID ||
+        self->obj->type == TYPE_DICT || 
+        self->obj->type == TYPE_TABLE ||
+        self->obj->type == TYPE_LAMBDA ||
+        self->obj->type == TYPE_UNARY ||
+        self->obj->type == TYPE_BINARY ||
+        self->obj->type == TYPE_VARY ||
+        self->obj->type == TYPE_TOKEN) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a vector");
+        return NULL;
+    }
+    
+    // Дополнительно проверяем, что у объекта есть атрибут len
+    if (self->obj->len < 0) {
+        PyErr_SetString(PyExc_TypeError, "Object does not have a valid length attribute");
+        return NULL;
+    }
+    
+    // Возвращаем тип вектора
+    return PyLong_FromLong(self->obj->type);
+}
+
+
 /*
  * TABLE type handling functions
  */
@@ -765,13 +830,7 @@ RayObject_create_table(PyTypeObject* type, PyObject* args)
     if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj)) {
         return NULL;
     }
-    
-    // Check that inputs are lists
-    if (keys_obj->obj == NULL || keys_obj->obj->type != TYPE_LIST) {
-        PyErr_SetString(PyExc_TypeError, "Keys must be a list");
-        return NULL;
-    }
-    
+
     if (vals_obj->obj == NULL || vals_obj->obj->type != TYPE_LIST) {
         PyErr_SetString(PyExc_TypeError, "Values must be a list");
         return NULL;
@@ -839,6 +898,54 @@ RayObject_is_table(RayObject* self, PyObject* args)
     } else {
         Py_RETURN_FALSE;
     }
+}
+
+// Get all keys from a table
+static PyObject *
+RayObject_table_keys(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL || self->obj->type != TYPE_TABLE) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a TABLE type");
+        return NULL;
+    }
+    
+    // Таблица содержит список ключей в AS_LIST(self->obj)[0]
+    obj_p keys_list = AS_LIST(self->obj)[0];
+    if (keys_list == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Table has no keys list");
+        return NULL;
+    }
+    
+    // Возвращаем сам объект списка ключей
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL) {
+        result->obj = clone_obj(keys_list);
+    }
+    return (PyObject*)result;
+}
+
+// Get all values from a table
+static PyObject *
+RayObject_table_values(RayObject* self, PyObject* args)
+{
+    if (self->obj == NULL || self->obj->type != TYPE_TABLE) {
+        PyErr_SetString(PyExc_TypeError, "Object is not a TABLE type");
+        return NULL;
+    }
+    
+    // Таблица содержит список значений в AS_LIST(self->obj)[1]
+    obj_p values_list = AS_LIST(self->obj)[1];
+    if (values_list == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Table has no values list");
+        return NULL;
+    }
+    
+    // Возвращаем сам объект списка значений
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL) {
+        result->obj = clone_obj(values_list);
+    }
+    return (PyObject*)result;
 }
 
 /*
@@ -1296,6 +1403,10 @@ static PyMethodDef RayObject_methods[] = {
      "Get the GUID value as bytes from a GUID object"},
     {"is_guid", (PyCFunction)RayObject_is_guid, METH_NOARGS,
      "Check if the object is a GUID"},
+    {"is_vector", (PyCFunction)RayObject_is_vector, METH_NOARGS,
+     "Check if the object is a vector (has a positive type)"},
+    {"get_vector_type", (PyCFunction)RayObject_get_vector_type, METH_NOARGS,
+     "Get the type code of a vector"},
      
     // TABLE methods
     {"create_table", (PyCFunction)RayObject_create_table, METH_VARARGS | METH_CLASS,
@@ -1304,6 +1415,10 @@ static PyMethodDef RayObject_methods[] = {
      "Get a value from a TABLE by key"},
     {"is_table", (PyCFunction)RayObject_is_table, METH_NOARGS,
      "Check if the object is a TABLE"},
+    {"table_keys", (PyCFunction)RayObject_table_keys, METH_NOARGS,
+     "Get keys from a table"},
+    {"table_values", (PyCFunction)RayObject_table_values, METH_NOARGS,
+     "Get values from a table"},
      
     // DICT methods
     {"create_dict", (PyCFunction)RayObject_create_dict, METH_VARARGS | METH_CLASS,

@@ -6,7 +6,6 @@ from raypy import _rayforce as r
 
 from . import scalar
 
-
 T = TypeVar("T")
 
 
@@ -280,6 +279,58 @@ class Dict:
         return f"Dict({str(self)})"
 
 
+class Table:
+    """
+    Rayforce table type
+    """
+
+    ptr: r.RayObject
+    ray_type_code = r.TYPE_TABLE
+
+    ray_init_method = "create_table"
+    ray_table_keys_method = "table_keys"
+    ray_table_values_method = "table_values"
+
+    def __init__(
+        self,
+        columns: Vector[scalar.Symbol] | List,
+        values: List,
+    ) -> None:
+        self.ptr = getattr(r.RayObject, self.ray_init_method)(columns.ptr, values.ptr)
+
+    def keys(self) -> List | Vector:
+        _keys = getattr(self.ptr, self.ray_table_keys_method)()
+        return from_pointer_to_raypy_type(_keys)
+
+    def values(self) -> List:
+        _values = getattr(self.ptr, self.ray_table_values_method)()
+        return from_pointer_to_raypy_type(_values)
+
+    def __str__(self) -> str:
+        return f"Table({self.keys()}) with length of {len(self.values())}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
+
+RAY_TYPE_TO_CLASS_MAPPING = {
+    -r.TYPE_I16: scalar.i16,
+    -r.TYPE_I32: scalar.i32,
+    -r.TYPE_I64: scalar.i64,
+    -r.TYPE_F64: scalar.f64,
+    -r.TYPE_B8: scalar.b8,
+    -r.TYPE_C8: scalar.c8,
+    r.TYPE_GUID: scalar.GUID,
+    -r.TYPE_SYMBOL: scalar.Symbol,
+    -r.TYPE_TIME: scalar.Time,
+    -r.TYPE_TIMESTAMP: scalar.Timestamp,
+    -r.TYPE_DATE: scalar.Date,
+    -r.TYPE_U8: scalar.u8,
+    r.TYPE_LIST: List,
+    r.TYPE_DICT: Dict,
+}
+
+
 def from_pythonic_to_raypy_type(
     value: Any,
 ) -> (
@@ -362,37 +413,15 @@ def from_pointer_to_raypy_type(
     if ptr is None:
         raise ValueError("Pointer can not be None")
 
-    ptr_type = ptr.get_type()
+    if ptr.is_vector():
+        cls = RAY_TYPE_TO_CLASS_MAPPING.get(ptr.get_vector_type())
+        if not cls:
+            raise ValueError("Unknown vector type")
 
-    if ptr_type == -r.TYPE_I16:
-        return scalar.i16(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_I32:
-        return scalar.i32(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_I64:
-        return scalar.i64(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_F64:
-        return scalar.f64(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_B8:
-        return scalar.b8(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_C8:
-        return scalar.c8(ray_obj=ptr)
-    elif ptr_type == r.TYPE_GUID:
-        return scalar.GUID(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_SYMBOL:
-        return scalar.Symbol(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_TIME:
-        return scalar.Time(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_TIMESTAMP:
-        return scalar.Timestamp(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_DATE:
-        return scalar.Date(ray_obj=ptr)
-    elif ptr_type == -r.TYPE_U8:
-        return scalar.u8(ray_obj=ptr)
-    elif ptr_type == r.TYPE_LIST:
-        return List(ray_obj=ptr)
-    elif ptr_type == r.TYPE_DICT:
-        return Dict(ray_obj=ptr)
-    elif ptr_type > 0:  # Positive type values generally indicate vector types
-        return Vector(ptr_type, ray_obj=ptr)
+        return Vector(cls, ray_obj=ptr)
+
+    ptr_type = ptr.get_type()
+    if cls := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
+        return cls(ray_obj=ptr)
 
     raise ValueError(f"RayObject type of {ptr_type} is not supported")
