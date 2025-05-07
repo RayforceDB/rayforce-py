@@ -1,10 +1,98 @@
-from typing import Any, Iterable
+from typing import Any, Iterable, TypeVar, Generic, List as PyList
 import uuid
 import datetime as dt
 
 from raypy import _rayforce as r
 
 from . import scalar
+
+
+T = TypeVar("T")
+
+
+class Vector(Generic[T]):
+    """
+    Rayforce vector type - collection of elements of type T
+    """
+
+    ptr: r.RayObject
+    class_type: scalar.ScalarType
+    length: int
+    ray_get_item_at_idx_method = "at_idx"
+    ray_set_item_at_idx_method = "set_idx"
+
+    def __init__(
+        self,
+        class_type: scalar.ScalarType,
+        length: int = 0,
+        *,
+        ray_obj: r.RayObject | None = None,
+    ) -> None:
+        if not hasattr(class_type, "ray_type_code"):
+            raise ValueError(
+                "Class type has to be an object with ray_type_code attribute"
+            )
+
+        self.class_type = class_type
+        self.length = length
+
+        if ray_obj is not None:
+            if (_type := ray_obj.get_type()) != class_type.ray_type_code:
+                raise ValueError(
+                    f"Expected Vector object of type {class_type.ray_type_code}, got {_type}"
+                )
+            self.ptr = ray_obj
+            return
+
+        try:
+            self.ptr = r.RayObject.vector(class_type.ray_type_code, length)
+            assert self.ptr is not None, "RayObject should not be empty"
+        except Exception as e:
+            raise TypeError(f"Error during vector initialization - {str(e)}")
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __getitem__(self, idx: int) -> scalar.ScalarType:
+        if idx < 0:
+            idx = len(self) + idx
+
+        if not 0 <= idx < len(self):
+            raise IndexError("Vector index out of range")
+
+        item = getattr(self.ptr, self.ray_get_item_at_idx_method)(idx)
+        return from_pointer_to_raypy_type(item)
+
+    def __setitem__(self, idx: int, value: scalar.ScalarType) -> None:
+        if idx < 0:
+            idx = len(self) + idx
+
+        if not 0 <= idx < len(self):
+            raise IndexError("Vector index out of range")
+
+        if not hasattr(value, "ray_type_code"):
+            raise ValueError(f"Expected Ray type object, got {type(value)}")
+
+        getattr(self.ptr, self.ray_set_item_at_idx_method)(idx, value.ptr)
+
+    def to_list(self) -> PyList[T]:
+        return [self[i] for i in range(len(self))]
+
+    def __str__(self) -> str:
+        return f"Vector[{self.class_type}]({self.to_list()})"
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Vector):
+            return False
+        if len(self) != len(other):
+            return False
+        try:
+            return all(self[i] == other[i] for i in range(len(self)))
+        except Exception:
+            return False
 
 
 class List:
@@ -266,6 +354,7 @@ def from_pointer_to_raypy_type(
     | scalar.Time
     | scalar.Timestamp
     | scalar.GUID
+    | Vector
 ):
     """
     Convert a raw Rayforce type (RayObject) to one of the raypy types.
@@ -303,5 +392,7 @@ def from_pointer_to_raypy_type(
         return List(ray_obj=ptr)
     elif ptr_type == r.TYPE_DICT:
         return Dict(ray_obj=ptr)
+    elif ptr_type > 0:  # Positive type values generally indicate vector types
+        return Vector(ptr_type, ray_obj=ptr)
 
     raise ValueError(f"RayObject type of {ptr_type} is not supported")

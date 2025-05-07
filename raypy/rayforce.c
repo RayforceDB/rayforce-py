@@ -1090,6 +1090,103 @@ RayObject_dict_get(RayObject* self, PyObject* args)
     return (PyObject*)ray_result;
 }
 
+// Vector operations
+static PyObject* RayObject_vector(PyTypeObject* type, PyObject* args) {
+    int type_code;
+    Py_ssize_t length;
+    
+    if (!PyArg_ParseTuple(args, "in", &type_code, &length)) {
+        return NULL;
+    }
+    
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "Vector length cannot be negative");
+        return NULL;
+    }
+    
+    RayObject* self = (RayObject*)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->obj = vector(type_code, (u64_t)length);
+        if (self->obj == NULL) {
+            Py_DECREF(self);
+            PyErr_SetString(PyExc_MemoryError, "Failed to create vector");
+            return NULL;
+        }
+    }
+    return (PyObject*)self;
+}
+
+// Get vector element at index
+static PyObject* RayObject_at_idx(RayObject* self, PyObject* args) {
+    Py_ssize_t index;
+    if (!PyArg_ParseTuple(args, "n", &index)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+    
+    if (index < 0 || index >= (Py_ssize_t)self->obj->len) {
+        PyErr_SetString(PyExc_IndexError, "Vector index out of range");
+        return NULL;
+    }
+    
+    obj_p item = at_idx(self->obj, (i64_t)index);
+    if (item == NULL) {
+        Py_RETURN_NONE;
+    }
+    
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    result->obj = clone_obj(item);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
+// Set vector element at index
+static PyObject* RayObject_set_idx(RayObject* self, PyObject* args) {
+    Py_ssize_t index;
+    RayObject* item;
+    if (!PyArg_ParseTuple(args, "nO!", &index, &RayObjectType, &item)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+    
+    if (index < 0 || index >= (Py_ssize_t)self->obj->len) {
+        PyErr_SetString(PyExc_IndexError, "Vector index out of range");
+        return NULL;
+    }
+    
+    obj_p clone = clone_obj(item->obj);
+    if (clone == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
+        return NULL;
+    }
+    
+    if (set_idx(&self->obj, (i64_t)index, clone) == NULL) {
+        drop_obj(clone);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to set item in vector");
+        return NULL;
+    }
+    
+    Py_RETURN_NONE;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1221,7 +1318,15 @@ static PyMethodDef RayObject_methods[] = {
      "Get a value from a DICT by key"},
     {"dict_length", (PyCFunction)RayObject_dict_length, METH_NOARGS,
      "Get the number of items in a DICT"},
-      
+    
+    // Vector methods
+    {"vector", (PyCFunction)RayObject_vector, METH_VARARGS | METH_CLASS,
+     "Create a new vector of specified type and length"},
+    {"at_idx", (PyCFunction)RayObject_at_idx, METH_VARARGS,
+     "Get element at index from vector"},
+    {"set_idx", (PyCFunction)RayObject_set_idx, METH_VARARGS,
+     "Set element at index in vector"},
+    
     {NULL, NULL, 0, NULL}
 };
 

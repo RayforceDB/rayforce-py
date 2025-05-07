@@ -1,8 +1,8 @@
 import pytest
 
 from raypy import _rayforce as r
-from raypy.types.container import List, Dict
-from raypy.types.scalar import Symbol, i64, b8
+from raypy.types.container import List, Dict, Vector
+from raypy.types.scalar import Symbol, i64, b8, i32, f64
 
 
 class TestListContainer:
@@ -391,3 +391,96 @@ class TestDictContainer:
         nested_dict_value = nested_dict.get("dict")
         assert isinstance(nested_dict_value, Dict)
         assert nested_dict_value.get("nested") == "value"
+
+
+class TestVectorContainer:
+    def test_vector_creation(self):
+        v = Vector(class_type=i32, length=5)
+        assert v.class_type.ray_type_code == r.TYPE_I32
+        assert len(v) == 5
+
+        with pytest.raises(ValueError):
+            Vector(i32, ray_obj=r.RayObject.vector(r.TYPE_F64, 5))
+
+    def test_vector_get_set(self):
+        v = Vector(i32, 3)
+
+        v[0] = i32(10)
+        v[1] = i32(20)
+        v[2] = i32(30)
+
+        assert v[0].value == 10
+        assert v[1].value == 20
+        assert v[2].value == 30
+
+        assert v[-1].value == 30
+        assert v[-2].value == 20
+        assert v[-3].value == 10
+
+        with pytest.raises(IndexError):
+            v[3] = i32(40)
+
+        with pytest.raises(IndexError):
+            val = v[3]
+
+    def test_vector_str_repr(self):
+        v = Vector(i32, 2)
+        v[0] = i32(10)
+        v[1] = i32(20)
+
+        assert "Vector[" in str(v)
+        assert "[i32(10), i32(20)]" in str(v) or "i32(10), i32(20)" in str(v)
+
+        assert str(v) == repr(v)
+
+    def test_vector_equality(self):
+        v1 = Vector(i32, 2)
+        v1[0] = i32(10)
+        v1[1] = i32(20)
+
+        v2 = Vector(i32, 2)
+        v2[0] = i32(10)
+        v2[1] = i32(20)
+
+        v3 = Vector(i32, 2)
+        v3[0] = i32(10)
+        v3[1] = i32(30)
+
+        assert v1 == v2
+        assert v1 != v3
+        assert v2 != v3
+
+        v4 = Vector(i32, 3)
+        v4[0] = i32(10)
+        v4[1] = i32(20)
+        v4[2] = i32(30)
+
+        assert v1 != v4
+
+    def test_vector_to_list(self):
+        v = Vector(i32, 3)
+        v[0] = i32(10)
+        v[1] = i32(20)
+        v[2] = i32(30)
+
+        l = v.to_list()
+        assert len(l) == 3
+        assert l[0].value == 10
+        assert l[1].value == 20
+        assert l[2].value == 30
+
+    def test_different_vector_types(self):
+        vf = Vector(f64, 2)
+        vf[0] = f64(1.5)
+        vf[1] = f64(2.5)
+
+        assert vf[0].value == 1.5
+        assert vf[1].value == 2.5
+
+        # Тест для вектора символов
+        vs = Vector(Symbol, 2)
+        vs[0] = Symbol("test1")
+        vs[1] = Symbol("test2")
+
+        assert vs[0].value == "test1"
+        assert vs[1].value == "test2"
