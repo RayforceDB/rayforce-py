@@ -1348,6 +1348,39 @@ static PyObject* RayObject_ray_add(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Subtraction operation for RayObjects
+ */
+static PyObject* RayObject_ray_sub(RayObject* self, PyObject* args) {
+    RayObject* other;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || other->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot subtract NULL objects");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's subtract operation directly
+    result->obj = ray_sub(self->obj, other->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform subtraction operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1503,6 +1536,10 @@ static PyMethodDef RayObject_methods[] = {
     // Addition method
     {"ray_add", (PyCFunction)RayObject_ray_add, METH_VARARGS,
      "Add two RayObjects"},
+     
+    // Subtraction method
+    {"ray_sub", (PyCFunction)RayObject_ray_sub, METH_VARARGS,
+     "Subtract two RayObjects"},
     
     {NULL, NULL, 0, NULL}
 };
