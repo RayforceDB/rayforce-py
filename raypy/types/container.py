@@ -18,9 +18,9 @@ class Vector(Generic[T]):
 
     ptr: r.RayObject
     class_type: scalar.ScalarType
-    length: int
     ray_get_item_at_idx_method = "at_idx"
     ray_set_item_at_idx_method = "set_idx"
+    ray_get_vector_length = "get_vector_length"
 
     def __init__(
         self,
@@ -35,7 +35,6 @@ class Vector(Generic[T]):
             )
 
         self.class_type = class_type
-        self.length = length
 
         if ray_obj is not None:
             if (_type := ray_obj.get_type()) != class_type.ray_type_code:
@@ -52,7 +51,10 @@ class Vector(Generic[T]):
             raise TypeError(f"Error during vector initialization - {str(e)}")
 
     def __len__(self) -> int:
-        return self.length
+        try:
+            return getattr(self.ptr, self.ray_get_vector_length)()
+        except Exception as e:
+            raise TypeError(f"Unable to get vector length - {str(e)}")
 
     def __getitem__(self, idx: int) -> scalar.ScalarType:
         if idx < 0:
@@ -381,6 +383,18 @@ RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_U8: scalar.u8,
     r.TYPE_LIST: List,
     r.TYPE_DICT: Dict,
+    # Vectors are positive scalars
+    r.TYPE_I16: scalar.i16,
+    r.TYPE_I32: scalar.i32,
+    r.TYPE_I64: scalar.i64,
+    r.TYPE_F64: scalar.f64,
+    r.TYPE_B8: scalar.b8,
+    r.TYPE_C8: scalar.c8,
+    r.TYPE_SYMBOL: scalar.Symbol,
+    r.TYPE_TIME: scalar.Time,
+    r.TYPE_TIMESTAMP: scalar.Timestamp,
+    r.TYPE_DATE: scalar.Date,
+    r.TYPE_U8: scalar.u8,
 }
 
 

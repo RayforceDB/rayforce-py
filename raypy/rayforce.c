@@ -11,7 +11,6 @@ extern void *memcpy(void *dest, const void *src, size_t n);
 // Forward declaration of RayObjectType
 static PyTypeObject RayObjectType;
 
-
 typedef struct {
     PyObject_HEAD obj_p obj;
 } RayObject;
@@ -1294,6 +1293,61 @@ static PyObject* RayObject_set_idx(RayObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+/*
+ * Get vector length for any object that has a length attribute
+ */
+static PyObject* RayObject_get_vector_length(RayObject* self, PyObject* args) {
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+    
+    // Проверяем, является ли объект вектором или другим типом, имеющим len
+    if (self->obj->type > 0 || 
+        self->obj->type == TYPE_LIST || 
+        self->obj->type == TYPE_DICT || 
+        self->obj->type == TYPE_TABLE) {
+        
+        return PyLong_FromUnsignedLongLong(self->obj->len);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Object does not have a length attribute");
+        return NULL;
+    }
+}
+
+/*
+ * Addition operation for RayObjects
+ */
+static PyObject* RayObject_ray_add(RayObject* self, PyObject* args) {
+    RayObject* other;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || other->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot add NULL objects");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's add operation directly
+    result->obj = ray_add(self->obj, other->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform addition operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1441,6 +1495,14 @@ static PyMethodDef RayObject_methods[] = {
      "Get element at index from vector"},
     {"set_idx", (PyCFunction)RayObject_set_idx, METH_VARARGS,
      "Set element at index in vector"},
+    
+    // Get vector length
+    {"get_vector_length", (PyCFunction)RayObject_get_vector_length, METH_NOARGS,
+     "Get the length of a vector"},
+    
+    // Addition method
+    {"ray_add", (PyCFunction)RayObject_ray_add, METH_VARARGS,
+     "Add two RayObjects"},
     
     {NULL, NULL, 0, NULL}
 };
