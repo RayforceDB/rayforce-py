@@ -9,25 +9,43 @@ def add(
     x: scalar.i64
     | scalar.f64
     | container.Vector[scalar.i64]
-    | container.Vector[scalar.f64],
+    | container.Vector[scalar.f64]
+    | scalar.Timestamp,
     y: scalar.i64
     | scalar.f64
     | container.Vector[scalar.i64]
-    | container.Vector[scalar.f64],
+    | container.Vector[scalar.f64]
+    | scalar.Timestamp,
 ) -> (
     scalar.i64
     | scalar.f64
     | container.Vector[scalar.i64]
     | container.Vector[scalar.f64]
+    | scalar.Timestamp
 ):
-    for arg in (x, y):
-        if isinstance(arg, container.Vector):
-            if arg.class_type not in (scalar.i64, scalar.f64):
-                raise ValueError("Vector has to be of type i64 or f64")
-        elif not isinstance(arg, (scalar.i64, scalar.f64)):
-            raise ValueError(
-                "Argument has to be of type i64 or f64 or Vector of these types"
-            )
+    if isinstance(x, container.Vector):
+        if x.class_type == scalar.Timestamp:
+            if not isinstance(y, scalar.i64):
+                raise ValueError("Provide an US i64 value to add to timestamp vector")
+
+        if x.class_type not in (scalar.i64, scalar.f64):
+            raise ValueError("Vector has to be of type i64 or f64")
+    elif not isinstance(x, (scalar.i64, scalar.f64, scalar.Timestamp)):
+        raise ValueError(
+            "Argument has to be of type i64 or f64 or Timestamp or Vector of these types"
+        )
+
+    if isinstance(y, container.Vector):
+        if y.class_type == scalar.Timestamp:
+            if not isinstance(x, scalar.i64):
+                raise ValueError("Provide an US i64 value to add to timestamp vector")
+
+        if y.class_type not in (scalar.i64, scalar.f64):
+            raise ValueError("Vector has to be of type i64 or f64")
+    elif not isinstance(y, (scalar.i64, scalar.f64, scalar.Timestamp)):
+        raise ValueError(
+            "Argument has to be of type i64 or f64 or Timestamp or Vector of these types"
+        )
 
     try:
         ptr = getattr(r.RayObject, ray_add_method)(x.ptr, y.ptr)
