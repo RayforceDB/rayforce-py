@@ -1,4 +1,5 @@
 from typing import Any, Iterable, TypeVar, Generic, List as PyList
+import numpy as np
 import uuid
 import datetime as dt
 
@@ -22,7 +23,7 @@ class Vector(Generic[T]):
 
     def __init__(
         self,
-        class_type: scalar.ScalarType,
+        class_type: Any,
         length: int = 0,
         *,
         ray_obj: r.RayObject | None = None,
@@ -69,10 +70,8 @@ class Vector(Generic[T]):
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        if not hasattr(value, "ray_type_code"):
-            raise ValueError(f"Expected Ray type object, got {type(value)}")
-
-        getattr(self.ptr, self.ray_set_item_at_idx_method)(idx, value.ptr)
+        v = from_pythonic_to_raypy_type(value)
+        getattr(self.ptr, self.ray_set_item_at_idx_method)(idx, v.ptr)
 
     def to_list(self) -> PyList[T]:
         return [self[i] for i in range(len(self))]
@@ -337,7 +336,9 @@ def from_pythonic_to_raypy_type(
     scalar.Symbol
     | List
     | Dict
+    | Vector
     | scalar.i64
+    | scalar.f64
     | scalar.b8
     | scalar.Date
     | scalar.Time
@@ -368,10 +369,32 @@ def from_pythonic_to_raypy_type(
     if value is None:
         raise ValueError("Value can not be None")
 
+    if isinstance(
+        value,
+        (
+            scalar.Symbol,
+            List,
+            Dict,
+            Vector,
+            scalar.i16,
+            scalar.i32,
+            scalar.i64,
+            scalar.f64,
+            scalar.b8,
+            scalar.Date,
+            scalar.Time,
+            scalar.Timestamp,
+            scalar.GUID,
+        ),
+    ):
+        return value
+
     if isinstance(value, str):
         return scalar.Symbol(value)
     elif isinstance(value, int) and not isinstance(value, bool):
         return scalar.i64(value)
+    elif isinstance(value, float):
+        return scalar.f64(value)
     elif isinstance(value, bool):
         return scalar.b8(value)
     elif isinstance(value, dt.date):
@@ -389,8 +412,19 @@ def from_pythonic_to_raypy_type(
         return ll
     elif isinstance(value, dict):
         return Dict(value)
+    elif isinstance(value, np.ndarray):
+        if value.dtype == object:
+            raise ValueError("Expected homogeneous numpy array")
 
-    raise ValueError("Value type is not supported")
+        v = Vector(
+            class_type=from_pythonic_to_raypy_type(value[0].item()).__class__,
+            length=len(value),
+        )
+        for idx, item in enumerate(value):
+            v[idx] = item.item()
+        return v
+
+    raise ValueError(f"Value type is not supported - {type(value)}")
 
 
 def from_pointer_to_raypy_type(
