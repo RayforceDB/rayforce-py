@@ -1,5 +1,6 @@
 from typing import Any, Iterable, TypeVar, Generic, List as PyList
 import numpy as np
+import numpy.typing as npt
 import uuid
 import datetime as dt
 
@@ -292,10 +293,63 @@ class Table:
 
     def __init__(
         self,
-        columns: Vector[scalar.Symbol] | List,
-        values: List,
+        columns: list[str]
+        | npt.NDArray[np.str_]
+        | Vector[scalar.Symbol]
+        | List
+        | None = None,
+        values: List | list | None = None,
+        *,
+        ray_obj: r.RayObject | None = None,
     ) -> None:
-        self.ptr = getattr(r.RayObject, self.ray_init_method)(columns.ptr, values.ptr)
+        if ray_obj is not None:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
+                raise ValueError(
+                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                )
+            self.ptr = ray_obj
+            return
+
+        if (columns is None or values is None) or len(columns) == 0:
+            raise ValueError("Provide columns and values for table initialisation")
+
+        if isinstance(columns, list):
+            if not all([isinstance(i, str) for i in columns]):
+                raise ValueError("Columns python list must be of strings")
+            c = from_pythonic_to_raypy_type(columns)
+        elif isinstance(columns, np.ndarray):
+            for i in columns:
+                if not isinstance(i.item(), str):
+                    raise ValueError("Columns numpy array must be of strings")
+            c = from_pythonic_to_raypy_type(columns)
+        elif isinstance(columns, Vector):
+            for i in columns:
+                if not isinstance(i, scalar.Symbol):
+                    raise ValueError("Columns vector must be of symbols")
+            c = columns
+        elif isinstance(columns, List):
+            if not all([isinstance(i, scalar.Symbol) for i in columns]):
+                raise ValueError("Columns RayForce list must be of symbols")
+            c = columns
+        else:
+            raise ValueError(f"Invalid type for columns - {type(columns)}")
+
+        if isinstance(values, list):
+            v = List(values)
+        elif isinstance(values, List):
+            v = values
+        else:
+            raise ValueError(f"Invalid type for values - {type(values)}")
+
+        # Assert columns and values having same length
+        if any([len(v_i) != len(c) for v_i in v]):
+            raise ValueError("Keys and values lists must have the same length")
+
+        try:
+            self.ptr = getattr(r.RayObject, self.ray_init_method)(c.ptr, v.ptr)
+            assert self.ptr is not None, "RayObject should not be empty"
+        except Exception as e:
+            raise TypeError(f"Error during type initialisation - {str(e)}")
 
     def keys(self) -> List | Vector:
         _keys = getattr(self.ptr, self.ray_table_keys_method)()

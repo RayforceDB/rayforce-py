@@ -1,5 +1,6 @@
 setuptools~=78.1.0
 wheel~=0.45.1
+numpy~=2.2.5
 
 # Tests, linters and typing
 pytest~=8.3.5
