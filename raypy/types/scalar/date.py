@@ -8,12 +8,20 @@ EPOCH_DATE = dt.date(1970, 1, 1)
 
 class Date:
     """
-    Rayforce Date class
+    ## Rayforce Date class.
+    Analog of datetime.date in Python
+
+    ### Init Arguments:
+        `value`: dt.date | int | str | None - Datetime date object, or days since Epoch,
+            or string isoformat representation of a date. Leave as None to have today's date
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_DATE
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_DATE
+
     ray_init_method = "from_date"
     ray_extr_method = "get_date_value"
 
@@ -24,10 +32,11 @@ class Date:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
@@ -54,22 +63,16 @@ class Date:
             raise TypeError(f"Error during type initialisation - {str(e)}")
 
     @property
-    def __days_since_epoch(self) -> int:
+    def raw_value(self) -> int:
+        """Returns an integer which represents a number of days since epoch"""
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
-
-    @property
-    def raw_value(self) -> int:
-        """Returns raw value of Date object (Number of days since Epoch)"""
-        return self.__days_since_epoch
+        except Exception as e:
+            raise ValueError(f"Error during Date type extraction - {str(e)}")
 
     @property
     def value(self) -> dt.date:
-        return EPOCH_DATE + dt.timedelta(days=self.__days_since_epoch)
+        return EPOCH_DATE + dt.timedelta(days=self.raw_value)
 
     def __str__(self) -> str:
         return self.value.isoformat()

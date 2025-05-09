@@ -5,13 +5,12 @@ from .date import Date
 from .time import Time
 from .timestamp import Timestamp
 from .unsigned import u8
-from .guid import GUID
 from .char import c8
 from .symbol import Symbol
 
 
 type ScalarType = (
-    Symbol | i16 | i32 | i64 | f64 | b8 | Date | Time | Timestamp | u8 | GUID | c8
+    Symbol | i16 | i32 | i64 | f64 | b8 | Date | Time | Timestamp | u8 | c8
 )
 
 
@@ -25,7 +24,6 @@ __all__ = [
     "Time",
     "Timestamp",
     "u8",
-    "GUID",
     "c8",
     "Symbol",
 ]

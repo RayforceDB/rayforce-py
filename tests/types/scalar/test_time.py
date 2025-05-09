@@ -28,13 +28,13 @@ class TestTimeType:
 
         # Calculate raw value (milliseconds since midnight)
         expected_ms = (12 * 3600 + 34 * 60 + 56) * 1000 + 789
-        assert time_obj.raw_value == expected_ms
+        assert time_obj.ms_since_midnight == expected_ms
 
         # Test with midnight
         midnight = dt.time(0, 0, 0)
         midnight_obj = Time(midnight)
         assert midnight_obj.value == midnight
-        assert midnight_obj.raw_value == 0
+        assert midnight_obj.ms_since_midnight == 0
 
     def test_time_creation_from_int(self):
         """Test creating a Time from an integer (milliseconds since midnight)."""
@@ -44,18 +44,18 @@ class TestTimeType:
 
         expected_time = dt.time(12, 34, 56, 789000)
         assert time_obj.value == expected_time
-        assert time_obj.raw_value == ms
+        assert time_obj.ms_since_midnight == ms
 
         # Test with zero (midnight)
         midnight_obj = Time(0)
         assert midnight_obj.value == dt.time(0, 0, 0)
-        assert midnight_obj.raw_value == 0
+        assert midnight_obj.ms_since_midnight == 0
 
         # Test with max value (23:59:59.999)
         max_ms = 86399999
         max_obj = Time(max_ms)
         assert max_obj.value == dt.time(23, 59, 59, 999000)
-        assert max_obj.raw_value == max_ms
+        assert max_obj.ms_since_midnight == max_ms
 
         # Test invalid values
         with pytest.raises(ValueError):
@@ -148,7 +148,7 @@ class TestTimeType:
         # Verify values and types
         expected_time = dt.time(12, 34, 56, 789000)
         assert time_obj.value == expected_time
-        assert time_obj.raw_value == ms_since_midnight
+        assert time_obj.ms_since_midnight == ms_since_midnight
         assert time_obj.ptr.get_type() == -r.TYPE_TIME
 
         # Test with wrong RayObject type
@@ -169,4 +169,4 @@ class TestTimeType:
 
         # Test raw_value (ms since midnight)
         expected_ms = (12 * 3600 + 34 * 60 + 56) * 1000 + 789
-        assert time_obj.raw_value == expected_ms
+        assert time_obj.ms_since_midnight == expected_ms

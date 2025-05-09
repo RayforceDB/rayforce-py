@@ -396,7 +396,7 @@ class TestDictContainer:
 class TestVectorContainer:
     def test_vector_creation(self):
         v = Vector(class_type=i32, length=5)
-        assert v.class_type.ray_type_code == r.TYPE_I32
+        assert v.ray_type_code == r.TYPE_I32
         assert len(v) == 5
 
         with pytest.raises(ValueError):

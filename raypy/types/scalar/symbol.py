@@ -5,37 +5,44 @@ from raypy import _rayforce as r
 
 class Symbol:
     """
-    Rayforce Symbol type
+    # Rayforce Symbol type
+    Analog of Python string
+
+    ### Init Arguments:
+        `value`: float | None - Python stringable type
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_SYMBOL
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_SYMBOL
+
     ray_init_method = "from_symbol"
     ray_extr_method = "get_symbol_value"
 
     def __init__(
         self,
-        value: str | None = None,
+        value: str | Any | None = None,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if value is None and ray_obj is None:
-            raise ValueError("At least one argument is required")
+            raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
-        if not isinstance(value, str):
-            value = str(value)
+        _value = str(value)
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
+            self.ptr = getattr(r.RayObject, self.ray_init_method)(_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -44,10 +51,8 @@ class Symbol:
     def value(self) -> str:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
+        except Exception as e:
+            raise TypeError(f"Error during symbol type extraction - {str(e)}") from e
 
     def __str__(self) -> str:
         return self.value

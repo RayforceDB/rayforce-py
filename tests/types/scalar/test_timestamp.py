@@ -35,7 +35,7 @@ class TestTimestampType:
 
         # Calculate raw value (milliseconds since epoch)
         expected_ms = int(test_dt.timestamp() * 1000)
-        assert timestamp_obj.raw_value == expected_ms
+        assert timestamp_obj.ms_since_epoch == expected_ms
 
         # Test with epoch
         # Note: We can't directly test for raw_value == 0 because of timezone
@@ -45,7 +45,7 @@ class TestTimestampType:
 
         # Calculate expected offset for timezone
         expected_epoch_ms = int(epoch_dt.timestamp() * 1000)
-        assert epoch_obj.raw_value == expected_epoch_ms
+        assert epoch_obj.ms_since_epoch == expected_epoch_ms
 
     def test_timestamp_creation_from_int(self):
         """Test creating a Timestamp from an integer (milliseconds since epoch)."""
@@ -66,7 +66,7 @@ class TestTimestampType:
         assert timestamp_obj.value.second == expected_dt.second
         assert timestamp_obj.value.microsecond == 789000
 
-        assert timestamp_obj.raw_value == ms_since_epoch
+        assert timestamp_obj.ms_since_epoch == ms_since_epoch
 
         # Test with zero (epoch)
         epoch_obj = Timestamp(0)
@@ -83,7 +83,7 @@ class TestTimestampType:
         assert epoch_obj.value.minute == local_epoch.minute
         assert epoch_obj.value.second == local_epoch.second
         assert epoch_obj.value.microsecond == 0
-        assert epoch_obj.raw_value == 0
+        assert epoch_obj.ms_since_epoch == 0
 
     def test_timestamp_creation_from_str(self):
         """Test creating a Timestamp from a string in ISO format."""
@@ -193,7 +193,7 @@ class TestTimestampType:
         assert timestamp_obj.value.second == expected_dt.second
         assert timestamp_obj.value.microsecond == 789000
 
-        assert timestamp_obj.raw_value == ms_since_epoch
+        assert timestamp_obj.ms_since_epoch == ms_since_epoch
         assert timestamp_obj.ptr.get_type() == -r.TYPE_TIMESTAMP
 
         # Test with wrong RayObject type

@@ -10,12 +10,20 @@ EPOCH_DATE = dt.date(1970, 1, 1)
 
 class Timestamp:
     """
-    Rayforce Timestamp class
+    # Rayforce Timestamp type
+    Analog of Python datetime.datetime
+
+    ### Init Arguments:
+        `value`: dt.time | int | str | None - Python datetime.datetime or
+            int represents MS since EPOCH (1970.1.1) or datetime in str isoformat
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_TIMESTAMP
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_TIMESTAMP
+
     ray_init_method = "from_timestamp"
     ray_extr_method = "get_timestamp_value"
 
@@ -26,10 +34,11 @@ class Timestamp:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
@@ -41,8 +50,7 @@ class Timestamp:
             ms_since_epoch = value
         elif isinstance(value, dt.datetime):
             ms_since_epoch = int(value.timestamp() * 1000)
-        elif isinstance(value, str):
-            # Parse from string (ISO format)
+        elif isinstance(value, str):  # Parse from string (ISO format)
             try:
                 dt_obj = dt.datetime.fromisoformat(value)
                 ms_since_epoch = int(dt_obj.timestamp() * 1000)
@@ -58,22 +66,15 @@ class Timestamp:
             raise TypeError(f"Error during type initialisation - {str(e)}")
 
     @property
-    def __ms_since_epoch(self) -> int:
+    def ms_since_epoch(self) -> int:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
-
-    @property
-    def raw_value(self) -> int:
-        """Returns raw value of Time object (Milliseconds since midnight)"""
-        return self.__ms_since_epoch
+        except Exception as e:
+            raise TypeError(f"Error during timestamp type extraction - {str(e)}") from e
 
     @property
     def value(self) -> dt.datetime:
-        ms = self.__ms_since_epoch
+        ms = self.ms_since_epoch
         seconds = ms // 1000
         microseconds = (ms % 1000) * 1000
         return dt.datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
@@ -102,5 +103,5 @@ class Timestamp:
         if isinstance(other, dt.datetime):
             return self.value == other
         if isinstance(other, int):
-            return self.raw_value == other
+            return self.ms_since_epoch == other
         return False

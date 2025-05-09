@@ -7,12 +7,19 @@ from raypy import _rayforce as r
 
 class u8:
     """
-    8-bit Rayforce unsigned type
+    # Rayforce Unsigned type
+    Has no Python analog
+
+    ### Init Arguments:
+        `value`: int | None - Python integer representing unsigned value in range 0-255
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_U8
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_U8
+
     ray_init_method = "from_u8"
     ray_extr_method = "get_u8_value"
 
@@ -26,10 +33,11 @@ class u8:
             raise ValueError("At least one argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
@@ -37,10 +45,10 @@ class u8:
             try:
                 value = int(value)
             except (ValueError, TypeError):
-                raise ValueError(f"Expected value of type bool, got {type(value)}")
+                raise ValueError(f"Expected value of int-able type, got {type(value)}")
 
         if value < 0 or value > 255:
-            raise ValueError("Unsigned value must be in range 0-255")
+            raise ValueError("Unsigned value is out of range (0-255)")
 
         try:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
@@ -52,10 +60,8 @@ class u8:
     def value(self) -> int:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
+        except Exception as e:
+            raise TypeError(f"Error during unsigned type extraction - {str(e)}") from e
 
     def __int__(self) -> int:
         return self.value

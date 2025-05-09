@@ -5,51 +5,57 @@ from raypy import _rayforce as r
 
 class b8:
     """
-    8-bit Rayforce boolean
+    # Rayforce boolean
+    Analog of Python boolean
+
+    ### Init Arguments:
+        `value`: Any | None - Instance, which could be converted to bool using bool(value).
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance.
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_B8
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_B8
+
     ray_init_method = "from_b8"
     ray_extr_method = "get_b8_value"
 
     def __init__(
         self,
-        value: bool | None = None,
+        value: Any | None = None,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if value is None and ray_obj is None:
-            raise ValueError("At least one argument is required")
+            raise ValueError("At least one initialisatiion is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
         try:
-            value = bool(value)
+            _value = bool(value)
         except ValueError as e:
-            raise ValueError(f"Expected value of type bool, got {type(value)}") from e
+            raise ValueError(f"Expected value of type bool, got {type(_value)}") from e
 
         try:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
-            raise TypeError(f"Error during type initialisation - {str(e)}")
+            raise TypeError(f"Error during b8 type initialisation - {str(e)}")
 
     @property
     def value(self) -> bool:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
+        except Exception as e:
+            raise ValueError(f"Error during b8 type extraction - {str(e)}")
 
     def __bool__(self) -> bool:
         return self.value

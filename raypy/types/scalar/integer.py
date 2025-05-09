@@ -12,55 +12,45 @@ class _RayInteger(abc.ABC):
     ptr: r.RayObject
 
     ray_type_code: int
+
     ray_init_method: str
     ray_extr_method: str
 
     def __init__(
         self,
-        value: int | None = None,
+        value: int | float | str | None = None,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if value is None and ray_obj is None:
-            raise ValueError("At least one argument is required")
+            raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
         try:
-            value = int(value)
+            _value = int(value)
         except ValueError as e:
             raise ValueError(f"Expected value of type int, got {type(value)}") from e
 
-        if not self.ray_init_method:
-            raise AttributeError(
-                "Rayforce value init method is not defined for integer type"
-            )
-
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
+            self.ptr = getattr(r.RayObject, self.ray_init_method)(_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
 
     @property
     def value(self) -> int:
-        if not self.ray_extr_method:
-            raise AttributeError(
-                "Rayforce value extraction is not defined for integer type"
-            )
-
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
+        except Exception as e:
+            raise ValueError(f"Error during int type extraction - {str(e)}")
 
     def __int__(self) -> int:
         return self.value
@@ -99,29 +89,47 @@ class _RayInteger(abc.ABC):
 
 class i16(_RayInteger):
     """
-    16-bit Rayforce integer
+    # Rayforce 16-bit integer
+    Analog of Python int (-32768 to 32767)
+
+    ### Init Arguments:
+        `value`: float | None - Python int / float / string of an integer
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
-    ray_type_code = r.TYPE_I16
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_I16
     ray_init_method = "from_i16"
     ray_extr_method = "get_i16_value"
 
 
 class i32(_RayInteger):
     """
-    16-bit Rayforce integer
+    # Rayforce 32-bit integer
+    Analog of Python int (-2147483648 to 2147483647)
+
+    ### Init Arguments:
+        `value`: float | None - Python int / float / string of an integer
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
-    ray_type_code = r.TYPE_I32
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_I32
     ray_init_method = "from_i32"
     ray_extr_method = "get_i32_value"
 
 
 class i64(_RayInteger):
     """
-    64-bit Rayforce integer
+    # Rayforce 64-bit integer
+    Analog of Python int
+
+    ### Init Arguments:
+        `value`: float | None - Python int / float / string of an integer
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
-    ray_type_code = r.TYPE_I64
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_I64
     ray_init_method = "from_i64"
     ray_extr_method = "get_i64_value"

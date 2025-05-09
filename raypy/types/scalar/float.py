@@ -5,39 +5,47 @@ from raypy import _rayforce as r
 
 class f64:
     """
-    64-bit Rayforce float
+    # Rayforce float
+    Analog of Python float
+
+    ### Init Arguments:
+        `value`: float | None - Python int or float type
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_F64
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_F64
+
     ray_init_method = "from_f64"
     ray_extr_method = "get_f64_value"
 
     def __init__(
         self,
-        value: float | None = None,
+        value: int | float | None = None,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if value is None and ray_obj is None:
-            raise ValueError("At least one argument is required")
+            raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
         try:
-            value = float(value)
+            _value = float(value)
         except ValueError as e:
             raise ValueError(f"Expected value of type float, got {type(value)}") from e
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
+            self.ptr = getattr(r.RayObject, self.ray_init_method)(_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -46,10 +54,8 @@ class f64:
     def value(self) -> float:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
+        except Exception as e:
+            raise ValueError(f"Error during f8 type extraction - {str(e)}")
 
     def __float__(self) -> float:
         return float(self.value)
@@ -58,7 +64,7 @@ class f64:
         return str(self.value)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.value})"
+        return f"f64({self.value})"
 
     def __eq__(self, other: Any):
         if isinstance(other, f64):

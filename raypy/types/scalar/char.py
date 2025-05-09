@@ -5,12 +5,19 @@ from raypy import _rayforce as r
 
 class c8:
     """
-    Rayforce char type
+    # Rayforce Char type
+    Has no Python equivalent
+
+    ### Init Arguments:
+        `value`: str | int | None - Char value, or integer representation of unicode char.
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance.
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_C8
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_C8
+
     ray_init_method = "from_c8"
     ray_extr_method = "get_c8_value"
 
@@ -21,23 +28,32 @@ class c8:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if value is None and ray_obj is None:
-            raise ValueError("At least one argument is required")
+            raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
-        if isinstance(value, str) and len(value) == 1:
-            if ord(value) > 127:
-                char_value = "A"
+        if isinstance(value, str):
+            if len(value) == 1:
+                # If unicode value of given char is not supported, set it as "A"
+                char_value = "A" if ord(value) > 127 else value
             else:
-                char_value = value
-        elif isinstance(value, int) and 0 <= value <= 126:
-            char_value = chr(value)
+                raise ValueError(
+                    "Character must be a single character string or an integer (0-126)"
+                )
+        elif isinstance(value, int):
+            if 0 <= value <= 126:
+                char_value = chr(value)
+            else:
+                raise ValueError(
+                    "Integer representation of a char should be between 0 and 126"
+                )
         else:
             raise ValueError(
                 "Character must be a single character string or an integer (0-126)"
@@ -47,16 +63,14 @@ class c8:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(char_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
-            raise TypeError(f"Error during type initialisation - {str(e)}")
+            raise TypeError(f"Error during c8 type initialisation - {str(e)}")
 
     @property
     def value(self) -> str:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
+        except Exception as e:
+            raise ValueError(f"Error during b8 type extraction - {str(e)}")
 
     @property
     def code(self) -> int:

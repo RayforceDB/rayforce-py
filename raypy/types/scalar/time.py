@@ -6,26 +6,35 @@ from raypy import _rayforce as r
 
 class Time:
     """
-    Rayforce Time class
+    # Rayforce Time type
+    Analog of Python datetime.time
+
+    ### Init Arguments:
+        `value`: dt.time | int | str | None - Python datetime.time or
+            int represents MS since midnight or time in str isoformat (HH:MM:SS or HH:MM:SS.mmm)
+        `ray_obj`: rayforce.RayObject | None - RayObject pointer instance
     """
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_TIME
+    # This class represents scalar value, hence code is negative
+    ray_type_code = -r.TYPE_TIME
+
     ray_init_method = "from_time"
     ray_extr_method = "get_time_value"
 
     def __init__(
         self,
-        value: dt.date | int | str | None = None,
+        value: dt.time | int | str | None = None,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -self.ray_type_code:
+            if (_type := ray_obj.get_type()) != self.ray_type_code:
                 raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
+                    f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
+
             self.ptr = ray_obj
             return
 
@@ -37,7 +46,9 @@ class Time:
             ) * 1000 + now.microsecond // 1000
         elif isinstance(value, int):
             if value < 0 or value > 86399999:  # 24*60*60*1000 - 1
-                raise ValueError("Time value must be in range 0-86399999 milliseconds")
+                raise ValueError(
+                    "Time int value must be in range 0-86399999 milliseconds"
+                )
             ms_since_midnight = value
         elif isinstance(value, dt.time):
             ms_since_midnight = (
@@ -54,12 +65,12 @@ class Time:
                 ms_since_midnight = (
                     time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second
                 ) * 1000 + time_obj.microsecond // 1000
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
                     "Time string must be in format HH:MM:SS or HH:MM:SS.mmm"
-                )
+                ) from e
         else:
-            raise TypeError(f"Unable to convert {type(value)} to Date")
+            raise TypeError(f"Unable to convert {type(value)} to Time")
 
         try:
             self.ptr = getattr(r.RayObject, self.ray_init_method)(ms_since_midnight)
@@ -68,22 +79,15 @@ class Time:
             raise TypeError(f"Error during type initialisation - {str(e)}")
 
     @property
-    def __ms_since_midnight(self) -> int:
+    def ms_since_midnight(self) -> int:
         try:
             return getattr(self.ptr, self.ray_extr_method)()
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
-            ) from e
-
-    @property
-    def raw_value(self) -> int:
-        """Returns raw value of Time object (Milliseconds since midnight)"""
-        return self.__ms_since_midnight
+        except Exception as e:
+            raise TypeError(f"Error during time type extraction - {str(e)}") from e
 
     @property
     def value(self) -> dt.time:
-        ms = self.__ms_since_midnight
+        ms = self.ms_since_midnight
         hours = ms // 3600000
         ms %= 3600000
         minutes = ms // 60000
@@ -104,5 +108,5 @@ class Time:
         if isinstance(other, dt.time):
             return self.value == other
         if isinstance(other, int):
-            return self.raw_value == other
+            return self.ms_since_midnight == other
         return False

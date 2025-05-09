@@ -2,7 +2,7 @@ import pytest
 import uuid
 
 from raypy import _rayforce as r
-from raypy.types.scalar.guid import GUID
+from raypy.types.container import GUID
 
 
 class TestGUIDType:
