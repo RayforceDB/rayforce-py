@@ -1636,6 +1636,57 @@ static PyObject* RayObject_ray_med(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Standard deviation operation for RayObject vectors
+ */
+static PyObject* RayObject_ray_dev(RayObject* self, PyObject* args) {
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute standard deviation of NULL object");
+        return NULL;
+    }
+    
+    // Handle empty vector case
+    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0) {
+        // Create a new RayObject for the result
+        RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+        if (result == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+            return NULL;
+        }
+        
+        result->obj = f64(0.0);
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject*)result;
+    }
+    
+    // F64 vectors are not supported by the core's ray_dev function
+    if (self->obj->type == TYPE_F64) {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for standard deviation operation");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's standard deviation operation directly
+    result->obj = ray_dev(self->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform standard deviation operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1823,6 +1874,10 @@ static PyMethodDef RayObject_methods[] = {
     // Median method
     {"ray_med", (PyCFunction)RayObject_ray_med, METH_VARARGS,
      "Compute the median of a vector or scalar"},
+    
+    // Standard deviation method
+    {"ray_dev", (PyCFunction)RayObject_ray_dev, METH_VARARGS,
+     "Compute the standard deviation of a vector or scalar"},
     
     {NULL, NULL, 0, NULL}
 };

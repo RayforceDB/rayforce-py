@@ -11,6 +11,7 @@ ray_mod_method = "ray_mod"
 ray_sum_method = "ray_sum"
 ray_avg_method = "ray_avg"
 ray_med_method = "ray_med"
+ray_dev_method = "ray_dev"
 
 
 def add(
@@ -741,5 +742,47 @@ def med(
         ptr = getattr(r.RayObject, ray_med_method)(x.ptr)
     except Exception as e:
         raise TypeError(f"Error when calling {ray_med_method} - {str(e)}")
+
+    return container.from_pointer_to_raypy_type(ptr)
+
+
+def dev(
+    x: scalar.i64 | scalar.f64 | container.Vector[scalar.i64],
+) -> scalar.f64:
+    """
+    Calculate the standard deviation of a scalar or all elements in a vector.
+
+    For scalar inputs, the function returns 0.0 as a standard deviation of a single value.
+    For vector inputs, it returns the standard deviation of all elements.
+    For empty vectors, returns nan.
+    For vectors with a single element, returns 0.0.
+
+    Note: F64 vectors are not supported by the core implementation.
+
+    Args:
+        x: Scalar (i64, f64) or vector of i64 values
+
+    Returns:
+        Scalar f64 value representing the standard deviation
+
+    Raises:
+        ValueError: If input is not a supported type
+        TypeError: If there's an error during the calculation
+    """
+    if not isinstance(x, (scalar.i64, scalar.f64, container.Vector)):
+        raise ValueError("Input must be a scalar or vector of type i64 or f64")
+
+    if isinstance(x, container.Vector):
+        if x.class_type == scalar.f64:
+            raise ValueError(
+                "F64 vectors are not supported for standard deviation operation"
+            )
+        if x.class_type not in (scalar.i64,):
+            raise ValueError("Vector must be of type i64")
+
+    try:
+        ptr = getattr(r.RayObject, ray_dev_method)(x.ptr)
+    except Exception as e:
+        raise TypeError(f"Error when calling {ray_dev_method} - {str(e)}")
 
     return container.from_pointer_to_raypy_type(ptr)
