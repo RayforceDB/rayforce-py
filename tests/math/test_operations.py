@@ -1,7 +1,7 @@
 import pytest
 import datetime as dt
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum, avg
+from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum, avg, med
 
 
 class TestAddOperation:
@@ -2131,3 +2131,180 @@ class TestAvgOperation:
 
         with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
             avg(ts_vec)
+
+
+class TestMedOperation:
+    """Tests for the med operation in raypy.math.operations."""
+
+    def test_med_scalar(self):
+        """Test median of scalar values (converts to f64)."""
+        # i64 scalar
+        a = scalar.i64(42)
+        result = med(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 42.0
+
+        # f64 scalar
+        b = scalar.f64(3.14)
+        result = med(b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.14
+
+    def test_med_i64_vector_odd(self):
+        """Test median of i64 vector with odd length."""
+        # Create vector [1, 2, 3, 4, 5]
+        a = container.Vector(scalar.i64, 5)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+        a[3] = scalar.i64(4)
+        a[4] = scalar.i64(5)
+
+        result = med(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.0  # Middle value of [1, 2, 3, 4, 5] is 3
+
+        # Test with unsorted vector [5, 3, 1, 4, 2]
+        b = container.Vector(scalar.i64, 5)
+        b[0] = scalar.i64(5)
+        b[1] = scalar.i64(3)
+        b[2] = scalar.i64(1)
+        b[3] = scalar.i64(4)
+        b[4] = scalar.i64(2)
+
+        result = med(b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.0  # Middle value of sorted [1, 2, 3, 4, 5] is 3
+
+    def test_med_i64_vector_even(self):
+        """Test median of i64 vector with even length."""
+        # Create vector [1, 2, 3, 4, 5, 6]
+        a = container.Vector(scalar.i64, 6)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+        a[3] = scalar.i64(4)
+        a[4] = scalar.i64(5)
+        a[5] = scalar.i64(6)
+
+        result = med(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.5  # Average of 3 and 4 is 3.5
+
+        # Test with unsorted vector [6, 4, 2, 5, 3, 1]
+        b = container.Vector(scalar.i64, 6)
+        b[0] = scalar.i64(6)
+        b[1] = scalar.i64(4)
+        b[2] = scalar.i64(2)
+        b[3] = scalar.i64(5)
+        b[4] = scalar.i64(3)
+        b[5] = scalar.i64(1)
+
+        result = med(b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.5  # Average of 3 and 4 is 3.5
+
+    def test_med_f64_vector_odd(self):
+        """Test median of f64 vector with odd length."""
+        # Create vector [1.5, 2.5, 3.5, 4.5, 5.5]
+        a = container.Vector(scalar.f64, 5)
+        a[0] = scalar.f64(1.5)
+        a[1] = scalar.f64(2.5)
+        a[2] = scalar.f64(3.5)
+        a[3] = scalar.f64(4.5)
+        a[4] = scalar.f64(5.5)
+
+        result = med(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.5  # Middle value is 3.5
+
+    def test_med_f64_vector_even(self):
+        """Test median of f64 vector with even length."""
+        # Create vector [1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
+        a = container.Vector(scalar.f64, 6)
+        a[0] = scalar.f64(1.5)
+        a[1] = scalar.f64(2.5)
+        a[2] = scalar.f64(3.5)
+        a[3] = scalar.f64(4.5)
+        a[4] = scalar.f64(5.5)
+        a[5] = scalar.f64(6.5)
+
+        result = med(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 4.0  # Average of 3.5 and 4.5 is 4.0
+
+    def test_med_negative_values(self):
+        """Test median with negative values."""
+        # Create vector [5, -3, 2, -8, 4]
+        a = container.Vector(scalar.i64, 5)
+        a[0] = scalar.i64(5)
+        a[1] = scalar.i64(-3)
+        a[2] = scalar.i64(2)
+        a[3] = scalar.i64(-8)
+        a[4] = scalar.i64(4)
+
+        result = med(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.0  # Sorted: [-8, -3, 2, 4, 5], middle is 2
+
+    def test_med_empty_vector(self):
+        """Test median of an empty vector."""
+        # Empty i64 vector
+        empty_i64 = container.Vector(scalar.i64, 0)
+        result = med(empty_i64)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+        # Empty f64 vector
+        empty_f64 = container.Vector(scalar.f64, 0)
+        result = med(empty_f64)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+    def test_error_unsupported_type(self):
+        """Test that providing an unsupported type raises an error."""
+        # Symbol scalar
+        sym = scalar.Symbol("test")
+        with pytest.raises(
+            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+        ):
+            med(sym)
+
+        # Timestamp scalar
+        ts = scalar.Timestamp(dt.datetime.now())
+        with pytest.raises(
+            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+        ):
+            med(ts)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that unsupported vector types raise an error."""
+        # Create symbol vector
+        sym_vec = container.Vector(scalar.Symbol, 3)
+        sym_vec[0] = scalar.Symbol("a")
+        sym_vec[1] = scalar.Symbol("b")
+        sym_vec[2] = scalar.Symbol("c")
+
+        with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
+            med(sym_vec)
+
+        # Create timestamp vector
+        now = dt.datetime.now()
+        ts_vec = container.Vector(scalar.Timestamp, 3)
+        ts_vec[0] = scalar.Timestamp(now)
+        ts_vec[1] = scalar.Timestamp(now + dt.timedelta(seconds=1))
+        ts_vec[2] = scalar.Timestamp(now + dt.timedelta(seconds=2))
+
+        with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
+            med(ts_vec)

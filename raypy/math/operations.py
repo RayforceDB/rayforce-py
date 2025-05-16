@@ -10,6 +10,7 @@ ray_fdiv_method = "ray_fdiv"
 ray_mod_method = "ray_mod"
 ray_sum_method = "ray_sum"
 ray_avg_method = "ray_avg"
+ray_med_method = "ray_med"
 
 
 def add(
@@ -693,5 +694,46 @@ def avg(
         ptr = getattr(r.RayObject, ray_avg_method)(x.ptr)
     except Exception as e:
         raise TypeError(f"Error when calling {ray_avg_method} - {str(e)}")
+
+    return container.from_pointer_to_raypy_type(ptr)
+
+
+def med(
+    x: scalar.i64
+    | scalar.f64
+    | container.Vector[scalar.i64]
+    | container.Vector[scalar.f64],
+) -> scalar.f64:
+    """
+    Calculate the median of a scalar or all elements in a vector.
+
+    The median is the middle value of a dataset. It is the value that separates
+    the higher half from the lower half of the data.
+
+    For scalar inputs, the function returns the input value as a float.
+    For vector inputs with odd length, returns the middle value.
+    For vector inputs with even length, returns the average of the two middle values.
+    For empty vectors, returns 0.0.
+
+    Args:
+        x: Scalar or vector of i64 or f64 values
+
+    Returns:
+        Scalar f64 value representing the median
+
+    Raises:
+        ValueError: If input is not a supported type
+        TypeError: If there's an error during the calculation
+    """
+    if not isinstance(x, (scalar.i64, scalar.f64, container.Vector)):
+        raise ValueError("Input must be a scalar or vector of type i64 or f64")
+
+    if isinstance(x, container.Vector) and x.class_type not in (scalar.i64, scalar.f64):
+        raise ValueError("Vector must be of type i64 or f64")
+
+    try:
+        ptr = getattr(r.RayObject, ray_med_method)(x.ptr)
+    except Exception as e:
+        raise TypeError(f"Error when calling {ray_med_method} - {str(e)}")
 
     return container.from_pointer_to_raypy_type(ptr)
