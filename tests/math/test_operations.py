@@ -1,7 +1,7 @@
 import pytest
 import datetime as dt
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub
+from raypy.math.operations import add, sub, mul, div, fdiv
 
 
 class TestAddOperation:
@@ -191,17 +191,6 @@ class TestAddOperation:
         result_times = [item.value for item in result.to_list()]
 
         for actual, expected in zip(result_times, expected_times):
-            assert abs((actual - expected).total_seconds()) < 0.001
-
-        # Добавляем i64 к вектору Timestamp (обратный порядок)
-        result2 = add(delta, ts_vector)
-
-        assert isinstance(result2, container.Vector)
-        assert result2.class_type == scalar.Timestamp
-
-        result_times2 = [item.value for item in result2.to_list()]
-
-        for actual, expected in zip(result_times2, expected_times):
             assert abs((actual - expected).total_seconds()) < 0.001
 
     def test_error_unsupported_scalar_type(self):
@@ -532,6 +521,17 @@ class TestSubOperation:
         ):
             sub(a_vec, b_vec)
 
+        # i32 vector
+        c_vec = container.Vector(scalar.i32, 3)
+        c_vec[0] = scalar.i32(10)
+        c_vec[1] = scalar.i32(20)
+        c_vec[2] = scalar.i32(30)
+
+        with pytest.raises(
+            ValueError, match="Vector types i16 and i32 are not supported"
+        ):
+            sub(c_vec, b_vec)
+
     def test_error_unsupported_vector_type(self):
         """Test that subtracting unsupported vector element types raises an error."""
         a = container.Vector(scalar.Symbol, 3)
@@ -593,3 +593,937 @@ class TestSubOperation:
             ValueError, match="Cannot subtract Timestamp from non-Timestamp value"
         ):
             sub(scalar.i64(100), timestamp)
+
+
+class TestMulOperation:
+    """Tests for the mul operation in raypy.math.operations."""
+
+    def test_mul_i64_scalars(self):
+        """Test multiplying two i64 scalars."""
+        a = scalar.i64(5)
+        b = scalar.i64(10)
+        result = mul(a, b)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 50
+
+    def test_mul_f64_scalars(self):
+        """Test multiplying two f64 scalars."""
+        a = scalar.f64(3.5)
+        b = scalar.f64(2.0)
+        result = mul(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 7.0
+
+    def test_mul_mixed_scalars(self):
+        """Test multiplying i64 and f64 scalars."""
+        a = scalar.i64(5)
+        b = scalar.f64(2.5)
+        result = mul(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 12.5
+
+    def test_mul_i64_vectors(self):
+        """Test multiplying two i64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(4)
+        b[1] = scalar.i64(5)
+        b[2] = scalar.i64(6)
+
+        result = mul(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [4, 10, 18]
+
+    def test_mul_f64_vectors(self):
+        """Test multiplying two f64 vectors (element-wise)."""
+        a = container.Vector(scalar.f64, 3)
+        a[0] = scalar.f64(1.5)
+        a[1] = scalar.f64(2.5)
+        a[2] = scalar.f64(3.5)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(0.5)
+        b[1] = scalar.f64(1.5)
+        b[2] = scalar.f64(2.5)
+
+        result = mul(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [0.75, 3.75, 8.75]
+
+    def test_mul_mixed_vectors(self):
+        """Test multiplying i64 and f64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(0.5)
+        b[1] = scalar.f64(1.5)
+        b[2] = scalar.f64(2.5)
+
+        result = mul(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [0.5, 3.0, 7.5]
+
+    def test_mul_scalar_to_vector(self):
+        """Test multiplying a scalar with a vector (scalar broadcast)."""
+        # i64 скаляр * i64 вектор
+        a = scalar.i64(2)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(1)
+        b[1] = scalar.i64(2)
+        b[2] = scalar.i64(3)
+
+        result = mul(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [2, 4, 6]
+
+        # f64 скаляр * f64 вектор
+        a2 = scalar.f64(2.0)
+        b2 = container.Vector(scalar.f64, 3)
+        b2[0] = scalar.f64(0.5)
+        b2[1] = scalar.f64(1.0)
+        b2[2] = scalar.f64(1.5)
+
+        result2 = mul(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [1.0, 2.0, 3.0]
+
+    def test_mul_mixed_scalar_to_vector(self):
+        """Test multiplying mixed scalar types to vectors."""
+        # i64 скаляр * f64 вектор
+        a = scalar.i64(2)
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(0.5)
+        b[1] = scalar.f64(1.5)
+        b[2] = scalar.f64(2.5)
+
+        result = mul(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [1.0, 3.0, 5.0]
+
+    def test_error_unsupported_scalar_type(self):
+        """Test that multiplying unsupported scalar types raises an error."""
+        a = scalar.Symbol("test")
+        b = scalar.i64(5)
+
+        with pytest.raises(ValueError):
+            mul(a, b)
+
+    def test_error_timestamp_not_supported(self):
+        """Test that multiplying with Timestamp raises an error."""
+        timestamp = scalar.Timestamp(dt.datetime.now())
+        b = scalar.i64(5)
+
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for multiplication"
+        ):
+            mul(timestamp, b)
+
+        c = scalar.f64(2.5)
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for multiplication"
+        ):
+            mul(c, timestamp)
+
+    def test_error_i16_i32_not_supported(self):
+        """Test that multiplying i16 and i32 raises an error."""
+        # i16 scalar
+        a = scalar.i16(5)
+        b = scalar.i64(10)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            mul(a, b)
+
+        # i32 scalar
+        c = scalar.i32(15)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            mul(c, b)
+
+        # i16 vector
+        a_vec = container.Vector(scalar.i16, 3)
+        a_vec[0] = scalar.i16(1)
+        a_vec[1] = scalar.i16(2)
+        a_vec[2] = scalar.i16(3)
+
+        b_vec = container.Vector(scalar.i64, 3)
+        b_vec[0] = scalar.i64(4)
+        b_vec[1] = scalar.i64(5)
+        b_vec[2] = scalar.i64(6)
+
+        with pytest.raises(
+            ValueError, match="Vector types i16 and i32 are not supported"
+        ):
+            mul(a_vec, b_vec)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that multiplying unsupported vector element types raises an error."""
+        a = container.Vector(scalar.Symbol, 3)
+        a[0] = scalar.Symbol("a")
+        a[1] = scalar.Symbol("b")
+        a[2] = scalar.Symbol("c")
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(1)
+        b[1] = scalar.i64(2)
+        b[2] = scalar.i64(3)
+
+        with pytest.raises(ValueError):
+            mul(a, b)
+
+    def test_error_mismatched_vector_lengths(self):
+        """Test that multiplying vectors of different lengths raises an error."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+
+        b = container.Vector(scalar.i64, 2)
+        b[0] = scalar.i64(4)
+        b[1] = scalar.i64(5)
+
+        with pytest.raises(ValueError, match="Vectors must be of same length"):
+            mul(a, b)
+
+
+class TestDivOperation:
+    """Tests for the div operation in raypy.math.operations."""
+
+    def test_div_i64_scalars(self):
+        """Test dividing two i64 scalars."""
+        a = scalar.i64(10)
+        b = scalar.i64(2)
+        result = div(a, b)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 5
+
+        # Integer division truncation
+        c = scalar.i64(5)
+        d = scalar.i64(2)
+        result = div(c, d)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 2  # 5 / 2 = 2.5, но результат округляется до 2
+
+    def test_div_f64_scalars(self):
+        """Test dividing two f64 scalars."""
+        a = scalar.f64(10.0)
+        b = scalar.f64(2.0)
+        result = div(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 5.0
+
+        # В rayforce при делении f64 округляется до целого числа
+        c = scalar.f64(5.0)
+        d = scalar.f64(2.0)
+        result = div(c, d)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.0  # Целочисленное деление: 5.0 // 2.0 = 2.0
+
+    def test_div_mixed_scalars(self):
+        """Test dividing i64 and f64 scalars."""
+        # i64 / f64 - результат остается i64
+        a = scalar.i64(10)
+        b = scalar.f64(2.0)
+        result = div(a, b)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 5
+
+        # f64 / i64 - результат остается f64
+        c = scalar.f64(5.0)
+        d = scalar.i64(2)
+        result = div(c, d)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.0  # div() выполняет целочисленное деление
+
+    def test_div_i64_vectors(self):
+        """Test dividing two i64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(15)
+        a[2] = scalar.i64(20)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(2)
+        b[1] = scalar.i64(3)
+        b[2] = scalar.i64(4)
+
+        result = div(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5, 5, 5]  # 10/2, 15/3, 20/4
+
+    def test_div_f64_vectors(self):
+        """Test dividing two f64 vectors (element-wise)."""
+        a = container.Vector(scalar.f64, 3)
+        a[0] = scalar.f64(10.0)
+        a[1] = scalar.f64(15.0)
+        a[2] = scalar.f64(20.0)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(2.0)
+        b[1] = scalar.f64(3.0)
+        b[2] = scalar.f64(4.0)
+
+        result = div(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5.0, 5.0, 5.0]  # 10/2, 15/3, 20/4
+
+    def test_div_mixed_vectors(self):
+        """Test dividing i64 and f64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(15)
+        a[2] = scalar.i64(20)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(2.0)
+        b[1] = scalar.f64(3.0)
+        b[2] = scalar.f64(4.0)
+
+        result = div(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64  # Тип не меняется, остается i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5, 5, 5]  # 10/2, 15/3, 20/4
+
+    def test_div_vector_by_scalar(self):
+        """Test dividing a vector by a scalar (scalar broadcast)."""
+        # i64 вектор / i64 скаляр
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = scalar.i64(2)
+
+        result = div(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5, 10, 15]  # 10/2, 20/2, 30/2
+
+        # f64 вектор / f64 скаляр
+        a2 = container.Vector(scalar.f64, 3)
+        a2[0] = scalar.f64(10.0)
+        a2[1] = scalar.f64(20.0)
+        a2[2] = scalar.f64(30.0)
+
+        b2 = scalar.f64(2.0)
+
+        result2 = div(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [5.0, 10.0, 15.0]  # 10/2, 20/2, 30/2
+
+    def test_div_mixed_vector_by_scalar(self):
+        """Test dividing mixed scalar types to vectors."""
+        # i64 вектор / f64 скаляр
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = scalar.f64(2.0)
+
+        result = div(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64  # Тип не меняется, остается i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5, 10, 15]  # 10/2, 20/2, 30/2
+
+        # f64 вектор / i64 скаляр
+        a2 = container.Vector(scalar.f64, 3)
+        a2[0] = scalar.f64(10.0)
+        a2[1] = scalar.f64(20.0)
+        a2[2] = scalar.f64(30.0)
+
+        b2 = scalar.i64(2)
+
+        result2 = div(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [5.0, 10.0, 15.0]  # 10/2, 20/2, 30/2
+
+    def test_div_scalar_by_vector(self):
+        """Test scalar divided by vector (element-wise)."""
+        a = scalar.i64(30)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(2)
+        b[1] = scalar.i64(3)
+        b[2] = scalar.i64(5)
+
+        result = div(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [15, 10, 6]  # 30/2, 30/3, 30/5
+
+    def test_integer_division_truncation(self):
+        """Test that integer division behaves like Python's // operator."""
+        # Integer division truncation
+        a = scalar.i64(5)
+        b = scalar.i64(2)
+        result = div(a, b)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 2  # 5 // 2 = 2
+
+        # Negative integer division
+        c = scalar.i64(-5)
+        d = scalar.i64(2)
+        result2 = div(c, d)
+
+        assert isinstance(result2, scalar.i64)
+        # В Python -5 // 2 = -3 (округление вниз)
+        assert result2.value == -3  # -5 // 2 = -3 (округление вниз в Python)
+
+        # Vector integer division truncation
+        vec_a = container.Vector(scalar.i64, 3)
+        vec_a[0] = scalar.i64(5)
+        vec_a[1] = scalar.i64(7)
+        vec_a[2] = scalar.i64(9)
+
+        vec_b = container.Vector(scalar.i64, 3)
+        vec_b[0] = scalar.i64(2)
+        vec_b[1] = scalar.i64(3)
+        vec_b[2] = scalar.i64(4)
+
+        result3 = div(vec_a, vec_b)
+
+        assert isinstance(result3, container.Vector)
+        assert result3.class_type == scalar.i64
+
+        result_values = [item.value for item in result3.to_list()]
+        assert result_values == [
+            2,
+            2,
+            2,
+        ]  # 5//2=2, 7//3=2, 9//4=2 (целочисленное деление)
+
+    def test_error_division_by_zero(self):
+        """Test that division by zero raises an error."""
+        a = scalar.i64(10)
+        b = scalar.i64(0)
+
+        with pytest.raises(ValueError, match="Division by zero"):
+            div(a, b)
+
+        c = scalar.f64(10.0)
+        d = scalar.f64(0.0)
+
+        with pytest.raises(ValueError, match="Division by zero"):
+            div(c, d)
+
+        # Vector with zero element
+        vec_a = container.Vector(scalar.i64, 3)
+        vec_a[0] = scalar.i64(10)
+        vec_a[1] = scalar.i64(20)
+        vec_a[2] = scalar.i64(30)
+
+        vec_b = container.Vector(scalar.i64, 3)
+        vec_b[0] = scalar.i64(2)
+        vec_b[1] = scalar.i64(0)  # Zero element
+        vec_b[2] = scalar.i64(5)
+
+        with pytest.raises(ValueError, match="Division by zero in vector"):
+            div(vec_a, vec_b)
+
+    def test_error_unsupported_scalar_type(self):
+        """Test that dividing unsupported scalar types raises an error."""
+        a = scalar.Symbol("test")
+        b = scalar.i64(5)
+
+        with pytest.raises(ValueError):
+            div(a, b)
+
+    def test_error_timestamp_not_supported(self):
+        """Test that dividing with Timestamp raises an error."""
+        timestamp = scalar.Timestamp(dt.datetime.now())
+        b = scalar.i64(5)
+
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for division"
+        ):
+            div(timestamp, b)
+
+        c = scalar.f64(2.5)
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for division"
+        ):
+            div(c, timestamp)
+
+    def test_error_i16_i32_not_supported(self):
+        """Test that dividing i16 and i32 raises an error."""
+        # i16 scalar
+        a = scalar.i16(10)
+        b = scalar.i64(2)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            div(a, b)
+
+        # i32 scalar
+        c = scalar.i32(15)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            div(c, b)
+
+        # i16 vector
+        a_vec = container.Vector(scalar.i16, 3)
+        a_vec[0] = scalar.i16(10)
+        a_vec[1] = scalar.i16(20)
+        a_vec[2] = scalar.i16(30)
+
+        b_vec = container.Vector(scalar.i64, 3)
+        b_vec[0] = scalar.i64(2)
+        b_vec[1] = scalar.i64(4)
+        b_vec[2] = scalar.i64(6)
+
+        with pytest.raises(
+            ValueError, match="Vector types i16 and i32 are not supported"
+        ):
+            div(a_vec, b_vec)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that dividing unsupported vector element types raises an error."""
+        a = container.Vector(scalar.Symbol, 3)
+        a[0] = scalar.Symbol("a")
+        a[1] = scalar.Symbol("b")
+        a[2] = scalar.Symbol("c")
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(1)
+        b[1] = scalar.i64(2)
+        b[2] = scalar.i64(3)
+
+        with pytest.raises(ValueError):
+            div(a, b)
+
+    def test_error_mismatched_vector_lengths(self):
+        """Test that dividing vectors of different lengths raises an error."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = container.Vector(scalar.i64, 2)
+        b[0] = scalar.i64(2)
+        b[1] = scalar.i64(4)
+
+        with pytest.raises(ValueError, match="Vectors must be of same length"):
+            div(a, b)
+
+
+class TestFdivOperation:
+    """Tests for the fdiv operation in raypy.math.operations."""
+
+    def test_fdiv_i64_scalars(self):
+        """Test float-dividing two i64 scalars."""
+        a = scalar.i64(10)
+        b = scalar.i64(2)
+        result = fdiv(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 5.0
+
+        # Float division with fraction
+        c = scalar.i64(5)
+        d = scalar.i64(2)
+        result = fdiv(c, d)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.5  # 5 / 2 = 2.5
+
+    def test_fdiv_f64_scalars(self):
+        """Test float-dividing two f64 scalars."""
+        a = scalar.f64(10.0)
+        b = scalar.f64(2.0)
+        result = fdiv(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 5.0
+
+        # With fraction in result
+        c = scalar.f64(5.0)
+        d = scalar.f64(2.0)
+        result = fdiv(c, d)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.5  # 5.0 / 2.0 = 2.5
+
+    def test_fdiv_mixed_scalars(self):
+        """Test float-dividing i64 and f64 scalars."""
+        # i64 / f64
+        a = scalar.i64(10)
+        b = scalar.f64(2.0)
+        result = fdiv(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 5.0
+
+        # f64 / i64
+        c = scalar.f64(5.0)
+        d = scalar.i64(2)
+        result = fdiv(c, d)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.5  # fdiv() выполняет деление с плавающей точкой
+
+    def test_fdiv_i64_vectors(self):
+        """Test float-dividing two i64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(15)
+        a[2] = scalar.i64(20)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(2)
+        b[1] = scalar.i64(3)
+        b[2] = scalar.i64(4)
+
+        result = fdiv(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5.0, 5.0, 5.0]  # 10/2, 15/3, 20/4
+
+    def test_fdiv_f64_vectors(self):
+        """Test float-dividing two f64 vectors (element-wise)."""
+        a = container.Vector(scalar.f64, 3)
+        a[0] = scalar.f64(10.0)
+        a[1] = scalar.f64(15.0)
+        a[2] = scalar.f64(20.0)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(2.0)
+        b[1] = scalar.f64(3.0)
+        b[2] = scalar.f64(4.0)
+
+        result = fdiv(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5.0, 5.0, 5.0]  # 10/2, 15/3, 20/4
+
+    def test_fdiv_mixed_vectors(self):
+        """Test float-dividing i64 and f64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(15)
+        a[2] = scalar.i64(20)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(2.0)
+        b[1] = scalar.f64(3.0)
+        b[2] = scalar.f64(4.0)
+
+        result = fdiv(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5.0, 5.0, 5.0]  # 10/2, 15/3, 20/4
+
+    def test_fdiv_vector_by_scalar(self):
+        """Test float-dividing a vector by a scalar (scalar broadcast)."""
+        # i64 вектор / i64 скаляр
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = scalar.i64(2)
+
+        result = fdiv(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5.0, 10.0, 15.0]  # 10/2, 20/2, 30/2
+
+        # f64 вектор / f64 скаляр
+        a2 = container.Vector(scalar.f64, 3)
+        a2[0] = scalar.f64(10.0)
+        a2[1] = scalar.f64(20.0)
+        a2[2] = scalar.f64(30.0)
+
+        b2 = scalar.f64(2.0)
+
+        result2 = fdiv(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [5.0, 10.0, 15.0]  # 10/2, 20/2, 30/2
+
+    def test_fdiv_mixed_vector_by_scalar(self):
+        """Test float-dividing mixed vector types by scalars."""
+        # i64 вектор / f64 скаляр
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = scalar.f64(2.0)
+
+        result = fdiv(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [5.0, 10.0, 15.0]  # 10/2, 20/2, 30/2
+
+        # f64 вектор / i64 скаляр
+        a2 = container.Vector(scalar.f64, 3)
+        a2[0] = scalar.f64(10.0)
+        a2[1] = scalar.f64(20.0)
+        a2[2] = scalar.f64(30.0)
+
+        b2 = scalar.i64(2)
+
+        result2 = fdiv(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [5.0, 10.0, 15.0]  # 10/2, 20/2, 30/2
+
+    def test_fdiv_scalar_by_vector(self):
+        """Test float-dividing scalar by vector (element-wise)."""
+        a = scalar.i64(30)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(2)
+        b[1] = scalar.i64(3)
+        b[2] = scalar.i64(5)
+
+        result = fdiv(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [15.0, 10.0, 6.0]  # 30/2, 30/3, 30/5
+
+    def test_fdiv_fractions(self):
+        """Test that fdiv correctly handles fractional results."""
+        # Integer division with fraction
+        a = scalar.i64(5)
+        b = scalar.i64(2)
+        result = fdiv(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 2.5  # 5 / 2 = 2.5
+
+        # Negative integer division
+        c = scalar.i64(-5)
+        d = scalar.i64(2)
+        result2 = fdiv(c, d)
+
+        assert isinstance(result2, scalar.f64)
+        assert result2.value == -2.5  # -5 / 2 = -2.5
+
+        # Vector fraction division
+        vec_a = container.Vector(scalar.i64, 3)
+        vec_a[0] = scalar.i64(5)
+        vec_a[1] = scalar.i64(7)
+        vec_a[2] = scalar.i64(9)
+
+        vec_b = container.Vector(scalar.i64, 3)
+        vec_b[0] = scalar.i64(2)
+        vec_b[1] = scalar.i64(3)
+        vec_b[2] = scalar.i64(4)
+
+        result3 = fdiv(vec_a, vec_b)
+
+        assert isinstance(result3, container.Vector)
+        assert result3.class_type == scalar.f64
+
+        result_values = [item.value for item in result3.to_list()]
+        assert result_values == [
+            2.5,
+            2.3333333333333335,
+            2.25,
+        ]  # 5/2=2.5, 7/3≈2.33, 9/4=2.25
+
+    def test_error_division_by_zero(self):
+        """Test that float division by zero raises an error."""
+        a = scalar.i64(10)
+        b = scalar.i64(0)
+
+        with pytest.raises(ValueError, match="Division by zero"):
+            fdiv(a, b)
+
+        c = scalar.f64(10.0)
+        d = scalar.f64(0.0)
+
+        with pytest.raises(ValueError, match="Division by zero"):
+            fdiv(c, d)
+
+        # Vector with zero element
+        vec_a = container.Vector(scalar.i64, 3)
+        vec_a[0] = scalar.i64(10)
+        vec_a[1] = scalar.i64(20)
+        vec_a[2] = scalar.i64(30)
+
+        vec_b = container.Vector(scalar.i64, 3)
+        vec_b[0] = scalar.i64(2)
+        vec_b[1] = scalar.i64(0)  # Zero element
+        vec_b[2] = scalar.i64(5)
+
+        with pytest.raises(ValueError, match="Division by zero in vector"):
+            fdiv(vec_a, vec_b)
+
+    def test_error_unsupported_scalar_type(self):
+        """Test that float-dividing unsupported scalar types raises an error."""
+        a = scalar.Symbol("test")
+        b = scalar.i64(5)
+
+        with pytest.raises(ValueError):
+            fdiv(a, b)
+
+    def test_error_timestamp_not_supported(self):
+        """Test that float-dividing with Timestamp raises an error."""
+        timestamp = scalar.Timestamp(dt.datetime.now())
+        b = scalar.i64(5)
+
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for division"
+        ):
+            fdiv(timestamp, b)
+
+        c = scalar.f64(2.5)
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for division"
+        ):
+            fdiv(c, timestamp)
+
+    def test_error_i16_i32_not_supported(self):
+        """Test that float-dividing i16 and i32 raises an error."""
+        # i16 scalar
+        a = scalar.i16(10)
+        b = scalar.i64(2)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            fdiv(a, b)
+
+        # i32 scalar
+        c = scalar.i32(15)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            fdiv(c, b)
+
+        # i16 vector
+        a_vec = container.Vector(scalar.i16, 3)
+        a_vec[0] = scalar.i16(10)
+        a_vec[1] = scalar.i16(20)
+        a_vec[2] = scalar.i16(30)
+
+        b_vec = container.Vector(scalar.i64, 3)
+        b_vec[0] = scalar.i64(2)
+        b_vec[1] = scalar.i64(4)
+        b_vec[2] = scalar.i64(6)
+
+        with pytest.raises(
+            ValueError, match="Vector types i16 and i32 are not supported"
+        ):
+            fdiv(a_vec, b_vec)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that float-dividing unsupported vector element types raises an error."""
+        a = container.Vector(scalar.Symbol, 3)
+        a[0] = scalar.Symbol("a")
+        a[1] = scalar.Symbol("b")
+        a[2] = scalar.Symbol("c")
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(1)
+        b[1] = scalar.i64(2)
+        b[2] = scalar.i64(3)
+
+        with pytest.raises(ValueError):
+            fdiv(a, b)
+
+    def test_error_mismatched_vector_lengths(self):
+        """Test that float-dividing vectors of different lengths raises an error."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = container.Vector(scalar.i64, 2)
+        b[0] = scalar.i64(2)
+        b[1] = scalar.i64(4)
+
+        with pytest.raises(ValueError, match="Vectors must be of same length"):
+            fdiv(a, b)

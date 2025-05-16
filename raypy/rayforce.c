@@ -1381,6 +1381,105 @@ static PyObject* RayObject_ray_sub(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Multiplication operation for RayObjects
+ */
+static PyObject* RayObject_ray_mul(RayObject* self, PyObject* args) {
+    RayObject* other;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || other->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot multiply NULL objects");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's multiply operation directly
+    result->obj = ray_mul(self->obj, other->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform multiplication operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
+/*
+ * Division operation for RayObjects
+ */
+static PyObject* RayObject_ray_div(RayObject* self, PyObject* args) {
+    RayObject* other;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || other->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot divide NULL objects");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's divide operation directly
+    result->obj = ray_div(self->obj, other->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform division operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
+/*
+ * Floating-point division operation for RayObjects
+ */
+static PyObject* RayObject_ray_fdiv(RayObject* self, PyObject* args) {
+    RayObject* other;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || other->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot divide NULL objects");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's floating-point divide operation directly
+    result->obj = ray_fdiv(self->obj, other->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform floating-point division operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1540,6 +1639,18 @@ static PyMethodDef RayObject_methods[] = {
     // Subtraction method
     {"ray_sub", (PyCFunction)RayObject_ray_sub, METH_VARARGS,
      "Subtract two RayObjects"},
+     
+    // Multiplication method
+    {"ray_mul", (PyCFunction)RayObject_ray_mul, METH_VARARGS,
+     "Multiply two RayObjects"},
+     
+    // Division method
+    {"ray_div", (PyCFunction)RayObject_ray_div, METH_VARARGS,
+     "Divide two RayObjects"},
+     
+    // Floating-point division method
+    {"ray_fdiv", (PyCFunction)RayObject_ray_fdiv, METH_VARARGS,
+     "Perform floating-point division of two RayObjects"},
     
     {NULL, NULL, 0, NULL}
 };
