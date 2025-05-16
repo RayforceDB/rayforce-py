@@ -13,6 +13,7 @@ ray_avg_method = "ray_avg"
 ray_med_method = "ray_med"
 ray_dev_method = "ray_dev"
 ray_min_method = "ray_min"
+ray_max_method = "ray_max"
 
 
 def add(
@@ -821,5 +822,43 @@ def min(
         ptr = getattr(r.RayObject, ray_min_method)(x.ptr)
     except Exception as e:
         raise TypeError(f"Error when calling {ray_min_method} - {str(e)}")
+
+    return container.from_pointer_to_raypy_type(ptr)
+
+
+def max(
+    x: scalar.i64 | scalar.f64 | container.Vector[scalar.i64],
+) -> scalar.i64 | scalar.f64:
+    """
+    Find the maximum value in a scalar or vector.
+
+    For a scalar, this will return the scalar itself.
+    For a vector, this will find the maximum value of all elements.
+
+    Args:
+        x: Value to find maximum of
+
+    Returns:
+        Maximum value as a scalar (same type as input for scalars, i64 for i64 vectors)
+
+    Raises:
+        ValueError: If the input vector is not of type i64
+        TypeError: If there's an error during the maximum calculation
+    """
+    if isinstance(x, container.Vector):
+        if x.class_type == scalar.f64:
+            raise ValueError("F64 vectors are not supported for maximum operation")
+        elif x.class_type != scalar.i64:
+            raise ValueError("Vector must be of type i64")
+
+    elif not isinstance(x, (scalar.i64, scalar.f64)):
+        raise ValueError(
+            "Input must be a scalar of type i64 or f64, or a vector of type i64"
+        )
+
+    try:
+        ptr = getattr(r.RayObject, ray_max_method)(x.ptr)
+    except Exception as e:
+        raise TypeError(f"Error when calling {ray_max_method} - {str(e)}")
 
     return container.from_pointer_to_raypy_type(ptr)

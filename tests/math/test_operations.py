@@ -1,7 +1,20 @@
 import datetime as dt
 import datetime
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum, avg, med, dev, min
+from raypy.math.operations import (
+    add,
+    sub,
+    mul,
+    div,
+    fdiv,
+    mod,
+    sum,
+    avg,
+    med,
+    dev,
+    min,
+    max,
+)
 import math
 import pytest
 from unittest import TestCase
@@ -2556,4 +2569,91 @@ class TestMinOperation(TestCase):
         vec[0] = scalar.i64(42)
 
         result = min(vec)
+        assert result.value == 42
+
+
+class TestMaxOperation(TestCase):
+    def test_max_scalar(self):
+        """Test max of scalar values returns the scalar itself"""
+        # i64 scalar
+        result = max(scalar.i64(42))
+        assert isinstance(result, scalar.i64)
+        assert result.value == 42
+
+        # f64 scalar
+        result = max(scalar.f64(3.14))
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.14
+
+    def test_max_i64_vector(self):
+        """Test max of i64 vector returns the maximum value"""
+        # Regular vector
+        vec = container.Vector(scalar.i64, 5)
+        vec[0] = scalar.i64(5)
+        vec[1] = scalar.i64(3)
+        vec[2] = scalar.i64(9)
+        vec[3] = scalar.i64(1)
+        vec[4] = scalar.i64(7)
+
+        result = max(vec)
+        assert isinstance(result, scalar.i64)
+        assert result.value == 9
+
+        # Vector with repeated maximum
+        vec2 = container.Vector(scalar.i64, 5)
+        vec2[0] = scalar.i64(5)
+        vec2[1] = scalar.i64(3)
+        vec2[2] = scalar.i64(9)
+        vec2[3] = scalar.i64(9)
+        vec2[4] = scalar.i64(7)
+
+        result = max(vec2)
+        assert result.value == 9
+
+    def test_max_empty_vector(self):
+        """Test max of empty vector returns 0"""
+        vec = container.Vector(scalar.i64, 0)
+        result = max(vec)
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+    def test_error_unsupported_vector_type(self):
+        """Test max raises error for F64 vectors"""
+        vec = container.Vector(scalar.f64, 3)
+        vec[0] = scalar.f64(1.0)
+        vec[1] = scalar.f64(2.0)
+        vec[2] = scalar.f64(3.0)
+
+        with pytest.raises(
+            ValueError, match="F64 vectors are not supported for maximum operation"
+        ):
+            max(vec)
+
+    def test_max_negative_values(self):
+        """Test max with negative values in vector"""
+        vec = container.Vector(scalar.i64, 5)
+        vec[0] = scalar.i64(5)
+        vec[1] = scalar.i64(-3)
+        vec[2] = scalar.i64(2)
+        vec[3] = scalar.i64(-8)
+        vec[4] = scalar.i64(4)
+
+        result = max(vec)
+        assert result.value == 5
+
+    def test_error_unsupported_type(self):
+        """Test max raises error for unsupported types"""
+        ts = scalar.Timestamp(dt.datetime.now())
+        with pytest.raises(
+            ValueError,
+            match="Input must be a scalar of type i64 or f64, or a vector of type i64",
+        ):
+            max(ts)
+
+    def test_max_single_element_vector(self):
+        """Test max of vector with single element returns that element"""
+        vec = container.Vector(scalar.i64, 1)
+        vec[0] = scalar.i64(42)
+
+        result = max(vec)
         assert result.value == 42

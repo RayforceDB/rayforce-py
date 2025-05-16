@@ -1738,6 +1738,57 @@ static PyObject* RayObject_ray_min(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Maximum value operation for RayObject vectors
+ */
+static PyObject* RayObject_ray_max(RayObject* self, PyObject* args) {
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute maximum of NULL object");
+        return NULL;
+    }
+    
+    // Handle empty vector case
+    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0) {
+        // Create a new RayObject for the result
+        RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+        if (result == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+            return NULL;
+        }
+        
+        result->obj = f64(0.0);
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject*)result;
+    }
+    
+    // F64 vectors are not supported by the core's ray_max function
+    if (self->obj->type == TYPE_F64) {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for maximum operation");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's maximum operation directly
+    result->obj = ray_max(self->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform maximum operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1933,6 +1984,10 @@ static PyMethodDef RayObject_methods[] = {
     // Minimum method
     {"ray_min", (PyCFunction)RayObject_ray_min, METH_VARARGS,
      "Compute the minimum value of a vector or scalar"},
+    
+    // Maximum method
+    {"ray_max", (PyCFunction)RayObject_ray_max, METH_VARARGS,
+     "Compute the maximum value of a vector or scalar"},
     
     {NULL, NULL, 0, NULL}
 };
