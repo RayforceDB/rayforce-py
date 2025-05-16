@@ -1580,6 +1580,88 @@ static PyObject* RayObject_ray_sum(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Average operation for RayObject vectors and scalars
+ */
+static PyObject* RayObject_ray_avg(RayObject* self, PyObject* args) {
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute average of NULL object");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result (always f64)
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Handle scalar case - convert to f64
+    if (self->obj->type == -TYPE_I64) {
+        result->obj = f64((f64_t)self->obj->i64);
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to convert i64 to f64");
+            return NULL;
+        }
+        return (PyObject*)result;
+    } else if (self->obj->type == -TYPE_F64) {
+        result->obj = f64(self->obj->f64);
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create f64 result");
+            return NULL;
+        }
+        return (PyObject*)result;
+    }
+    
+    // Handle vector case
+    if (self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) {
+        // Handle empty vector case
+        if (self->obj->len == 0) {
+            result->obj = f64(0.0);
+            if (result->obj == NULL) {
+                Py_DECREF(result);
+                PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+                return NULL;
+            }
+            return (PyObject*)result;
+        }
+        
+        // For vectors, compute the average
+        if (self->obj->type == TYPE_I64) {
+            i64_t sum = 0;
+            i64_t* data = AS_I64(self->obj);
+            for (u64_t i = 0; i < self->obj->len; i++) {
+                sum += data[i];
+            }
+            // Convert to float and divide by length for average
+            result->obj = f64((f64_t)sum / (f64_t)self->obj->len);
+        } else if (self->obj->type == TYPE_F64) {
+            f64_t sum = 0.0;
+            f64_t* data = AS_F64(self->obj);
+            for (u64_t i = 0; i < self->obj->len; i++) {
+                sum += data[i];
+            }
+            // Divide by length for average
+            result->obj = f64(sum / (f64_t)self->obj->len);
+        }
+        
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to compute average");
+            return NULL;
+        }
+        
+        return (PyObject*)result;
+    }
+    
+    // Unsupported type
+    Py_DECREF(result);
+    PyErr_SetString(PyExc_TypeError, "Unsupported type for average operation. Must be i64, f64, or vector of i64/f64");
+    return NULL;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1759,6 +1841,10 @@ static PyMethodDef RayObject_methods[] = {
     // Sum method
     {"ray_sum", (PyCFunction)RayObject_ray_sum, METH_VARARGS,
      "Sum all elements in a vector"},
+    
+    // Average method
+    {"ray_avg", (PyCFunction)RayObject_ray_avg, METH_VARARGS,
+     "Compute the average of a vector or scalar"},
     
     {NULL, NULL, 0, NULL}
 };

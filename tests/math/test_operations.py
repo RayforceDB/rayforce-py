@@ -1,7 +1,7 @@
 import pytest
 import datetime as dt
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum
+from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum, avg
 
 
 class TestAddOperation:
@@ -2015,3 +2015,119 @@ class TestSumOperation:
 
         with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
             sum(ts_vec)
+
+
+class TestAvgOperation:
+    """Tests for the avg operation in raypy.math.operations."""
+
+    def test_avg_scalar(self):
+        """Test averaging scalar values (converts to f64)."""
+        # i64 scalar
+        a = scalar.i64(42)
+        result = avg(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 42.0
+
+        # f64 scalar
+        b = scalar.f64(3.14)
+        result = avg(b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.14
+
+    def test_avg_i64_vector(self):
+        """Test averaging i64 vector elements."""
+        # Create vector [1, 2, 3, 4, 5]
+        a = container.Vector(scalar.i64, 5)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+        a[3] = scalar.i64(4)
+        a[4] = scalar.i64(5)
+
+        result = avg(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.0  # (1 + 2 + 3 + 4 + 5) / 5 = 3.0
+
+        # Test empty vector
+        empty = container.Vector(scalar.i64, 0)
+        result = avg(empty)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+    def test_avg_f64_vector(self):
+        """Test averaging f64 vector elements."""
+        # Create vector [1.5, 2.5, 3.5, 4.5, 5.5]
+        a = container.Vector(scalar.f64, 5)
+        a[0] = scalar.f64(1.5)
+        a[1] = scalar.f64(2.5)
+        a[2] = scalar.f64(3.5)
+        a[3] = scalar.f64(4.5)
+        a[4] = scalar.f64(5.5)
+
+        result = avg(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.5  # (1.5 + 2.5 + 3.5 + 4.5 + 5.5) / 5 = 3.5
+
+        # Test empty vector
+        empty = container.Vector(scalar.f64, 0)
+        result = avg(empty)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+    def test_avg_negative_values(self):
+        """Test averaging with negative values."""
+        # Create vector [5, -3, 2, -8, 4]
+        a = container.Vector(scalar.i64, 5)
+        a[0] = scalar.i64(5)
+        a[1] = scalar.i64(-3)
+        a[2] = scalar.i64(2)
+        a[3] = scalar.i64(-8)
+        a[4] = scalar.i64(4)
+
+        result = avg(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0  # (5 - 3 + 2 - 8 + 4) / 5 = 0.0
+
+    def test_error_unsupported_type(self):
+        """Test that providing an unsupported type raises an error."""
+        # Symbol scalar
+        sym = scalar.Symbol("test")
+        with pytest.raises(
+            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+        ):
+            avg(sym)
+
+        # Timestamp scalar
+        ts = scalar.Timestamp(dt.datetime.now())
+        with pytest.raises(
+            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+        ):
+            avg(ts)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that unsupported vector types raise an error."""
+        # Create symbol vector
+        sym_vec = container.Vector(scalar.Symbol, 3)
+        sym_vec[0] = scalar.Symbol("a")
+        sym_vec[1] = scalar.Symbol("b")
+        sym_vec[2] = scalar.Symbol("c")
+
+        with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
+            avg(sym_vec)
+
+        # Create timestamp vector
+        now = dt.datetime.now()
+        ts_vec = container.Vector(scalar.Timestamp, 3)
+        ts_vec[0] = scalar.Timestamp(now)
+        ts_vec[1] = scalar.Timestamp(now + dt.timedelta(seconds=1))
+        ts_vec[2] = scalar.Timestamp(now + dt.timedelta(seconds=2))
+
+        with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
+            avg(ts_vec)
