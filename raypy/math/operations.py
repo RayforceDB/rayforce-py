@@ -12,6 +12,7 @@ ray_sum_method = "ray_sum"
 ray_avg_method = "ray_avg"
 ray_med_method = "ray_med"
 ray_dev_method = "ray_dev"
+ray_min_method = "ray_min"
 
 
 def add(
@@ -750,39 +751,75 @@ def dev(
     x: scalar.i64 | scalar.f64 | container.Vector[scalar.i64],
 ) -> scalar.f64:
     """
-    Calculate the standard deviation of a scalar or all elements in a vector.
+    Calculate the standard deviation of a scalar or vector.
 
-    For scalar inputs, the function returns 0.0 as a standard deviation of a single value.
-    For vector inputs, it returns the standard deviation of all elements.
-    For empty vectors, returns nan.
-    For vectors with a single element, returns 0.0.
-
-    Note: F64 vectors are not supported by the core implementation.
+    For a scalar, this will always return 0.0.
+    For a vector, this will calculate the standard deviation of all values.
 
     Args:
-        x: Scalar (i64, f64) or vector of i64 values
+        x: Value to calculate standard deviation of
 
     Returns:
-        Scalar f64 value representing the standard deviation
+        Standard deviation as a f64 scalar
 
     Raises:
-        ValueError: If input is not a supported type
-        TypeError: If there's an error during the calculation
+        ValueError: If the input vector is not of type i64
+        TypeError: If there's an error during the standard deviation calculation
     """
-    if not isinstance(x, (scalar.i64, scalar.f64, container.Vector)):
-        raise ValueError("Input must be a scalar or vector of type i64 or f64")
-
     if isinstance(x, container.Vector):
         if x.class_type == scalar.f64:
             raise ValueError(
                 "F64 vectors are not supported for standard deviation operation"
             )
-        if x.class_type not in (scalar.i64,):
+        elif x.class_type != scalar.i64:
             raise ValueError("Vector must be of type i64")
+
+    elif not isinstance(x, (scalar.i64, scalar.f64)):
+        raise ValueError(
+            "Input must be a scalar of type i64 or f64, or a vector of type i64"
+        )
 
     try:
         ptr = getattr(r.RayObject, ray_dev_method)(x.ptr)
     except Exception as e:
         raise TypeError(f"Error when calling {ray_dev_method} - {str(e)}")
+
+    return container.from_pointer_to_raypy_type(ptr)
+
+
+def min(
+    x: scalar.i64 | scalar.f64 | container.Vector[scalar.i64],
+) -> scalar.i64 | scalar.f64:
+    """
+    Find the minimum value in a scalar or vector.
+
+    For a scalar, this will return the scalar itself.
+    For a vector, this will find the minimum value of all elements.
+
+    Args:
+        x: Value to find minimum of
+
+    Returns:
+        Minimum value as a scalar (same type as input for scalars, i64 for i64 vectors)
+
+    Raises:
+        ValueError: If the input vector is not of type i64
+        TypeError: If there's an error during the minimum calculation
+    """
+    if isinstance(x, container.Vector):
+        if x.class_type == scalar.f64:
+            raise ValueError("F64 vectors are not supported for minimum operation")
+        elif x.class_type != scalar.i64:
+            raise ValueError("Vector must be of type i64")
+
+    elif not isinstance(x, (scalar.i64, scalar.f64)):
+        raise ValueError(
+            "Input must be a scalar of type i64 or f64, or a vector of type i64"
+        )
+
+    try:
+        ptr = getattr(r.RayObject, ray_min_method)(x.ptr)
+    except Exception as e:
+        raise TypeError(f"Error when calling {ray_min_method} - {str(e)}")
 
     return container.from_pointer_to_raypy_type(ptr)

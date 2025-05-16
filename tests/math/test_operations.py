@@ -1,8 +1,10 @@
-import pytest
 import datetime as dt
+import datetime
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum, avg, med, dev
+from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum, avg, med, dev, min
 import math
+import pytest
+from unittest import TestCase
 
 
 class TestAddOperation:
@@ -2445,14 +2447,16 @@ class TestDevOperation:
         # Symbol scalar
         sym = scalar.Symbol("test")
         with pytest.raises(
-            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+            ValueError,
+            match="Input must be a scalar of type i64 or f64, or a vector of type i64",
         ):
             dev(sym)
 
         # Timestamp scalar
         ts = scalar.Timestamp(dt.datetime.now())
         with pytest.raises(
-            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+            ValueError,
+            match="Input must be a scalar of type i64 or f64, or a vector of type i64",
         ):
             dev(ts)
 
@@ -2466,3 +2470,90 @@ class TestDevOperation:
 
         assert isinstance(result, scalar.f64)
         assert result.value == 0.0  # Single element vector has std dev of 0
+
+
+class TestMinOperation(TestCase):
+    def test_min_scalar(self):
+        """Test min of scalar values returns the scalar itself"""
+        # i64 scalar
+        result = min(scalar.i64(42))
+        assert isinstance(result, scalar.i64)
+        assert result.value == 42
+
+        # f64 scalar
+        result = min(scalar.f64(3.14))
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.14
+
+    def test_min_i64_vector(self):
+        """Test min of i64 vector returns the minimum value"""
+        # Regular vector
+        vec = container.Vector(scalar.i64, 5)
+        vec[0] = scalar.i64(5)
+        vec[1] = scalar.i64(3)
+        vec[2] = scalar.i64(9)
+        vec[3] = scalar.i64(1)
+        vec[4] = scalar.i64(7)
+
+        result = min(vec)
+        assert isinstance(result, scalar.i64)
+        assert result.value == 1
+
+        # Vector with repeated minimum
+        vec2 = container.Vector(scalar.i64, 5)
+        vec2[0] = scalar.i64(5)
+        vec2[1] = scalar.i64(3)
+        vec2[2] = scalar.i64(1)
+        vec2[3] = scalar.i64(1)
+        vec2[4] = scalar.i64(7)
+
+        result = min(vec2)
+        assert result.value == 1
+
+    def test_min_empty_vector(self):
+        """Test min of empty vector returns 0"""
+        vec = container.Vector(scalar.i64, 0)
+        result = min(vec)
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+    def test_error_unsupported_vector_type(self):
+        """Test min raises error for F64 vectors"""
+        vec = container.Vector(scalar.f64, 3)
+        vec[0] = scalar.f64(1.0)
+        vec[1] = scalar.f64(2.0)
+        vec[2] = scalar.f64(3.0)
+
+        with pytest.raises(
+            ValueError, match="F64 vectors are not supported for minimum operation"
+        ):
+            min(vec)
+
+    def test_min_negative_values(self):
+        """Test min with negative values in vector"""
+        vec = container.Vector(scalar.i64, 5)
+        vec[0] = scalar.i64(5)
+        vec[1] = scalar.i64(-3)
+        vec[2] = scalar.i64(2)
+        vec[3] = scalar.i64(-8)
+        vec[4] = scalar.i64(4)
+
+        result = min(vec)
+        assert result.value == -8
+
+    def test_error_unsupported_type(self):
+        """Test min raises error for unsupported types"""
+        ts = scalar.Timestamp(dt.datetime.now())
+        with pytest.raises(
+            ValueError,
+            match="Input must be a scalar of type i64 or f64, or a vector of type i64",
+        ):
+            min(ts)
+
+    def test_min_single_element_vector(self):
+        """Test min of vector with single element returns that element"""
+        vec = container.Vector(scalar.i64, 1)
+        vec[0] = scalar.i64(42)
+
+        result = min(vec)
+        assert result.value == 42
