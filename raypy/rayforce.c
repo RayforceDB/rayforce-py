@@ -1513,6 +1513,73 @@ static PyObject* RayObject_ray_mod(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Sum operation for RayObject vectors
+ */
+static PyObject* RayObject_ray_sum(RayObject* self, PyObject* args) {
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot sum NULL object");
+        return NULL;
+    }
+    
+    // Check if the object is a vector
+    if (self->obj->type <= 0 || self->obj->type > TYPE_ENUM) {
+        PyErr_SetString(PyExc_TypeError, "Object must be a vector for sum operation");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Handle empty vector case
+    if (self->obj->len == 0) {
+        if (self->obj->type == TYPE_F64) {
+            result->obj = f64(0.0);
+        } else {
+            result->obj = i64(0);
+        }
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject*)result;
+    }
+    
+    // For numeric vectors, compute the sum
+    if (self->obj->type == TYPE_I64) {
+        i64_t sum = 0;
+        i64_t* data = AS_I64(self->obj);
+        for (u64_t i = 0; i < self->obj->len; i++) {
+            sum += data[i];
+        }
+        result->obj = i64(sum);
+    } else if (self->obj->type == TYPE_F64) {
+        f64_t sum = 0.0;
+        f64_t* data = AS_F64(self->obj);
+        for (u64_t i = 0; i < self->obj->len; i++) {
+            sum += data[i];
+        }
+        result->obj = f64(sum);
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_TypeError, "Unsupported vector type for sum operation");
+        return NULL;
+    }
+    
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform sum operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1688,6 +1755,10 @@ static PyMethodDef RayObject_methods[] = {
     // Modulo method
     {"ray_mod", (PyCFunction)RayObject_ray_mod, METH_VARARGS,
      "Perform modulo operation on two RayObjects"},
+    
+    // Sum method
+    {"ray_sum", (PyCFunction)RayObject_ray_sum, METH_VARARGS,
+     "Sum all elements in a vector"},
     
     {NULL, NULL, 0, NULL}
 };

@@ -1,7 +1,7 @@
 import pytest
 import datetime as dt
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub, mul, div, fdiv, mod
+from raypy.math.operations import add, sub, mul, div, fdiv, mod, sum
 
 
 class TestAddOperation:
@@ -1899,3 +1899,119 @@ class TestModOperation:
 
         with pytest.raises(ValueError, match="Vectors must be of same length"):
             mod(a, b)
+
+
+class TestSumOperation:
+    """Tests for the sum operation in raypy.math.operations."""
+
+    def test_sum_scalar(self):
+        """Test summing scalar values (which simply returns the input)."""
+        # i64 scalar
+        a = scalar.i64(42)
+        result = sum(a)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 42
+
+        # f64 scalar
+        b = scalar.f64(3.14)
+        result = sum(b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 3.14
+
+    def test_sum_i64_vector(self):
+        """Test summing i64 vector elements."""
+        # Create vector [1, 2, 3, 4, 5]
+        a = container.Vector(scalar.i64, 5)
+        a[0] = scalar.i64(1)
+        a[1] = scalar.i64(2)
+        a[2] = scalar.i64(3)
+        a[3] = scalar.i64(4)
+        a[4] = scalar.i64(5)
+
+        result = sum(a)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 15  # 1 + 2 + 3 + 4 + 5 = 15
+
+        # Test empty vector
+        empty = container.Vector(scalar.i64, 0)
+        result = sum(empty)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 0
+
+    def test_sum_f64_vector(self):
+        """Test summing f64 vector elements."""
+        # Create vector [1.5, 2.5, 3.5, 4.5, 5.5]
+        a = container.Vector(scalar.f64, 5)
+        a[0] = scalar.f64(1.5)
+        a[1] = scalar.f64(2.5)
+        a[2] = scalar.f64(3.5)
+        a[3] = scalar.f64(4.5)
+        a[4] = scalar.f64(5.5)
+
+        result = sum(a)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 17.5  # 1.5 + 2.5 + 3.5 + 4.5 + 5.5 = 17.5
+
+        # Test empty vector
+        empty = container.Vector(scalar.f64, 0)
+        result = sum(empty)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 0.0
+
+    def test_sum_negative_values(self):
+        """Test summing with negative values."""
+        # Create vector [5, -3, 2, -8, 4]
+        a = container.Vector(scalar.i64, 5)
+        a[0] = scalar.i64(5)
+        a[1] = scalar.i64(-3)
+        a[2] = scalar.i64(2)
+        a[3] = scalar.i64(-8)
+        a[4] = scalar.i64(4)
+
+        result = sum(a)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 0  # 5 - 3 + 2 - 8 + 4 = 0
+
+    def test_error_unsupported_type(self):
+        """Test that providing an unsupported type raises an error."""
+        # Symbol scalar
+        sym = scalar.Symbol("test")
+        with pytest.raises(
+            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+        ):
+            sum(sym)
+
+        # Timestamp scalar
+        ts = scalar.Timestamp(dt.datetime.now())
+        with pytest.raises(
+            ValueError, match="Input must be a scalar or vector of type i64 or f64"
+        ):
+            sum(ts)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that unsupported vector types raise an error."""
+        # Create symbol vector
+        sym_vec = container.Vector(scalar.Symbol, 3)
+        sym_vec[0] = scalar.Symbol("a")
+        sym_vec[1] = scalar.Symbol("b")
+        sym_vec[2] = scalar.Symbol("c")
+
+        with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
+            sum(sym_vec)
+
+        # Create timestamp vector
+        now = dt.datetime.now()
+        ts_vec = container.Vector(scalar.Timestamp, 3)
+        ts_vec[0] = scalar.Timestamp(now)
+        ts_vec[1] = scalar.Timestamp(now + dt.timedelta(seconds=1))
+        ts_vec[2] = scalar.Timestamp(now + dt.timedelta(seconds=2))
+
+        with pytest.raises(ValueError, match="Vector must be of type i64 or f64"):
+            sum(ts_vec)

@@ -8,6 +8,7 @@ ray_mul_method = "ray_mul"
 ray_div_method = "ray_div"
 ray_fdiv_method = "ray_fdiv"
 ray_mod_method = "ray_mod"
+ray_sum_method = "ray_sum"
 
 
 def add(
@@ -615,3 +616,44 @@ def mod(
         raise TypeError(f"Error when calling {ray_mod_method} - {str(e)}")
 
     return container.from_pointer_to_raypy_type(ptr)
+
+
+def sum(
+    x: scalar.i64
+    | scalar.f64
+    | container.Vector[scalar.i64]
+    | container.Vector[scalar.f64],
+) -> scalar.i64 | scalar.f64:
+    """
+    Calculate the sum of a scalar or all elements in a vector.
+
+    For scalar inputs, the function returns the input value.
+    For vector inputs, it returns the sum of all elements.
+
+    Args:
+        x: Scalar or vector of i64 or f64 values
+
+    Returns:
+        Scalar value (input value for scalars, sum of elements for vectors)
+
+    Raises:
+        ValueError: If input is not a supported type
+        TypeError: If there's an error during the sum operation
+    """
+    # Handle scalar inputs directly
+    if isinstance(x, (scalar.i64, scalar.f64)):
+        return x
+
+    # Handle vector inputs
+    if isinstance(x, container.Vector):
+        if x.class_type not in (scalar.i64, scalar.f64):
+            raise ValueError("Vector must be of type i64 or f64")
+
+        try:
+            ptr = getattr(r.RayObject, ray_sum_method)(x.ptr)
+        except Exception as e:
+            raise TypeError(f"Error when calling {ray_sum_method} - {str(e)}")
+
+        return container.from_pointer_to_raypy_type(ptr)
+
+    raise ValueError("Input must be a scalar or vector of type i64 or f64")
