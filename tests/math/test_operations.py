@@ -1,7 +1,7 @@
 import pytest
 import datetime as dt
 from raypy.types import scalar, container
-from raypy.math.operations import add, sub, mul, div, fdiv
+from raypy.math.operations import add, sub, mul, div, fdiv, mod
 
 
 class TestAddOperation:
@@ -1527,3 +1527,375 @@ class TestFdivOperation:
 
         with pytest.raises(ValueError, match="Vectors must be of same length"):
             fdiv(a, b)
+
+
+class TestModOperation:
+    """Tests for the mod operation in raypy.math.operations."""
+
+    def test_mod_i64_scalars(self):
+        """Test modulo operation on two i64 scalars."""
+        a = scalar.i64(10)
+        b = scalar.i64(3)
+        result = mod(a, b)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 1  # 10 % 3 = 1
+
+        # Negative modulo behaves like Python's modulo
+        # In Python: -7 % 3 = 2 (always returns positive result for positive divisor)
+        c = scalar.i64(-7)
+        d = scalar.i64(3)
+        result2 = mod(c, d)
+
+        assert isinstance(result2, scalar.i64)
+        assert result2.value == 2  # Python behavior: -7 % 3 = 2
+
+    def test_mod_f64_scalars(self):
+        """Test modulo operation on two f64 scalars."""
+        a = scalar.f64(10.0)
+        b = scalar.f64(3.0)
+        result = mod(a, b)
+
+        assert isinstance(result, scalar.f64)
+        assert result.value == 1.0  # 10.0 % 3.0 = 1.0
+
+        # Negative modulo with f64 follows Python's behavior
+        c = scalar.f64(-7.0)
+        d = scalar.f64(3.0)
+        result2 = mod(c, d)
+
+        assert isinstance(result2, scalar.f64)
+        assert result2.value == 2.0  # Python behavior: -7.0 % 3.0 = 2.0
+
+    def test_mod_mixed_scalars(self):
+        """Test modulo operation with i64 and f64 scalars."""
+        # i64 % f64
+        a = scalar.i64(10)
+        b = scalar.f64(3.0)
+        result = mod(a, b)
+
+        # Result is converted to f64 when mixing with f64
+        assert isinstance(result, scalar.f64)
+        assert result.value == 1.0
+
+        # f64 % i64
+        c = scalar.f64(10.0)
+        d = scalar.i64(3)
+        result2 = mod(c, d)
+
+        assert isinstance(result2, scalar.f64)
+        assert result2.value == 1.0
+
+    def test_mod_i64_vectors(self):
+        """Test modulo operation on two i64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(11)
+        a[2] = scalar.i64(12)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(3)
+        b[1] = scalar.i64(4)
+        b[2] = scalar.i64(5)
+
+        result = mod(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [1, 3, 2]  # 10%3=1, 11%4=3, 12%5=2
+
+    def test_mod_f64_vectors(self):
+        """Test modulo operation on two f64 vectors (element-wise)."""
+        a = container.Vector(scalar.f64, 3)
+        a[0] = scalar.f64(10.0)
+        a[1] = scalar.f64(11.0)
+        a[2] = scalar.f64(12.0)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(3.0)
+        b[1] = scalar.f64(4.0)
+        b[2] = scalar.f64(5.0)
+
+        result = mod(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [
+            1.0,
+            3.0,
+            2.0,
+        ]  # 10.0%3.0=1.0, 11.0%4.0=3.0, 12.0%5.0=2.0
+
+    def test_mod_mixed_vectors(self):
+        """Test modulo operation on i64 and f64 vectors (element-wise)."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(11)
+        a[2] = scalar.i64(12)
+
+        b = container.Vector(scalar.f64, 3)
+        b[0] = scalar.f64(3.0)
+        b[1] = scalar.f64(4.0)
+        b[2] = scalar.f64(5.0)
+
+        result = mod(a, b)
+
+        assert isinstance(result, container.Vector)
+        # When mixing i64 and f64, result is converted to f64
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [1.0, 3.0, 2.0]  # 10%3=1, 11%4=3, 12%5=2
+
+    def test_mod_vector_by_scalar(self):
+        """Test modulo operation of a vector by a scalar (scalar broadcast)."""
+        # i64 vector % i64 scalar
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(11)
+        a[2] = scalar.i64(12)
+
+        b = scalar.i64(3)
+
+        result = mod(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [1, 2, 0]  # 10%3=1, 11%3=2, 12%3=0
+
+        # f64 vector % f64 scalar
+        a2 = container.Vector(scalar.f64, 3)
+        a2[0] = scalar.f64(10.0)
+        a2[1] = scalar.f64(11.0)
+        a2[2] = scalar.f64(12.0)
+
+        b2 = scalar.f64(3.0)
+
+        result2 = mod(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [
+            1.0,
+            2.0,
+            0.0,
+        ]  # 10.0%3.0=1.0, 11.0%3.0=2.0, 12.0%3.0=0.0
+
+    def test_mod_mixed_vector_by_scalar(self):
+        """Test modulo operation with mixed vector and scalar types."""
+        # i64 vector % f64 scalar
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(11)
+        a[2] = scalar.i64(12)
+
+        b = scalar.f64(3.0)
+
+        result = mod(a, b)
+
+        assert isinstance(result, container.Vector)
+        # When mixing i64 and f64, result is converted to f64
+        assert result.class_type == scalar.f64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [1.0, 2.0, 0.0]  # 10%3=1, 11%3=2, 12%3=0
+
+        # f64 vector % i64 scalar
+        a2 = container.Vector(scalar.f64, 3)
+        a2[0] = scalar.f64(10.0)
+        a2[1] = scalar.f64(11.0)
+        a2[2] = scalar.f64(12.0)
+
+        b2 = scalar.i64(3)
+
+        result2 = mod(a2, b2)
+
+        assert isinstance(result2, container.Vector)
+        assert result2.class_type == scalar.f64
+
+        result_values2 = [item.value for item in result2.to_list()]
+        assert result_values2 == [1.0, 2.0, 0.0]  # 10.0%3=1.0, 11.0%3=2.0, 12.0%3=0.0
+
+    def test_mod_scalar_by_vector(self):
+        """Test scalar modulo vector (element-wise)."""
+        a = scalar.i64(10)
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(3)
+        b[1] = scalar.i64(4)
+        b[2] = scalar.i64(5)
+
+        result = mod(a, b)
+
+        assert isinstance(result, container.Vector)
+        assert result.class_type == scalar.i64
+
+        result_values = [item.value for item in result.to_list()]
+        assert result_values == [1, 2, 0]  # 10%3=1, 10%4=2, 10%5=0
+
+    def test_negative_modulo(self):
+        """Test that modulo operation handles negative numbers like Python's modulo."""
+        # In Python: -7 % 3 = 2 (always returns positive result for positive divisor)
+
+        # Testing with negative dividend
+        a = scalar.i64(-7)
+        b = scalar.i64(3)
+        result = mod(a, b)
+
+        assert isinstance(result, scalar.i64)
+        assert result.value == 2  # Python behavior: -7 % 3 = 2
+
+        # Testing with negative divisor
+        c = scalar.i64(7)
+        d = scalar.i64(-3)
+        result2 = mod(c, d)
+
+        assert isinstance(result2, scalar.i64)
+        assert result2.value == -2  # Python behavior: 7 % -3 = -2
+
+        # Testing with both negative
+        e = scalar.i64(-7)
+        f = scalar.i64(-3)
+        result3 = mod(e, f)
+
+        assert isinstance(result3, scalar.i64)
+        assert result3.value == -1  # Python behavior: -7 % -3 = -1
+
+        # Vector negative modulo
+        vec_a = container.Vector(scalar.i64, 3)
+        vec_a[0] = scalar.i64(-7)
+        vec_a[1] = scalar.i64(-9)
+        vec_a[2] = scalar.i64(-11)
+
+        vec_b = container.Vector(scalar.i64, 3)
+        vec_b[0] = scalar.i64(3)
+        vec_b[1] = scalar.i64(4)
+        vec_b[2] = scalar.i64(5)
+
+        result4 = mod(vec_a, vec_b)
+
+        assert isinstance(result4, container.Vector)
+        assert result4.class_type == scalar.i64
+
+        result_values = [item.value for item in result4.to_list()]
+        assert result_values == [2, 3, 4]  # Python behavior: -7%3=2, -9%4=3, -11%5=4
+
+    def test_error_division_by_zero(self):
+        """Test that modulo by zero raises an error."""
+        a = scalar.i64(10)
+        b = scalar.i64(0)
+
+        with pytest.raises(ValueError, match="Division by zero"):
+            mod(a, b)
+
+        c = scalar.f64(10.0)
+        d = scalar.f64(0.0)
+
+        with pytest.raises(ValueError, match="Division by zero"):
+            mod(c, d)
+
+        # Vector with zero element
+        vec_a = container.Vector(scalar.i64, 3)
+        vec_a[0] = scalar.i64(10)
+        vec_a[1] = scalar.i64(20)
+        vec_a[2] = scalar.i64(30)
+
+        vec_b = container.Vector(scalar.i64, 3)
+        vec_b[0] = scalar.i64(3)
+        vec_b[1] = scalar.i64(0)  # Zero element
+        vec_b[2] = scalar.i64(5)
+
+        with pytest.raises(ValueError, match="Division by zero in vector"):
+            mod(vec_a, vec_b)
+
+    def test_error_unsupported_scalar_type(self):
+        """Test that modulo with unsupported scalar types raises an error."""
+        a = scalar.Symbol("test")
+        b = scalar.i64(5)
+
+        with pytest.raises(ValueError):
+            mod(a, b)
+
+    def test_error_timestamp_not_supported(self):
+        """Test that modulo with Timestamp raises an error."""
+        timestamp = scalar.Timestamp(dt.datetime.now())
+        b = scalar.i64(5)
+
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for modulo"
+        ):
+            mod(timestamp, b)
+
+        c = scalar.f64(2.5)
+        with pytest.raises(
+            ValueError, match="Timestamp type is not supported for modulo"
+        ):
+            mod(c, timestamp)
+
+    def test_error_i16_i32_not_supported(self):
+        """Test that modulo with i16 and i32 raises an error."""
+        # i16 scalar
+        a = scalar.i16(10)
+        b = scalar.i64(3)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            mod(a, b)
+
+        # i32 scalar
+        c = scalar.i32(15)
+
+        with pytest.raises(ValueError, match="Types i16 and i32 are not supported"):
+            mod(c, b)
+
+        # i16 vector
+        a_vec = container.Vector(scalar.i16, 3)
+        a_vec[0] = scalar.i16(10)
+        a_vec[1] = scalar.i16(20)
+        a_vec[2] = scalar.i16(30)
+
+        b_vec = container.Vector(scalar.i64, 3)
+        b_vec[0] = scalar.i64(3)
+        b_vec[1] = scalar.i64(4)
+        b_vec[2] = scalar.i64(6)
+
+        with pytest.raises(
+            ValueError, match="Vector types i16 and i32 are not supported"
+        ):
+            mod(a_vec, b_vec)
+
+    def test_error_unsupported_vector_type(self):
+        """Test that modulo with unsupported vector element types raises an error."""
+        a = container.Vector(scalar.Symbol, 3)
+        a[0] = scalar.Symbol("a")
+        a[1] = scalar.Symbol("b")
+        a[2] = scalar.Symbol("c")
+
+        b = container.Vector(scalar.i64, 3)
+        b[0] = scalar.i64(1)
+        b[1] = scalar.i64(2)
+        b[2] = scalar.i64(3)
+
+        with pytest.raises(ValueError):
+            mod(a, b)
+
+    def test_error_mismatched_vector_lengths(self):
+        """Test that modulo with vectors of different lengths raises an error."""
+        a = container.Vector(scalar.i64, 3)
+        a[0] = scalar.i64(10)
+        a[1] = scalar.i64(20)
+        a[2] = scalar.i64(30)
+
+        b = container.Vector(scalar.i64, 2)
+        b[0] = scalar.i64(3)
+        b[1] = scalar.i64(4)
+
+        with pytest.raises(ValueError, match="Vectors must be of same length"):
+            mod(a, b)

@@ -1480,6 +1480,39 @@ static PyObject* RayObject_ray_fdiv(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Modulo operation for RayObjects
+ */
+static PyObject* RayObject_ray_mod(RayObject* self, PyObject* args) {
+    RayObject* other;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other)) {
+        return NULL;
+    }
+    
+    if (self->obj == NULL || other->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot perform modulo operation on NULL objects");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+    
+    // Call rayforce's modulo operation directly
+    result->obj = ray_mod(self->obj, other->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform modulo operation");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -1651,6 +1684,10 @@ static PyMethodDef RayObject_methods[] = {
     // Floating-point division method
     {"ray_fdiv", (PyCFunction)RayObject_ray_fdiv, METH_VARARGS,
      "Perform floating-point division of two RayObjects"},
+     
+    // Modulo method
+    {"ray_mod", (PyCFunction)RayObject_ray_mod, METH_VARARGS,
+     "Perform modulo operation on two RayObjects"},
     
     {NULL, NULL, 0, NULL}
 };
