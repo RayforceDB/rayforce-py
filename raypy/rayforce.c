@@ -1522,12 +1522,6 @@ static PyObject* RayObject_ray_sum(RayObject* self, PyObject* args) {
         return NULL;
     }
     
-    // Check if the object is a vector
-    if (self->obj->type <= 0 || self->obj->type > TYPE_ENUM) {
-        PyErr_SetString(PyExc_TypeError, "Object must be a vector for sum operation");
-        return NULL;
-    }
-    
     // Create a new RayObject for the result
     RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL) {
@@ -1535,42 +1529,8 @@ static PyObject* RayObject_ray_sum(RayObject* self, PyObject* args) {
         return NULL;
     }
     
-    // Handle empty vector case
-    if (self->obj->len == 0) {
-        if (self->obj->type == TYPE_F64) {
-            result->obj = f64(0.0);
-        } else {
-            result->obj = i64(0);
-        }
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-            return NULL;
-        }
-        return (PyObject*)result;
-    }
-    
-    // For numeric vectors, compute the sum
-    if (self->obj->type == TYPE_I64) {
-        i64_t sum = 0;
-        i64_t* data = AS_I64(self->obj);
-        for (u64_t i = 0; i < self->obj->len; i++) {
-            sum += data[i];
-        }
-        result->obj = i64(sum);
-    } else if (self->obj->type == TYPE_F64) {
-        f64_t sum = 0.0;
-        f64_t* data = AS_F64(self->obj);
-        for (u64_t i = 0; i < self->obj->len; i++) {
-            sum += data[i];
-        }
-        result->obj = f64(sum);
-    } else {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_TypeError, "Unsupported vector type for sum operation");
-        return NULL;
-    }
-    
+    // Call rayforce's sum operation directly
+    result->obj = ray_sum(self->obj);
     if (result->obj == NULL) {
         Py_DECREF(result);
         PyErr_SetString(PyExc_RuntimeError, "Failed to perform sum operation");
@@ -1581,7 +1541,7 @@ static PyObject* RayObject_ray_sum(RayObject* self, PyObject* args) {
 }
 
 /*
- * Average operation for RayObject vectors and scalars
+ * Average operation for RayObject vectors
  */
 static PyObject* RayObject_ray_avg(RayObject* self, PyObject* args) {
     if (self->obj == NULL) {
@@ -1589,77 +1549,40 @@ static PyObject* RayObject_ray_avg(RayObject* self, PyObject* args) {
         return NULL;
     }
     
-    // Create a new RayObject for the result (always f64)
+    // Handle empty vector case
+    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0) {
+        // Create a new RayObject for the result
+        RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+        if (result == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+            return NULL;
+        }
+        
+        result->obj = f64(0.0);
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject*)result;
+    }
+    
+    // Create a new RayObject for the result
     RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
         return NULL;
     }
     
-    // Handle scalar case - convert to f64
-    if (self->obj->type == -TYPE_I64) {
-        result->obj = f64((f64_t)self->obj->i64);
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to convert i64 to f64");
-            return NULL;
-        }
-        return (PyObject*)result;
-    } else if (self->obj->type == -TYPE_F64) {
-        result->obj = f64(self->obj->f64);
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create f64 result");
-            return NULL;
-        }
-        return (PyObject*)result;
+    // Call rayforce's average operation directly
+    result->obj = ray_avg(self->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform average operation");
+        return NULL;
     }
     
-    // Handle vector case
-    if (self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) {
-        // Handle empty vector case
-        if (self->obj->len == 0) {
-            result->obj = f64(0.0);
-            if (result->obj == NULL) {
-                Py_DECREF(result);
-                PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-                return NULL;
-            }
-            return (PyObject*)result;
-        }
-        
-        // For vectors, compute the average
-        if (self->obj->type == TYPE_I64) {
-            i64_t sum = 0;
-            i64_t* data = AS_I64(self->obj);
-            for (u64_t i = 0; i < self->obj->len; i++) {
-                sum += data[i];
-            }
-            // Convert to float and divide by length for average
-            result->obj = f64((f64_t)sum / (f64_t)self->obj->len);
-        } else if (self->obj->type == TYPE_F64) {
-            f64_t sum = 0.0;
-            f64_t* data = AS_F64(self->obj);
-            for (u64_t i = 0; i < self->obj->len; i++) {
-                sum += data[i];
-            }
-            // Divide by length for average
-            result->obj = f64(sum / (f64_t)self->obj->len);
-        }
-        
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to compute average");
-            return NULL;
-        }
-        
-        return (PyObject*)result;
-    }
-    
-    // Unsupported type
-    Py_DECREF(result);
-    PyErr_SetString(PyExc_TypeError, "Unsupported type for average operation. Must be i64, f64, or vector of i64/f64");
-    return NULL;
+    return (PyObject*)result;
 }
 
 /*
@@ -1671,146 +1594,46 @@ static PyObject* RayObject_ray_med(RayObject* self, PyObject* args) {
         return NULL;
     }
     
-    // Create a new RayObject for the result (always f64)
+    // Handle empty vector case
+    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0) {
+        // Create a new RayObject for the result
+        RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+        if (result == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+            return NULL;
+        }
+        
+        result->obj = f64(0.0);
+        if (result->obj == NULL) {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject*)result;
+    }
+    
+    // F64 vectors are not supported by the core's ray_med function
+    if (self->obj->type == TYPE_F64) {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for median operation");
+        return NULL;
+    }
+    
+    // Create a new RayObject for the result
     RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
         return NULL;
     }
     
-    // Handle scalar case - convert to f64
-    if (self->obj->type == -TYPE_I64) {
-        result->obj = f64((f64_t)self->obj->i64);
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to convert i64 to f64");
-            return NULL;
-        }
-        return (PyObject*)result;
-    } else if (self->obj->type == -TYPE_F64) {
-        result->obj = f64(self->obj->f64);
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create f64 result");
-            return NULL;
-        }
-        return (PyObject*)result;
+    // Call rayforce's median operation directly
+    result->obj = ray_med(self->obj);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform median operation");
+        return NULL;
     }
     
-    // Handle vector case
-    if (self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) {
-        // Handle empty vector case
-        if (self->obj->len == 0) {
-            result->obj = f64(0.0);
-            if (result->obj == NULL) {
-                Py_DECREF(result);
-                PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-                return NULL;
-            }
-            return (PyObject*)result;
-        }
-        
-        // Make a copy of the vector elements for sorting
-        obj_p sorted_vec = NULL;
-        
-        if (self->obj->type == TYPE_I64) {
-            // Create a new vector for sorted values
-            sorted_vec = vector(TYPE_I64, self->obj->len);
-            if (sorted_vec == NULL) {
-                Py_DECREF(result);
-                PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for sorting");
-                return NULL;
-            }
-            
-            // Copy the values
-            i64_t* src_data = AS_I64(self->obj);
-            i64_t* dst_data = AS_I64(sorted_vec);
-            for (u64_t i = 0; i < self->obj->len; i++) {
-                dst_data[i] = src_data[i];
-            }
-            
-            // Sort the values (simple bubble sort - could be optimized for larger vectors)
-            for (u64_t i = 0; i < sorted_vec->len - 1; i++) {
-                for (u64_t j = 0; j < sorted_vec->len - i - 1; j++) {
-                    if (dst_data[j] > dst_data[j + 1]) {
-                        i64_t temp = dst_data[j];
-                        dst_data[j] = dst_data[j + 1];
-                        dst_data[j + 1] = temp;
-                    }
-                }
-            }
-            
-            // Compute the median
-            if (sorted_vec->len % 2 == 1) {
-                // Odd number of elements - return the middle one
-                u64_t middle_idx = sorted_vec->len / 2;
-                result->obj = f64((f64_t)dst_data[middle_idx]);
-            } else {
-                // Even number of elements - return the average of the two middle ones
-                u64_t middle_idx1 = sorted_vec->len / 2 - 1;
-                u64_t middle_idx2 = sorted_vec->len / 2;
-                f64_t median = ((f64_t)dst_data[middle_idx1] + (f64_t)dst_data[middle_idx2]) / 2.0;
-                result->obj = f64(median);
-            }
-        } else if (self->obj->type == TYPE_F64) {
-            // Create a new vector for sorted values
-            sorted_vec = vector(TYPE_F64, self->obj->len);
-            if (sorted_vec == NULL) {
-                Py_DECREF(result);
-                PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for sorting");
-                return NULL;
-            }
-            
-            // Copy the values
-            f64_t* src_data = AS_F64(self->obj);
-            f64_t* dst_data = AS_F64(sorted_vec);
-            for (u64_t i = 0; i < self->obj->len; i++) {
-                dst_data[i] = src_data[i];
-            }
-            
-            // Sort the values (simple bubble sort - could be optimized for larger vectors)
-            for (u64_t i = 0; i < sorted_vec->len - 1; i++) {
-                for (u64_t j = 0; j < sorted_vec->len - i - 1; j++) {
-                    if (dst_data[j] > dst_data[j + 1]) {
-                        f64_t temp = dst_data[j];
-                        dst_data[j] = dst_data[j + 1];
-                        dst_data[j + 1] = temp;
-                    }
-                }
-            }
-            
-            // Compute the median
-            if (sorted_vec->len % 2 == 1) {
-                // Odd number of elements - return the middle one
-                u64_t middle_idx = sorted_vec->len / 2;
-                result->obj = f64(dst_data[middle_idx]);
-            } else {
-                // Even number of elements - return the average of the two middle ones
-                u64_t middle_idx1 = sorted_vec->len / 2 - 1;
-                u64_t middle_idx2 = sorted_vec->len / 2;
-                f64_t median = (dst_data[middle_idx1] + dst_data[middle_idx2]) / 2.0;
-                result->obj = f64(median);
-            }
-        }
-        
-        // Clean up the temporary sorted vector
-        if (sorted_vec != NULL) {
-            drop_obj(sorted_vec);
-        }
-        
-        if (result->obj == NULL) {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to compute median");
-            return NULL;
-        }
-        
-        return (PyObject*)result;
-    }
-    
-    // Unsupported type
-    Py_DECREF(result);
-    PyErr_SetString(PyExc_TypeError, "Unsupported type for median operation. Must be i64, f64, or vector of i64/f64");
-    return NULL;
+    return (PyObject*)result;
 }
 
 // Методы RayObject

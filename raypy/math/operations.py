@@ -90,16 +90,16 @@ def add(
             if not len(x) == len(y):
                 raise ValueError("Vectors must be of same length")
 
-            if y.class_type not in (scalar.i64, scalar.f64, scalar.Timestamp):
-                raise ValueError("Vector must be of type i64, f64 or Timestamp")
+            if y.class_type not in (scalar.i64, scalar.f64):
+                raise ValueError("Vector must be of type i64 or f64")
 
         elif not isinstance(y, (scalar.i64, scalar.f64)):
             if x.class_type != scalar.Timestamp or not isinstance(y, scalar.i64):
                 raise ValueError("Scalar must be of type i64 or f64")
 
     elif isinstance(y, container.Vector):
-        if y.class_type not in (scalar.i64, scalar.f64, scalar.Timestamp):
-            raise ValueError("Vector must be of type i64, f64 or Timestamp")
+        if y.class_type not in (scalar.i64, scalar.f64):
+            raise ValueError("Vector must be of type i64 or f64")
 
         if not isinstance(x, (scalar.i64, scalar.f64)):
             if y.class_type != scalar.Timestamp or not isinstance(x, scalar.i64):
@@ -662,10 +662,7 @@ def sum(
 
 
 def avg(
-    x: scalar.i64
-    | scalar.f64
-    | container.Vector[scalar.i64]
-    | container.Vector[scalar.f64],
+    x: scalar.i64 | scalar.f64 | container.Vector[scalar.i64],
 ) -> scalar.f64:
     """
     Calculate the average of a scalar or all elements in a vector.
@@ -673,9 +670,12 @@ def avg(
     For scalar inputs, the function returns the input value as a float.
     For vector inputs, it returns the mean of all elements.
     For empty vectors, returns 0.0.
+    For vectors with a single element, returns that element as a float.
+
+    Note: F64 vectors are not supported by the core implementation.
 
     Args:
-        x: Scalar or vector of i64 or f64 values
+        x: Scalar (i64, f64) or vector of i64 values
 
     Returns:
         Scalar f64 value representing the average
@@ -687,8 +687,11 @@ def avg(
     if not isinstance(x, (scalar.i64, scalar.f64, container.Vector)):
         raise ValueError("Input must be a scalar or vector of type i64 or f64")
 
-    if isinstance(x, container.Vector) and x.class_type not in (scalar.i64, scalar.f64):
-        raise ValueError("Vector must be of type i64 or f64")
+    if isinstance(x, container.Vector):
+        if x.class_type == scalar.f64:
+            raise ValueError("F64 vectors are not supported for average operation")
+        if x.class_type not in (scalar.i64,):
+            raise ValueError("Vector must be of type i64")
 
     try:
         ptr = getattr(r.RayObject, ray_avg_method)(x.ptr)
@@ -699,10 +702,7 @@ def avg(
 
 
 def med(
-    x: scalar.i64
-    | scalar.f64
-    | container.Vector[scalar.i64]
-    | container.Vector[scalar.f64],
+    x: scalar.i64 | scalar.f64 | container.Vector[scalar.i64],
 ) -> scalar.f64:
     """
     Calculate the median of a scalar or all elements in a vector.
@@ -714,9 +714,12 @@ def med(
     For vector inputs with odd length, returns the middle value.
     For vector inputs with even length, returns the average of the two middle values.
     For empty vectors, returns 0.0.
+    For vectors with a single element, returns that element as a float.
+
+    Note: F64 vectors are not supported by the core implementation.
 
     Args:
-        x: Scalar or vector of i64 or f64 values
+        x: Scalar (i64, f64) or vector of i64 values
 
     Returns:
         Scalar f64 value representing the median
@@ -728,8 +731,11 @@ def med(
     if not isinstance(x, (scalar.i64, scalar.f64, container.Vector)):
         raise ValueError("Input must be a scalar or vector of type i64 or f64")
 
-    if isinstance(x, container.Vector) and x.class_type not in (scalar.i64, scalar.f64):
-        raise ValueError("Vector must be of type i64 or f64")
+    if isinstance(x, container.Vector):
+        if x.class_type == scalar.f64:
+            raise ValueError("F64 vectors are not supported for median operation")
+        if x.class_type not in (scalar.i64,):
+            raise ValueError("Vector must be of type i64")
 
     try:
         ptr = getattr(r.RayObject, ray_med_method)(x.ptr)

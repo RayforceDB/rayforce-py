@@ -616,7 +616,7 @@ def from_pointer_to_raypy_type(
     if ptr.is_vector():
         cls = RAY_TYPE_TO_CLASS_MAPPING.get(ptr.get_vector_type())
         if not cls:
-            raise ValueError("Unknown vector type")
+            raise ValueError(f"Unknown vector type - {ptr.get_vector_type()}")
 
         return Vector(cls, ray_obj=ptr)
 
