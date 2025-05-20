@@ -2137,7 +2137,10 @@ static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
     ray_error_p err = AS_ERROR(self->obj);
     
     if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8) {
-        return PyUnicode_FromString(AS_C8(err->msg));
+        const char* error_text = AS_C8(err->msg);
+        u64_t length = err->msg->len;
+
+        return PyUnicode_DecodeLatin1(error_text, length, "replace");
     }
 
     if (err != NULL) {
