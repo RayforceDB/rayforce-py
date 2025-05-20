@@ -4,6 +4,7 @@ build/
 .vscode
 __pycache__
 _rayforce.c*.so
+_rayforce.so
 .pytest_cache
 .ruff_cache
 tmp/
