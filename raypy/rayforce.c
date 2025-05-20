@@ -2084,6 +2084,38 @@ static PyObject *RayObject_ray_max(RayObject *self, PyObject *args)
     return (PyObject *)result;
 }
 
+/*
+ * Evaluate a Rayforce expression
+ */
+static PyObject* RayObject_ray_eval(RayObject* self, PyObject* args) {
+    if (self->obj == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot evaluate NULL object");
+        return NULL;
+    }
+
+    if (self->obj->type != TYPE_C8) {
+        PyErr_SetString(PyExc_TypeError, "Object must be a string (TYPE_C8) for evaluation");
+        return NULL;
+    }
+    
+    const char* expr = AS_C8(self->obj);
+    
+    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = eval_str(expr);
+    if (result->obj == NULL) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate expression");
+        return NULL;
+    }
+    
+    return (PyObject*)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -2284,7 +2316,12 @@ static PyMethodDef RayObject_methods[] = {
     {"ray_max", (PyCFunction)RayObject_ray_max, METH_VARARGS,
      "Compute the maximum value of a vector or scalar"},
 
-    {NULL, NULL, 0, NULL}};
+    // Eval method
+    {"ray_eval", (PyCFunction)RayObject_ray_eval, METH_NOARGS,
+     "Evaluate a Rayforce expression"},
+    
+    {NULL, NULL, 0, NULL}
+};
 
 // Define the RayObject type
 static PyTypeObject RayObjectType = {
