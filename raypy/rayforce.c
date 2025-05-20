@@ -2139,12 +2139,22 @@ static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
     if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8) {
         const char* error_text = AS_C8(err->msg);
         u64_t length = err->msg->len;
-
-        return PyUnicode_DecodeLatin1(error_text, length, "replace");
+        
+        PyObject* error_message = PyUnicode_DecodeLatin1(error_text, length, "replace");
+        
+        if (err->locs != NULL && err->locs->type == TYPE_LIST && err->locs->len > 0) {
+            PyObject* with_code = PyUnicode_FromFormat("%s (error code: %lld)", 
+                                                       PyUnicode_AsUTF8(error_message), 
+                                                       (long long)err->code);
+            Py_DECREF(error_message);
+            return with_code;
+        }
+        
+        return error_message;
     }
 
     if (err != NULL) {
-        return PyUnicode_FromFormat("Error code: %d", err->code);
+        return PyUnicode_FromFormat("Error code: %lld", (long long)err->code);
     } else {
         return PyUnicode_FromString("Unknown error");
     }
