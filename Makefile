@@ -29,21 +29,23 @@ shared:
 lib:
 	python3 setup.py build_ext --inplace
 
-
-clean:
-	@echo "🧹 Cleaning cache and generated files..."
+clean-ext:
 	@cd $(EXEC_DIR) && rm -rf \
 		raypy/_rayforce.c*.so  \
-		raypy/librayforce.dylib  \
-		raypy/librayforce.so  \
-		raypy/core/ \
-		tmp/ \
+		raypy/librayforce.* \
 		build/ \
 		dist/ && \
 		find . -type d -name "__pycache__" -exec rm -rf {} +
 
+clean: clean-ext
+	@echo "🧹 Cleaning cache and generated files..."
+	@cd $(EXEC_DIR) && rm -rf \
+		raypy/core/ \
+		tmp/ \
 
 all: clean pull_from_gh shared lib
+
+ext: clean-ext shared lib
 
 test:
 	pytest tests/
