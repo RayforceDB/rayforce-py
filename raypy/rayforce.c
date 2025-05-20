@@ -10,6 +10,7 @@
 #pragma GCC diagnostic pop
 #endif
 #include "./core/rayforce.h"
+#include "./core/error.h"
 
 // Forward declaration for memcpy if needed
 #ifndef memcpy
@@ -849,7 +850,7 @@ RayObject_from_guid(PyTypeObject *type, PyObject *args)
         }
 
         // Copy the GUID data
-        memcpy(self->obj->raw, buffer.buf, 16);
+        memcpy(AS_U8(self->obj), buffer.buf, 16);
     }
 
     // Release the buffer
@@ -868,7 +869,7 @@ RayObject_get_guid_value(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    return PyBytes_FromStringAndSize((const char *)self->obj->raw, 16);
+    return PyBytes_FromStringAndSize((const char *)AS_U8(self->obj), 16);
 }
 
 // Check if object is a GUID
@@ -2116,6 +2117,36 @@ static PyObject* RayObject_ray_eval(RayObject* self, PyObject* args) {
     return (PyObject*)result;
 }
 
+/*
+ * Get error message from an error object
+ */
+static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
+{
+    if (self->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+
+    if (self->obj->type != TYPE_ERR)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not an error type");
+        return NULL;
+    }
+
+    ray_error_p err = AS_ERROR(self->obj);
+    
+    if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8) {
+        return PyUnicode_FromString(AS_C8(err->msg));
+    }
+
+    if (err != NULL) {
+        return PyUnicode_FromFormat("Error code: %d", err->code);
+    } else {
+        return PyUnicode_FromString("Unknown error");
+    }
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -2319,6 +2350,10 @@ static PyMethodDef RayObject_methods[] = {
     // Eval method
     {"ray_eval", (PyCFunction)RayObject_ray_eval, METH_NOARGS,
      "Evaluate a Rayforce expression"},
+     
+    // Error handling
+    {"get_error_message", (PyCFunction)RayObject_get_error_message, METH_NOARGS,
+     "Get the error message from an error object"},
     
     {NULL, NULL, 0, NULL}
 };

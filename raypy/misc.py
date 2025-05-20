@@ -16,4 +16,8 @@ def eval_str(expr: str) -> r.RayObject:
     if result is None:
         raise ValueError("Failed to evaluate expression")
 
+    if result.get_type() == r.TYPE_ERR:
+        error_message = result.get_error_message()
+        raise Exception(f"Eval error: {error_message}")
+
     return result
