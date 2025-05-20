@@ -1,17 +1,38 @@
-#define PY_SSIZE_T_CLEAN
 #include <string.h>
-#if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
-#pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
-#endif
 #include <Python.h>
-#if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-#include "./core/rayforce.h"
-#include "./core/error.h"
-#include "./core/eval.h"
+#include "rayforce.h"
+#include "error.h"
+#include "eval.h"
+#include "binary.h"
+#include "cmp.h"
+#include "compose.h"
+#include "cond.h"
+#include "dynlib.h"
+#include "format.h"
+#include "guid.h"
+#include "io.h"
+#include "items.h"
+#include "iter.h"
+#include "join.h"
+#include "logic.h"
+#include "math.h"
+#include "misc.h"
+#include "ops.h"
+#include "order.h"
+#include "query.h"
+#include "runtime.h"
+#include "serde.h"
+#include "string.h"
+#include "chrono.h"
+#include "date.h"
+#include "time.h"
+#include "timestamp.h"
+#include "unary.h"
+#include "update.h"
+#include "util.h"
+#include "vary.h"
+#include "os.h"
+#include "proc.h"
 
 // Forward declaration for memcpy if needed
 #ifndef memcpy
