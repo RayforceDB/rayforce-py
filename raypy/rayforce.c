@@ -11,6 +11,7 @@
 #endif
 #include "./core/rayforce.h"
 #include "./core/error.h"
+#include "./core/eval.h"
 
 // Forward declaration for memcpy if needed
 #ifndef memcpy
@@ -2088,33 +2089,36 @@ static PyObject *RayObject_ray_max(RayObject *self, PyObject *args)
 /*
  * Evaluate a Rayforce expression
  */
-static PyObject* RayObject_ray_eval(RayObject* self, PyObject* args) {
-    if (self->obj == NULL) {
+static PyObject *RayObject_ray_eval(RayObject *self, PyObject *args)
+{
+    if (self->obj == NULL)
+    {
         PyErr_SetString(PyExc_ValueError, "Cannot evaluate NULL object");
         return NULL;
     }
 
-    if (self->obj->type != TYPE_C8) {
+    if (self->obj->type != TYPE_C8)
+    {
         PyErr_SetString(PyExc_TypeError, "Object must be a string (TYPE_C8) for evaluation");
         return NULL;
     }
-    
-    const char* expr = AS_C8(self->obj);
-    
-    RayObject* result = (RayObject*)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL) {
+
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
         PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
         return NULL;
     }
 
-    result->obj = eval_str(expr);
-    if (result->obj == NULL) {
+    result->obj = ray_eval_str(self->obj, NULL);
+    if (result->obj == NULL)
+    {
         Py_DECREF(result);
         PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate expression");
         return NULL;
     }
-    
-    return (PyObject*)result;
+
+    return (PyObject *)result;
 }
 
 /*
@@ -2135,27 +2139,32 @@ static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
     }
 
     ray_error_p err = AS_ERROR(self->obj);
-    
-    if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8) {
-        const char* error_text = AS_C8(err->msg);
+
+    if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8)
+    {
+        const char *error_text = AS_C8(err->msg);
         u64_t length = err->msg->len;
-        
-        PyObject* error_message = PyUnicode_DecodeLatin1(error_text, length, "replace");
-        
-        if (err->locs != NULL && err->locs->type == TYPE_LIST && err->locs->len > 0) {
-            PyObject* with_code = PyUnicode_FromFormat("%s (error code: %lld)", 
-                                                       PyUnicode_AsUTF8(error_message), 
+
+        PyObject *error_message = PyUnicode_DecodeLatin1(error_text, length, "replace");
+
+        if (err->locs != NULL && err->locs->type == TYPE_LIST && err->locs->len > 0)
+        {
+            PyObject *with_code = PyUnicode_FromFormat("%s (error code: %lld)",
+                                                       PyUnicode_AsUTF8(error_message),
                                                        (long long)err->code);
             Py_DECREF(error_message);
             return with_code;
         }
-        
+
         return error_message;
     }
 
-    if (err != NULL) {
+    if (err != NULL)
+    {
         return PyUnicode_FromFormat("Error code: %lld", (long long)err->code);
-    } else {
+    }
+    else
+    {
         return PyUnicode_FromString("Unknown error");
     }
 }
@@ -2363,13 +2372,12 @@ static PyMethodDef RayObject_methods[] = {
     // Eval method
     {"ray_eval", (PyCFunction)RayObject_ray_eval, METH_NOARGS,
      "Evaluate a Rayforce expression"},
-     
+
     // Error handling
     {"get_error_message", (PyCFunction)RayObject_get_error_message, METH_NOARGS,
      "Get the error message from an error object"},
-    
-    {NULL, NULL, 0, NULL}
-};
+
+    {NULL, NULL, 0, NULL}};
 
 // Define the RayObject type
 static PyTypeObject RayObjectType = {
