@@ -2482,7 +2482,8 @@ PyMODINIT_FUNC PyInit__rayforce(void)
     PyModule_AddIntConstant(m, "TYPE_ERR", TYPE_ERR);
 
     // Initialize the Rayforce runtime
-    if (ray_init() != 0)
+    char *argv[] = {"raypy", NULL};
+    if (runtime_create(1, argv) != 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
         return NULL;

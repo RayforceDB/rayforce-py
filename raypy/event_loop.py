@@ -8,6 +8,9 @@ import ctypes
 from ctypes import *
 from typing import Optional, Callable, Any, Dict
 import logging
+from enum import IntEnum
+import sys
+import queue
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,16 +40,26 @@ class PollEvents(IntEnum):
 
 class RayforceEventLoop:
     def __init__(self):
-        self._rayforce = ctypes.CDLL("_rayforce.so")
+        self._rayforce = ctypes.CDLL("raypy/_rayforce.so", mode=ctypes.RTLD_GLOBAL)
         self._setup_function_signatures()
-        self._poll = self._rayforce.poll_create()
         self._running = False
-        self._thread: Optional[threading.Thread] = None
         self._callbacks: Dict[int, Callable] = {}
         self._lock = threading.Lock()
+        self._thread = None
+        self._cmd_queue = queue.Queue()
+        self._result_queue = queue.Queue()
+        self._poll = None
         
     def _setup_function_signatures(self):
         """Set up C function signatures for the Rayforce library."""
+        # Runtime management
+        self._rayforce.runtime_create.argtypes = [c_int, POINTER(c_char_p)]
+        self._rayforce.runtime_create.restype = None
+        self._rayforce.runtime_run.argtypes = []
+        self._rayforce.runtime_run.restype = c_int32
+        self._rayforce.runtime_destroy.argtypes = []
+        self._rayforce.runtime_destroy.restype = None
+        
         # Poll creation and management
         self._rayforce.poll_create.argtypes = []
         self._rayforce.poll_create.restype = c_void_p
@@ -83,41 +96,71 @@ class RayforceEventLoop:
         self._rayforce.poll_exit.argtypes = [c_void_p, c_int64]
         self._rayforce.poll_set_usr_fd.argtypes = [c_int64]
         
+        # Command evaluation
+        self._rayforce.ray_eval_str.argtypes = [c_void_p, c_void_p]
+        self._rayforce.ray_eval_str.restype = c_int64
+        
     def start(self):
         """Start the Rayforce event loop in a background thread."""
         if self._running:
             return
-            
         self._running = True
-        self._thread = threading.Thread(target=self._run_poll_loop)
-        self._thread.daemon = True
+        self._thread = threading.Thread(target=self._run_poll_loop, daemon=True)
         self._thread.start()
-        logger.info("Rayforce event loop started")
+        logger.info("Rayforce event loop started (background thread)")
         
     def stop(self):
         """Stop the Rayforce event loop and clean up resources."""
         if not self._running:
             return
-            
+        self._cmd_queue.put({"cmd": "exit"})
+        self._thread.join(timeout=2.0)
         self._running = False
-        if self._thread:
-            self._thread.join()
-        self._rayforce.poll_destroy(self._poll)
         logger.info("Rayforce event loop stopped")
         
     def _run_poll_loop(self):
         """Main event loop that processes Rayforce events."""
-        while self._running:
-            try:
-                # This will block until events are ready
-                result = self._rayforce.poll_run(self._poll)
-                if result != 0:  # Error or exit condition
-                    logger.error(f"Poll loop exited with code {result}")
+        # All Rayforce initialization must happen here!
+        argv = [b"raypy", b"-r", b"0", None]
+        logger.info(f"Initializing Rayforce runtime with argv: {argv}")
+        self._rayforce.runtime_create(3, (c_char_p * 4)(*argv))
+        try:
+            while self._running:
+                # Handle commands from the queue
+                try:
+                    cmd = self._cmd_queue.get(timeout=0.05)
+                    if cmd["cmd"] == "exit":
+                        self._running = False
+                        break
+                    elif cmd["cmd"] == "eval":
+                        source = cmd["source"]
+                        buf = self._rayforce.poll_buf_create(len(source.encode()) + 1)
+                        if not buf:
+                            self._result_queue.put(RuntimeError("Failed to create buffer"))
+                            continue
+                        try:
+                            ctypes.memmove(buf, source.encode(), len(source.encode()))
+                            result = self._rayforce.ray_eval_str(buf, None)
+                            if result == -1:
+                                self._result_queue.put(RuntimeError("Failed to evaluate command"))
+                            else:
+                                self._result_queue.put(result)
+                        finally:
+                            self._rayforce.poll_buf_destroy(buf)
+                        continue
+                except queue.Empty:
+                    pass
+                # Run the runtime
+                result = self._rayforce.runtime_run()
+                if result != 0:
+                    logger.info(f"Runtime exited with code {result}")
+                    self._running = False
                     break
-            except Exception as e:
-                logger.error(f"Error in poll loop: {e}")
-                break
-                
+        except Exception as e:
+            logger.error(f"Error in poll loop: {e}")
+        finally:
+            self._rayforce.runtime_destroy()
+        
     def register_selector(self, fd: int, selector_type: SelectorType, 
                          events: PollEvents, callback: Callable) -> int:
         """Register a new selector with the event loop."""
@@ -174,6 +217,16 @@ class RayforceEventLoop:
         if selector:
             return self._rayforce.poll_block_on(self._poll, selector)
         return None
+
+    def eval(self, source: str) -> Any:
+        """Evaluate a Rayforce command."""
+        if not self._running:
+            raise RuntimeError("Rayforce event loop is not running")
+        self._cmd_queue.put({"cmd": "eval", "source": source})
+        result = self._result_queue.get()
+        if isinstance(result, Exception):
+            raise result
+        return result
 
 class RayforceEventLoopPolicy(asyncio.AbstractEventLoopPolicy):
     """Event loop policy that integrates Rayforce with asyncio."""
