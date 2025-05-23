@@ -9,9 +9,14 @@ from .event_loop import (
     PollEvents
 )
 
+from . import _rayforce
+from .repl import start_repl, RayforceREPL
+
 __all__ = [
     'RayforceEventLoop',
     'RayforceEventLoopPolicy',
     'SelectorType',
-    'PollEvents'
+    'PollEvents',
+    'start_repl',
+    'RayforceREPL'
 ]

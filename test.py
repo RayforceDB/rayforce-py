@@ -5,9 +5,8 @@ import os
 
 from raypy import _rayforce as r
 from raypy.types import scalar, container
+from raypy import start_repl
 
 if __name__ == "__main__":
-    print("Hello, World!")
-    a = scalar.i64(1)
-    print(a)
-    r.runtime_run()
+    print("Starting Rayforce REPL")
+    start_repl()

@@ -2428,9 +2428,141 @@ static PyObject *rayforce_runtime_run(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+// Python REPL state
+typedef struct
+{
+    PyObject *stdin;
+    PyObject *stdout;
+    PyObject *stderr;
+    char *prompt;
+} PyReplState;
+
+static PyReplState g_repl_state = {NULL, NULL, NULL, "raypy> "};
+
+// Initialize REPL state
+static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
+{
+    const char *prompt = "raypy> ";
+    if (!PyArg_ParseTuple(args, "|s", &prompt))
+    {
+        return NULL;
+    }
+
+    // Get Python's stdin/stdout/stderr
+    g_repl_state.stdin = PySys_GetObject("stdin");
+    g_repl_state.stdout = PySys_GetObject("stdout");
+    g_repl_state.stderr = PySys_GetObject("stderr");
+
+    if (!g_repl_state.stdin || !g_repl_state.stdout || !g_repl_state.stderr)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to get stdio objects");
+        return NULL;
+    }
+
+    // Increment refcounts to keep them alive
+    Py_INCREF(g_repl_state.stdin);
+    Py_INCREF(g_repl_state.stdout);
+    Py_INCREF(g_repl_state.stderr);
+
+    // Set prompt
+    g_repl_state.prompt = strdup(prompt);
+    if (!g_repl_state.prompt)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate prompt string");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+// Cleanup REPL state
+static PyObject *rayforce_repl_cleanup(PyObject *self, PyObject *args)
+{
+    if (g_repl_state.stdin)
+    {
+        Py_DECREF(g_repl_state.stdin);
+        g_repl_state.stdin = NULL;
+    }
+    if (g_repl_state.stdout)
+    {
+        Py_DECREF(g_repl_state.stdout);
+        g_repl_state.stdout = NULL;
+    }
+    if (g_repl_state.stderr)
+    {
+        Py_DECREF(g_repl_state.stderr);
+        g_repl_state.stderr = NULL;
+    }
+    if (g_repl_state.prompt)
+    {
+        free(g_repl_state.prompt);
+        g_repl_state.prompt = NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+// Run one REPL iteration
+static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
+{
+    if (!g_repl_state.stdin || !g_repl_state.stdout || !g_repl_state.stderr)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "REPL not initialized");
+        return NULL;
+    }
+
+    // Print prompt
+    PyObject *prompt_str = PyUnicode_FromString(g_repl_state.prompt);
+    if (!prompt_str)
+    {
+        return NULL;
+    }
+    PyObject *write_result = PyObject_CallMethod(g_repl_state.stdout, "write", "O", prompt_str);
+    Py_DECREF(prompt_str);
+    if (!write_result)
+    {
+        return NULL;
+    }
+    Py_DECREF(write_result);
+
+    // Flush stdout
+    PyObject *flush_result = PyObject_CallMethod(g_repl_state.stdout, "flush", NULL);
+    if (!flush_result)
+    {
+        return NULL;
+    }
+    Py_DECREF(flush_result);
+
+    // Read line
+    PyObject *line = PyObject_CallMethod(g_repl_state.stdin, "readline", NULL);
+    if (!line)
+    {
+        return NULL;
+    }
+
+    // Convert to C string
+    const char *input = PyUnicode_AsUTF8(line);
+    if (!input)
+    {
+        Py_DECREF(line);
+        return NULL;
+    }
+
+    // Evaluate
+    obj_p res = eval_str(input);
+    io_write(STDOUT_FILENO, 2, res);
+
+    // Cleanup
+    drop_obj(res);
+    Py_DECREF(line);
+    Py_RETURN_NONE;
+}
+
 // List of module methods
 static PyMethodDef module_methods[] = {
     {"runtime_run", rayforce_runtime_run, METH_NOARGS, "Run the Rayforce runtime"},
+    {"repl_init", rayforce_repl_init, METH_VARARGS, "Initialize the REPL"},
+    {"repl_cleanup", rayforce_repl_cleanup, METH_NOARGS, "Cleanup the REPL"},
+    {"repl_step", rayforce_repl_step, METH_NOARGS, "Run one REPL iteration"},
     {NULL, NULL, 0, NULL}};
 
 // Define the module
