@@ -2494,8 +2494,8 @@ static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
     const char *header =
         ANSI_BOLD ANSI_BLUE "Rayforce Interactive REPL v1.0.0\n" ANSI_RESET ANSI_LIGHTGRAY "Build: 2024-05-20\n"
                             "License: MIT\n"
-                            "GitHub: https://github.com/rayforce-ai/raypy\n"
-                            "Docs:   https://rayforce-ai.github.io/raypy\n"
+                            "GitHub: https://github.com/singaraiona/raypy\n"
+                            "Docs:   https://github.com/singaraiona/raypy\n"
                             "\n"
                             "Modes:\n"
                             "  • [" ANSI_BLUE "rf" ANSI_LIGHTGRAY "] Rayforce mode (default)\n"
