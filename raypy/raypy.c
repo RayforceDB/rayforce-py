@@ -2435,14 +2435,29 @@ typedef struct
     PyObject *stdout;
     PyObject *stderr;
     char *prompt;
+    int mode; // 0 for Rayforce mode, 1 for Python mode
 } PyReplState;
 
-static PyReplState g_repl_state = {NULL, NULL, NULL, "raypy> "};
+// ANSI color codes
+#define ANSI_RESET "\033[0m"
+#define ANSI_BOLD "\033[1m"
+#define ANSI_RED "\033[31m"
+#define ANSI_GREEN "\033[32m"
+#define ANSI_BLUE "\033[34m"
+#define ANSI_CYAN "\033[36m"
+#define ANSI_YELLOW "\033[33m"
+#define ANSI_MAGENTA "\033[35m"
+#define ANSI_LIGHTGRAY "\033[90m"
+
+// Unicode symbols
+#define UNI_PROMPT ">" // Simple prompt
+
+static PyReplState g_repl_state = {NULL, NULL, NULL, "raypy", 0}; // Default to Rayforce mode
 
 // Initialize REPL state
 static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
 {
-    const char *prompt = "raypy> ";
+    const char *prompt = "raypy";
     if (!PyArg_ParseTuple(args, "|s", &prompt))
     {
         return NULL;
@@ -2470,6 +2485,32 @@ static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
     {
         PyErr_SetString(PyExc_MemoryError, "Failed to allocate prompt string");
         return NULL;
+    }
+
+    // Default to Rayforce mode
+    g_repl_state.mode = 0;
+
+    // Print rich header
+    const char *header =
+        ANSI_BOLD ANSI_BLUE "Rayforce Interactive REPL v1.0.0\n" ANSI_RESET ANSI_LIGHTGRAY "Build: 2024-05-20\n"
+                            "License: MIT\n"
+                            "GitHub: https://github.com/rayforce-ai/raypy\n"
+                            "Docs:   https://rayforce-ai.github.io/raypy\n"
+                            "\n"
+                            "Modes:\n"
+                            "  • [" ANSI_BLUE "rf" ANSI_LIGHTGRAY "] Rayforce mode (default)\n"
+                            "  • [" ANSI_GREEN "py" ANSI_LIGHTGRAY "] Python mode\n"
+                            "\n"
+                            "Commands:\n"
+                            "  • :py  Switch to Python mode\n"
+                            "  • :rf  Switch to Rayforce mode\n" ANSI_RESET "\n";
+
+    PyObject *header_str = PyUnicode_FromString(header);
+    if (header_str)
+    {
+        PyObject *write_result = PyObject_CallMethod(g_repl_state.stdout, "write", "O", header_str);
+        Py_DECREF(write_result);
+        Py_DECREF(header_str);
     }
 
     Py_RETURN_NONE;
@@ -2501,6 +2542,31 @@ static PyObject *rayforce_repl_cleanup(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+// Get current mode
+static PyObject *rayforce_repl_get_mode(PyObject *self, PyObject *args)
+{
+    return PyLong_FromLong(g_repl_state.mode);
+}
+
+// Set mode
+static PyObject *rayforce_repl_set_mode(PyObject *self, PyObject *args)
+{
+    int mode;
+    if (!PyArg_ParseTuple(args, "i", &mode))
+    {
+        return NULL;
+    }
+
+    if (mode != 0 && mode != 1)
+    {
+        PyErr_SetString(PyExc_ValueError, "Mode must be 0 (Rayforce) or 1 (Python)");
+        return NULL;
+    }
+
+    g_repl_state.mode = mode;
+    Py_RETURN_NONE;
+}
+
 // Run one REPL iteration
 static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
 {
@@ -2510,8 +2576,23 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    // Create mode-specific prompt with colors and Unicode
+    char mode_prompt[512];
+    if (g_repl_state.mode == 0)
+    {
+        // Rayforce mode - blue with minimalist indicator
+        snprintf(mode_prompt, sizeof(mode_prompt),
+                 ANSI_BOLD ANSI_BLUE "[rf] ↪ " ANSI_RESET);
+    }
+    else
+    {
+        // Python mode - green with minimalist indicator
+        snprintf(mode_prompt, sizeof(mode_prompt),
+                 ANSI_BOLD ANSI_GREEN "[py] ↪ " ANSI_RESET);
+    }
+
     // Print prompt
-    PyObject *prompt_str = PyUnicode_FromString(g_repl_state.prompt);
+    PyObject *prompt_str = PyUnicode_FromString(mode_prompt);
     if (!prompt_str)
     {
         return NULL;
@@ -2547,12 +2628,111 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Evaluate
-    obj_p res = eval_str(input);
-    io_write(STDOUT_FILENO, 2, res);
+    // Skip empty lines
+    if (input[0] == '\0' || input[0] == '\n')
+    {
+        Py_DECREF(line);
+        Py_RETURN_NONE;
+    }
+
+    // Check for mode switch commands
+    if (strcmp(input, ":py\n") == 0)
+    {
+        g_repl_state.mode = 1;
+        Py_DECREF(line);
+        Py_RETURN_NONE;
+    }
+    else if (strcmp(input, ":rf\n") == 0)
+    {
+        g_repl_state.mode = 0;
+        Py_DECREF(line);
+        Py_RETURN_NONE;
+    }
+
+    // Execute based on current mode
+    if (g_repl_state.mode == 1)
+    {
+        // Python mode
+        PyObject *main = PyImport_ImportModule("__main__");
+        if (!main)
+        {
+            Py_DECREF(line);
+            return NULL;
+        }
+
+        PyObject *globals = PyModule_GetDict(main);
+        PyObject *locals = PyDict_New();
+        if (!locals)
+        {
+            Py_DECREF(main);
+            Py_DECREF(line);
+            return NULL;
+        }
+
+        PyObject *result = PyRun_String(input, Py_single_input, globals, locals);
+
+        // Handle the result
+        if (result)
+        {
+            if (result != Py_None)
+            {
+                PyObject *str_result = PyObject_Str(result);
+                if (str_result)
+                {
+                    // Color Python output in green
+                    PyObject *colored_output = PyUnicode_FromFormat(
+                        ANSI_GREEN "%s" ANSI_RESET "\n",
+                        PyUnicode_AsUTF8(str_result));
+                    if (colored_output)
+                    {
+                        PyObject *write_result = PyObject_CallMethod(
+                            g_repl_state.stdout, "write", "O", colored_output);
+                        Py_DECREF(write_result);
+                        Py_DECREF(colored_output);
+                    }
+                    Py_DECREF(str_result);
+                }
+            }
+            Py_DECREF(result);
+        }
+        else
+        {
+            // Print Python error in red
+            PyObject *exc_type, *exc_value, *exc_traceback;
+            PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+            if (exc_value)
+            {
+                PyObject *str_value = PyObject_Str(exc_value);
+                if (str_value)
+                {
+                    PyObject *colored_error = PyUnicode_FromFormat(
+                        ANSI_RED "%s" ANSI_RESET "\n",
+                        PyUnicode_AsUTF8(str_value));
+                    if (colored_error)
+                    {
+                        PyObject *write_result = PyObject_CallMethod(
+                            g_repl_state.stderr, "write", "O", colored_error);
+                        Py_DECREF(write_result);
+                        Py_DECREF(colored_error);
+                    }
+                    Py_DECREF(str_value);
+                }
+            }
+            PyErr_Restore(exc_type, exc_value, exc_traceback);
+        }
+
+        Py_DECREF(locals);
+        Py_DECREF(main);
+    }
+    else
+    {
+        // Rayforce mode - output will be colored by io_write
+        obj_p res = eval_str(input);
+        io_write(STDOUT_FILENO, 2, res);
+        drop_obj(res);
+    }
 
     // Cleanup
-    drop_obj(res);
     Py_DECREF(line);
     Py_RETURN_NONE;
 }
@@ -2563,6 +2743,8 @@ static PyMethodDef module_methods[] = {
     {"repl_init", rayforce_repl_init, METH_VARARGS, "Initialize the REPL"},
     {"repl_cleanup", rayforce_repl_cleanup, METH_NOARGS, "Cleanup the REPL"},
     {"repl_step", rayforce_repl_step, METH_NOARGS, "Run one REPL iteration"},
+    {"repl_get_mode", rayforce_repl_get_mode, METH_NOARGS, "Get current REPL mode"},
+    {"repl_set_mode", rayforce_repl_set_mode, METH_VARARGS, "Set REPL mode (0=Rayforce, 1=Python)"},
     {NULL, NULL, 0, NULL}};
 
 // Define the module
@@ -2631,8 +2813,8 @@ PyMODINIT_FUNC PyInit__rayforce(void)
     PyModule_AddIntConstant(m, "TYPE_ERR", TYPE_ERR);
 
     // Initialize the Rayforce runtime
-    char *argv[] = {"raypy", NULL};
-    g_runtime = runtime_create(1, argv);
+    char *argv[] = {"raypy", "-r", "0", NULL};
+    g_runtime = runtime_create(3, argv);
     if (g_runtime == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");

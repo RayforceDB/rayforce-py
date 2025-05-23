@@ -33,7 +33,8 @@ patch_makefile:
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'PY_OBJECTS = core/raypy.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) $$(shell python3.13-config --includes)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	# @echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@echo 'python: LDFLAGS = -rdynamic'
 	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 

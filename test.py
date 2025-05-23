@@ -8,5 +8,4 @@ from raypy.types import scalar, container
 from raypy import start_repl
 
 if __name__ == "__main__":
-    print("Starting Rayforce REPL")
     start_repl()
