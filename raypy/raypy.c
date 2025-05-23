@@ -34,6 +34,9 @@
 #include "os.h"
 #include "proc.h"
 
+// Global variable to store the runtime pointer
+static void *g_runtime = NULL;
+
 // Forward declaration for memcpy if needed
 #ifndef memcpy
 extern void *memcpy(void *dest, const void *src, size_t n);
@@ -2412,8 +2415,22 @@ static PyTypeObject RayObjectType = {
     .tp_new = PyType_GenericNew,
 };
 
+// Wrapper for runtime_run
+static PyObject *rayforce_runtime_run(PyObject *self, PyObject *args)
+{
+    if (g_runtime == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Rayforce runtime not initialized");
+        return NULL;
+    }
+
+    runtime_run();
+    Py_RETURN_NONE;
+}
+
 // List of module methods
 static PyMethodDef module_methods[] = {
+    {"runtime_run", rayforce_runtime_run, METH_NOARGS, "Run the Rayforce runtime"},
     {NULL, NULL, 0, NULL}};
 
 // Define the module
@@ -2483,7 +2500,8 @@ PyMODINIT_FUNC PyInit__rayforce(void)
 
     // Initialize the Rayforce runtime
     char *argv[] = {"raypy", NULL};
-    if (runtime_create(1, argv) != 0)
+    g_runtime = runtime_create(1, argv);
+    if (g_runtime == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
         return NULL;

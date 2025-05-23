@@ -101,65 +101,12 @@ class RayforceEventLoop:
         self._rayforce.ray_eval_str.restype = c_int64
         
     def start(self):
-        """Start the Rayforce event loop in a background thread."""
-        if self._running:
-            return
-        self._running = True
-        self._thread = threading.Thread(target=self._run_poll_loop, daemon=True)
-        self._thread.start()
-        logger.info("Rayforce event loop started (background thread)")
-        
-    def stop(self):
-        """Stop the Rayforce event loop and clean up resources."""
-        if not self._running:
-            return
-        self._cmd_queue.put({"cmd": "exit"})
-        self._thread.join(timeout=2.0)
-        self._running = False
-        logger.info("Rayforce event loop stopped")
-        
-    def _run_poll_loop(self):
         """Main event loop that processes Rayforce events."""
         # All Rayforce initialization must happen here!
         argv = [b"raypy", b"-r", b"0", None]
         logger.info(f"Initializing Rayforce runtime with argv: {argv}")
         self._rayforce.runtime_create(3, (c_char_p * 4)(*argv))
-        try:
-            while self._running:
-                # Handle commands from the queue
-                try:
-                    cmd = self._cmd_queue.get(timeout=0.05)
-                    if cmd["cmd"] == "exit":
-                        self._running = False
-                        break
-                    elif cmd["cmd"] == "eval":
-                        source = cmd["source"]
-                        buf = self._rayforce.poll_buf_create(len(source.encode()) + 1)
-                        if not buf:
-                            self._result_queue.put(RuntimeError("Failed to create buffer"))
-                            continue
-                        try:
-                            ctypes.memmove(buf, source.encode(), len(source.encode()))
-                            result = self._rayforce.ray_eval_str(buf, None)
-                            if result == -1:
-                                self._result_queue.put(RuntimeError("Failed to evaluate command"))
-                            else:
-                                self._result_queue.put(result)
-                        finally:
-                            self._rayforce.poll_buf_destroy(buf)
-                        continue
-                except queue.Empty:
-                    pass
-                # Run the runtime
-                result = self._rayforce.runtime_run()
-                if result != 0:
-                    logger.info(f"Runtime exited with code {result}")
-                    self._running = False
-                    break
-        except Exception as e:
-            logger.error(f"Error in poll loop: {e}")
-        finally:
-            self._rayforce.runtime_destroy()
+        self._rayforce.runtime_run()
         
     def register_selector(self, fd: int, selector_type: SelectorType, 
                          events: PollEvents, callback: Callable) -> int:
@@ -180,53 +127,7 @@ class RayforceEventLoop:
                 logger.error(f"Failed to register selector for fd {fd}")
                 
             return selector_id
-            
-    def deregister_selector(self, selector_id: int):
-        """Deregister a selector from the event loop."""
-        with self._lock:
-            if selector_id in self._callbacks:
-                self._rayforce.poll_deregister(self._poll, selector_id)
-                del self._callbacks[selector_id]
-                logger.info(f"Deregistered selector {selector_id}")
-                
-    def create_buffer(self, size: int) -> c_void_p:
-        """Create a new buffer for reading/writing data."""
-        return self._rayforce.poll_buf_create(size)
-        
-    def destroy_buffer(self, buf: c_void_p):
-        """Destroy a buffer."""
-        self._rayforce.poll_buf_destroy(buf)
-        
-    def request_read_buffer(self, selector_id: int, size: int) -> int:
-        """Request a buffer for reading data."""
-        selector = self._rayforce.poll_get_selector(self._poll, selector_id)
-        if selector:
-            return self._rayforce.poll_rx_buf_request(self._poll, selector, size)
-        return -1
-        
-    def send_buffer(self, selector_id: int, buf: c_void_p) -> int:
-        """Send data from a buffer."""
-        selector = self._rayforce.poll_get_selector(self._poll, selector_id)
-        if selector:
-            return self._rayforce.poll_send_buf(self._poll, selector, buf)
-        return -1
-        
-    def block_on(self, selector_id: int) -> Any:
-        """Block until a selector is ready."""
-        selector = self._rayforce.poll_get_selector(self._poll, selector_id)
-        if selector:
-            return self._rayforce.poll_block_on(self._poll, selector)
-        return None
-
-    def eval(self, source: str) -> Any:
-        """Evaluate a Rayforce command."""
-        if not self._running:
-            raise RuntimeError("Rayforce event loop is not running")
-        self._cmd_queue.put({"cmd": "eval", "source": source})
-        result = self._result_queue.get()
-        if isinstance(result, Exception):
-            raise result
-        return result
+       
 
 class RayforceEventLoopPolicy(asyncio.AbstractEventLoopPolicy):
     """Event loop policy that integrates Rayforce with asyncio."""
