@@ -2611,7 +2611,7 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
     }
     Py_DECREF(write_result);
 
-    // Flush stdout
+    // Flush stdout to ensure prompt is displayed
     PyObject *flush_result = PyObject_CallMethod(g_repl_state.stdout, "flush", NULL);
     if (!flush_result)
     {
@@ -2736,6 +2736,15 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
         obj_p res = eval_str(input);
         io_write(STDOUT_FILENO, 2, res);
         drop_obj(res);
+    }
+
+    // Print a newline after the result
+    PyObject *newline = PyUnicode_FromString("\n");
+    if (newline)
+    {
+        PyObject *write_result = PyObject_CallMethod(g_repl_state.stdout, "write", "O", newline);
+        Py_DECREF(write_result);
+        Py_DECREF(newline);
     }
 
     // Cleanup
