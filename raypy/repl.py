@@ -46,15 +46,14 @@ class RayforceREPL:
         self._setup_signal_handlers()
         
         try:
-            while self._running:
-                try:
-                    r.repl_step()
-                except KeyboardInterrupt:
-                    print("\nUse Ctrl+D or type 'exit' to quit")
-                except EOFError:
-                    break
-                except Exception as e:
-                    print(f"Error: {e}")
+            # Start the Rayforce runtime which will handle stdin through poll events
+            r.runtime_run()
+        except KeyboardInterrupt:
+            print("\nUse Ctrl+D or type 'exit' to quit")
+        except EOFError:
+            pass
+        except Exception as e:
+            print(f"Error: {e}")
         finally:
             self.stop()
             

@@ -33,6 +33,7 @@
 #include "vary.h"
 #include "os.h"
 #include "proc.h"
+#include <unistd.h>
 
 // Global variable to store the runtime pointer
 static void *g_runtime = NULL;
@@ -41,6 +42,8 @@ static void *g_runtime = NULL;
 #ifndef memcpy
 extern void *memcpy(void *dest, const void *src, size_t n);
 #endif
+
+void register_python_repl_stdin(void);
 
 // Forward declaration of RayObjectType
 static PyTypeObject RayObjectType;
@@ -2513,6 +2516,9 @@ static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
         Py_DECREF(header_str);
     }
 
+    // Register Python REPL stdin with poll
+    register_python_repl_stdin();
+
     Py_RETURN_NONE;
 }
 
@@ -2822,4 +2828,50 @@ PyMODINIT_FUNC PyInit__rayforce(void)
     }
 
     return m;
+}
+
+// Event handler for stdin in the poll loop
+static option_t python_repl_on_data(poll_p poll, selector_p selector)
+{
+    UNUSED(poll);
+    UNUSED(selector);
+
+    // Call the Python REPL step
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *result = rayforce_repl_step(NULL, NULL);
+    PyGILState_Release(gstate);
+
+    // Check if we should continue
+    if (result == NULL)
+    {
+        // Error occurred or EOF
+        if (PyErr_Occurred())
+        {
+            if (PyErr_ExceptionMatches(PyExc_EOFError))
+            {
+                // On EOF, just return - the poll system will handle cleanup
+                return option_none();
+            }
+            PyErr_Print();
+        }
+    }
+
+    return option_none();
+}
+
+// Register stdin with the Rayforce poll API for the Python REPL
+void register_python_repl_stdin(void)
+{
+    poll_p poll = runtime_get_ext()->poll;
+    struct poll_registry_t registry = {0};
+    registry.fd = STDIN_FILENO;
+    registry.type = SELECTOR_TYPE_STDIN;
+    registry.events = POLL_EVENT_READ | POLL_EVENT_ERROR | POLL_EVENT_HUP;
+    registry.recv_fn = NULL;
+    registry.read_fn = python_repl_on_data; // Use read_fn instead of data_fn
+    registry.close_fn = NULL;
+    registry.error_fn = NULL;
+    registry.data_fn = NULL; // Not using data_fn anymore
+    registry.data = NULL;
+    poll_register(poll, &registry);
 }
