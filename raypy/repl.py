@@ -3,7 +3,24 @@
 import sys
 import signal
 from typing import Optional, Callable
+import ctypes
+import os
+
+# Load the shared library globally before importing as a Python extension
+ctypes.CDLL(os.path.join(os.path.dirname(__file__), "_rayforce.so"), mode=getattr(ctypes, 'RTLD_GLOBAL', 256))
+
+# Set RTLD_GLOBAL before importing the extension
+if hasattr(sys, 'setdlopenflags'):
+    _orig_flags = sys.getdlopenflags()
+    RTLD_GLOBAL = getattr(ctypes, 'RTLD_GLOBAL', getattr(os, 'RTLD_GLOBAL', 256))
+    RTLD_NOW = getattr(ctypes, 'RTLD_NOW', getattr(os, 'RTLD_NOW', 2))
+    sys.setdlopenflags(RTLD_GLOBAL | RTLD_NOW)
+
 from . import _rayforce as r
+
+# Restore original dlopen flags
+if hasattr(sys, 'setdlopenflags'):
+    sys.setdlopenflags(_orig_flags)
 
 class RayforceREPL:
     def __init__(self, prompt: str = "raypy> "):
