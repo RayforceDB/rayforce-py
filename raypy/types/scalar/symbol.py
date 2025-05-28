@@ -70,3 +70,6 @@ class Symbol:
 
     def __hash__(self):
         return hash(self.value)
+
+    def __format__(self, format_spec: str) -> str:
+        return format(str(self), format_spec)

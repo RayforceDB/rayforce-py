@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, Iterable, TypeVar, Generic, List as PyList
 import numpy as np
 import numpy.typing as npt
@@ -15,8 +16,6 @@ class GUID:
     """
     # Rayforce GUID type (Globally unique identifier)
     Analog of Python uuid.uuid4. Made as a vector of chars
-
-
     """
 
     ptr: r.RayObject
@@ -113,7 +112,7 @@ class Vector(Generic[T]):
     ptr: r.RayObject
     class_type: scalar.ScalarType
     ray_get_item_at_idx_method = "at_idx"
-    ray_set_item_at_idx_method = "set_idx"
+    ray_set_item_at_idx_method = "ins_obj"
     ray_get_vector_length = "get_vector_length"
 
     def __init__(
@@ -173,8 +172,12 @@ class Vector(Generic[T]):
     def to_list(self) -> PyList[T]:
         return [self[i] for i in range(len(self))]
 
+    def __iter__(self) -> Any:
+        for i in range(len(self)):
+            yield self.__getitem__(i)
+
     def __str__(self) -> str:
-        return f"Vector[{self.class_type}]({self.to_list()})"
+        return f"Vector[{-self.class_type.ray_type_code}] of len {len(self)}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -188,10 +191,6 @@ class Vector(Generic[T]):
             return all(self[i] == other[i] for i in range(len(self)))
         except Exception:
             return False
-
-    @property
-    def ray_type_code(self) -> int:
-        return -self.class_type.ray_type_code
 
 
 class List:
@@ -298,6 +297,20 @@ class List:
     def __repr__(self) -> str:
         return f"List({str(self)})"
 
+    def __add__(self, addable: list | List) -> List:
+        if isinstance(addable, List):
+            return List([i for i in self] + [i for i in addable])
+        if isinstance(addable, list):
+            return List([i for i in self] + addable)
+        raise ValueError("Unable to concatenate types")
+
+    def __radd__(self, addable: list | List) -> List:
+        if isinstance(addable, List):
+            return List([i for i in self] + [i for i in addable])
+        if isinstance(addable, list):
+            return List([i for i in self] + addable)
+        raise ValueError("Unable to concatenate types")
+
 
 class Dict:
     """
@@ -394,13 +407,13 @@ class Table:
 
     def __init__(
         self,
-        columns: list[str]
+        columns: list[str]  # Always vector of symbols
         | npt.NDArray[np.str_]
         | Vector[scalar.Symbol]
-        | List
         | None = None,
         values: List | list | None = None,
         *,
+        name: str | scalar.Symbol | None = None,
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
@@ -414,45 +427,62 @@ class Table:
         if (columns is None or values is None) or len(columns) == 0:
             raise ValueError("Provide columns and values for table initialisation")
 
+        if name and not isinstance(name, (str, scalar.Symbol)):
+            raise ValueError("Table name should be string or symbol")
+
+        # Parse columns to Vector of symbols
         if isinstance(columns, list):
-            if not all([isinstance(i, str) for i in columns]):
-                raise ValueError("Columns python list must be of strings")
-            c = from_pythonic_to_raypy_type(columns)
+            if not all([isinstance(i, (str, scalar.Symbol)) for i in columns]):
+                raise ValueError(
+                    "Column elements must be of RF Symbols or Python strings"
+                )
+            table_columns = Vector(scalar.Symbol, len(columns))
+            for idx, item in enumerate(columns):
+                table_columns[idx] = item
         elif isinstance(columns, np.ndarray):
-            for i in columns:
-                if not isinstance(i.item(), str):
-                    raise ValueError("Columns numpy array must be of strings")
-            c = from_pythonic_to_raypy_type(columns)
+            if not all([isinstance(i.item(), (str, scalar.Symbol)) for i in columns]):
+                raise ValueError(
+                    "Column elements must be of RF Symbols or Python strings"
+                )
+            table_columns = from_pythonic_to_raypy_type(columns)
         elif isinstance(columns, Vector):
-            for i in columns:
-                if not isinstance(i, scalar.Symbol):
-                    raise ValueError("Columns vector must be of symbols")
-            c = columns
-        elif isinstance(columns, List):
-            if not all([isinstance(i, scalar.Symbol) for i in columns]):
-                raise ValueError("Columns RayForce list must be of symbols")
-            c = columns
+            if columns.ptr.get_type() != -scalar.Symbol.ray_type_code:
+                raise ValueError("Column elements must be a Vector of symbols")
+            table_columns = columns
         else:
             raise ValueError(f"Invalid type for columns - {type(columns)}")
 
-        if isinstance(values, list):
-            v = List(values)
-        elif isinstance(values, List):
-            v = values
-        else:
+        # Verify values are of correct type
+        if not isinstance(values, (list, List)):
             raise ValueError(f"Invalid type for values - {type(values)}")
 
-        # Assert columns and values having same length
-        if any([len(v_i) != len(c) for v_i in v]):
+        table_values = List(values) if isinstance(values, list) else values
+
+        # Assert columns vector and values list are having same length
+        if len(columns) != len(values):
             raise ValueError("Keys and values lists must have the same length")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(c.ptr, v.ptr)
+            self.ptr = getattr(r.RayObject, self.ray_init_method)(
+                table_columns.ptr, table_values.ptr
+            )
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
 
-    def keys(self) -> List | Vector:
+        # Set table name
+        if name:
+            try:
+                name_ptr = (
+                    scalar.Symbol(name).ptr if isinstance(name, str) else name.ptr
+                )
+                table = getattr(r.RayObject, self.ray_set_method)(name_ptr, self.ptr)
+                print(f"set table name to {name}")
+                assert table is not None, "Fail when assigning table a name"
+            except Exception as e:
+                raise TypeError(f"Error during table name assignment - {str(e)}")
+
+    def columns(self) -> List | Vector:
         _keys = getattr(self.ptr, self.ray_table_keys_method)()
         return from_pointer_to_raypy_type(_keys)
 
@@ -461,7 +491,45 @@ class Table:
         return from_pointer_to_raypy_type(_values)
 
     def __str__(self) -> str:
-        return f"Table({self.keys()}) with length of {len(self.values())}"
+        columns = self.columns()
+        values = self.values()
+
+        rows = list(zip(*values))
+
+        all_rows = [columns] + rows
+        col_widths = [max(len(str(cell)) for cell in col) for col in zip(*all_rows)]
+
+        # Box drawing chars
+        tl, tr = "┌", "┐"
+        bl, br = "└", "┘"
+        h, v = "─", "│"
+        hl, hr, hm = "├", "┤", "┼"
+        ct = "┬"
+        cb = "┴"
+
+        # Helper: line builder
+        def line(left, mid, right):
+            return left + mid.join(h * (w + 2) for w in col_widths) + right
+
+        # Top, header separator, bottom
+        top = line(tl, ct, tr)
+        header_sep = line(hl, hm, hr)
+        bottom = line(bl, cb, br)
+
+        def format_row(row):
+            # pad cell content with 1 space on each side
+            return (
+                v
+                + v.join(f" {str(cell).ljust(w)} " for cell, w in zip(row, col_widths))
+                + v
+            )
+
+        lines = [top, format_row(columns), header_sep]
+        for row in rows:
+            lines.append(format_row(row))
+        lines.append(bottom)
+
+        return "\n".join(lines)
 
     def __repr__(self) -> str:
         return str(self)

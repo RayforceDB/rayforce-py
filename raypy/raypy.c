@@ -1542,6 +1542,46 @@ static PyObject *RayObject_set_idx(RayObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+// Insert object at index in vector/list
+static PyObject *RayObject_ins_obj(RayObject *self, PyObject *args)
+{
+    Py_ssize_t index;
+    RayObject *item;
+    
+    if (!PyArg_ParseTuple(args, "nO!", &index, &RayObjectType, &item))
+    {
+        return NULL;
+    }
+
+    if (self->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+
+    if (index < 0 || index > (Py_ssize_t)self->obj->len)
+    {
+        PyErr_SetString(PyExc_IndexError, "Insert index out of range");
+        return NULL;
+    }
+
+    obj_p clone = clone_obj(item->obj);
+    if (clone == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
+        return NULL;
+    }
+
+    if (ins_obj(&self->obj, (i64_t)index, clone) == NULL)
+    {
+        drop_obj(clone);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to insert item in vector/list");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 /*
  * Get vector length for any object that has a length attribute
  */
@@ -1648,7 +1688,7 @@ static PyObject *RayObject_ray_sub(RayObject *self, PyObject *args)
 /*
  * Multiplication operation for RayObjects
  */
-static PyObject *RayObject_ray_mul(RayObject *self, PyObject *args)
+static PyObject *RayObject_mul(RayObject *self, PyObject *args)
 {
     RayObject *other;
 
@@ -2480,8 +2520,11 @@ static PyMethodDef RayObject_methods[] = {
      "Subtract two RayObjects"},
 
     // Multiplication method
-    {"ray_mul", (PyCFunction)RayObject_ray_mul, METH_VARARGS,
+    {"ray_mul", (PyCFunction)ray_mul, METH_VARARGS,
      "Multiply two RayObjects"},
+
+    // {"ray_mul", (PyCFunction)RayObject_ray_mul, METH_VARARGS,
+    //  "Multiply two RayObjects"},
 
     // Division method
     {"ray_div", (PyCFunction)RayObject_ray_div, METH_VARARGS,
@@ -2534,6 +2577,8 @@ static PyMethodDef RayObject_methods[] = {
     {"ray_set", (PyCFunction)RayObject_ray_set, METH_VARARGS | METH_CLASS,
      "Set a value to a symbol or save to file"},
 
+    {"ins_obj", (PyCFunction)RayObject_ins_obj, METH_VARARGS,
+     "Insert object at index in vector/list"},
 
     {NULL, NULL, 0, NULL}};
 
