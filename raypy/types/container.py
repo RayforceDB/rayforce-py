@@ -390,6 +390,7 @@ class Table:
     ray_init_method = "create_table"
     ray_table_keys_method = "table_keys"
     ray_table_values_method = "table_values"
+    ray_set_method = "ray_set"
 
     def __init__(
         self,
@@ -466,6 +467,17 @@ class Table:
         return str(self)
 
 
+# class Query(Dict):
+#     """
+#     Dict instance which represents a database query (select, for example)
+#     """
+
+#     def __init__(
+#         self,
+#         value: dict[]
+#     )
+
+
 RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_I16: scalar.i16,
     -r.TYPE_I32: scalar.i32,
@@ -535,6 +547,9 @@ def from_pythonic_to_raypy_type(
     if value is None:
         raise ValueError("Value can not be None")
 
+    if isinstance(value, r.RayObject):
+        return from_pointer_to_raypy_type(value)
+
     if isinstance(
         value,
         (
@@ -546,6 +561,7 @@ def from_pythonic_to_raypy_type(
             scalar.i32,
             scalar.i64,
             scalar.f64,
+            scalar.c8,
             scalar.b8,
             scalar.Date,
             scalar.Time,

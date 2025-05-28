@@ -2196,6 +2196,126 @@ static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
     }
 }
 
+/*
+ * Select operation - SQL-like query interface
+ */
+static PyObject *RayObject_ray_select(PyTypeObject *type, PyObject *args)
+{
+    RayObject *query_dict;
+
+    // Parse argument - expect a single RayObject (dictionary)
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &query_dict))
+    {
+        return NULL;
+    }
+
+    // Validate that the query object exists and is a dictionary
+    if (query_dict->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Query object cannot be NULL");
+        return NULL;
+    }
+
+    if (query_dict->obj->type != TYPE_DICT)
+    {
+        PyErr_SetString(PyExc_TypeError, "Query must be a dictionary (TYPE_DICT)");
+        return NULL;
+    }
+
+    // Create a new RayObject for the result
+    RayObject *result = (RayObject *)type->tp_alloc(type, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Call rayforce's select operation directly
+    result->obj = ray_select(query_dict->obj);
+    
+    // Check for errors
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to execute select query");
+        return NULL;
+    }
+
+    // Check if result is an error object
+    if (result->obj->type == TYPE_ERR)
+    {
+        // Don't DECREF here, let Python handle the error object
+        return (PyObject *)result;  // Return the error for inspection
+    }
+
+    // Verify result is a table
+    if (result->obj->type != TYPE_TABLE)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Select query did not return a table");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+
+/*
+ * Set operation - Assign value to symbol or save to file
+ */
+static PyObject *RayObject_ray_set(PyTypeObject *type, PyObject *args)
+{
+    RayObject *symbol_or_path;
+    RayObject *value;
+
+    // Parse arguments - expect two RayObjects
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &symbol_or_path, &RayObjectType, &value))
+    {
+        return NULL;
+    }
+
+    // Validate that the objects exist
+    if (symbol_or_path->obj == NULL || value->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Neither symbol/path nor value can be NULL");
+        return NULL;
+    }
+
+    // Validate that the first argument is either a symbol or string
+    if (symbol_or_path->obj->type != -TYPE_SYMBOL && symbol_or_path->obj->type != TYPE_C8)
+    {
+        PyErr_SetString(PyExc_TypeError, "First argument must be a symbol or string");
+        return NULL;
+    }
+
+    // Create a new RayObject for the result
+    RayObject *result = (RayObject *)type->tp_alloc(type, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Call rayforce's set operation directly
+    result->obj = ray_set(symbol_or_path->obj, value->obj);
+    
+    // Check for errors
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to execute set operation");
+        return NULL;
+    }
+
+    // Check if result is an error object
+    if (result->obj->type == TYPE_ERR)
+    {
+        // Don't DECREF here, let Python handle the error object
+        return (PyObject *)result;  // Return the error for inspection
+    }
+
+    return (PyObject *)result;
+}
+
 // Методы RayObject
 static PyMethodDef RayObject_methods[] = {
     // Integer methods
@@ -2403,6 +2523,14 @@ static PyMethodDef RayObject_methods[] = {
     // Error handling
     {"get_error_message", (PyCFunction)RayObject_get_error_message, METH_NOARGS,
      "Get the error message from an error object"},
+
+    // Select method
+    {"ray_select", (PyCFunction)RayObject_ray_select, METH_VARARGS | METH_CLASS,
+     "Perform a SELECT query operation on data"},
+
+    {"ray_set", (PyCFunction)RayObject_ray_set, METH_VARARGS | METH_CLASS,
+     "Set a value to a symbol or save to file"},
+
 
     {NULL, NULL, 0, NULL}};
 
