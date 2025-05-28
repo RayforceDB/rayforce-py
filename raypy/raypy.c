@@ -2495,14 +2495,10 @@ static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
 
     // Print rich header
     const char *header =
-        ANSI_BOLD ANSI_BLUE "Rayforce Interactive REPL v1.0.0\n" ANSI_RESET ANSI_LIGHTGRAY "Build: 2024-05-20\n"
-                            "License: MIT\n"
-                            "GitHub: https://github.com/singaraiona/raypy\n"
-                            "Docs:   https://github.com/singaraiona/raypy\n"
-                            "\n"
+        ANSI_BOLD ANSI_BLUE "Rayforce Interactive REPL\n" ANSI_RESET ANSI_LIGHTGRAY "\n"
                             "Modes:\n"
-                            "  • [" ANSI_BLUE "rf" ANSI_LIGHTGRAY "] Rayforce mode (default)\n"
-                            "  • [" ANSI_GREEN "py" ANSI_LIGHTGRAY "] Python mode\n"
+                            "  • [" ANSI_GREEN "rf" ANSI_LIGHTGRAY "] Rayfall mode (current)\n"
+                            "  • [" ANSI_BLUE "py" ANSI_LIGHTGRAY "] Python mode\n"
                             "\n"
                             "Commands:\n"
                             "  • :py  Switch to Python mode\n"
@@ -2588,13 +2584,13 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
     {
         // Rayforce mode - blue with minimalist indicator
         snprintf(mode_prompt, sizeof(mode_prompt),
-                 ANSI_BOLD ANSI_BLUE "[rf] ↪ " ANSI_RESET);
+                 ANSI_BOLD ANSI_GREEN "[rf] ↪ " ANSI_RESET);
     }
     else
     {
         // Python mode - green with minimalist indicator
         snprintf(mode_prompt, sizeof(mode_prompt),
-                 ANSI_BOLD ANSI_GREEN "[py] ↪ " ANSI_RESET);
+                 ANSI_BOLD ANSI_BLUE "[py] ↪ " ANSI_RESET);
     }
 
     // Print prompt

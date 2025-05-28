@@ -1,99 +1,70 @@
-#!/usr/bin/env python3
-
 import sys
 import signal
-from typing import Optional, Callable
-import ctypes
-import os
 
-# Load the shared library globally before importing as a Python extension
-ctypes.CDLL(os.path.join(os.path.dirname(__file__), "_rayforce.so"), mode=getattr(ctypes, 'RTLD_GLOBAL', 256))
+from raypy import _rayforce as r
 
-# Set RTLD_GLOBAL before importing the extension
-if hasattr(sys, 'setdlopenflags'):
-    _orig_flags = sys.getdlopenflags()
-    RTLD_GLOBAL = getattr(ctypes, 'RTLD_GLOBAL', getattr(os, 'RTLD_GLOBAL', 256))
-    RTLD_NOW = getattr(ctypes, 'RTLD_NOW', getattr(os, 'RTLD_NOW', 2))
-    sys.setdlopenflags(RTLD_GLOBAL | RTLD_NOW)
 
-from . import _rayforce as r
+class RaypyREPL:
+    _running = False
+    _signal_handlers = {}
 
-# Restore original dlopen flags
-if hasattr(sys, 'setdlopenflags'):
-    sys.setdlopenflags(_orig_flags)
-
-class RayforceREPL:
-    def __init__(self, prompt: str = "raypy> "):
-        """Initialize the Rayforce REPL.
-        
-        Args:
-            prompt: The prompt string to display before each input line
-        """
-        self.prompt = prompt
-        self._running = False
-        self._signal_handlers = {}
-        
     def start(self):
-        """Start the REPL loop."""
+        """
+        Start the REPL loop
+        """
+
         if self._running:
+            print("Warning: REPL already running.")
             return
-            
-        # Initialize the REPL
-        r.repl_init(self.prompt)
+
+        r.repl_init()
         self._running = True
-        
+
         # Set up signal handlers
-        self._setup_signal_handlers()
-        
+        def handle_sigint(*args, **kwargs) -> None:
+            raise KeyboardInterrupt()
+
+        def handle_sigterm(*args, **kwargs) -> None:
+            self.stop()
+            sys.exit(0)
+
+        self._signal_handlers = {
+            signal.SIGINT: signal.signal(signal.SIGINT, handle_sigint),
+            signal.SIGTERM: signal.signal(signal.SIGTERM, handle_sigterm),
+        }
+
         try:
-            # Start the Rayforce runtime which will handle stdin through poll events
             r.runtime_run()
         except KeyboardInterrupt:
-            print("\nUse Ctrl+D or type 'exit' to quit")
+            print(" Exiting the REPL...")
         except EOFError:
             pass
         except Exception as e:
             print(f"Error: {e}")
         finally:
             self.stop()
-            
+
     def stop(self):
-        """Stop the REPL loop."""
+        """
+        Stop the REPL loop
+        """
         if not self._running:
+            print("Warning: REPL not running to be stopped.")
             return
-            
+
         self._running = False
-        self._restore_signal_handlers()
-        r.repl_cleanup()
-        
-    def _setup_signal_handlers(self):
-        """Set up signal handlers for graceful shutdown."""
-        def handle_sigint(signum, frame):
-            raise KeyboardInterrupt()
-            
-        def handle_sigterm(signum, frame):
-            self.stop()
-            sys.exit(0)
-            
-        self._signal_handlers = {
-            signal.SIGINT: signal.signal(signal.SIGINT, handle_sigint),
-            signal.SIGTERM: signal.signal(signal.SIGTERM, handle_sigterm)
-        }
-        
-    def _restore_signal_handlers(self):
-        """Restore original signal handlers."""
+
         for signum, handler in self._signal_handlers.items():
             signal.signal(signum, handler)
         self._signal_handlers.clear()
 
-def start_repl(prompt: str = "raypy> "):
-    """Start the Rayforce REPL with the given prompt.
-    
-    Args:
-        prompt: The prompt string to display before each input line
-    """
-    repl = RayforceREPL(prompt)
-    repl.start()
+        r.repl_cleanup()
 
-if __name__ == "__main__":
-    start_repl() 
+
+def start_repl() -> None:
+    """
+    Initiate Raypy REPL, which consists of 2 modes:
+    1. Python mode - executing python code
+    2. Rayforce mode - executing rayforce queries with rayfall language
+    """
+    RaypyREPL().start()
