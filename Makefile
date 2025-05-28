@@ -62,6 +62,9 @@ all: clean pull_from_gh patch_makefile ext
 test:
 	pytest tests/
 
+runtime:
+	python3 -c 'from raypy import repl; repl.start_repl()'
+
 lint:
 	ruff format tests/ raypy/
 	ruff check raypy/ --fix
