@@ -1156,9 +1156,12 @@ RayObject_create_dict(PyTypeObject *type, PyObject *args)
     }
 
     // Check that inputs are lists
-    if (keys_obj->obj == NULL || keys_obj->obj->type != TYPE_LIST)
+    if (
+        keys_obj->obj == NULL
+        || (keys_obj->obj->type != TYPE_LIST && keys_obj->obj->type != TYPE_SYMBOL)
+    )
     {
-        PyErr_SetString(PyExc_TypeError, "Keys must be a list");
+        PyErr_SetString(PyExc_TypeError, "Keys must be a list or vector of symbols");
         return NULL;
     }
 
