@@ -35,18 +35,12 @@ jobs:
           cd docs
           mkdocs build
           cd ..
-          touch docs/site/.nojekyll
+          mv docs/site .
+          cp docs/.nojekyll site/
         
       - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
+        uses: actions/deploy-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/site
-          publish_branch: gh-pages
-          force_orphan: true
-          enable_jekyll: false
-          disable_nojekyll: false
-          exclude_assets: .github
-          commit_message: "Deploy docs to GitHub Pages"
-          keep_files: false 
+          token: ${{ secrets.GITHUB_TOKEN }}
+        branch: gh-pages
+        folder: site
