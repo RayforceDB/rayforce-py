@@ -39,6 +39,7 @@ jobs:
         cd ..
         mv docs/site .
         cp docs/.nojekyll site/
+        cp docs/CNAME site/CNAME
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
