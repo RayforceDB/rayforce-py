@@ -35,6 +35,8 @@ jobs:
           cd docs
           mkdocs build
           cd ..
+          echo "Contents of docs/site:"
+          ls -la docs/site
         
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -46,4 +48,5 @@ jobs:
           force_orphan: false
           enable_jekyll: false
           disable_nojekyll: false
-          exclude_assets: .github 
+          exclude_assets: .github
+          commit_message: "Deploy docs to GitHub Pages" 
