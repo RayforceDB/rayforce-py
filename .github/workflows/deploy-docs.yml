@@ -1,48 +1,60 @@
-name: Deploy Documentation
+name: Documentation
 
 on:
   push:
-    branches:
-      - main
+    branches: [ master ]
   pull_request:
-    branches:
-      - main
+    branches: [ master ]
+  workflow_dispatch:
 
-# Add permissions block
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
-  deploy:
+  docs:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
     steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: main
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install mkdocs-material mkdocs-git-revision-date-localized-plugin
-          
-      - name: Build documentation
-        run: |
-          cd docs
-          mkdocs build
-          cd ..
-          mv docs/site .
-          cp docs/.nojekyll site/
-        
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./site
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.x
+
+    - name: Install MkDocs
+      run: |
+        pip install mkdocs-material
+        pip install mkdocs-git-revision-date-plugin
+
+    - name: Build documentation
+      run: |
+        cd docs
+        mkdocs build
+        cd ..
+        mv docs/site .
+        cp docs/.nojekyll site/
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      with:
+        enablement: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./site
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: gh-pages
+        folder: site
