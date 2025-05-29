@@ -11,6 +11,8 @@ on:
 # Add permissions block
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
@@ -39,8 +41,8 @@ jobs:
           cp docs/.nojekyll site/
         
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-        branch: gh-pages
-        folder: site
+          path: ./site
