@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: main
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -39,4 +41,9 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/site 
+          publish_dir: ./docs/site
+          publish_branch: gh-pages
+          force_orphan: false
+          enable_jekyll: false
+          disable_nojekyll: false
+          exclude_assets: .github 
