@@ -1,21 +1,33 @@
-# Welcome to RayPy Documentation
+# :material-database: Welcome to RayforceDB
 
-Welcome to the official documentation for RayPy. This documentation will help you get started with RayPy and provide detailed information about its features and usage.
+The RayPy is a Python interface to the RayforceDB columnar database.
 
-## Quick Start
+<div class="grid cards" markdown>
 
-To get started with RayPy, check out our [Introduction](content/intro.md) page.
+- :fontawesome-solid-feather-pointed:{ .lg .middle } __Python Native Interface__
 
-## Features
+    ---
 
-- Feature 1
-- Feature 2
-- Feature 3
+    Seamless integration with Python, providing a familiar and intuitive API for data manipulation and analysis.
 
-## Contributing
+- :material-poll:{ .lg .middle } __Columnar Storage__
 
-We welcome contributions! Please check our contributing guidelines for more information.
+    ---
 
-## License
+    Leverages RayforceDB's columnar storage for optimized data access and vectorized operations, enabling high-performance analytics.
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+- :material-language-c:{ .lg .middle } __Rich Data Types__
+
+    ---
+
+    Comprehensive support for various data types including integers, floats, strings, symbols, dates, timestamps, and complex data structures like tables and dictionaries.
+
+- :material-scale-balance:{ .lg .middle } __Open Source, MIT__
+
+    ---
+
+    RayforceDB is licensed under MIT and available on [GitHub](https://github.com/singaraiona/rayforce)
+
+</div>
+
+<asciinema-player src="assets/demo.cast" preload rows="24" loop=1></asciinema-player>
