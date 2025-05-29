@@ -35,8 +35,7 @@ jobs:
           cd docs
           mkdocs build
           cd ..
-          echo "Contents of docs/site:"
-          ls -la docs/site
+          touch docs/site/.nojekyll
         
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -45,8 +44,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/site
           publish_branch: gh-pages
-          force_orphan: false
+          force_orphan: true
           enable_jekyll: false
           disable_nojekyll: false
           exclude_assets: .github
-          commit_message: "Deploy docs to GitHub Pages" 
+          commit_message: "Deploy docs to GitHub Pages"
+          keep_files: false 
