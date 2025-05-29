@@ -1,4 +1,4 @@
-# :material-database: Welcome to RayforceDB
+# :material-database: Welcome to RayPy
 
 The RayPy is a Python interface to the RayforceDB columnar database.
 
