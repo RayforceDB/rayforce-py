@@ -66,7 +66,7 @@ runtime:
 	python3 -c 'from raypy import repl; repl.start_repl()'
 
 py:
-	python3 -i -c "from raypy.types import container as c; from raypy.types import scalar as s; from raypy import _rayforce as r"
+	ipython -i -c "from raypy.types import container as c; from raypy.types import scalar as s; from raypy import _rayforce as r"
 
 lint:
 	ruff format tests/ raypy/
