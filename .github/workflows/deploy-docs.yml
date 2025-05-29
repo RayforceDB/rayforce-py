@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+# Add permissions block
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
