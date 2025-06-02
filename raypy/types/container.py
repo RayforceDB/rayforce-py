@@ -403,7 +403,7 @@ class Table:
     ray_init_method = "create_table"
     ray_table_keys_method = "table_keys"
     ray_table_values_method = "table_values"
-    ray_set_method = "ray_set"
+    ray_set_method = "binary_set"
 
     def __init__(
         self,

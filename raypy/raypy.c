@@ -56,13 +56,8 @@ typedef struct
 // Deallocator for RayObject
 static void RayObject_dealloc(RayObject *self)
 {
-    if (self->obj != NULL)
-    {
-        self->obj->rc--;
-        if (self->obj->rc == 0)
-        {
-            drop_obj(self->obj);
-        }
+    if (self->obj != NULL) {
+        drop_obj(self->obj);
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -488,15 +483,7 @@ static PyObject *RayObject_list_append(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    // Push the item to the list
-    if (push_obj(&self->obj, clone) == NULL)
-    {
-        // If push_obj fails, we need to free the clone
-        drop_obj(clone);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to append item to list");
-        return NULL;
-    }
-
+    push_obj(&self->obj, clone);
     Py_RETURN_NONE;
 }
 
@@ -578,15 +565,7 @@ static PyObject *RayObject_list_set_item(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    // Set the item at the index
-    if (set_idx(&self->obj, (i64_t)index, clone) == NULL)
-    {
-        // If set_idx fails, we need to free the clone
-        drop_obj(clone);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to set item in list");
-        return NULL;
-    }
-
+    set_idx(&self->obj, (i64_t)index, clone);
     Py_RETURN_NONE;
 }
 
@@ -1020,7 +999,7 @@ RayObject_create_table(PyTypeObject *type, PyObject *args)
     RayObject *self = (RayObject *)type->tp_alloc(type, 0);
     if (self != NULL)
     {
-        self->obj = table(keys_obj->obj, vals_obj->obj);
+        self->obj = ray_table(keys_obj->obj, vals_obj->obj);
         if (self->obj == NULL)
         {
             Py_DECREF(self);
@@ -1155,50 +1134,10 @@ RayObject_create_dict(PyTypeObject *type, PyObject *args)
         return NULL;
     }
 
-    // Check that inputs are lists
-    if (
-        keys_obj->obj == NULL
-        || (keys_obj->obj->type != TYPE_LIST && keys_obj->obj->type != TYPE_SYMBOL)
-    )
-    {
-        PyErr_SetString(PyExc_TypeError, "Keys must be a list or vector of symbols");
-        return NULL;
-    }
-
-    if (vals_obj->obj == NULL || vals_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Values must be a list");
-        return NULL;
-    }
-
-    // Check that lists have the same length
-    if (keys_obj->obj->len != vals_obj->obj->len)
-    {
-        PyErr_SetString(PyExc_ValueError, "Keys and values lists must have the same length");
-        return NULL;
-    }
-
-    // Make sure all keys are either symbols or strings
-    for (i64_t i = 0; i < keys_obj->obj->len; i++)
-    {
-        obj_p key = at_idx(keys_obj->obj, i);
-        if (key == NULL)
-        {
-            PyErr_SetString(PyExc_ValueError, "Invalid key at index");
-            return NULL;
-        }
-
-        if (key->type != -TYPE_SYMBOL && key->type != TYPE_C8)
-        {
-            PyErr_SetString(PyExc_TypeError, "Keys must be symbols or strings");
-            return NULL;
-        }
-    }
-
     RayObject *self = (RayObject *)type->tp_alloc(type, 0);
     if (self != NULL)
     {
-        self->obj = dict(keys_obj->obj, vals_obj->obj);
+        self->obj = ray_dict(keys_obj->obj, vals_obj->obj);
         if (self->obj == NULL)
         {
             Py_DECREF(self);
@@ -1532,12 +1471,7 @@ static PyObject *RayObject_set_idx(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    if (set_idx(&self->obj, (i64_t)index, clone) == NULL)
-    {
-        drop_obj(clone);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to set item in vector");
-        return NULL;
-    }
+    set_idx(&self->obj, (i64_t)index, clone);
 
     Py_RETURN_NONE;
 }
@@ -1572,13 +1506,7 @@ static PyObject *RayObject_ins_obj(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    if (ins_obj(&self->obj, (i64_t)index, clone) == NULL)
-    {
-        drop_obj(clone);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to insert item in vector/list");
-        return NULL;
-    }
-
+    ins_obj(&self->obj, (i64_t)index, clone);
     Py_RETURN_NONE;
 }
 
@@ -2180,7 +2108,7 @@ static PyObject *RayObject_ray_eval(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    result->obj = ray_eval_str(self->obj, NULL);
+    result->obj = ray_eval_str(self->obj, NULL_OBJ);
     if (result->obj == NULL)
     {
         Py_DECREF(result);
@@ -2274,38 +2202,14 @@ static PyObject *RayObject_ray_select(PyTypeObject *type, PyObject *args)
     }
 
     // Call rayforce's select operation directly
-    result->obj = ray_select(query_dict->obj);
-    
-    // Check for errors
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to execute select query");
-        return NULL;
-    }
-
-    // Check if result is an error object
-    if (result->obj->type == TYPE_ERR)
-    {
-        // Don't DECREF here, let Python handle the error object
-        return (PyObject *)result;  // Return the error for inspection
-    }
-
-    // Verify result is a table
-    if (result->obj->type != TYPE_TABLE)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Select query did not return a table");
-        return NULL;
-    }
-
+    result->obj = EVAL_WITH_CTX(ray_select(query_dict->obj), NULL_OBJ);
     return (PyObject *)result;
 }
 
 /*
  * Set operation - Assign value to symbol or save to file
  */
-static PyObject *RayObject_ray_set(PyTypeObject *type, PyObject *args)
+static PyObject *RayObject_binary_set(PyTypeObject *type, PyObject *args)
 {
     RayObject *symbol_or_path;
     RayObject *value;
@@ -2339,8 +2243,8 @@ static PyObject *RayObject_ray_set(PyTypeObject *type, PyObject *args)
     }
 
     // Call rayforce's set operation directly
-    result->obj = ray_set(symbol_or_path->obj, value->obj);
-    
+    result->obj = binary_set(symbol_or_path->obj, value->obj);
+
     // Check for errors
     if (result->obj == NULL)
     {
@@ -2574,7 +2478,7 @@ static PyMethodDef RayObject_methods[] = {
     {"ray_select", (PyCFunction)RayObject_ray_select, METH_VARARGS | METH_CLASS,
      "Perform a SELECT query operation on data"},
 
-    {"ray_set", (PyCFunction)RayObject_ray_set, METH_VARARGS | METH_CLASS,
+    {"binary_set", (PyCFunction)RayObject_binary_set, METH_VARARGS | METH_CLASS,
      "Set a value to a symbol or save to file"},
 
     {"ins_obj", (PyCFunction)RayObject_ins_obj, METH_VARARGS,
