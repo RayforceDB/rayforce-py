@@ -697,4 +697,7 @@ def from_pointer_to_raypy_type(
     if cls := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
         return cls(ray_obj=ptr)
 
+    if ptr_type in (r.TYPE_UNARY, r.TYPE_BINARY):
+        return ptr
+
     raise ValueError(f"RayObject type of {ptr_type} is not supported")

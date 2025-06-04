@@ -2869,6 +2869,49 @@ static PyObject *rayforce_env_get_internal_function(PyObject *self, PyObject *ar
     return (PyObject *)result;
 }
 
+// Evaluate a RayObject using eval_obj
+static PyObject *rayforce_eval_obj(PyObject *self, PyObject *args)
+{
+    RayObject *ray_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
+        return NULL;
+    }
+
+    // Create a new RayObject for the result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Call eval_obj from eval.c
+    result->obj = eval_obj(ray_obj->obj);
+    
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate object");
+        return NULL;
+    }
+
+    // Check if result is an error object
+    if (result->obj->type == TYPE_ERR)
+    {
+        // Don't DECREF here, let Python handle the error object
+        return (PyObject *)result;  // Return the error for inspection
+    }
+
+    return (PyObject *)result;
+}
 
 // List of module methods
 static PyMethodDef module_methods[] = {
@@ -2879,6 +2922,7 @@ static PyMethodDef module_methods[] = {
     {"repl_get_mode", rayforce_repl_get_mode, METH_NOARGS, "Get current REPL mode"},
     {"repl_set_mode", rayforce_repl_set_mode, METH_VARARGS, "Set REPL mode (0=Rayforce, 1=Python)"},
     {"env_get_internal_function", rayforce_env_get_internal_function, METH_VARARGS, "Get internal function by name"},
+    {"eval_obj", rayforce_eval_obj, METH_VARARGS, "Evaluate a RayObject"},
     {NULL, NULL, 0, NULL}};
 
 // Define the module
