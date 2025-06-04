@@ -535,39 +535,6 @@ class Table:
         return str(self)
 
 
-class Query(Dict):
-    """
-    Dict instance which represents a database query (select, for example).
-
-    Difference is that keys are vector, but not list
-    """
-
-    def __init__(
-        self,
-        value: dict[str, Any],
-    ) -> None:
-        pydict_keys = value.keys()
-        query_keys = Vector(scalar.Symbol, length=len(pydict_keys))
-        for idx, key in enumerate(pydict_keys):
-            if not isinstance(key, (str, scalar.Symbol)):
-                raise ValueError("Key objects has to be Strings or Symbols")
-
-            query_keys[idx] = key
-
-        pydict_values = value.values()
-        query_values = List()
-        for v in pydict_values:
-            query_values.append(v)
-
-        try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(
-                query_keys.ptr, query_values.ptr
-            )
-            assert self.ptr is not None, "RayObject should not be empty"
-        except Exception as e:
-            raise TypeError(f"Error during type initialisation - {str(e)}")
-
-
 RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_I16: scalar.i16,
     -r.TYPE_I32: scalar.i32,

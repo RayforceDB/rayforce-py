@@ -33,6 +33,7 @@
 #include "vary.h"
 #include "os.h"
 #include "proc.h"
+#include "env.h"
 #include <unistd.h>
 
 // Global variable to store the runtime pointer
@@ -2828,6 +2829,47 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
+// Get internal function by name
+static PyObject *rayforce_env_get_internal_function(PyObject *self, PyObject *args)
+{
+    const char *name;
+    Py_ssize_t name_len;
+
+    if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
+    {
+        return NULL;
+    }
+
+    if (name_len == 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "Function name cannot be empty");
+        return NULL;
+    }
+
+    // Call env_get_internal_function
+    obj_p func_obj = env_get_internal_function(name);
+    
+    if (func_obj == NULL_OBJ || func_obj == NULL)
+    {
+        Py_RETURN_NONE; // Function not found
+    }
+
+    // Create a new RayObject for the result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        drop_obj(func_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = func_obj; // env_get_internal_function already clones the object
+    
+    return (PyObject *)result;
+}
+
+
 // List of module methods
 static PyMethodDef module_methods[] = {
     {"runtime_run", rayforce_runtime_run, METH_NOARGS, "Run the Rayforce runtime"},
@@ -2836,6 +2878,7 @@ static PyMethodDef module_methods[] = {
     {"repl_step", rayforce_repl_step, METH_NOARGS, "Run one REPL iteration"},
     {"repl_get_mode", rayforce_repl_get_mode, METH_NOARGS, "Get current REPL mode"},
     {"repl_set_mode", rayforce_repl_set_mode, METH_VARARGS, "Set REPL mode (0=Rayforce, 1=Python)"},
+    {"env_get_internal_function", rayforce_env_get_internal_function, METH_VARARGS, "Get internal function by name"},
     {NULL, NULL, 0, NULL}};
 
 // Define the module
