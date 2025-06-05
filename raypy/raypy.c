@@ -2913,6 +2913,34 @@ static PyObject *rayforce_eval_obj(PyObject *self, PyObject *args)
     return (PyObject *)result;
 }
 
+// Get internal function name by object
+static PyObject *rayforce_env_get_internal_name(PyObject *self, PyObject *args)
+{
+    RayObject *ray_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
+        return NULL;
+    }
+
+    // Call env_get_internal_name
+    str_p name = env_get_internal_name(ray_obj->obj);
+    
+    if (name == NULL)
+    {
+        Py_RETURN_NONE; // No name found
+    }
+
+    // Convert C string to Python string
+    return PyUnicode_FromString(name);
+}
+
 // List of module methods
 static PyMethodDef module_methods[] = {
     {"runtime_run", rayforce_runtime_run, METH_NOARGS, "Run the Rayforce runtime"},
@@ -2923,6 +2951,7 @@ static PyMethodDef module_methods[] = {
     {"repl_set_mode", rayforce_repl_set_mode, METH_VARARGS, "Set REPL mode (0=Rayforce, 1=Python)"},
     {"env_get_internal_function", rayforce_env_get_internal_function, METH_VARARGS, "Get internal function by name"},
     {"eval_obj", rayforce_eval_obj, METH_VARARGS, "Evaluate a RayObject"},
+    {"env_get_internal_name", rayforce_env_get_internal_name, METH_VARARGS, "Get internal function name by object"},
     {NULL, NULL, 0, NULL}};
 
 // Define the module

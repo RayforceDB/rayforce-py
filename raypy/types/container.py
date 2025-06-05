@@ -383,13 +383,13 @@ class Dict:
     def __str__(self) -> str:
         result = []
         keys_list = self.keys()
-        for i in keys_list:
-            value = self.get(str(i))
-            result.append(f"{repr(i)}: {repr(value)}")
-        return "{" + ", ".join(result) + "}"
+        for key in keys_list:
+            value = self.get(str(key))
+            result.append(f"\t{repr(key)}: {repr(value)}")
+        return "{\n" + ",\n".join(result) + "\n}"
 
     def __repr__(self) -> str:
-        return f"Dict({str(self)})"
+        return f"Dict({self.__str__()})"
 
 
 class Table:
@@ -683,6 +683,9 @@ def from_pointer_to_raypy_type(
     """
     Convert a raw Rayforce type (RayObject) to one of the raypy types.
     """
+    # TODO: Resolve circular import
+    from raypy.queries import expr
+
     if ptr is None:
         raise ValueError("Pointer can not be None")
 
@@ -698,6 +701,6 @@ def from_pointer_to_raypy_type(
         return cls(ray_obj=ptr)
 
     if ptr_type in (r.TYPE_UNARY, r.TYPE_BINARY):
-        return ptr
+        return expr.QueryOperation.from_ptr(ptr)
 
     raise ValueError(f"RayObject type of {ptr_type} is not supported")
