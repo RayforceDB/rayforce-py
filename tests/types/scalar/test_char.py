@@ -107,7 +107,7 @@ class TestCharType:
 
         # Verify values and types
         assert char_obj.value == "A"  # Value should come from ray_obj, not from "B"
-        assert char_obj.ptr.get_type() == -r.TYPE_C8
+        assert char_obj.ptr.get_obj_type() == -r.TYPE_C8
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(65)

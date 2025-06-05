@@ -20,8 +20,8 @@ class u8:
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_U8
 
-    ray_init_method = "from_u8"
-    ray_extr_method = "get_u8_value"
+    ray_init_method = "init_u8"
+    ray_extr_method = "read_u8"
 
     def __init__(
         self,
@@ -33,7 +33,7 @@ class u8:
             raise ValueError("At least one argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -51,7 +51,7 @@ class u8:
             raise ValueError("Unsigned value is out of range (0-255)")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(value)
+            self.ptr = getattr(r, self.ray_init_method)(value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -59,7 +59,7 @@ class u8:
     @property
     def value(self) -> int:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise TypeError(f"Error during unsigned type extraction - {str(e)}") from e
 

@@ -11,7 +11,7 @@ class TestUnsignedTypes:
         value = u8(42)
         assert value.value == 42
         assert type(value.value) == int
-        assert value.ptr.get_type() == -r.TYPE_U8
+        assert value.ptr.get_obj_type() == -r.TYPE_U8
 
         # Test with string that can be converted to int
         str_value = u8("100")
@@ -78,7 +78,7 @@ class TestUnsignedTypes:
 
         # Verify values and types
         assert value_u8.value == 42
-        assert value_u8.ptr.get_type() == -r.TYPE_U8
+        assert value_u8.ptr.get_obj_type() == -r.TYPE_U8
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

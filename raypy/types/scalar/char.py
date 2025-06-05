@@ -18,8 +18,8 @@ class c8:
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_C8
 
-    ray_init_method = "from_c8"
-    ray_extr_method = "get_c8_value"
+    ray_init_method = "init_c8"
+    ray_extr_method = "read_c8"
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class c8:
             raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -60,7 +60,7 @@ class c8:
             )
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(char_value)
+            self.ptr = getattr(r, self.ray_init_method)(char_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during c8 type initialisation - {str(e)}")
@@ -68,7 +68,7 @@ class c8:
     @property
     def value(self) -> str:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise ValueError(f"Error during b8 type extraction - {str(e)}")
 

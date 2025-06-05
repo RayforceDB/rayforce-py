@@ -13,7 +13,7 @@ class TestDateType:
 
         assert isinstance(date_obj.value, dt.date)
         assert date_obj.value == today
-        assert date_obj.ptr.get_type() == -r.TYPE_DATE
+        assert date_obj.ptr.get_obj_type() == -r.TYPE_DATE
 
     def test_date_creation_from_date(self):
         """Test creating a Date from a Python date object."""
@@ -130,7 +130,7 @@ class TestDateType:
         expected_date = EPOCH_DATE + dt.timedelta(days=days_since_epoch)
         assert date_obj.value == expected_date
         assert date_obj.raw_value == days_since_epoch
-        assert date_obj.ptr.get_type() == -r.TYPE_DATE
+        assert date_obj.ptr.get_obj_type() == -r.TYPE_DATE
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

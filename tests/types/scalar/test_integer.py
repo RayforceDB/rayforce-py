@@ -10,7 +10,7 @@ class TestIntegerTypes:
         value = i16(42)
         assert value.value == 42
         assert type(value.value) == int
-        assert value.ptr.get_type() == -r.TYPE_I16
+        assert value.ptr.get_obj_type() == -r.TYPE_I16
 
         # Test with floating point (should be truncated)
         value_float = i16(42.9)
@@ -42,7 +42,7 @@ class TestIntegerTypes:
         value = i32(42)
         assert value.value == 42
         assert type(value.value) == int
-        assert value.ptr.get_type() == -r.TYPE_I32
+        assert value.ptr.get_obj_type() == -r.TYPE_I32
 
         # Test with floating point (should be truncated)
         value_float = i32(42.9)
@@ -75,7 +75,7 @@ class TestIntegerTypes:
         value = i64(42)
         assert value.value == 42
         assert type(value.value) == int
-        assert value.ptr.get_type() == -r.TYPE_I64
+        assert value.ptr.get_obj_type() == -r.TYPE_I64
 
         # Test with floating point (should be truncated)
         value_float = i64(42.9)
@@ -149,9 +149,9 @@ class TestIntegerTypes:
         assert value_i32.value == 42
         assert value_i64.value == 42
 
-        assert value_i16.ptr.get_type() == -r.TYPE_I16
-        assert value_i32.ptr.get_type() == -r.TYPE_I32
-        assert value_i64.ptr.get_type() == -r.TYPE_I64
+        assert value_i16.ptr.get_obj_type() == -r.TYPE_I16
+        assert value_i32.ptr.get_obj_type() == -r.TYPE_I32
+        assert value_i64.ptr.get_obj_type() == -r.TYPE_I64
 
         # Test with wrong RayObject types
         with pytest.raises(ValueError):

@@ -11,7 +11,7 @@ class TestFloatTypes:
         value = f64(42.5)
         assert value.value == 42.5
         assert type(value.value) == float
-        assert value.ptr.get_type() == -r.TYPE_F64
+        assert value.ptr.get_obj_type() == -r.TYPE_F64
 
         # Test with integer (should be converted to float)
         value_int = f64(42)
@@ -76,7 +76,7 @@ class TestFloatTypes:
 
         # Verify values and types
         assert value_f64.value == 42.5
-        assert value_f64.ptr.get_type() == -r.TYPE_F64
+        assert value_f64.ptr.get_obj_type() == -r.TYPE_F64
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

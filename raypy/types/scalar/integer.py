@@ -26,7 +26,7 @@ class _RayInteger(abc.ABC):
             raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -40,7 +40,7 @@ class _RayInteger(abc.ABC):
             raise ValueError(f"Expected value of type int, got {type(value)}") from e
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(_value)
+            self.ptr = getattr(r, self.ray_init_method)(_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -48,7 +48,7 @@ class _RayInteger(abc.ABC):
     @property
     def value(self) -> int:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise ValueError(f"Error during int type extraction - {str(e)}")
 
@@ -99,8 +99,8 @@ class i16(_RayInteger):
 
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_I16
-    ray_init_method = "from_i16"
-    ray_extr_method = "get_i16_value"
+    ray_init_method = "init_i16"
+    ray_extr_method = "read_i16"
 
 
 class i32(_RayInteger):
@@ -115,8 +115,8 @@ class i32(_RayInteger):
 
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_I32
-    ray_init_method = "from_i32"
-    ray_extr_method = "get_i32_value"
+    ray_init_method = "init_i32"
+    ray_extr_method = "read_i32"
 
 
 class i64(_RayInteger):
@@ -131,5 +131,5 @@ class i64(_RayInteger):
 
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_I64
-    ray_init_method = "from_i64"
-    ray_extr_method = "get_i64_value"
+    ray_init_method = "init_i64"
+    ray_extr_method = "read_i64"

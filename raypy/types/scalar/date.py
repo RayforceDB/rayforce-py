@@ -22,8 +22,8 @@ class Date:
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_DATE
 
-    ray_init_method = "from_date"
-    ray_extr_method = "get_date_value"
+    ray_init_method = "init_date"
+    ray_extr_method = "read_date"
 
     def __init__(
         self,
@@ -32,7 +32,7 @@ class Date:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -57,7 +57,7 @@ class Date:
             raise TypeError(f"Unable to convert {type(value)} to Date")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(days_since_epoch)
+            self.ptr = getattr(r, self.ray_init_method)(days_since_epoch)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -66,7 +66,7 @@ class Date:
     def raw_value(self) -> int:
         """Returns an integer which represents a number of days since epoch"""
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise ValueError(f"Error during Date type extraction - {str(e)}")
 

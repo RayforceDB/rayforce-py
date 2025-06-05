@@ -20,8 +20,8 @@ class Time:
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_TIME
 
-    ray_init_method = "from_time"
-    ray_extr_method = "get_time_value"
+    ray_init_method = "init_time"
+    ray_extr_method = "read_time"
 
     def __init__(
         self,
@@ -30,7 +30,7 @@ class Time:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -73,7 +73,7 @@ class Time:
             raise TypeError(f"Unable to convert {type(value)} to Time")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(ms_since_midnight)
+            self.ptr = getattr(r, self.ray_init_method)(ms_since_midnight)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -81,7 +81,7 @@ class Time:
     @property
     def ms_since_midnight(self) -> int:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise TypeError(f"Error during time type extraction - {str(e)}") from e
 

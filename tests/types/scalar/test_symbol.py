@@ -83,7 +83,7 @@ class TestSymbolType:
         assert (
             symbol_obj.value == "test_ray"
         )  # Value should come from ray_obj, not from "ignored"
-        assert symbol_obj.ptr.get_type() == -r.TYPE_SYMBOL
+        assert symbol_obj.ptr.get_obj_type() == -r.TYPE_SYMBOL
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

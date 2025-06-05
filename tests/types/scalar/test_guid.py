@@ -12,7 +12,7 @@ class TestGUIDType:
 
         # Check that result is a valid UUID
         assert isinstance(guid_obj.value, uuid.UUID)
-        assert guid_obj.ptr.get_type() == r.TYPE_GUID
+        assert guid_obj.ptr.get_obj_type() == r.TYPE_GUID
 
         # Creating another empty GUID should generate a different UUID
         another_guid = GUID()
@@ -136,7 +136,7 @@ class TestGUIDType:
 
         # Verify values and types
         assert guid_obj.value == test_uuid
-        assert guid_obj.ptr.get_type() == r.TYPE_GUID
+        assert guid_obj.ptr.get_obj_type() == r.TYPE_GUID
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

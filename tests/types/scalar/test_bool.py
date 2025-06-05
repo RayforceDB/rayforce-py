@@ -11,12 +11,12 @@ class TestBoolTypes:
         true_value = b8(True)
         assert true_value.value is True
         assert type(true_value.value) == bool
-        assert true_value.ptr.get_type() == -r.TYPE_B8
+        assert true_value.ptr.get_obj_type() == -r.TYPE_B8
 
         false_value = b8(False)
         assert false_value.value is False
         assert type(false_value.value) == bool
-        assert false_value.ptr.get_type() == -r.TYPE_B8
+        assert false_value.ptr.get_obj_type() == -r.TYPE_B8
 
         # Test with integers (should be converted to boolean)
         one_value = b8(1)
@@ -88,8 +88,8 @@ class TestBoolTypes:
         # Verify values and types
         assert value_true.value is True
         assert value_false.value is False
-        assert value_true.ptr.get_type() == -r.TYPE_B8
-        assert value_false.ptr.get_type() == -r.TYPE_B8
+        assert value_true.ptr.get_obj_type() == -r.TYPE_B8
+        assert value_false.ptr.get_obj_type() == -r.TYPE_B8
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

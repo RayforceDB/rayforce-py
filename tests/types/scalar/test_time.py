@@ -13,7 +13,7 @@ class TestTimeType:
         time_obj = Time()
 
         assert isinstance(time_obj.value, dt.time)
-        assert time_obj.ptr.get_type() == -r.TYPE_TIME
+        assert time_obj.ptr.get_obj_type() == -r.TYPE_TIME
 
     def test_time_creation_from_time(self):
         """Test creating a Time from a Python time object."""
@@ -149,7 +149,7 @@ class TestTimeType:
         expected_time = dt.time(12, 34, 56, 789000)
         assert time_obj.value == expected_time
         assert time_obj.ms_since_midnight == ms_since_midnight
-        assert time_obj.ptr.get_type() == -r.TYPE_TIME
+        assert time_obj.ptr.get_obj_type() == -r.TYPE_TIME
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

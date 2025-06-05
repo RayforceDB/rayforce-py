@@ -77,13 +77,13 @@ class QueryOperation(enum.StrEnum):
     @property
     def primitive(self) -> r.RayObject:
         try:
-            return r.env_get_internal_function(self.value)
+            return r.env_get_internal_function_by_name(self.value)
         except Exception as e:
             raise ValueError(f"Operation {self.value} is undefined.") from e
 
     @staticmethod
     def from_ptr(ptr: r.RayObject) -> QueryOperation:
-        internal_name = r.env_get_internal_name(ptr)
+        internal_name = r.env_get_internal_name_by_function(ptr)
 
         try:
             return QueryOperation(internal_name)
@@ -92,7 +92,7 @@ class QueryOperation(enum.StrEnum):
 
     def __str__(self) -> str:
         try:
-            return r.env_get_internal_name(self.primitive)
+            return r.env_get_internal_name_by_function(self.primitive)
         except Exception as e:
             raise ValueError(f"Unable to get {self.value} internal name.") from e
 

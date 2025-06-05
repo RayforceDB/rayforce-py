@@ -16,7 +16,7 @@ class TestTimestampType:
         timestamp_obj = Timestamp()
 
         assert isinstance(timestamp_obj.value, dt.datetime)
-        assert timestamp_obj.ptr.get_type() == -r.TYPE_TIMESTAMP
+        assert timestamp_obj.ptr.get_obj_type() == -r.TYPE_TIMESTAMP
 
     def test_timestamp_creation_from_datetime(self):
         """Test creating a Timestamp from a Python datetime object."""
@@ -194,7 +194,7 @@ class TestTimestampType:
         assert timestamp_obj.value.microsecond == 789000
 
         assert timestamp_obj.ms_since_epoch == ms_since_epoch
-        assert timestamp_obj.ptr.get_type() == -r.TYPE_TIMESTAMP
+        assert timestamp_obj.ptr.get_obj_type() == -r.TYPE_TIMESTAMP
 
         # Test with wrong RayObject type
         ray_i64 = r.RayObject.from_i64(42)

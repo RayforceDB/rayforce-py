@@ -18,8 +18,8 @@ class Symbol:
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_SYMBOL
 
-    ray_init_method = "from_symbol"
-    ray_extr_method = "get_symbol_value"
+    ray_init_method = "init_symbol"
+    ray_extr_method = "read_symbol"
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class Symbol:
             raise ValueError("At least one initialisation argument is required")
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -42,7 +42,7 @@ class Symbol:
         _value = str(value)
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(_value)
+            self.ptr = getattr(r, self.ray_init_method)(_value)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -50,7 +50,7 @@ class Symbol:
     @property
     def value(self) -> str:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise TypeError(f"Error during symbol type extraction - {str(e)}") from e
 

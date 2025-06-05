@@ -668,10 +668,9 @@ static PyObject *raypy_read_guid(PyObject *self, PyObject *args)
 // ---------------------------------------------------------------------------
 static PyObject *raypy_get_obj_type(PyObject *self, PyObject *args)
 {
-    (void)self;
-    RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
-
+    (void)args;
+    RayObject *ray_obj = (RayObject *)self;
+    
     if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
@@ -1921,7 +1920,9 @@ static PyObject *raypy_select(PyObject *self, PyObject *args)
 
 // RayObject TYPE DEFINITION
 // ---------------------------------------------------------------------------
-static PyMethodDef RayObject_methods[] = {{NULL, NULL, 0, NULL}};
+static PyMethodDef RayObject_methods[] = {
+    {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
+    {NULL, NULL, 0, NULL}};
 static PyTypeObject RayObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce.RayObject",
     .tp_basicsize = sizeof(RayObject),
@@ -2305,7 +2306,6 @@ static PyMethodDef module_methods[] = {
     {"read_guid", raypy_read_guid, METH_VARARGS, "Read GUID value from object"},
     
     // Type introspection
-    {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
     {"is_vector", raypy_is_vector, METH_VARARGS, "Check if object is a vector"},
     
     // List operations

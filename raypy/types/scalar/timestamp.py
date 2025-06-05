@@ -24,8 +24,8 @@ class Timestamp:
     # This class represents scalar value, hence code is negative
     ray_type_code = -r.TYPE_TIMESTAMP
 
-    ray_init_method = "from_timestamp"
-    ray_extr_method = "get_timestamp_value"
+    ray_init_method = "init_timestamp"
+    ray_extr_method = "read_timestamp"
 
     def __init__(
         self,
@@ -34,7 +34,7 @@ class Timestamp:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayObject of type {self.ray_type_code}, got {_type}"
                 )
@@ -60,7 +60,7 @@ class Timestamp:
             raise TypeError(f"Unable to convert {type(value)} to Date")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(ms_since_epoch)
+            self.ptr = getattr(r, self.ray_init_method)(ms_since_epoch)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -68,7 +68,7 @@ class Timestamp:
     @property
     def ms_since_epoch(self) -> int:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except Exception as e:
             raise TypeError(f"Error during timestamp type extraction - {str(e)}") from e
 

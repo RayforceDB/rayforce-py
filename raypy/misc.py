@@ -16,9 +16,9 @@ def eval_str(expr: str) -> r.RayObject:
     if result is None:
         raise ValueError("Failed to evaluate expression")
 
-    if result.get_type() == r.TYPE_ERR:
+    if result.get_obj_type() == r.TYPE_ERR:
         error_message = result.get_error_message()
         if error_message:
             raise ValueError(f"Evaluation error: {error_message}")
-        raise ValueError(f"Evaluation error (type {result.get_type()})")
+        raise ValueError(f"Evaluation error (type {result.get_obj_type()})")
     return result

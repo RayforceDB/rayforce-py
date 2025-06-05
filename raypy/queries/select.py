@@ -90,19 +90,19 @@ class SelectQuery:
 
         # Build the actual query
         try:
-            query_ptr = r.RayObject.create_dict(query_keys.ptr, query_values.ptr)
+            query_ptr = r.init_dict(query_keys.ptr, query_values.ptr)
             self.query = c.Dict(ray_obj=query_ptr)
         except Exception as e:
             raise ValueError("Error during Select type initialisation") from e
 
 
 def select(q: SelectQuery) -> c.Table:
-    result_ptr = r.RayObject.ray_select(q.query.ptr)
+    result_ptr = r.select(q.query.ptr)
 
-    if result_ptr.get_type() == r.TYPE_ERR:
+    if result_ptr.get_obj_type() == r.TYPE_ERR:
         raise ValueError(f"Query error: {result_ptr.get_error_message()}")
 
-    if (_type := result_ptr.get_type()) != r.TYPE_TABLE:
+    if (_type := result_ptr.get_obj_type()) != r.TYPE_TABLE:
         raise ValueError(f"Expected result of type Table (98), got {_type}")
 
     return c.Table(ray_obj=result_ptr)

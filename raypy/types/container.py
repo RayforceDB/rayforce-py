@@ -21,8 +21,8 @@ class GUID:
     ptr: r.RayObject
 
     ray_type_code = r.TYPE_GUID
-    ray_init_method = "from_guid"
-    ray_extr_method = "get_guid_value"
+    ray_init_method = "init_guid"
+    ray_extr_method = "read_guid"
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class GUID:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
                 )
@@ -56,7 +56,7 @@ class GUID:
             raise TypeError(f"Cannot convert {type(value)} to GUID")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(guid_bytes)
+            self.ptr = getattr(r, self.ray_init_method)(guid_bytes)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -64,10 +64,10 @@ class GUID:
     @property
     def __raw_bytes(self) -> bytes:
         try:
-            return getattr(self.ptr, self.ray_extr_method)()
+            return getattr(r, self.ray_extr_method)(self.ptr)
         except TypeError as e:
             raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_type()}"
+                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_obj_type()}"
             ) from e
 
     @property
@@ -111,9 +111,10 @@ class Vector(Generic[T]):
 
     ptr: r.RayObject
     class_type: scalar.ScalarType
+    ray_init_method = "init_vector"
     ray_get_item_at_idx_method = "at_idx"
     ray_set_item_at_idx_method = "ins_obj"
-    ray_get_vector_length = "get_vector_length"
+    ray_get_vector_length = "get_obj_length"
 
     def __init__(
         self,
@@ -130,7 +131,7 @@ class Vector(Generic[T]):
         self.class_type = class_type
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != -class_type.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != -class_type.ray_type_code:
                 raise ValueError(
                     f"Expected Vector object of type {class_type.ray_type_code}, got {_type}"
                 )
@@ -138,14 +139,16 @@ class Vector(Generic[T]):
             return
 
         try:
-            self.ptr = r.RayObject.vector(class_type.ray_type_code, length)
+            self.ptr = getattr(r, self.ray_init_method)(
+                class_type.ray_type_code, length
+            )
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during vector initialization - {str(e)}")
 
     def __len__(self) -> int:
         try:
-            return getattr(self.ptr, self.ray_get_vector_length)()
+            return getattr(r, self.ray_get_vector_length)(self.ptr)
         except Exception as e:
             raise TypeError(f"Unable to get vector length - {str(e)}")
 
@@ -156,7 +159,7 @@ class Vector(Generic[T]):
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        item = getattr(self.ptr, self.ray_get_item_at_idx_method)(idx)
+        item = getattr(r, self.ray_get_item_at_idx_method)(self.ptr, idx)
         return from_pointer_to_raypy_type(item)
 
     def __setitem__(self, idx: int, value: scalar.ScalarType) -> None:
@@ -167,7 +170,7 @@ class Vector(Generic[T]):
             raise IndexError("Vector index out of range")
 
         v = from_pythonic_to_raypy_type(value)
-        getattr(self.ptr, self.ray_set_item_at_idx_method)(idx, v.ptr)
+        getattr(r, self.ray_set_item_at_idx_method)(self.ptr, idx, v.ptr)
 
     def to_list(self) -> PyList[T]:
         return [self[i] for i in range(len(self))]
@@ -204,7 +207,7 @@ class List:
 
     ray_type_code = r.TYPE_LIST
 
-    ray_create_method = "create_list"
+    ray_create_method = "init_list"
     ray_append_method = "list_append"
     ray_length_method = "list_length"
     ray_get_item_method = "list_get_item"
@@ -218,14 +221,14 @@ class List:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
                 )
             self.ptr = ray_obj
             return
 
-        self.ptr = getattr(r.RayObject, self.ray_create_method)()
+        self.ptr = getattr(r, self.ray_create_method)()
 
         if items:
             if not isinstance(items, Iterable):
@@ -249,16 +252,16 @@ class List:
             - One of Raypy types
         """
         ptr = self.__get_ptr_from_list_item(item)
-        getattr(self.ptr, self.ray_append_method)(ptr)
+        getattr(r, self.ray_append_method)(self.ptr, ptr)
 
     def __len__(self) -> int:
-        return getattr(self.ptr, self.ray_length_method)()
+        return getattr(r, self.ray_length_method)(self.ptr)
 
     def get(self, index: int) -> Any:
         if index < 0 or index >= len(self):
             raise IndexError("List index out of range")
         return from_pointer_to_raypy_type(
-            ptr=getattr(self.ptr, self.ray_get_item_method)(index)
+            ptr=getattr(r, self.ray_get_item_method)(self.ptr, index)
         )
 
     def set(self, index: int, item: Any) -> None:
@@ -272,13 +275,13 @@ class List:
             raise IndexError("List index out of range")
 
         ptr = self.__get_ptr_from_list_item(item)
-        getattr(self.ptr, self.ray_set_item_method)(index, ptr)
+        getattr(r, self.ray_set_item_method)(self.ptr, index, ptr)
 
     def remove(self, index: int) -> None:
         if index < 0 or index >= len(self):
             raise IndexError("List index out of range")
 
-        getattr(self.ptr, self.ray_remove_item_method)(index)
+        getattr(r, self.ray_remove_item_method)(self.ptr, index)
 
     def __getitem__(self, index: int) -> Any:
         return self.get(index)
@@ -320,7 +323,7 @@ class Dict:
     ptr: r.RayObject
 
     ray_type_code = r.TYPE_DICT
-    ray_init_method = "create_dict"
+    ray_init_method = "init_dict"
     ray_get_keys = "dict_keys"
     ray_get_values = "dict_values"
     ray_get = "dict_get"
@@ -333,7 +336,7 @@ class Dict:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
                 )
@@ -354,9 +357,7 @@ class Dict:
             dict_values.append(item)
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(
-                dict_keys.ptr, dict_values.ptr
-            )
+            self.ptr = getattr(r, self.ray_init_method)(dict_keys.ptr, dict_values.ptr)
             assert self.ptr is not None, "RayObject should not be empty"
         except Exception as e:
             raise TypeError(f"Error during type initialisation - {str(e)}")
@@ -365,20 +366,20 @@ class Dict:
         return List(
             items=[
                 scalar.Symbol(ray_obj=ptr).ptr
-                for ptr in getattr(self.ptr, self.ray_get_keys)()
+                for ptr in getattr(r, self.ray_get_keys)(self.ptr)
             ]
         )
 
     def values(self) -> List:
-        return List(items=getattr(self.ptr, self.ray_get_values)())
+        return List(items=getattr(r, self.ray_get_values)(self.ptr))
 
     def get(self, key: str) -> Any:
         return from_pointer_to_raypy_type(
-            getattr(self.ptr, self.ray_get)(scalar.Symbol(value=key).ptr)
+            getattr(r, self.ray_get)(self.ptr, scalar.Symbol(value=key).ptr)
         )
 
     def __len__(self) -> int:
-        return getattr(self.ptr, self.ray_length)()
+        return getattr(r, self.ray_length)(self.ptr)
 
     def __str__(self) -> str:
         result = []
@@ -400,7 +401,7 @@ class Table:
     ptr: r.RayObject
     ray_type_code = r.TYPE_TABLE
 
-    ray_init_method = "create_table"
+    ray_init_method = "init_table"
     ray_table_keys_method = "table_keys"
     ray_table_values_method = "table_values"
     ray_set_method = "binary_set"
@@ -417,7 +418,7 @@ class Table:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_type()) != self.ray_type_code:
+            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
                 raise ValueError(
                     f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
                 )
@@ -446,7 +447,7 @@ class Table:
                 )
             table_columns = from_pythonic_to_raypy_type(columns)
         elif isinstance(columns, Vector):
-            if columns.ptr.get_type() != -scalar.Symbol.ray_type_code:
+            if columns.ptr.get_obj_type() != -scalar.Symbol.ray_type_code:
                 raise ValueError("Column elements must be a Vector of symbols")
             table_columns = columns
         else:
@@ -463,7 +464,7 @@ class Table:
             raise ValueError("Keys and values lists must have the same length")
 
         try:
-            self.ptr = getattr(r.RayObject, self.ray_init_method)(
+            self.ptr = getattr(r, self.ray_init_method)(
                 table_columns.ptr, table_values.ptr
             )
             assert self.ptr is not None, "RayObject should not be empty"
@@ -476,18 +477,18 @@ class Table:
                 name_ptr = (
                     scalar.Symbol(name).ptr if isinstance(name, str) else name.ptr
                 )
-                table = getattr(r.RayObject, self.ray_set_method)(name_ptr, self.ptr)
+                table = getattr(r, self.ray_set_method)(name_ptr, self.ptr)
                 print(f"set table name to {name}")
                 assert table is not None, "Fail when assigning table a name"
             except Exception as e:
                 raise TypeError(f"Error during table name assignment - {str(e)}")
 
     def columns(self) -> List | Vector:
-        _keys = getattr(self.ptr, self.ray_table_keys_method)()
+        _keys = getattr(r, self.ray_table_keys_method)(self.ptr)
         return from_pointer_to_raypy_type(_keys)
 
     def values(self) -> List:
-        _values = getattr(self.ptr, self.ray_table_values_method)()
+        _values = getattr(r, self.ray_table_values_method)(self.ptr)
         return from_pointer_to_raypy_type(_values)
 
     def __str__(self) -> str:
@@ -689,14 +690,14 @@ def from_pointer_to_raypy_type(
     if ptr is None:
         raise ValueError("Pointer can not be None")
 
-    if ptr.is_vector():
-        cls = RAY_TYPE_TO_CLASS_MAPPING.get(ptr.get_vector_type())
+    if getattr(r, "is_vector")(ptr):
+        cls = RAY_TYPE_TO_CLASS_MAPPING.get(ptr.get_obj_type())
         if not cls:
-            raise ValueError(f"Unknown vector type - {ptr.get_vector_type()}")
+            raise ValueError(f"Unknown vector type - {ptr.get_obj_type()}")
 
         return Vector(cls, ray_obj=ptr)
 
-    ptr_type = ptr.get_type()
+    ptr_type = ptr.get_obj_type()
     if cls := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
         return cls(ray_obj=ptr)
 
