@@ -36,6 +36,20 @@
 #include "env.h"
 #include <unistd.h>
 
+// ANSI color codes
+#define ANSI_RESET "\033[0m"
+#define ANSI_BOLD "\033[1m"
+#define ANSI_RED "\033[31m"
+#define ANSI_GREEN "\033[32m"
+#define ANSI_BLUE "\033[34m"
+#define ANSI_CYAN "\033[36m"
+#define ANSI_YELLOW "\033[33m"
+#define ANSI_MAGENTA "\033[35m"
+#define ANSI_LIGHTGRAY "\033[90m"
+
+// Unicode symbols
+#define UNI_PROMPT ">" // Simple prompt
+
 // Global variable to store the runtime pointer
 static void *g_runtime = NULL;
 
@@ -63,320 +77,493 @@ static void RayObject_dealloc(RayObject *self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-// INTEGERS GETTERS / SETTERS {{
-static PyObject *RayObject_from_i16(PyTypeObject *type, PyObject *args)
+// CONSTRUCTORS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_init_i16(PyObject *self, PyObject *args)
 {
+    (void)self;
     short value;
-    if (!PyArg_ParseTuple(args, "h", &value))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "h", &value)){ return NULL; }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+
+    if (result != NULL)
     {
-        self->obj = i16(value);
+        result->obj = i16(value);
     }
-    return (PyObject *)self;
+    return (PyObject *)result;
 }
-static PyObject *RayObject_from_i32(PyTypeObject *type, PyObject *args)
+static PyObject *raypy_init_i32(PyObject *self, PyObject *args)
 {
+    (void)self;
     int value;
-    if (!PyArg_ParseTuple(args, "i", &value))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "i", &value)) { return NULL; }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
-        self->obj = i32(value);
+        result->obj = i32(value);
     }
-    return (PyObject *)self;
+    return (PyObject *)result;
 }
-static PyObject *RayObject_from_i64(PyTypeObject *type, PyObject *args)
+static PyObject *raypy_init_i64(PyObject *self, PyObject *args)
 {
+    (void)self;
     long long value;
-    if (!PyArg_ParseTuple(args, "L", &value))
-    {
-        return NULL;
-    }
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = i64(value);
-    }
-    return (PyObject *)self;
-}
-static PyObject *RayObject_get_i16_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_I16)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not an i16");
-        return NULL;
-    }
-    return PyLong_FromLong(self->obj->i16);
-}
-static PyObject *RayObject_get_i32_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_I32)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not an i32");
-        return NULL;
-    }
-    return PyLong_FromLong(self->obj->i32);
-}
-static PyObject *RayObject_get_i64_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_I64)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not an i64");
-        return NULL;
-    }
-    return PyLong_FromLongLong(self->obj->i64);
-}
-// }}
+    if (!PyArg_ParseTuple(args, "L", &value)){ return NULL; }
 
-// FLOAT GETTERS / SETTERS {{
-static PyObject *RayObject_from_f64(PyTypeObject *type, PyObject *args)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = i64(value);
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_f64(PyObject *self, PyObject *args)
 {
+    (void)self;
     double value;
-    if (!PyArg_ParseTuple(args, "d", &value))
-    {
-        return NULL;
-    }
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = f64(value);
-    }
-    return (PyObject *)self;
-}
+    if (!PyArg_ParseTuple(args, "d", &value)) { return NULL; }
 
-static PyObject *RayObject_get_f64_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_F64)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
-        PyErr_SetString(PyExc_TypeError, "Object is not an f64");
-        return NULL;
+        result->obj = f64(value);
     }
-    return PyFloat_FromDouble(self->obj->f64);
+    return (PyObject *)result;
 }
-// }}
-
-// STRING OPERATIONS {{
-// Create a character (c8)
-static PyObject *RayObject_from_c8(PyTypeObject *type, PyObject *args)
+static PyObject *raypy_init_c8(PyObject *self, PyObject *args)
 {
+    (void)self;
     const char *value;
     Py_ssize_t len;
 
-    if (!PyArg_ParseTuple(args, "s#", &value, &len))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "s#", &value, &len)) { return NULL; }
 
+    // Validate char is single element
     if (len != 1)
     {
         PyErr_SetString(PyExc_ValueError, "Character must be a single character");
         return NULL;
     }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
-        self->obj = c8(value[0]);
+        result->obj = c8(value[0]);
     }
-    return (PyObject *)self;
+    return (PyObject *)result;
 }
-
-// Get character value
-static PyObject *RayObject_get_c8_value(RayObject *self, PyObject *args)
+static PyObject *raypy_init_string(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != -TYPE_C8)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a c8");
-        return NULL;
-    }
-    return PyUnicode_FromStringAndSize(&self->obj->c8, 1);
-}
+    (void)self;
+    // String is generally used for eval_str function.
+    // Raypy has no use of them at the moment.
 
-// Create a string from a Python string
-static PyObject *RayObject_from_string(PyTypeObject *type, PyObject *args)
-{
     const char *value;
     Py_ssize_t len;
 
-    if (!PyArg_ParseTuple(args, "s#", &value, &len))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "s#", &value, &len)) { return NULL; }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
-        // Create a vector of TYPE_C8 with the right length
-        self->obj = vector(TYPE_C8, len);
-        if (self->obj == NULL)
+        // String is vector of TYPE_C8, hence - create a vector with the right length
+        result->obj = vector(TYPE_C8, len);
+        if (result->obj == NULL)
         {
-            Py_DECREF(self);
+            Py_DECREF(result);
             PyErr_SetString(PyExc_MemoryError, "Failed to create string");
             return NULL;
         }
 
-        // Copy the string data
-        memcpy(AS_C8(self->obj), value, len);
+        memcpy(AS_C8(result->obj), value, len);
     }
-    return (PyObject *)self;
+    return (PyObject *)result;
 }
-
-// Get string value
-static PyObject *RayObject_get_string_value(RayObject *self, PyObject *args)
+static PyObject *raypy_init_symbol(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != TYPE_C8)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a string");
-        return NULL;
-    }
-
-    return PyUnicode_FromStringAndSize(AS_C8(self->obj), self->obj->len);
-}
-
-// Get string length
-static PyObject *RayObject_get_string_length(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != TYPE_C8)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a string");
-        return NULL;
-    }
-
-    return PyLong_FromUnsignedLongLong(self->obj->len);
-}
-
-// Get character at index
-static PyObject *RayObject_get_string_char(RayObject *self, PyObject *args)
-{
-    Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "n", &index))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || self->obj->type != TYPE_C8)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a string");
-        return NULL;
-    }
-
-    if (index < 0 || index >= (Py_ssize_t)self->obj->len)
-    {
-        PyErr_SetString(PyExc_IndexError, "String index out of range");
-        return NULL;
-    }
-
-    char c = AS_C8(self->obj)[index];
-    return PyUnicode_FromStringAndSize(&c, 1);
-}
-
-// Check if object is a string
-static PyObject *RayObject_is_string(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    if (self->obj->type == TYPE_C8)
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
-
-// Check if object is a character
-static PyObject *RayObject_is_c8(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    if (self->obj->type == -TYPE_C8)
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
-// }}
-
-// SYMBOL OPERATIONS {{
-// Create a symbol from a string
-static PyObject *RayObject_from_symbol(PyTypeObject *type, PyObject *args)
-{
+    (void)self;
     const char *value;
     Py_ssize_t len;
 
-    if (!PyArg_ParseTuple(args, "s#", &value, &len))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "s#", &value, &len)) { return NULL; }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
-        self->obj = symbol(value, len);
-        if (self->obj == NULL)
+        // Symbol is a standalone type, hence no vectors are required
+        result->obj = symbol(value, len);
+        if (result->obj == NULL)
         {
-            Py_DECREF(self);
+            Py_DECREF(result);
             PyErr_SetString(PyExc_MemoryError, "Failed to create symbol");
             return NULL;
         }
     }
-    return (PyObject *)self;
+    return (PyObject *)result;
 }
-
-// Create a symbol from an integer ID
-static PyObject *RayObject_from_symbol_id(PyTypeObject *type, PyObject *args)
+static PyObject *raypy_init_b8(PyObject *self, PyObject *args)
 {
-    long long id;
+    (void)self;
+    int bool_value;
 
-    if (!PyArg_ParseTuple(args, "L", &id))
+    if (!PyArg_ParseTuple(args, "p", &bool_value)) { return NULL; }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
+        result->obj = b8(bool_value ? 1 : 0);
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_u8(PyObject *self, PyObject *args)
+{
+    (void)self;
+    unsigned char byte_value;
+
+    if (!PyArg_ParseTuple(args, "b", &byte_value)) { return NULL; }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = u8(byte_value);
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_date(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // Date is a number of days since EPOCH
+    int days_value;
+
+    if (!PyArg_ParseTuple(args, "i", &days_value)) { return NULL; }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = adate(days_value);
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_time(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // Time is a number of milliseconds within 1 day (86399999 ms max)
+    int ms_value;
+
+    if (!PyArg_ParseTuple(args, "i", &ms_value)) { return NULL; }
+
+    // Check if the value is within the valid range
+    if (ms_value < 0 || ms_value > 86399999)
+    {
+        PyErr_SetString(PyExc_ValueError, "Time value must be in range 0-86399999 milliseconds");
         return NULL;
     }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
     {
-        self->obj = symboli64(id);
-        if (self->obj == NULL)
+        result->obj = atime(ms_value);
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_timestamp(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // Timestamp is a number of milliseconds since EPOCH
+    long long ms_value;
+
+    if (!PyArg_ParseTuple(args, "L", &ms_value)) { return NULL; }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = timestamp(ms_value);
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_guid(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // GUID is an array of 16 bytes
+    Py_buffer buffer;
+
+    if (!PyArg_ParseTuple(args, "y*", &buffer)) { return NULL; }
+
+    // Check if the buffer size is 16 bytes (standard GUID size)
+    if (buffer.len != 16)
+    {
+        PyBuffer_Release(&buffer);
+
+        PyErr_SetString(PyExc_ValueError, "GUID must be exactly 16 bytes");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        // Create a GUID object
+        result->obj = vector(TYPE_GUID, 16);
+        if (result->obj == NULL)
         {
-            Py_DECREF(self);
-            PyErr_SetString(PyExc_MemoryError, "Failed to create symbol from ID");
+            Py_DECREF(result);
+            PyBuffer_Release(&buffer);
+
+            PyErr_SetString(PyExc_MemoryError, "Failed to create GUID");
+            return NULL;
+        }
+
+        // Copy the GUID value
+        memcpy(AS_U8(result->obj), buffer.buf, 16);
+    }
+
+    // Release the buffer
+    PyBuffer_Release(&buffer);
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_list(PyObject *self, PyObject *args)
+{
+    (void)self;
+    Py_ssize_t initial_size = 0;
+
+    if (!PyArg_ParseTuple(args, "|n", &initial_size)) { return NULL; }
+
+    if (initial_size < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "List size cannot be negative");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = vector(TYPE_LIST, (u64_t)initial_size);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_MemoryError, "Failed to create list");
             return NULL;
         }
     }
-    return (PyObject *)self;
+    return (PyObject *)result;
 }
-
-// Get symbol string value
-static PyObject *RayObject_get_symbol_value(RayObject *self, PyObject *args)
+static PyObject *raypy_init_table(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != -TYPE_SYMBOL)
+    (void)self;
+    // Table is a type where keys are vector of symbols, and values are a list
+    // of any values
+
+    RayObject *keys_obj;
+    RayObject *vals_obj;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj)) { return NULL; }
+
+    if (keys_obj->obj == NULL || keys_obj->obj->type != TYPE_SYMBOL)
+    {
+        PyErr_SetString(PyExc_TypeError, "Keys must be a vector of symbols");
+        return NULL;
+    }
+
+    if (vals_obj->obj == NULL || vals_obj->obj->type != TYPE_LIST)
+    {
+        PyErr_SetString(PyExc_TypeError, "Values must be a list");
+        return NULL;
+    }
+
+    if (keys_obj->obj->len != vals_obj->obj->len)
+    {
+        PyErr_SetString(PyExc_ValueError, "Keys and values lists must have the same length");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = ray_table(keys_obj->obj, vals_obj->obj);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create table");
+            return NULL;
+        }
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_dict(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // Dict is a type where keys and values are iterables of same length
+    RayObject *keys_obj;
+    RayObject *vals_obj;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj)) { return NULL; }
+
+    if (keys_obj->obj->len != vals_obj->obj->len)
+    {
+        PyErr_SetString(PyExc_ValueError, "Keys and values lists must have the same length");
+        return NULL;
+    }
+
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = ray_dict(keys_obj->obj, vals_obj->obj);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create dictionary");
+            return NULL;
+        }
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_init_vector(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // Vector has certain type and length. If multiple types are present in vector,
+    // Vector becomes List (type 0)
+    int type_code;
+    Py_ssize_t length;
+
+    if (!PyArg_ParseTuple(args, "in", &type_code, &length)) { return NULL; }
+
+    if (length < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "Vector length cannot be negative");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = vector(type_code, (u64_t)length);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_MemoryError, "Failed to create vector");
+            return NULL;
+        }
+    }
+    return (PyObject *)result;
+}
+// END CONSTRUCTORS
+// ---------------------------------------------------------------------------
+
+// READERS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_read_i16(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I16)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not an i16");
+        return NULL;
+    }
+    return PyLong_FromLong(ray_obj->obj->i16);
+}
+static PyObject *raypy_read_i32(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I32)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not an i32");
+        return NULL;
+    }
+    return PyLong_FromLong(ray_obj->obj->i32);
+}
+static PyObject *raypy_read_i64(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I64)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not an i64");
+        return NULL;
+    }
+    return PyLong_FromLongLong(ray_obj->obj->i64);
+}
+static PyObject *raypy_read_f64(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_F64)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not an f64");
+        return NULL;
+    }
+    return PyFloat_FromDouble(ray_obj->obj->f64);
+}
+static PyObject *raypy_read_c8(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_C8)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not a c8");
+        return NULL;
+    }
+    return PyUnicode_FromStringAndSize(&ray_obj->obj->c8, 1);
+}
+static PyObject *raypy_read_string(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_C8)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not a string");
+        return NULL;
+    }
+
+    return PyUnicode_FromStringAndSize(AS_C8(ray_obj->obj), ray_obj->obj->len);
+}
+static PyObject *raypy_read_symbol(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_SYMBOL)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a symbol");
         return NULL;
     }
 
     // Get the symbol ID
-    i64_t symbol_id = self->obj->i64;
+    i64_t symbol_id = ray_obj->obj->i64;
 
     // Get the string representation
     const char *str = str_from_symbol(symbol_id);
@@ -387,90 +574,164 @@ static PyObject *RayObject_get_symbol_value(RayObject *self, PyObject *args)
 
     return PyUnicode_FromString(str);
 }
-
-// Get symbol ID value
-static PyObject *RayObject_get_symbol_id(RayObject *self, PyObject *args)
+static PyObject *raypy_read_b8(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != -TYPE_SYMBOL)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_B8)
     {
-        PyErr_SetString(PyExc_TypeError, "Object is not a symbol");
+        PyErr_SetString(PyExc_TypeError, "Object is not a B8 type");
         return NULL;
     }
 
-    return PyLong_FromLongLong(self->obj->i64);
-}
-
-// Check if object is a symbol
-static PyObject *RayObject_is_symbol(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    if (self->obj->type == -TYPE_SYMBOL)
-    {
+    if (ray_obj->obj->b8)
         Py_RETURN_TRUE;
-    }
     else
-    {
         Py_RETURN_FALSE;
-    }
 }
-// }}
-
-// LIST OPERATIONS {{
-// Create an empty list
-static PyObject *RayObject_create_list(PyTypeObject *type, PyObject *args)
+static PyObject *raypy_read_u8(PyObject *self, PyObject *args)
 {
-    Py_ssize_t initial_size = 0;
-    if (!PyArg_ParseTuple(args, "|n", &initial_size))
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_U8)
     {
+        PyErr_SetString(PyExc_TypeError, "Object is not a U8 type");
         return NULL;
     }
 
-    if (initial_size < 0)
+    return PyLong_FromLong((long)ray_obj->obj->u8);
+}
+static PyObject *raypy_read_date(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_DATE)
     {
-        PyErr_SetString(PyExc_ValueError, "List size cannot be negative");
+        PyErr_SetString(PyExc_TypeError, "Object is not a DATE type");
         return NULL;
     }
 
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
+    return PyLong_FromLong(ray_obj->obj->i32);
+}
+static PyObject *raypy_read_time(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_TIME)
     {
-        self->obj = vector(TYPE_LIST, (u64_t)initial_size);
-        if (self->obj == NULL)
+        PyErr_SetString(PyExc_TypeError, "Object is not a TIME type");
+        return NULL;
+    }
+
+    return PyLong_FromLong(ray_obj->obj->i32);
+}
+static PyObject *raypy_read_timestamp(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_TIMESTAMP)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not a TIMESTAMP type");
+        return NULL;
+    }
+
+    return PyLong_FromLongLong(ray_obj->obj->i64);
+}
+static PyObject *raypy_read_guid(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_GUID)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not a GUID type");
+        return NULL;
+    }
+
+    return PyBytes_FromStringAndSize((const char *)AS_U8(ray_obj->obj), 16);
+}
+// END READERS
+// ---------------------------------------------------------------------------
+
+// TYPE INTROSPECTION
+// ---------------------------------------------------------------------------
+static PyObject *raypy_get_obj_type(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+    return PyLong_FromLong(ray_obj->obj->type);
+}
+static PyObject *raypy_is_vector(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL) { Py_RETURN_FALSE; }
+
+    if (ray_obj->obj->type > 0 &&
+        ray_obj->obj->type != TYPE_GUID &&
+        ray_obj->obj->type != TYPE_DICT &&
+        ray_obj->obj->type != TYPE_TABLE &&
+        ray_obj->obj->type != TYPE_LAMBDA &&
+        ray_obj->obj->type != TYPE_UNARY &&
+        ray_obj->obj->type != TYPE_BINARY &&
+        ray_obj->obj->type != TYPE_VARY &&
+        ray_obj->obj->type != TYPE_TOKEN)
+    {
+        if (ray_obj->obj->len >= 0)
         {
-            Py_DECREF(self);
-            PyErr_SetString(PyExc_MemoryError, "Failed to create list");
-            return NULL;
+            Py_RETURN_TRUE;
         }
     }
-    return (PyObject *)self;
-}
 
-// Get list length
-static PyObject *RayObject_list_length(RayObject *self, PyObject *args)
+    Py_RETURN_FALSE;
+}
+// END TYPE INTROSPECTION
+// ---------------------------------------------------------------------------
+
+// LIST OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_list_length(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != TYPE_LIST)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a list");
         return NULL;
     }
 
-    return PyLong_FromUnsignedLongLong(self->obj->len);
+    return PyLong_FromUnsignedLongLong(ray_obj->obj->len);
 }
-
-// Append an item to the list
-static PyObject *RayObject_list_append(RayObject *self, PyObject *args)
+static PyObject *raypy_list_append(PyObject *self, PyObject *args)
 {
+    (void)self;
+    RayObject *ray_obj;
     RayObject *item;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &item)) { return NULL; }
 
-    if (self->obj == NULL || self->obj->type != TYPE_LIST)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a list");
         return NULL;
@@ -484,39 +745,33 @@ static PyObject *RayObject_list_append(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    push_obj(&self->obj, clone);
+    push_obj(&ray_obj->obj, clone);
     Py_RETURN_NONE;
 }
-
-// Get item at index
-static PyObject *RayObject_list_get_item(RayObject *self, PyObject *args)
+static PyObject *raypy_list_get_item(PyObject *self, PyObject *args)
 {
+    (void)self;
+    RayObject *ray_obj;
     Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "n", &index))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
 
-    if (self->obj == NULL || self->obj->type != TYPE_LIST)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a list");
         return NULL;
     }
 
-    if (index < 0 || index >= (Py_ssize_t)self->obj->len)
+    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
     {
         PyErr_SetString(PyExc_IndexError, "List index out of range");
         return NULL;
     }
 
     // Get the item at the index
-    obj_p item = at_idx(self->obj, (i64_t)index);
-    if (item == NULL)
-    {
-        Py_RETURN_NONE;
-    }
+    obj_p item = at_idx(ray_obj->obj, (i64_t)index);
+    if (item == NULL) { Py_RETURN_NONE; }
 
-    // Create a new RayObject with the item
+    // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL)
     {
@@ -535,30 +790,27 @@ static PyObject *RayObject_list_get_item(RayObject *self, PyObject *args)
 
     return (PyObject *)result;
 }
-
-// Set item at index
-static PyObject *RayObject_list_set_item(RayObject *self, PyObject *args)
+static PyObject *raypy_list_set_item(PyObject *self, PyObject *args)
 {
+    (void)self;
+    RayObject *ray_obj;
     Py_ssize_t index;
     RayObject *item;
-    if (!PyArg_ParseTuple(args, "nO!", &index, &RayObjectType, &item))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O!nO!", &RayObjectType, &ray_obj, &index, &RayObjectType, &item)) { return NULL; }
 
-    if (self->obj == NULL || self->obj->type != TYPE_LIST)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a list");
         return NULL;
     }
 
-    if (index < 0 || index >= (Py_ssize_t)self->obj->len)
+    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
     {
         PyErr_SetString(PyExc_IndexError, "List index out of range");
         return NULL;
     }
 
-    // Clone the item
+    // Clone the item, because set_idx would own it
     obj_p clone = clone_obj(item->obj);
     if (clone == NULL)
     {
@@ -566,33 +818,30 @@ static PyObject *RayObject_list_set_item(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    set_idx(&self->obj, (i64_t)index, clone);
+    set_idx(&ray_obj->obj, (i64_t)index, clone);
     Py_RETURN_NONE;
 }
-
-// Remove item at index
-static PyObject *RayObject_list_remove_item(RayObject *self, PyObject *args)
+static PyObject *raypy_list_remove_item(PyObject *self, PyObject *args)
 {
+    (void)self;
+    RayObject *ray_obj;
     Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "n", &index))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
 
-    if (self->obj == NULL || self->obj->type != TYPE_LIST)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a list");
         return NULL;
     }
 
-    if (index < 0 || index >= (Py_ssize_t)self->obj->len)
+    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
     {
         PyErr_SetString(PyExc_IndexError, "List index out of range");
         return NULL;
     }
 
     // Remove the item at the index
-    if (remove_idx(&self->obj, (i64_t)index) == NULL)
+    if (remove_idx(&ray_obj->obj, (i64_t)index) == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to remove item from list");
         return NULL;
@@ -600,490 +849,31 @@ static PyObject *RayObject_list_remove_item(RayObject *self, PyObject *args)
 
     Py_RETURN_NONE;
 }
+// END LIST OPERATIONS
+// ---------------------------------------------------------------------------
 
-// Check if object is a list
-static PyObject *RayObject_is_list(RayObject *self, PyObject *args)
+// TABLE OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_table_keys(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
 
-    if (self->obj->type == TYPE_LIST)
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
-// }}
-
-// Get object type (references are in rayforce.h)
-static PyObject *RayObject_get_type(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Object is NULL");
-        return NULL;
-    }
-    return PyLong_FromLong(self->obj->type);
-}
-
-/*
- * B8 (Boolean) type handling functions
- */
-
-// Convert a Python boolean to a RayObject with B8 type
-static PyObject *
-RayObject_from_b8(PyTypeObject *type, PyObject *args)
-{
-    int bool_value;
-
-    if (!PyArg_ParseTuple(args, "p", &bool_value))
-    {
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = b8(bool_value ? 1 : 0);
-    }
-    return (PyObject *)self;
-}
-
-// Get the boolean value from a RayObject of B8 type
-static PyObject *
-RayObject_get_b8_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_B8)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a B8 type");
-        return NULL;
-    }
-
-    if (self->obj->b8)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
-}
-
-/*
- * U8 (Unsigned 8-bit integer) type handling functions
- */
-
-// Convert a Python integer to a RayObject with U8 type
-static PyObject *
-RayObject_from_u8(PyTypeObject *type, PyObject *args)
-{
-    unsigned char byte_value;
-
-    if (!PyArg_ParseTuple(args, "b", &byte_value))
-    {
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = u8(byte_value);
-    }
-    return (PyObject *)self;
-}
-
-// Get the unsigned 8-bit integer value from a RayObject of U8 type
-static PyObject *
-RayObject_get_u8_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_U8)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a U8 type");
-        return NULL;
-    }
-
-    return PyLong_FromLong((long)self->obj->u8);
-}
-
-/*
- * DATE type handling functions
- */
-
-// Convert a Python integer (days since epoch) to a RayObject with DATE type
-static PyObject *
-RayObject_from_date(PyTypeObject *type, PyObject *args)
-{
-    int days_value;
-
-    if (!PyArg_ParseTuple(args, "i", &days_value))
-    {
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = adate(days_value);
-    }
-    return (PyObject *)self;
-}
-
-// Get the date value (days since epoch) from a RayObject of DATE type
-static PyObject *
-RayObject_get_date_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_DATE)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a DATE type");
-        return NULL;
-    }
-
-    return PyLong_FromLong(self->obj->i32);
-}
-
-/*
- * TIME type handling functions
- */
-
-// Convert a Python integer (milliseconds since midnight) to a RayObject with TIME type
-static PyObject *
-RayObject_from_time(PyTypeObject *type, PyObject *args)
-{
-    int ms_value;
-
-    if (!PyArg_ParseTuple(args, "i", &ms_value))
-    {
-        return NULL;
-    }
-
-    // Check if the value is within the valid range (0-86399999 milliseconds in a day)
-    if (ms_value < 0 || ms_value > 86399999)
-    {
-        PyErr_SetString(PyExc_ValueError, "Time value must be in range 0-86399999 milliseconds");
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = atime(ms_value);
-    }
-    return (PyObject *)self;
-}
-
-// Get the time value (milliseconds since midnight) from a RayObject of TIME type
-static PyObject *
-RayObject_get_time_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_TIME)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a TIME type");
-        return NULL;
-    }
-
-    return PyLong_FromLong(self->obj->i32);
-}
-
-/*
- * TIMESTAMP type handling functions
- */
-
-// Convert a Python integer (milliseconds since epoch) to a RayObject with TIMESTAMP type
-static PyObject *
-RayObject_from_timestamp(PyTypeObject *type, PyObject *args)
-{
-    long long ms_value;
-
-    if (!PyArg_ParseTuple(args, "L", &ms_value))
-    {
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = timestamp(ms_value);
-    }
-    return (PyObject *)self;
-}
-
-// Get the timestamp value (milliseconds since epoch) from a RayObject of TIMESTAMP type
-static PyObject *
-RayObject_get_timestamp_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != -TYPE_TIMESTAMP)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a TIMESTAMP type");
-        return NULL;
-    }
-
-    return PyLong_FromLongLong(self->obj->i64);
-}
-
-/*
- * GUID type handling functions
- */
-
-// Convert a Python bytes/bytearray object to a RayObject with GUID type
-static PyObject *
-RayObject_from_guid(PyTypeObject *type, PyObject *args)
-{
-    Py_buffer buffer;
-
-    if (!PyArg_ParseTuple(args, "y*", &buffer))
-    {
-        return NULL;
-    }
-
-    // Check if the buffer size is 16 bytes (standard GUID size)
-    if (buffer.len != 16)
-    {
-        PyBuffer_Release(&buffer);
-        PyErr_SetString(PyExc_ValueError, "GUID must be exactly 16 bytes");
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        // Create a GUID object and copy the bytes
-        self->obj = vector(TYPE_GUID, 16);
-        if (self->obj == NULL)
-        {
-            Py_DECREF(self);
-            PyBuffer_Release(&buffer);
-            PyErr_SetString(PyExc_MemoryError, "Failed to create GUID");
-            return NULL;
-        }
-
-        // Copy the GUID data
-        memcpy(AS_U8(self->obj), buffer.buf, 16);
-    }
-
-    // Release the buffer
-    PyBuffer_Release(&buffer);
-
-    return (PyObject *)self;
-}
-
-// Get the GUID value as bytes from a RayObject of GUID type
-static PyObject *
-RayObject_get_guid_value(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != TYPE_GUID)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a GUID type");
-        return NULL;
-    }
-
-    return PyBytes_FromStringAndSize((const char *)AS_U8(self->obj), 16);
-}
-
-// Check if object is a GUID
-static PyObject *RayObject_is_guid(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    if (self->obj->type == TYPE_GUID)
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
-
-// Check if object is a vector (has a positive type)
-static PyObject *RayObject_is_vector(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    // Настоящие векторы имеют положительные типы, но исключаем специальные типы:
-    // - TYPE_LIST=0 не является вектором
-    // - TYPE_GUID=11 не является вектором (хотя формально является)
-    // - TYPE_DICT=99 не является вектором
-    // - TYPE_TABLE=98 не является вектором
-    // - TYPE_LAMBDA=100 и другие специальные типы не являются векторами
-    if (self->obj->type > 0 &&
-        self->obj->type != TYPE_GUID &&
-        self->obj->type != TYPE_DICT &&
-        self->obj->type != TYPE_TABLE &&
-        self->obj->type != TYPE_LAMBDA &&
-        self->obj->type != TYPE_UNARY &&
-        self->obj->type != TYPE_BINARY &&
-        self->obj->type != TYPE_VARY &&
-        self->obj->type != TYPE_TOKEN)
-    {
-
-        // Проверяем, что у объекта есть длина
-        if (self->obj->len >= 0)
-        {
-            Py_RETURN_TRUE;
-        }
-    }
-
-    Py_RETURN_FALSE;
-}
-
-// Get vector type code (for vectors with positive type)
-static PyObject *RayObject_get_vector_type(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Object is NULL");
-        return NULL;
-    }
-
-    // Проверяем, что это вектор - положительный тип, исключая специальные типы
-    if (self->obj->type <= 0 ||
-        self->obj->type == TYPE_GUID ||
-        self->obj->type == TYPE_DICT ||
-        self->obj->type == TYPE_TABLE ||
-        self->obj->type == TYPE_LAMBDA ||
-        self->obj->type == TYPE_UNARY ||
-        self->obj->type == TYPE_BINARY ||
-        self->obj->type == TYPE_VARY ||
-        self->obj->type == TYPE_TOKEN)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a vector");
-        return NULL;
-    }
-
-    // Дополнительно проверяем, что у объекта есть атрибут len
-    if (self->obj->len < 0)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object does not have a valid length attribute");
-        return NULL;
-    }
-
-    // Возвращаем тип вектора
-    return PyLong_FromLong(self->obj->type);
-}
-
-/*
- * TABLE type handling functions
- */
-
-// Create a table from keys and values lists
-static PyObject *
-RayObject_create_table(PyTypeObject *type, PyObject *args)
-{
-    RayObject *keys_obj;
-    RayObject *vals_obj;
-
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj))
-    {
-        return NULL;
-    }
-
-    if (vals_obj->obj == NULL || vals_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Values must be a list");
-        return NULL;
-    }
-
-    // Check that lists have the same length
-    if (keys_obj->obj->len != vals_obj->obj->len)
-    {
-        PyErr_SetString(PyExc_ValueError, "Keys and values lists must have the same length");
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = ray_table(keys_obj->obj, vals_obj->obj);
-        if (self->obj == NULL)
-        {
-            Py_DECREF(self);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create table");
-            return NULL;
-        }
-    }
-
-    return (PyObject *)self;
-}
-
-// Get a value from a table by key
-static PyObject *
-RayObject_table_get(RayObject *self, PyObject *args)
-{
-    RayObject *key_obj;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &key_obj))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || self->obj->type != TYPE_TABLE)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_TABLE)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a TABLE type");
         return NULL;
     }
 
-    obj_p result = at_obj(self->obj, key_obj->obj);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_KeyError, "Key not found in table");
-        return NULL;
-    }
-
-    // Create a new RayObject to wrap the result
-    RayObject *ray_result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (ray_result != NULL)
-    {
-        ray_result->obj = result;
-    }
-
-    return (PyObject *)ray_result;
-}
-
-// Check if object is a table
-static PyObject *
-RayObject_is_table(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    if (self->obj->type == TYPE_TABLE)
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
-
-// Get all keys from a table
-static PyObject *
-RayObject_table_keys(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != TYPE_TABLE)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a TABLE type");
-        return NULL;
-    }
-
-    // Таблица содержит список ключей в AS_LIST(self->obj)[0]
-    obj_p keys_list = AS_LIST(self->obj)[0];
+    obj_p keys_list = AS_LIST(ray_obj->obj)[0];
     if (keys_list == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Table has no keys list");
         return NULL;
     }
 
-    // Возвращаем сам объект списка ключей
+    // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
     {
@@ -1091,26 +881,26 @@ RayObject_table_keys(RayObject *self, PyObject *args)
     }
     return (PyObject *)result;
 }
-
-// Get all values from a table
-static PyObject *
-RayObject_table_values(RayObject *self, PyObject *args)
+static PyObject *raypy_table_values(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != TYPE_TABLE)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_TABLE)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a TABLE type");
         return NULL;
     }
 
-    // Таблица содержит список значений в AS_LIST(self->obj)[1]
-    obj_p values_list = AS_LIST(self->obj)[1];
+    obj_p values_list = AS_LIST(ray_obj->obj)[1];
     if (values_list == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Table has no values list");
         return NULL;
     }
 
-    // Возвращаем сам объект списка значений
+    // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
     {
@@ -1118,78 +908,50 @@ RayObject_table_values(RayObject *self, PyObject *args)
     }
     return (PyObject *)result;
 }
+// END TABLE OPERATIONS
+// ---------------------------------------------------------------------------
 
-/*
- * DICT type handling functions
- */
-
-// Create a dictionary from keys and values lists
-static PyObject *
-RayObject_create_dict(PyTypeObject *type, PyObject *args)
+// DICT OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_dict_length(PyObject *self, PyObject *args)
 {
-    RayObject *keys_obj;
-    RayObject *vals_obj;
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj))
-    {
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = ray_dict(keys_obj->obj, vals_obj->obj);
-        if (self->obj == NULL)
-        {
-            Py_DECREF(self);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create dictionary");
-            return NULL;
-        }
-    }
-
-    return (PyObject *)self;
-}
-
-// Get the number of items in a dictionary
-static PyObject *
-RayObject_dict_length(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL || self->obj->type != TYPE_DICT)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
         return NULL;
     }
 
-    // Словарь содержит список ключей в AS_LIST(self->obj)[0]
-    obj_p keys_list = AS_LIST(self->obj)[0];
+    obj_p keys_list = AS_LIST(ray_obj->obj)[0];
     if (keys_list == NULL)
     {
         return PyLong_FromLong(0);
     }
 
-    // Возвращаем длину списка ключей
     return PyLong_FromUnsignedLongLong(keys_list->len);
 }
-
-// Get all keys from a dictionary
-static PyObject *
-RayObject_dict_keys(RayObject *self, PyObject *args)
+static PyObject *raypy_dict_keys(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != TYPE_DICT)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
         return NULL;
     }
 
-    // Словарь содержит список ключей в AS_LIST(self->obj)[0]
-    obj_p keys_list = AS_LIST(self->obj)[0];
+    obj_p keys_list = AS_LIST(ray_obj->obj)[0];
     if (keys_list == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Dictionary has no keys list");
         return NULL;
     }
 
-    // Создаем новый Python-список для хранения ключей
     PyObject *py_list = PyList_New(keys_list->len);
     if (py_list == NULL)
     {
@@ -1197,7 +959,7 @@ RayObject_dict_keys(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    // Копируем каждый ключ в новый список
+    // Copy each key to new list
     for (i64_t i = 0; i < keys_list->len; i++)
     {
         obj_p key = at_idx(keys_list, i);
@@ -1208,7 +970,7 @@ RayObject_dict_keys(RayObject *self, PyObject *args)
             return NULL;
         }
 
-        // Создаем RayObject для каждого ключа
+        // Allocate memory for each py dict key
         RayObject *key_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
         if (key_obj == NULL)
         {
@@ -1231,34 +993,25 @@ RayObject_dict_keys(RayObject *self, PyObject *args)
 
     return py_list;
 }
-
-// Get all values from a dictionary
-static PyObject *
-RayObject_dict_values(RayObject *self, PyObject *args)
+static PyObject *raypy_dict_values(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL || self->obj->type != TYPE_DICT)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
         return NULL;
     }
 
-    // Словарь содержит список значений в AS_LIST(self->obj)[1]
-    obj_p values_list = AS_LIST(self->obj)[1];
+    obj_p values_list = AS_LIST(ray_obj->obj)[1];
     if (values_list == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Dictionary has no values list");
         return NULL;
     }
 
-    // Словарь содержит список ключей в AS_LIST(self->obj)[0]
-    obj_p keys_list = AS_LIST(self->obj)[0];
-    if (keys_list == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Dictionary has no keys list");
-        return NULL;
-    }
-
-    // Создаем новый Python-список для хранения значений
     PyObject *py_list = PyList_New(values_list->len);
     if (py_list == NULL)
     {
@@ -1300,58 +1053,33 @@ RayObject_dict_values(RayObject *self, PyObject *args)
 
     return py_list;
 }
-
-// Check if object is a dictionary
-static PyObject *
-RayObject_is_dict(RayObject *self, PyObject *args)
+static PyObject *raypy_dict_get(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL)
-    {
-        Py_RETURN_FALSE;
-    }
-
-    if (self->obj->type == TYPE_DICT)
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
-
-// Get a value from a dictionary by key
-static PyObject *
-RayObject_dict_get(RayObject *self, PyObject *args)
-{
+    (void)self;
+    RayObject *ray_obj;
     RayObject *key_obj;
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &key_obj)) { return NULL; }
 
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &key_obj))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || self->obj->type != TYPE_DICT)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a DICT type");
         return NULL;
     }
 
-    // Check that key is a symbol or string
     if (key_obj->obj->type != -TYPE_SYMBOL && key_obj->obj->type != TYPE_C8)
     {
         PyErr_SetString(PyExc_TypeError, "Key must be a symbol or string");
         return NULL;
     }
 
-    obj_p result = at_obj(self->obj, key_obj->obj);
+    obj_p result = at_obj(ray_obj->obj, key_obj->obj);
     if (result == NULL)
     {
         PyErr_SetString(PyExc_KeyError, "Key not found in dictionary");
         return NULL;
     }
 
-    // Create a new RayObject to wrap the result
+    // Allocate memory for new py object
     RayObject *ray_result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (ray_result != NULL)
     {
@@ -1366,64 +1094,32 @@ RayObject_dict_get(RayObject *self, PyObject *args)
 
     return (PyObject *)ray_result;
 }
+// END DICT OPERATIONS
+// ---------------------------------------------------------------------------
 
-// Vector operations
-static PyObject *RayObject_vector(PyTypeObject *type, PyObject *args)
+// VECTOR OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_at_idx(PyObject *self, PyObject *args)
 {
-    int type_code;
-    Py_ssize_t length;
-
-    if (!PyArg_ParseTuple(args, "in", &type_code, &length))
-    {
-        return NULL;
-    }
-
-    if (length < 0)
-    {
-        PyErr_SetString(PyExc_ValueError, "Vector length cannot be negative");
-        return NULL;
-    }
-
-    RayObject *self = (RayObject *)type->tp_alloc(type, 0);
-    if (self != NULL)
-    {
-        self->obj = vector(type_code, (u64_t)length);
-        if (self->obj == NULL)
-        {
-            Py_DECREF(self);
-            PyErr_SetString(PyExc_MemoryError, "Failed to create vector");
-            return NULL;
-        }
-    }
-    return (PyObject *)self;
-}
-
-// Get vector element at index
-static PyObject *RayObject_at_idx(RayObject *self, PyObject *args)
-{
+    (void)self;
+    RayObject *ray_obj;
     Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "n", &index))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
 
-    if (self->obj == NULL)
+    if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
         return NULL;
     }
 
-    if (index < 0 || index >= (Py_ssize_t)self->obj->len)
+    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
     {
         PyErr_SetString(PyExc_IndexError, "Vector index out of range");
         return NULL;
     }
 
-    obj_p item = at_idx(self->obj, (i64_t)index);
-    if (item == NULL)
-    {
-        Py_RETURN_NONE;
-    }
+    obj_p item = at_idx(ray_obj->obj, (i64_t)index);
+    if (item == NULL) { Py_RETURN_NONE; }
 
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL)
@@ -1442,59 +1138,22 @@ static PyObject *RayObject_at_idx(RayObject *self, PyObject *args)
 
     return (PyObject *)result;
 }
-
-// Set vector element at index
-static PyObject *RayObject_set_idx(RayObject *self, PyObject *args)
+static PyObject *raypy_ins_obj(PyObject *self, PyObject *args)
 {
-    Py_ssize_t index;
-    RayObject *item;
-    if (!PyArg_ParseTuple(args, "nO!", &index, &RayObjectType, &item))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Object is NULL");
-        return NULL;
-    }
-
-    if (index < 0 || index >= (Py_ssize_t)self->obj->len)
-    {
-        PyErr_SetString(PyExc_IndexError, "Vector index out of range");
-        return NULL;
-    }
-
-    obj_p clone = clone_obj(item->obj);
-    if (clone == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
-        return NULL;
-    }
-
-    set_idx(&self->obj, (i64_t)index, clone);
-
-    Py_RETURN_NONE;
-}
-
-// Insert object at index in vector/list
-static PyObject *RayObject_ins_obj(RayObject *self, PyObject *args)
-{
+    (void)self;
+    RayObject *ray_obj;
     Py_ssize_t index;
     RayObject *item;
     
-    if (!PyArg_ParseTuple(args, "nO!", &index, &RayObjectType, &item))
-    {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args, "O!nO!", &RayObjectType, &ray_obj, &index, &RayObjectType, &item)) { return NULL; }
 
-    if (self->obj == NULL)
+    if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
         return NULL;
     }
 
-    if (index < 0 || index > (Py_ssize_t)self->obj->len)
+    if (index < 0 || index > (Py_ssize_t)ray_obj->obj->len)
     {
         PyErr_SetString(PyExc_IndexError, "Insert index out of range");
         return NULL;
@@ -1507,29 +1166,32 @@ static PyObject *RayObject_ins_obj(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    ins_obj(&self->obj, (i64_t)index, clone);
+    ins_obj(&ray_obj->obj, (i64_t)index, clone);
     Py_RETURN_NONE;
 }
+// END VECTOR OPERATIONS
+// ---------------------------------------------------------------------------
 
-/*
- * Get vector length for any object that has a length attribute
- */
-static PyObject *RayObject_get_vector_length(RayObject *self, PyObject *args)
+// MISC
+// ---------------------------------------------------------------------------
+static PyObject *raypy_get_obj_length(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
         return NULL;
     }
 
-    // Проверяем, является ли объект вектором или другим типом, имеющим len
-    if (self->obj->type > 0 ||
-        self->obj->type == TYPE_LIST ||
-        self->obj->type == TYPE_DICT ||
-        self->obj->type == TYPE_TABLE)
+    if (ray_obj->obj->type > 0 ||
+        ray_obj->obj->type == TYPE_LIST ||
+        ray_obj->obj->type == TYPE_DICT ||
+        ray_obj->obj->type == TYPE_TABLE)
     {
-
-        return PyLong_FromUnsignedLongLong(self->obj->len);
+        return PyLong_FromUnsignedLongLong(ray_obj->obj->len);
     }
     else
     {
@@ -1537,571 +1199,25 @@ static PyObject *RayObject_get_vector_length(RayObject *self, PyObject *args)
         return NULL;
     }
 }
-
-/*
- * Addition operation for RayObjects
- */
-static PyObject *RayObject_ray_add(RayObject *self, PyObject *args)
+static PyObject *raypy_eval_str(PyObject *self, PyObject *args)
 {
-    RayObject *other;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || other->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot add NULL objects");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's add operation directly
-    result->obj = ray_add(self->obj, other->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform addition operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Subtraction operation for RayObjects
- */
-static PyObject *RayObject_ray_sub(RayObject *self, PyObject *args)
-{
-    RayObject *other;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || other->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot subtract NULL objects");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's subtract operation directly
-    result->obj = ray_sub(self->obj, other->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform subtraction operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Multiplication operation for RayObjects
- */
-static PyObject *RayObject_mul(RayObject *self, PyObject *args)
-{
-    RayObject *other;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || other->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot multiply NULL objects");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's multiply operation directly
-    result->obj = ray_mul(self->obj, other->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform multiplication operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Division operation for RayObjects
- */
-static PyObject *RayObject_ray_div(RayObject *self, PyObject *args)
-{
-    RayObject *other;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || other->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot divide NULL objects");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's divide operation directly
-    result->obj = ray_div(self->obj, other->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform division operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Floating-point division operation for RayObjects
- */
-static PyObject *RayObject_ray_fdiv(RayObject *self, PyObject *args)
-{
-    RayObject *other;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || other->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot divide NULL objects");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's floating-point divide operation directly
-    result->obj = ray_fdiv(self->obj, other->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform floating-point division operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Modulo operation for RayObjects
- */
-static PyObject *RayObject_ray_mod(RayObject *self, PyObject *args)
-{
-    RayObject *other;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &other))
-    {
-        return NULL;
-    }
-
-    if (self->obj == NULL || other->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot perform modulo operation on NULL objects");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's modulo operation directly
-    result->obj = ray_mod(self->obj, other->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform modulo operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Sum operation for RayObject vectors
- */
-static PyObject *RayObject_ray_sum(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot sum NULL object");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's sum operation directly
-    result->obj = ray_sum(self->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform sum operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Average operation for RayObject vectors
- */
-static PyObject *RayObject_ray_avg(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot compute average of NULL object");
-        return NULL;
-    }
-
-    // Handle empty vector case
-    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0)
-    {
-        // Create a new RayObject for the result
-        RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (result == NULL)
-        {
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-            return NULL;
-        }
-
-        result->obj = f64(0.0);
-        if (result->obj == NULL)
-        {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-            return NULL;
-        }
-        return (PyObject *)result;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's average operation directly
-    result->obj = ray_avg(self->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform average operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Median operation for RayObject vectors
- */
-static PyObject *RayObject_ray_med(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot compute median of NULL object");
-        return NULL;
-    }
-
-    // Handle empty vector case
-    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0)
-    {
-        // Create a new RayObject for the result
-        RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (result == NULL)
-        {
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-            return NULL;
-        }
-
-        result->obj = f64(0.0);
-        if (result->obj == NULL)
-        {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-            return NULL;
-        }
-        return (PyObject *)result;
-    }
-
-    // F64 vectors are not supported by the core's ray_med function
-    if (self->obj->type == TYPE_F64)
-    {
-        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for median operation");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's median operation directly
-    result->obj = ray_med(self->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform median operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Standard deviation operation for RayObject vectors
- */
-static PyObject *RayObject_ray_dev(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot compute standard deviation of NULL object");
-        return NULL;
-    }
-
-    // Handle empty vector case
-    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0)
-    {
-        // Create a new RayObject for the result
-        RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (result == NULL)
-        {
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-            return NULL;
-        }
-
-        result->obj = f64(0.0);
-        if (result->obj == NULL)
-        {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-            return NULL;
-        }
-        return (PyObject *)result;
-    }
-
-    // F64 vectors are not supported by the core's ray_dev function
-    if (self->obj->type == TYPE_F64)
-    {
-        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for standard deviation operation");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's standard deviation operation directly
-    result->obj = ray_dev(self->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform standard deviation operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Minimum value operation for RayObject vectors
- */
-static PyObject *RayObject_ray_min(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot compute minimum of NULL object");
-        return NULL;
-    }
-
-    // Handle empty vector case
-    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0)
-    {
-        // Create a new RayObject for the result
-        RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (result == NULL)
-        {
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-            return NULL;
-        }
-
-        result->obj = f64(0.0);
-        if (result->obj == NULL)
-        {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-            return NULL;
-        }
-        return (PyObject *)result;
-    }
-
-    // F64 vectors are not supported by the core's ray_min function
-    if (self->obj->type == TYPE_F64)
-    {
-        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for minimum operation");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's minimum operation directly
-    result->obj = ray_min(self->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform minimum operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Maximum value operation for RayObject vectors
- */
-static PyObject *RayObject_ray_max(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Cannot compute maximum of NULL object");
-        return NULL;
-    }
-
-    // Handle empty vector case
-    if ((self->obj->type == TYPE_I64 || self->obj->type == TYPE_F64) && self->obj->len == 0)
-    {
-        // Create a new RayObject for the result
-        RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (result == NULL)
-        {
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-            return NULL;
-        }
-
-        result->obj = f64(0.0);
-        if (result->obj == NULL)
-        {
-            Py_DECREF(result);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
-            return NULL;
-        }
-        return (PyObject *)result;
-    }
-
-    // F64 vectors are not supported by the core's ray_max function
-    if (self->obj->type == TYPE_F64)
-    {
-        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for maximum operation");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's maximum operation directly
-    result->obj = ray_max(self->obj);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to perform maximum operation");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-
-/*
- * Evaluate a Rayforce expression
- */
-static PyObject *RayObject_ray_eval(RayObject *self, PyObject *args)
-{
-    if (self->obj == NULL)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Cannot evaluate NULL object");
         return NULL;
     }
 
-    if (self->obj->type != TYPE_C8)
+    if (ray_obj->obj->type != TYPE_C8)
     {
         PyErr_SetString(PyExc_TypeError, "Object must be a string (TYPE_C8) for evaluation");
         return NULL;
     }
 
+    // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL)
     {
@@ -2109,7 +1225,7 @@ static PyObject *RayObject_ray_eval(RayObject *self, PyObject *args)
         return NULL;
     }
 
-    result->obj = ray_eval_str(self->obj, NULL_OBJ);
+    result->obj = ray_eval_str(ray_obj->obj, NULL_OBJ);
     if (result->obj == NULL)
     {
         Py_DECREF(result);
@@ -2119,25 +1235,25 @@ static PyObject *RayObject_ray_eval(RayObject *self, PyObject *args)
 
     return (PyObject *)result;
 }
-
-/*
- * Get error message from an error object
- */
-static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
+static PyObject *raypy_get_error_message(PyObject *self, PyObject *args)
 {
-    if (self->obj == NULL)
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
         return NULL;
     }
 
-    if (self->obj->type != TYPE_ERR)
+    if (ray_obj->obj->type != TYPE_ERR)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not an error type");
         return NULL;
     }
 
-    ray_error_p err = AS_ERROR(self->obj);
+    ray_error_p err = AS_ERROR(ray_obj->obj);
 
     if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8)
     {
@@ -2167,19 +1283,613 @@ static PyObject *RayObject_get_error_message(RayObject *self, PyObject *args)
         return PyUnicode_FromString("Unknown error");
     }
 }
-
-/*
- * Select operation - SQL-like query interface
- */
-static PyObject *RayObject_ray_select(PyTypeObject *type, PyObject *args)
+static PyObject *raypy_binary_set(PyObject *self, PyObject *args)
 {
-    RayObject *query_dict;
+    (void)self;
+    RayObject *symbol_or_path;
+    RayObject *value;
 
-    // Parse argument - expect a single RayObject (dictionary)
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &query_dict))
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &symbol_or_path, &RayObjectType, &value)) { return NULL; }
+
+    if (symbol_or_path->obj == NULL || value->obj == NULL)
     {
+        PyErr_SetString(PyExc_ValueError, "Neither symbol/path nor value can be NULL");
         return NULL;
     }
+
+    if (symbol_or_path->obj->type != -TYPE_SYMBOL && symbol_or_path->obj->type != TYPE_C8)
+    {
+        PyErr_SetString(PyExc_TypeError, "First argument must be a symbol or string");
+        return NULL;
+    }
+
+    // Allocate memory for result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = binary_set(symbol_or_path->obj, value->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to execute set operation");
+        return NULL;
+    }
+
+    if (result->obj->type == TYPE_ERR)
+    {
+        return (PyObject *)result;
+    }
+    return (PyObject *)result;
+}
+static PyObject *raypy_env_get_internal_function_by_name(PyObject *self, PyObject *args)
+{
+    (void)self;
+    const char *name;
+    Py_ssize_t name_len;
+
+    if (!PyArg_ParseTuple(args, "s#", &name, &name_len)) { return NULL; }
+
+    if (name_len == 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "Function name cannot be empty");
+        return NULL;
+    }
+
+    obj_p func_obj = env_get_internal_function(name);
+    
+    if (func_obj == NULL_OBJ || func_obj == NULL)
+    {
+        Py_RETURN_NONE;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        drop_obj(func_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = func_obj;
+    return (PyObject *)result;
+}
+static PyObject *raypy_env_get_internal_name_by_function(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
+        return NULL;
+    }
+
+    str_p name = env_get_internal_name(ray_obj->obj);
+    
+    if (name == NULL) { Py_RETURN_NONE; }
+    return PyUnicode_FromString(name);
+}
+static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = eval_obj(ray_obj->obj);
+    
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate object");
+        return NULL;
+    }
+
+    if (result->obj->type == TYPE_ERR)
+    {
+        return (PyObject *)result;
+    }
+    return (PyObject *)result;
+}
+// END MISC
+// ---------------------------------------------------------------------------
+
+
+// MATH OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_math_add(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj1;
+    RayObject *ray_obj2;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+
+    if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot add NULL objects");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_add(ray_obj1->obj, ray_obj2->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform addition operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_sub(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj1;
+    RayObject *ray_obj2;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+
+    if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot subtract NULL objects");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_sub(ray_obj1->obj, ray_obj2->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform subtraction operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_mul(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj1;
+    RayObject *ray_obj2;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+
+    if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot multiply NULL objects");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_mul(ray_obj1->obj, ray_obj2->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform multiplication operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_div(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj1;
+    RayObject *ray_obj2;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+
+    if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot divide NULL objects");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_div(ray_obj1->obj, ray_obj2->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform division operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_fdiv(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj1;
+    RayObject *ray_obj2;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+
+    if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot divide NULL objects");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_fdiv(ray_obj1->obj, ray_obj2->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform floating-point division operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_mod(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj1;
+    RayObject *ray_obj2;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+
+    if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot perform modulo operation on NULL objects");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_mod(ray_obj1->obj, ray_obj2->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform modulo operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_sum(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot sum NULL object");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_sum(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform sum operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_avg(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute average of NULL object");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Handle empty vector case
+    if ((ray_obj->obj->type == TYPE_I64 || ray_obj->obj->type == TYPE_F64) && ray_obj->obj->len == 0)
+    {
+        result->obj = f64(0.0);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject *)result;
+    }
+
+    result->obj = ray_avg(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform average operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_med(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute median of NULL object");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    if ((ray_obj->obj->type == TYPE_I64 || ray_obj->obj->type == TYPE_F64) && ray_obj->obj->len == 0)
+    {
+        result->obj = f64(0.0);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject *)result;
+    }
+
+    // F64 vectors are not supported by the core's ray_med function
+    if (ray_obj->obj->type == TYPE_F64)
+    {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for median operation");
+        return NULL;
+    }
+
+    result->obj = ray_med(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform median operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_dev(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute standard deviation of NULL object");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    if ((ray_obj->obj->type == TYPE_I64 || ray_obj->obj->type == TYPE_F64) && ray_obj->obj->len == 0)
+    {
+        result->obj = f64(0.0);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject *)result;
+    }
+
+    // F64 vectors are not supported by the core's ray_dev function
+    if (ray_obj->obj->type == TYPE_F64)
+    {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for standard deviation operation");
+        return NULL;
+    }
+
+    result->obj = ray_dev(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform standard deviation operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_min(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute minimum of NULL object");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    if ((ray_obj->obj->type == TYPE_I64 || ray_obj->obj->type == TYPE_F64) && ray_obj->obj->len == 0)
+    {
+        result->obj = f64(0.0);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject *)result;
+    }
+
+    // F64 vectors are not supported by the core's ray_min function
+    if (ray_obj->obj->type == TYPE_F64)
+    {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for minimum operation");
+        return NULL;
+    }
+
+    result->obj = ray_min(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform minimum operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_math_max(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot compute maximum of NULL object");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    if ((ray_obj->obj->type == TYPE_I64 || ray_obj->obj->type == TYPE_F64) && ray_obj->obj->len == 0)
+    {
+        result->obj = f64(0.0);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_RuntimeError, "Failed to create zero result");
+            return NULL;
+        }
+        return (PyObject *)result;
+    }
+
+    // F64 vectors are not supported by the core's ray_max function
+    if (ray_obj->obj->type == TYPE_F64)
+    {
+        PyErr_SetString(PyExc_TypeError, "F64 vectors are not supported for maximum operation");
+        return NULL;
+    }
+
+    result->obj = ray_max(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to perform maximum operation");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+// END MATH OPERATIONS
+// ---------------------------------------------------------------------------
+
+// DATABASE OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_select(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *query_dict;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &query_dict)) { return NULL; }
 
     // Validate that the query object exists and is a dictionary
     if (query_dict->obj == NULL)
@@ -2194,300 +1904,24 @@ static PyObject *RayObject_ray_select(PyTypeObject *type, PyObject *args)
         return NULL;
     }
 
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)type->tp_alloc(type, 0);
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL)
     {
         PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
         return NULL;
     }
 
-    // Call rayforce's select operation directly
     result->obj = EVAL_WITH_CTX(ray_select(query_dict->obj), NULL_OBJ);
     return (PyObject *)result;
 }
+// END DATABASE OPERATIONS
+// ---------------------------------------------------------------------------
 
-/*
- * Set operation - Assign value to symbol or save to file
- */
-static PyObject *RayObject_binary_set(PyTypeObject *type, PyObject *args)
-{
-    RayObject *symbol_or_path;
-    RayObject *value;
 
-    // Parse arguments - expect two RayObjects
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &symbol_or_path, &RayObjectType, &value))
-    {
-        return NULL;
-    }
-
-    // Validate that the objects exist
-    if (symbol_or_path->obj == NULL || value->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "Neither symbol/path nor value can be NULL");
-        return NULL;
-    }
-
-    // Validate that the first argument is either a symbol or string
-    if (symbol_or_path->obj->type != -TYPE_SYMBOL && symbol_or_path->obj->type != TYPE_C8)
-    {
-        PyErr_SetString(PyExc_TypeError, "First argument must be a symbol or string");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)type->tp_alloc(type, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call rayforce's set operation directly
-    result->obj = binary_set(symbol_or_path->obj, value->obj);
-
-    // Check for errors
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to execute set operation");
-        return NULL;
-    }
-
-    // Check if result is an error object
-    if (result->obj->type == TYPE_ERR)
-    {
-        // Don't DECREF here, let Python handle the error object
-        return (PyObject *)result;  // Return the error for inspection
-    }
-
-    return (PyObject *)result;
-}
-
-// Методы RayObject
-static PyMethodDef RayObject_methods[] = {
-    // Integer methods
-    {"from_i16", (PyCFunction)RayObject_from_i16, METH_VARARGS | METH_CLASS,
-     "Create a new i16 object"},
-    {"from_i32", (PyCFunction)RayObject_from_i32, METH_VARARGS | METH_CLASS,
-     "Create a new i32 object"},
-    {"from_i64", (PyCFunction)RayObject_from_i64, METH_VARARGS | METH_CLASS,
-     "Create a new i64 object"},
-    {"get_i16_value", (PyCFunction)RayObject_get_i16_value, METH_NOARGS,
-     "Get the i16 value"},
-    {"get_i32_value", (PyCFunction)RayObject_get_i32_value, METH_NOARGS,
-     "Get the i32 value"},
-    {"get_i64_value", (PyCFunction)RayObject_get_i64_value, METH_NOARGS,
-     "Get the i64 value"},
-
-    // Float methods
-    {"from_f64", (PyCFunction)RayObject_from_f64, METH_VARARGS | METH_CLASS,
-     "Create a new f64 (double) object"},
-    {"get_f64_value", (PyCFunction)RayObject_get_f64_value, METH_NOARGS,
-     "Get the f64 (double) value"},
-
-    // String methods
-    {"from_c8", (PyCFunction)RayObject_from_c8, METH_VARARGS | METH_CLASS,
-     "Create a new c8 (character) object"},
-    {"get_c8_value", (PyCFunction)RayObject_get_c8_value, METH_NOARGS,
-     "Get the c8 (character) value"},
-    {"from_string", (PyCFunction)RayObject_from_string, METH_VARARGS | METH_CLASS,
-     "Create a new string from a Python string"},
-    {"get_string_value", (PyCFunction)RayObject_get_string_value, METH_NOARGS,
-     "Get the string value"},
-    {"get_string_length", (PyCFunction)RayObject_get_string_length, METH_NOARGS,
-     "Get the length of the string"},
-    {"get_string_char", (PyCFunction)RayObject_get_string_char, METH_VARARGS,
-     "Get the character at the specified index in the string"},
-    {"is_string", (PyCFunction)RayObject_is_string, METH_NOARGS,
-     "Check if the object is a string"},
-    {"is_c8", (PyCFunction)RayObject_is_c8, METH_NOARGS,
-     "Check if the object is a c8 (character)"},
-
-    // Symbol methods
-    {"from_symbol", (PyCFunction)RayObject_from_symbol, METH_VARARGS | METH_CLASS,
-     "Create a new symbol from a string"},
-    {"from_symbol_id", (PyCFunction)RayObject_from_symbol_id, METH_VARARGS | METH_CLASS,
-     "Create a new symbol from an integer ID"},
-    {"get_symbol_value", (PyCFunction)RayObject_get_symbol_value, METH_NOARGS,
-     "Get the symbol value as a string"},
-    {"get_symbol_id", (PyCFunction)RayObject_get_symbol_id, METH_NOARGS,
-     "Get the symbol ID"},
-    {"is_symbol", (PyCFunction)RayObject_is_symbol, METH_NOARGS,
-     "Check if the object is a symbol"},
-
-    // List methods
-    {"create_list", (PyCFunction)RayObject_create_list, METH_VARARGS | METH_CLASS,
-     "Create a new list with optional initial size"},
-    {"list_length", (PyCFunction)RayObject_list_length, METH_NOARGS,
-     "Get the length of the list"},
-    {"list_append", (PyCFunction)RayObject_list_append, METH_VARARGS,
-     "Append an item to the list"},
-    {"list_get_item", (PyCFunction)RayObject_list_get_item, METH_VARARGS,
-     "Get an item from the list by index"},
-    {"list_set_item", (PyCFunction)RayObject_list_set_item, METH_VARARGS,
-     "Set an item in the list at the given index"},
-    {"list_remove_item", (PyCFunction)RayObject_list_remove_item, METH_VARARGS,
-     "Remove an item from the list at the given index"},
-    {"is_list", (PyCFunction)RayObject_is_list, METH_NOARGS,
-     "Check if the object is a list"},
-
-    // Common methods
-    {"get_type", (PyCFunction)RayObject_get_type, METH_NOARGS,
-     "Get the type of the object"},
-
-    // B8 methods
-    {"from_b8", (PyCFunction)RayObject_from_b8, METH_VARARGS | METH_CLASS,
-     "Create a new B8 object from a Python boolean"},
-    {"get_b8_value", (PyCFunction)RayObject_get_b8_value, METH_NOARGS,
-     "Get the value of a B8 object"},
-
-    // U8 methods
-    {"from_u8", (PyCFunction)RayObject_from_u8, METH_VARARGS | METH_CLASS,
-     "Create a new U8 object from a Python integer"},
-    {"get_u8_value", (PyCFunction)RayObject_get_u8_value, METH_NOARGS,
-     "Get the value of a U8 object"},
-
-    // DATE methods
-    {"from_date", (PyCFunction)RayObject_from_date, METH_VARARGS | METH_CLASS,
-     "Create a new DATE object from a Python integer (days since epoch)"},
-    {"get_date_value", (PyCFunction)RayObject_get_date_value, METH_NOARGS,
-     "Get the date value (days since epoch) from a DATE object"},
-
-    // TIME methods
-    {"from_time", (PyCFunction)RayObject_from_time, METH_VARARGS | METH_CLASS,
-     "Create a new TIME object from a Python integer (milliseconds since midnight)"},
-    {"get_time_value", (PyCFunction)RayObject_get_time_value, METH_NOARGS,
-     "Get the time value (milliseconds since midnight) from a TIME object"},
-
-    // TIMESTAMP methods
-    {"from_timestamp", (PyCFunction)RayObject_from_timestamp, METH_VARARGS | METH_CLASS,
-     "Create a new TIMESTAMP object from a Python integer (milliseconds since epoch)"},
-    {"get_timestamp_value", (PyCFunction)RayObject_get_timestamp_value, METH_NOARGS,
-     "Get the timestamp value (milliseconds since epoch) from a TIMESTAMP object"},
-
-    // GUID methods
-    {"from_guid", (PyCFunction)RayObject_from_guid, METH_VARARGS | METH_CLASS,
-     "Create a new GUID object from a Python bytes/bytearray object"},
-    {"get_guid_value", (PyCFunction)RayObject_get_guid_value, METH_NOARGS,
-     "Get the GUID value as bytes from a GUID object"},
-    {"is_guid", (PyCFunction)RayObject_is_guid, METH_NOARGS,
-     "Check if the object is a GUID"},
-    {"is_vector", (PyCFunction)RayObject_is_vector, METH_NOARGS,
-     "Check if the object is a vector (has a positive type)"},
-    {"get_vector_type", (PyCFunction)RayObject_get_vector_type, METH_NOARGS,
-     "Get the type code of a vector"},
-
-    // TABLE methods
-    {"create_table", (PyCFunction)RayObject_create_table, METH_VARARGS | METH_CLASS,
-     "Create a new TABLE object from keys and values lists"},
-    {"table_get", (PyCFunction)RayObject_table_get, METH_VARARGS,
-     "Get a value from a TABLE by key"},
-    {"is_table", (PyCFunction)RayObject_is_table, METH_NOARGS,
-     "Check if the object is a TABLE"},
-    {"table_keys", (PyCFunction)RayObject_table_keys, METH_NOARGS,
-     "Get keys from a table"},
-    {"table_values", (PyCFunction)RayObject_table_values, METH_NOARGS,
-     "Get values from a table"},
-
-    // DICT methods
-    {"create_dict", (PyCFunction)RayObject_create_dict, METH_VARARGS | METH_CLASS,
-     "Create a new DICT object from keys and values lists"},
-    {"dict_keys", (PyCFunction)RayObject_dict_keys, METH_NOARGS,
-     "Get all keys from a DICT"},
-    {"dict_values", (PyCFunction)RayObject_dict_values, METH_NOARGS,
-     "Get all values from a DICT"},
-    {"is_dict", (PyCFunction)RayObject_is_dict, METH_NOARGS,
-     "Check if the object is a DICT"},
-    {"dict_get", (PyCFunction)RayObject_dict_get, METH_VARARGS,
-     "Get a value from a DICT by key"},
-    {"dict_length", (PyCFunction)RayObject_dict_length, METH_NOARGS,
-     "Get the number of items in a DICT"},
-
-    // Vector methods
-    {"vector", (PyCFunction)RayObject_vector, METH_VARARGS | METH_CLASS,
-     "Create a new vector of specified type and length"},
-    {"at_idx", (PyCFunction)RayObject_at_idx, METH_VARARGS,
-     "Get element at index from vector"},
-    {"set_idx", (PyCFunction)RayObject_set_idx, METH_VARARGS,
-     "Set element at index in vector"},
-
-    // Get vector length
-    {"get_vector_length", (PyCFunction)RayObject_get_vector_length, METH_NOARGS,
-     "Get the length of a vector"},
-
-    // Addition method
-    {"ray_add", (PyCFunction)RayObject_ray_add, METH_VARARGS,
-     "Add two RayObjects"},
-
-    // Subtraction method
-    {"ray_sub", (PyCFunction)RayObject_ray_sub, METH_VARARGS,
-     "Subtract two RayObjects"},
-
-    // Multiplication method
-    {"ray_mul", (PyCFunction)ray_mul, METH_VARARGS,
-     "Multiply two RayObjects"},
-
-    // {"ray_mul", (PyCFunction)RayObject_ray_mul, METH_VARARGS,
-    //  "Multiply two RayObjects"},
-
-    // Division method
-    {"ray_div", (PyCFunction)RayObject_ray_div, METH_VARARGS,
-     "Divide two RayObjects"},
-
-    // Floating-point division method
-    {"ray_fdiv", (PyCFunction)RayObject_ray_fdiv, METH_VARARGS,
-     "Perform floating-point division of two RayObjects"},
-
-    // Modulo method
-    {"ray_mod", (PyCFunction)RayObject_ray_mod, METH_VARARGS,
-     "Perform modulo operation on two RayObjects"},
-
-    // Sum method
-    {"ray_sum", (PyCFunction)RayObject_ray_sum, METH_VARARGS,
-     "Sum all elements in a vector"},
-
-    // Average method
-    {"ray_avg", (PyCFunction)RayObject_ray_avg, METH_VARARGS,
-     "Compute the average of a vector or scalar"},
-
-    // Median method
-    {"ray_med", (PyCFunction)RayObject_ray_med, METH_VARARGS,
-     "Compute the median of a vector or scalar"},
-
-    // Standard deviation method
-    {"ray_dev", (PyCFunction)RayObject_ray_dev, METH_VARARGS,
-     "Compute the standard deviation of a vector or scalar"},
-
-    // Minimum method
-    {"ray_min", (PyCFunction)RayObject_ray_min, METH_VARARGS,
-     "Compute the minimum value of a vector or scalar"},
-
-    // Maximum method
-    {"ray_max", (PyCFunction)RayObject_ray_max, METH_VARARGS,
-     "Compute the maximum value of a vector or scalar"},
-
-    // Eval method
-    {"ray_eval", (PyCFunction)RayObject_ray_eval, METH_NOARGS,
-     "Evaluate a Rayforce expression"},
-
-    // Error handling
-    {"get_error_message", (PyCFunction)RayObject_get_error_message, METH_NOARGS,
-     "Get the error message from an error object"},
-
-    // Select method
-    {"ray_select", (PyCFunction)RayObject_ray_select, METH_VARARGS | METH_CLASS,
-     "Perform a SELECT query operation on data"},
-
-    {"binary_set", (PyCFunction)RayObject_binary_set, METH_VARARGS | METH_CLASS,
-     "Set a value to a symbol or save to file"},
-
-    {"ins_obj", (PyCFunction)RayObject_ins_obj, METH_VARARGS,
-     "Insert object at index in vector/list"},
-
-    {NULL, NULL, 0, NULL}};
-
-// Define the RayObject type
+// RayObject TYPE DEFINITION
+// ---------------------------------------------------------------------------
+static PyMethodDef RayObject_methods[] = {{NULL, NULL, 0, NULL}};
 static PyTypeObject RayObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce.RayObject",
     .tp_basicsize = sizeof(RayObject),
@@ -2498,10 +1932,14 @@ static PyTypeObject RayObjectType = {
     .tp_methods = RayObject_methods,
     .tp_new = PyType_GenericNew,
 };
+// ---------------------------------------------------------------------------
 
-// Wrapper for runtime_run
+// REPL
+// ---------------------------------------------------------------------------
 static PyObject *rayforce_runtime_run(PyObject *self, PyObject *args)
 {
+    (void)self;
+    (void)args;
     if (g_runtime == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Rayforce runtime not initialized");
@@ -2511,7 +1949,6 @@ static PyObject *rayforce_runtime_run(PyObject *self, PyObject *args)
     runtime_run();
     Py_RETURN_NONE;
 }
-
 // Python REPL state
 typedef struct
 {
@@ -2522,25 +1959,12 @@ typedef struct
     int mode; // 0 for Rayforce mode, 1 for Python mode
 } PyReplState;
 
-// ANSI color codes
-#define ANSI_RESET "\033[0m"
-#define ANSI_BOLD "\033[1m"
-#define ANSI_RED "\033[31m"
-#define ANSI_GREEN "\033[32m"
-#define ANSI_BLUE "\033[34m"
-#define ANSI_CYAN "\033[36m"
-#define ANSI_YELLOW "\033[33m"
-#define ANSI_MAGENTA "\033[35m"
-#define ANSI_LIGHTGRAY "\033[90m"
-
-// Unicode symbols
-#define UNI_PROMPT ">" // Simple prompt
-
 static PyReplState g_repl_state = {NULL, NULL, NULL, "raypy", 0}; // Default to Rayforce mode
 
 // Initialize REPL state
 static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
 {
+    (void)self;
     const char *prompt = "raypy";
     if (!PyArg_ParseTuple(args, "|s", &prompt))
     {
@@ -2602,6 +2026,8 @@ static PyObject *rayforce_repl_init(PyObject *self, PyObject *args)
 // Cleanup REPL state
 static PyObject *rayforce_repl_cleanup(PyObject *self, PyObject *args)
 {
+    (void)self;
+    (void)args;
     if (g_repl_state.stdin)
     {
         Py_DECREF(g_repl_state.stdin);
@@ -2628,12 +2054,15 @@ static PyObject *rayforce_repl_cleanup(PyObject *self, PyObject *args)
 // Get current mode
 static PyObject *rayforce_repl_get_mode(PyObject *self, PyObject *args)
 {
+    (void)self;
+    (void)args;
     return PyLong_FromLong(g_repl_state.mode);
 }
 
 // Set mode
 static PyObject *rayforce_repl_set_mode(PyObject *self, PyObject *args)
 {
+    (void)self;
     int mode;
     if (!PyArg_ParseTuple(args, "i", &mode))
     {
@@ -2651,7 +2080,7 @@ static PyObject *rayforce_repl_set_mode(PyObject *self, PyObject *args)
 }
 
 // Run one REPL iteration
-static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
+static PyObject *rayforce_repl_step()
 {
     if (!g_repl_state.stdin || !g_repl_state.stdout || !g_repl_state.stderr)
     {
@@ -2828,118 +2257,8 @@ static PyObject *rayforce_repl_step(PyObject *self, PyObject *args)
     Py_DECREF(line);
     Py_RETURN_NONE;
 }
-
-
-// Get internal function by name
-static PyObject *rayforce_env_get_internal_function(PyObject *self, PyObject *args)
-{
-    const char *name;
-    Py_ssize_t name_len;
-
-    if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
-    {
-        return NULL;
-    }
-
-    if (name_len == 0)
-    {
-        PyErr_SetString(PyExc_ValueError, "Function name cannot be empty");
-        return NULL;
-    }
-
-    // Call env_get_internal_function
-    obj_p func_obj = env_get_internal_function(name);
-    
-    if (func_obj == NULL_OBJ || func_obj == NULL)
-    {
-        Py_RETURN_NONE; // Function not found
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        drop_obj(func_obj);
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    result->obj = func_obj; // env_get_internal_function already clones the object
-    
-    return (PyObject *)result;
-}
-
-// Evaluate a RayObject using eval_obj
-static PyObject *rayforce_eval_obj(PyObject *self, PyObject *args)
-{
-    RayObject *ray_obj;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
-        return NULL;
-    }
-
-    if (ray_obj->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
-        return NULL;
-    }
-
-    // Create a new RayObject for the result
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // Call eval_obj from eval.c
-    result->obj = eval_obj(ray_obj->obj);
-    
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate object");
-        return NULL;
-    }
-
-    // Check if result is an error object
-    if (result->obj->type == TYPE_ERR)
-    {
-        // Don't DECREF here, let Python handle the error object
-        return (PyObject *)result;  // Return the error for inspection
-    }
-
-    return (PyObject *)result;
-}
-
-// Get internal function name by object
-static PyObject *rayforce_env_get_internal_name(PyObject *self, PyObject *args)
-{
-    RayObject *ray_obj;
-
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
-        return NULL;
-    }
-
-    if (ray_obj->obj == NULL)
-    {
-        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
-        return NULL;
-    }
-
-    // Call env_get_internal_name
-    str_p name = env_get_internal_name(ray_obj->obj);
-    
-    if (name == NULL)
-    {
-        Py_RETURN_NONE; // No name found
-    }
-
-    // Convert C string to Python string
-    return PyUnicode_FromString(name);
-}
+// END REPL
+// ---------------------------------------------------------------------------
 
 // List of module methods
 static PyMethodDef module_methods[] = {
@@ -2949,10 +2268,95 @@ static PyMethodDef module_methods[] = {
     {"repl_step", rayforce_repl_step, METH_NOARGS, "Run one REPL iteration"},
     {"repl_get_mode", rayforce_repl_get_mode, METH_NOARGS, "Get current REPL mode"},
     {"repl_set_mode", rayforce_repl_set_mode, METH_VARARGS, "Set REPL mode (0=Rayforce, 1=Python)"},
-    {"env_get_internal_function", rayforce_env_get_internal_function, METH_VARARGS, "Get internal function by name"},
-    {"eval_obj", rayforce_eval_obj, METH_VARARGS, "Evaluate a RayObject"},
-    {"env_get_internal_name", rayforce_env_get_internal_name, METH_VARARGS, "Get internal function name by object"},
-    {NULL, NULL, 0, NULL}};
+    {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate a RayObject"},
+    
+    // Constructors
+    {"init_i16", raypy_init_i16, METH_VARARGS, "Create a new i16 object"},
+    {"init_i32", raypy_init_i32, METH_VARARGS, "Create a new i32 object"},
+    {"init_i64", raypy_init_i64, METH_VARARGS, "Create a new i64 object"},
+    {"init_f64", raypy_init_f64, METH_VARARGS, "Create a new f64 object"},
+    {"init_c8", raypy_init_c8, METH_VARARGS, "Create a new c8 (character) object"},
+    {"init_string", raypy_init_string, METH_VARARGS, "Create a new string object"},
+    {"init_symbol", raypy_init_symbol, METH_VARARGS, "Create a new symbol object"},
+    {"init_b8", raypy_init_b8, METH_VARARGS, "Create a new b8 (boolean) object"},
+    {"init_u8", raypy_init_u8, METH_VARARGS, "Create a new u8 (byte) object"},
+    {"init_date", raypy_init_date, METH_VARARGS, "Create a new date object"},
+    {"init_time", raypy_init_time, METH_VARARGS, "Create a new time object"},
+    {"init_timestamp", raypy_init_timestamp, METH_VARARGS, "Create a new timestamp object"},
+    {"init_guid", raypy_init_guid, METH_VARARGS, "Create a new GUID object"},
+    {"init_list", raypy_init_list, METH_VARARGS, "Create a new list object"},
+    {"init_table", raypy_init_table, METH_VARARGS, "Create a new table object"},
+    {"init_dict", raypy_init_dict, METH_VARARGS, "Create a new dictionary object"},
+    {"init_vector", raypy_init_vector, METH_VARARGS, "Create a new vector object"},
+    
+    // Readers
+    {"read_i16", raypy_read_i16, METH_VARARGS, "Read i16 value from object"},
+    {"read_i32", raypy_read_i32, METH_VARARGS, "Read i32 value from object"},
+    {"read_i64", raypy_read_i64, METH_VARARGS, "Read i64 value from object"},
+    {"read_f64", raypy_read_f64, METH_VARARGS, "Read f64 value from object"},
+    {"read_c8", raypy_read_c8, METH_VARARGS, "Read c8 value from object"},
+    {"read_string", raypy_read_string, METH_VARARGS, "Read string value from object"},
+    {"read_symbol", raypy_read_symbol, METH_VARARGS, "Read symbol value from object"},
+    {"read_b8", raypy_read_b8, METH_VARARGS, "Read b8 value from object"},
+    {"read_u8", raypy_read_u8, METH_VARARGS, "Read u8 value from object"},
+    {"read_date", raypy_read_date, METH_VARARGS, "Read date value from object"},
+    {"read_time", raypy_read_time, METH_VARARGS, "Read time value from object"},
+    {"read_timestamp", raypy_read_timestamp, METH_VARARGS, "Read timestamp value from object"},
+    {"read_guid", raypy_read_guid, METH_VARARGS, "Read GUID value from object"},
+    
+    // Type introspection
+    {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
+    {"is_vector", raypy_is_vector, METH_VARARGS, "Check if object is a vector"},
+    
+    // List operations
+    {"list_length", raypy_list_length, METH_VARARGS, "Get list length"},
+    {"list_append", raypy_list_append, METH_VARARGS, "Append item to list"},
+    {"list_get_item", raypy_list_get_item, METH_VARARGS, "Get item from list"},
+    {"list_set_item", raypy_list_set_item, METH_VARARGS, "Set item in list"},
+    {"list_remove_item", raypy_list_remove_item, METH_VARARGS, "Remove item from list"},
+    
+    // Table operations
+    {"table_keys", raypy_table_keys, METH_VARARGS, "Get table keys"},
+    {"table_values", raypy_table_values, METH_VARARGS, "Get table values"},
+    
+    // Dictionary operations
+    {"dict_length", raypy_dict_length, METH_VARARGS, "Get dictionary length"},
+    {"dict_keys", raypy_dict_keys, METH_VARARGS, "Get dictionary keys"},
+    {"dict_values", raypy_dict_values, METH_VARARGS, "Get dictionary values"},
+    {"dict_get", raypy_dict_get, METH_VARARGS, "Get value from dictionary"},
+    
+    // Vector operations
+    {"at_idx", raypy_at_idx, METH_VARARGS, "Get element at index"},
+    {"ins_obj", raypy_ins_obj, METH_VARARGS, "Insert object at index"},
+    
+    // Misc operations
+    {"get_obj_length", raypy_get_obj_length, METH_VARARGS, "Get object length"},
+    {"eval_str", raypy_eval_str, METH_VARARGS, "Evaluate string expression"},
+    {"get_error_message", raypy_get_error_message, METH_VARARGS, "Get error message"},
+    {"binary_set", raypy_binary_set, METH_VARARGS, "Set value to symbol or file"},
+    {"env_get_internal_function_by_name", raypy_env_get_internal_function_by_name, METH_VARARGS, "Get internal function by name"},
+    {"env_get_internal_name_by_function", raypy_env_get_internal_name_by_function, METH_VARARGS, "Get internal function name"},
+    {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
+    
+    // Math operations
+    {"math_add", raypy_math_add, METH_VARARGS, "Add two objects"},
+    {"math_sub", raypy_math_sub, METH_VARARGS, "Subtract two objects"},
+    {"math_mul", raypy_math_mul, METH_VARARGS, "Multiply two objects"},
+    {"math_div", raypy_math_div, METH_VARARGS, "Divide two objects"},
+    {"math_fdiv", raypy_math_fdiv, METH_VARARGS, "Floating-point divide two objects"},
+    {"math_mod", raypy_math_mod, METH_VARARGS, "Modulo operation on two objects"},
+    {"math_sum", raypy_math_sum, METH_VARARGS, "Sum all elements in vector"},
+    {"math_avg", raypy_math_avg, METH_VARARGS, "Average of vector elements"},
+    {"math_med", raypy_math_med, METH_VARARGS, "Median of vector elements"},
+    {"math_dev", raypy_math_dev, METH_VARARGS, "Standard deviation of vector elements"},
+    {"math_min", raypy_math_min, METH_VARARGS, "Minimum value in vector"},
+    {"math_max", raypy_math_max, METH_VARARGS, "Maximum value in vector"},
+    
+    // Database operations
+    {"select", raypy_select, METH_VARARGS, "Perform SELECT query"},
+    
+    {NULL, NULL, 0, NULL}
+};
 
 // Define the module
 static struct PyModuleDef rayforce_module = {
@@ -3039,7 +2443,7 @@ static option_t python_repl_on_data(poll_p poll, selector_p selector)
 
     // Call the Python REPL step
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject *result = rayforce_repl_step(NULL, NULL);
+    PyObject *result = rayforce_repl_step();
     PyGILState_Release(gstate);
 
     // Check if we should continue
