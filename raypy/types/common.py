@@ -31,5 +31,4 @@ class RaypyScalar:
             self.ptr = ray_obj
 
 
-class RaypyContainer(RaypyScalar):
-    ...
+class RaypyContainer(RaypyScalar): ...

@@ -474,7 +474,9 @@ class U8(common.RaypyScalar):
         return U8(result)
 
 
-type ScalarType = I16 | I32 | I64 | F64 | B8 | C8 | Date | Symbol | Time | Timestamp | U8
+type ScalarType = (
+    I16 | I32 | I64 | F64 | B8 | C8 | Date | Symbol | Time | Timestamp | U8
+)
 
 __all__ = [
     "I16",

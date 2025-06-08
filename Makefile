@@ -67,10 +67,11 @@ runtime:
 
 py:
 	ipython -i -c "\
-	from raypy.types import container as c; \
-	from raypy.types import scalar as s; \
+	from raypy import types as t; \
 	from raypy import _rayforce as r; \
-	from raypy import queries as q"
+	from raypy import queries as q; \
+	from raypy import api; \
+	from raypy import misc"
 
 lint:
 	ruff format tests/ raypy/

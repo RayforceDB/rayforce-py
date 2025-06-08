@@ -1,5 +1,6 @@
 from raypy import _rayforce as r
-from raypy.types import container as c
+from raypy import api
+from raypy import types as t
 
 
 def eval_str(expr: str) -> r.RayObject:
@@ -23,4 +24,8 @@ def eval_str(expr: str) -> r.RayObject:
             raise ValueError(f"Evaluation error: {error_message}")
         raise ValueError(f"Evaluation error (type {result.get_obj_type()})")
 
-    return c.from_pointer_to_raypy_type(result, return_raw=True)
+    return t.from_rf_to_raypy(result)
+
+
+def set_table_name(name: str, table: t.Table) -> None:
+    api.set_obj_to_env(name, table.ptr)

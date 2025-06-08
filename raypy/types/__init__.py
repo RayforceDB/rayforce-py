@@ -1,5 +1,6 @@
 from .scalar import *
 from .container import *
+from .primitive import *
 
 __all__ = [
     # Scalars
@@ -20,4 +21,8 @@ __all__ = [
     "Dict",
     "Vector",
     "Table",
+    "Expression",
+    "SelectQuery",
+    # Misc
+    "Operation",
 ]

@@ -303,7 +303,7 @@ def read_u8(obj: r.RayObject) -> int:
 def init_guid(value: str | uuid.UUID | bytes | bytearray) -> r.RayObject:
     if value is None:
         raise ValueError("Value is required")
-    
+
     if isinstance(value, uuid.UUID):
         guid_bytes = value.bytes
     elif isinstance(value, str):
@@ -342,7 +342,7 @@ def init_vector(type_code: int, length: int) -> r.RayObject:
 
 def get_obj_length(value: r.RayObject) -> int:
     try:
-        return getattr(r, 'get_obj_length')(value)
+        return getattr(r, "get_obj_length")(value)
     except Exception as e:
         raise TypeError(f"Error during getting object length - {str(e)}") from e
 
@@ -356,9 +356,23 @@ def insert_obj(source_obj: r.RayObject, idx: int, value: r.RayObject) -> None:
 
 def get_object_at_idx(source_obj: r.RayObject, idx: int) -> r.RayObject:
     try:
-        return getattr(r, 'at_idx')(source_obj, idx)
+        return getattr(r, "at_idx")(source_obj, idx)
     except Exception as e:
-        raise ValueError("Error during get object ad idx operation") from e
+        raise ValueError("Error during get object at idx operation") from e
+
+
+def remove_object_at_idx(source_obj: r.RayObject, idx: int) -> None:
+    try:
+        return getattr(r, "remove_idx")(source_obj, idx)
+    except Exception as e:
+        raise ValueError("Error during removing object at idx operation") from e
+
+
+def push_obj_to_iterable(iterable: r.RayObject, obj: r.RayObject) -> None:
+    try:
+        getattr(r, "push_obj")(iterable, obj)
+    except Exception as e:
+        raise ValueError("Error during push object operation") from e
 
 
 def init_list() -> r.RayObject:
@@ -368,28 +382,46 @@ def init_list() -> r.RayObject:
         raise TypeError(f"Error during List type initialization - {str(e)}") from e
 
 
-def list_append(list: r.RayObject, obj: r.RayObject) -> None:
-    try:
-        getattr(r, "list_append")(list, obj)
-    except Exception as e:
-        raise ValueError("Error during list append operation") from e
-
-
 def init_dict(value: dict[str, Any]) -> r.RayObject:
     dict_keys = init_list()
     for item in value.keys():
         if not isinstance(item, str):
             raise ValueError(f"Expected string as dict key, got {type(item)}")
-        list_append(dict_keys, init_symbol(item))
+        push_obj_to_iterable(dict_keys, init_symbol(item))
 
     dict_values = init_list()
     for item in value.values():
-        list_append(dict_values, from_python_to_rayforce_type(item))
+        push_obj_to_iterable(dict_values, from_python_to_rayforce_type(item))
 
+    init_dict_from_rf_objects(dict_keys, dict_values)
+
+
+def init_dict_from_rf_objects(keys: r.RayObject, values: r.RayObject) -> r.RayObject:
     try:
-        return getattr(r, "init_dict")(dict_keys.ptr, dict_values.ptr)
+        return getattr(r, "init_dict")(keys, values)
     except Exception as e:
         raise TypeError(f"Error during Dict type initialisation - {str(e)}") from e
+
+
+def get_dict_keys(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "dict_keys")(obj)
+    except Exception as e:
+        raise ValueError("Error during get dict keys operation") from e
+
+
+def get_dict_values(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "dict_values")(obj)
+    except Exception as e:
+        raise ValueError("Error during get dict values operation") from e
+
+
+def get_dict_value_by_key(obj: r.RayObject, key: Any) -> r.RayObject:
+    try:
+        return getattr(r, "dict_get")(obj, from_python_to_rayforce_type(key))
+    except Exception as e:
+        raise ValueError("Error during get dict value by key operation") from e
 
 
 def init_table(columns: list[str], values: list) -> r.RayObject:
@@ -410,17 +442,81 @@ def init_table(columns: list[str], values: list) -> r.RayObject:
 
     table_values = init_list()
     for item in values:
-        list_append(table_values, from_python_to_rayforce_type(item))
+        push_obj_to_iterable(table_values, from_python_to_rayforce_type(item))
 
     try:
-        return getattr(r, "init_table")(table_columns.ptr, table_values.ptr)
+        return getattr(r, "init_table")(table_columns, table_values)
     except Exception as e:
         raise TypeError(f"Error during Table type initialisation - {str(e)}") from e
+
+
+def get_table_keys(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "table_keys")(obj)
+    except Exception as e:
+        raise ValueError("Error during get table keys operation") from e
+
+
+def get_table_values(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "table_values")(obj)
+    except Exception as e:
+        raise ValueError("Error during get table values operation") from e
+
+
+def is_vector(obj: r.RayObject) -> bool:
+    try:
+        return getattr(r, "is_vector")(obj)
+    except Exception as e:
+        raise ValueError("Error during is_vector operation") from e
+
+
+def get_primitive_function_by_name(name: str) -> r.RayObject:
+    try:
+        return getattr(r, "env_get_internal_function_by_name")(name)
+    except Exception as e:
+        raise ValueError(
+            "Error during env_get_internal_function_by_name operation"
+        ) from e
+
+
+def get_name_by_primitive_function(obj: r.RayObject) -> str:
+    try:
+        return getattr(r, "env_get_internal_name_by_function")(obj)
+    except Exception as e:
+        raise ValueError(
+            "Error during env_get_internal_name_by_function operation"
+        ) from e
+
+
+def set_obj_to_env(name: str, obj: r.RayObject) -> None:
+    try:
+        return getattr(r, "binary_set")(init_symbol(name), obj)
+    except Exception as e:
+        raise ValueError("Error during binary_set operation") from e
+
+
+def get_error_message(obj: r.RayObject) -> str:
+    try:
+        return getattr(r, "get_error_message")(obj)
+    except Exception as e:
+        raise ValueError("Error during get_error_message operation") from e
+
+
+def select(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "select")(obj)
+    except Exception as e:
+        raise ValueError("Error during select operation") from e
 
 
 def from_python_to_rayforce_type(value: Any) -> r.RayObject:
     if isinstance(value, r.RayObject):
         return value
+    elif hasattr(value, "ptr"):
+        return value.ptr
+    elif hasattr(value, "primitive"):
+        return value.primitive
     elif isinstance(value, str):
         return init_symbol(value)
     elif isinstance(value, int) and not isinstance(value, bool):
@@ -442,7 +538,7 @@ def from_python_to_rayforce_type(value: Any) -> r.RayObject:
     elif isinstance(value, list):
         ll = init_list()
         for item in value:
-            list_append(ll, from_python_to_rayforce_type(item))
+            push_obj_to_iterable(ll, from_python_to_rayforce_type(item))
         return ll
     elif isinstance(value, np.ndarray):
         if value.dtype == object:

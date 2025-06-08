@@ -707,150 +707,6 @@ static PyObject *raypy_is_vector(PyObject *self, PyObject *args)
 // END TYPE INTROSPECTION
 // ---------------------------------------------------------------------------
 
-// LIST OPERATIONS
-// ---------------------------------------------------------------------------
-static PyObject *raypy_list_length(PyObject *self, PyObject *args)
-{
-    (void)self;
-    RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
-
-    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a list");
-        return NULL;
-    }
-
-    return PyLong_FromUnsignedLongLong(ray_obj->obj->len);
-}
-static PyObject *raypy_list_append(PyObject *self, PyObject *args)
-{
-    (void)self;
-    RayObject *ray_obj;
-    RayObject *item;
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &item)) { return NULL; }
-
-    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a list");
-        return NULL;
-    }
-
-    // We need to clone the item since push_obj will own the object
-    obj_p clone = clone_obj(item->obj);
-    if (clone == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
-        return NULL;
-    }
-
-    push_obj(&ray_obj->obj, clone);
-    Py_RETURN_NONE;
-}
-static PyObject *raypy_list_get_item(PyObject *self, PyObject *args)
-{
-    (void)self;
-    RayObject *ray_obj;
-    Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
-
-    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a list");
-        return NULL;
-    }
-
-    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
-    {
-        PyErr_SetString(PyExc_IndexError, "List index out of range");
-        return NULL;
-    }
-
-    // Get the item at the index
-    obj_p item = at_idx(ray_obj->obj, (i64_t)index);
-    if (item == NULL) { Py_RETURN_NONE; }
-
-    // Allocate memory for py object
-    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-    if (result == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
-        return NULL;
-    }
-
-    // We need to clone the item since it's owned by the list
-    result->obj = clone_obj(item);
-    if (result->obj == NULL)
-    {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
-        return NULL;
-    }
-
-    return (PyObject *)result;
-}
-static PyObject *raypy_list_set_item(PyObject *self, PyObject *args)
-{
-    (void)self;
-    RayObject *ray_obj;
-    Py_ssize_t index;
-    RayObject *item;
-    if (!PyArg_ParseTuple(args, "O!nO!", &RayObjectType, &ray_obj, &index, &RayObjectType, &item)) { return NULL; }
-
-    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a list");
-        return NULL;
-    }
-
-    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
-    {
-        PyErr_SetString(PyExc_IndexError, "List index out of range");
-        return NULL;
-    }
-
-    // Clone the item, because set_idx would own it
-    obj_p clone = clone_obj(item->obj);
-    if (clone == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
-        return NULL;
-    }
-
-    set_idx(&ray_obj->obj, (i64_t)index, clone);
-    Py_RETURN_NONE;
-}
-static PyObject *raypy_list_remove_item(PyObject *self, PyObject *args)
-{
-    (void)self;
-    RayObject *ray_obj;
-    Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
-
-    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_LIST)
-    {
-        PyErr_SetString(PyExc_TypeError, "Object is not a list");
-        return NULL;
-    }
-
-    if (index < 0 || index >= (Py_ssize_t)ray_obj->obj->len)
-    {
-        PyErr_SetString(PyExc_IndexError, "List index out of range");
-        return NULL;
-    }
-
-    // Remove the item at the index
-    if (remove_idx(&ray_obj->obj, (i64_t)index) == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to remove item from list");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-// END LIST OPERATIONS
-// ---------------------------------------------------------------------------
-
 // TABLE OPERATIONS
 // ---------------------------------------------------------------------------
 static PyObject *raypy_table_keys(PyObject *self, PyObject *args)
@@ -1166,6 +1022,58 @@ static PyObject *raypy_ins_obj(PyObject *self, PyObject *args)
     }
 
     ins_obj(&ray_obj->obj, (i64_t)index, clone);
+    Py_RETURN_NONE;
+}
+static PyObject *raypy_remove_idx(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    Py_ssize_t index;
+    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+
+    if (index < 0 || index > (Py_ssize_t)ray_obj->obj->len)
+    {
+        PyErr_SetString(PyExc_IndexError, "Insert index out of range");
+        return NULL;
+    }
+
+    // Remove the item at the index
+    if (remove_idx(&ray_obj->obj, (i64_t)index) == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to remove item from list");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+static PyObject *raypy_push_obj(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    RayObject *item;
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &item)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+
+    // We need to clone the item since push_obj will own the object
+    obj_p clone = clone_obj(item->obj);
+    if (clone == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
+        return NULL;
+    }
+
+    push_obj(&ray_obj->obj, clone);
     Py_RETURN_NONE;
 }
 // END VECTOR OPERATIONS
@@ -2308,13 +2216,6 @@ static PyMethodDef module_methods[] = {
     // Type introspection
     {"is_vector", raypy_is_vector, METH_VARARGS, "Check if object is a vector"},
     
-    // List operations
-    {"list_length", raypy_list_length, METH_VARARGS, "Get list length"},
-    {"list_append", raypy_list_append, METH_VARARGS, "Append item to list"},
-    {"list_get_item", raypy_list_get_item, METH_VARARGS, "Get item from list"},
-    {"list_set_item", raypy_list_set_item, METH_VARARGS, "Set item in list"},
-    {"list_remove_item", raypy_list_remove_item, METH_VARARGS, "Remove item from list"},
-    
     // Table operations
     {"table_keys", raypy_table_keys, METH_VARARGS, "Get table keys"},
     {"table_values", raypy_table_values, METH_VARARGS, "Get table values"},
@@ -2328,6 +2229,8 @@ static PyMethodDef module_methods[] = {
     // Vector operations
     {"at_idx", raypy_at_idx, METH_VARARGS, "Get element at index"},
     {"ins_obj", raypy_ins_obj, METH_VARARGS, "Insert object at index"},
+    {"push_obj", raypy_push_obj, METH_VARARGS, "Push object to the end of iterable"},
+    {"remove_idx", raypy_remove_idx, METH_VARARGS, "Remove item at index"},
     
     // Misc operations
     {"get_obj_length", raypy_get_obj_length, METH_VARARGS, "Get object length"},
