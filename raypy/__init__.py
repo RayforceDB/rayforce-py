@@ -1,6 +1,7 @@
 """
 Raypy - Python bindings for Rayforce library
 """
+
 import os
 import sys
 import ctypes

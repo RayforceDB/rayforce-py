@@ -5,24 +5,18 @@ import numpy.typing as npt
 import uuid
 import datetime as dt
 
+from raypy import api
+from raypy.types import common
+from raypy.types import scalar
 from raypy import _rayforce as r
 
-from . import scalar
 
-T = TypeVar("T")
-
-
-class GUID:
+class GUID(common.RaypyContainer):
     """
-    # Rayforce GUID type (Globally unique identifier)
-    Analog of Python uuid.uuid4. Made as a vector of chars
+    Rayforce GUID type (Globally unique identifier)
     """
 
-    ptr: r.RayObject
-
-    ray_type_code = r.TYPE_GUID
-    ray_init_method = "init_guid"
-    ray_extr_method = "read_guid"
+    _type = r.TYPE_GUID
 
     def __init__(
         self,
@@ -30,49 +24,14 @@ class GUID:
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
-        if ray_obj is not None:
-            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
-                raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
-                )
-            self.ptr = ray_obj
-            return
+        super().__init__(value, ray_obj=ray_obj)
 
-        guid_bytes = None
-        if value is None:
-            guid_bytes = uuid.uuid4().bytes
-        elif isinstance(value, uuid.UUID):
-            guid_bytes = value.bytes
-        elif isinstance(value, str):
-            try:
-                guid_bytes = uuid.UUID(value).bytes
-            except ValueError as e:
-                raise ValueError("Invalid GUID string format") from e
-        elif isinstance(value, (bytes, bytearray)):
-            if len(value) != 16:
-                raise ValueError("GUID must be 16 bytes")
-            guid_bytes = bytes(value)
-        else:
-            raise TypeError(f"Cannot convert {type(value)} to GUID")
-
-        try:
-            self.ptr = getattr(r, self.ray_init_method)(guid_bytes)
-            assert self.ptr is not None, "RayObject should not be empty"
-        except Exception as e:
-            raise TypeError(f"Error during type initialisation - {str(e)}")
-
-    @property
-    def __raw_bytes(self) -> bytes:
-        try:
-            return getattr(r, self.ray_extr_method)(self.ptr)
-        except TypeError as e:
-            raise TypeError(
-                f"Expected RayObject type of {self.ray_type_code}, got {self.ptr.get_obj_type()}"
-            ) from e
+        if not getattr(self, 'ptr', None):
+            self.ptr = api.init_guid(value)
 
     @property
     def value(self) -> uuid.UUID:
-        return uuid.UUID(bytes=self.__raw_bytes)
+        return api.read_guid(self.ptr)
 
     @property
     def hex(self) -> str:
@@ -98,59 +57,41 @@ class GUID:
                 return self.value == uuid.UUID(other)
             except ValueError:
                 return False
-        if isinstance(other, (bytes, bytearray)) and len(other) == 16:
-            return self.__raw_bytes == bytes(other)
 
         return False
 
 
-class Vector(Generic[T]):
+class Vector:
     """
-    Rayforce vector type - collection of elements of type T
+    Rayforce vector type - collection of elements of scalar type
     """
 
     ptr: r.RayObject
-    class_type: scalar.ScalarType
-    ray_init_method = "init_vector"
-    ray_get_item_at_idx_method = "at_idx"
-    ray_set_item_at_idx_method = "ins_obj"
-    ray_get_vector_length = "get_obj_length"
+    _type: int
 
     def __init__(
         self,
-        class_type: Any,
+        class_type: scalar.ScalarType,
         length: int = 0,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
-        if not hasattr(class_type, "ray_type_code"):
-            raise ValueError(
-                "Class type has to be an object with ray_type_code attribute"
-            )
+        if not hasattr(class_type, "_type"):
+            raise ValueError("Class type has to be an Python object with _type attribute")
 
-        self.class_type = class_type
+        self._type = -class_type._type
 
         if ray_obj is not None:
-            if (_type := ray_obj.get_obj_type()) != -class_type.ray_type_code:
-                raise ValueError(
-                    f"Expected Vector object of type {class_type.ray_type_code}, got {_type}"
-                )
+            if (_type := ray_obj.get_obj_type()) != self._type:
+                raise ValueError(f"Expected Vector object of type {self._type}, got {_type}")
+
             self.ptr = ray_obj
             return
 
-        try:
-            self.ptr = getattr(r, self.ray_init_method)(
-                class_type.ray_type_code, length
-            )
-            assert self.ptr is not None, "RayObject should not be empty"
-        except Exception as e:
-            raise TypeError(f"Error during vector initialization - {str(e)}")
+        self.ptr = api.init_vector(type_code=-self._type, length=length)
 
     def __len__(self) -> int:
-        try:
-            return getattr(r, self.ray_get_vector_length)(self.ptr)
-        except Exception as e:
-            raise TypeError(f"Unable to get vector length - {str(e)}")
+        return api.get_obj_length(self.ptr)
 
     def __getitem__(self, idx: int) -> scalar.ScalarType:
         if idx < 0:
@@ -159,20 +100,18 @@ class Vector(Generic[T]):
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        item = getattr(r, self.ray_get_item_at_idx_method)(self.ptr, idx)
-        return from_pointer_to_raypy_type(item)
+        return from_rf_to_raypy(api.get_object_at_idx(self.ptr, idx))
 
-    def __setitem__(self, idx: int, value: scalar.ScalarType) -> None:
+    def __setitem__(self, idx: int, value: Any) -> None:
         if idx < 0:
             idx = len(self) + idx
 
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        v = from_pythonic_to_raypy_type(value)
-        getattr(r, self.ray_set_item_at_idx_method)(self.ptr, idx, v.ptr)
+        api.insert_obj(self.ptr, idx, api.from_python_to_rayforce_type(value))
 
-    def to_list(self) -> PyList[T]:
+    def to_list(self) -> list:
         return [self[i] for i in range(len(self))]
 
     def __iter__(self) -> Any:
@@ -180,7 +119,7 @@ class Vector(Generic[T]):
             yield self.__getitem__(i)
 
     def __str__(self) -> str:
-        return f"Vector[{-self.class_type.ray_type_code}] of len {len(self)}"
+        return f"Vector[{self.ptr.get_obj_type()}] of len {len(self)}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -205,14 +144,14 @@ class List:
 
     ptr: r.RayObject
 
-    ray_type_code = r.TYPE_LIST
+    _type = r.TYPE_LIST
 
-    ray_create_method = "init_list"
-    ray_append_method = "list_append"
-    ray_length_method = "list_length"
-    ray_get_item_method = "list_get_item"
-    ray_set_item_method = "list_set_item"
-    ray_remove_item_method = "list_remove_item"
+    # ray_create_method = "init_list"
+    # ray_append_method = "list_append"
+    # ray_length_method = "list_length"
+    # ray_get_item_method = "list_get_item"
+    # ray_set_item_method = "list_set_item"
+    # ray_remove_item_method = "list_remove_item"
 
     def __init__(
         self,
@@ -221,18 +160,18 @@ class List:
         ray_obj: r.RayObject | None = None,
     ) -> None:
         if ray_obj is not None:
-            if (_type := ray_obj.get_obj_type()) != self.ray_type_code:
-                raise ValueError(
-                    f"Expected RayForce object of type {self.ray_type_code}, got {_type}"
-                )
+            if (_type := ray_obj.get_obj_type()) != self._type:
+                raise ValueError(f"Expected RayForce object of type {self._type}, got {_type}")
+
             self.ptr = ray_obj
             return
 
-        self.ptr = getattr(r, self.ray_create_method)()
+        self.ptr = api.init_list()
 
         if items:
             if not isinstance(items, Iterable):
                 raise ValueError("Value should be iterable")
+
             for item in items:
                 self.append(item)
 
@@ -260,7 +199,7 @@ class List:
     def get(self, index: int) -> Any:
         if index < 0 or index >= len(self):
             raise IndexError("List index out of range")
-        return from_pointer_to_raypy_type(
+        return from_rf_to_raypy(
             ptr=getattr(r, self.ray_get_item_method)(self.ptr, index)
         )
 
@@ -374,7 +313,7 @@ class Dict:
         return List(items=getattr(r, self.ray_get_values)(self.ptr))
 
     def get(self, key: str) -> Any:
-        return from_pointer_to_raypy_type(
+        return from_rf_to_raypy(
             getattr(r, self.ray_get)(self.ptr, scalar.Symbol(value=key).ptr)
         )
 
@@ -485,11 +424,11 @@ class Table:
 
     def columns(self) -> List | Vector:
         _keys = getattr(r, self.ray_table_keys_method)(self.ptr)
-        return from_pointer_to_raypy_type(_keys)
+        return from_rf_to_raypy(_keys)
 
     def values(self) -> List:
         _values = getattr(r, self.ray_table_values_method)(self.ptr)
-        return from_pointer_to_raypy_type(_values)
+        return from_rf_to_raypy(_values)
 
     def __str__(self) -> str:
         columns = self.columns()
@@ -537,32 +476,32 @@ class Table:
 
 
 RAY_TYPE_TO_CLASS_MAPPING = {
-    -r.TYPE_I16: scalar.i16,
-    -r.TYPE_I32: scalar.i32,
-    -r.TYPE_I64: scalar.i64,
-    -r.TYPE_F64: scalar.f64,
-    -r.TYPE_B8: scalar.b8,
-    -r.TYPE_C8: scalar.c8,
+    -r.TYPE_I16: scalar.I16,
+    -r.TYPE_I32: scalar.I32,
+    -r.TYPE_I64: scalar.I64,
+    -r.TYPE_F64: scalar.F64,
+    -r.TYPE_B8: scalar.B8,
+    -r.TYPE_C8: scalar.C8,
     r.TYPE_GUID: GUID,
     -r.TYPE_SYMBOL: scalar.Symbol,
     -r.TYPE_TIME: scalar.Time,
     -r.TYPE_TIMESTAMP: scalar.Timestamp,
     -r.TYPE_DATE: scalar.Date,
-    -r.TYPE_U8: scalar.u8,
+    -r.TYPE_U8: scalar.U8,
     r.TYPE_LIST: List,
     r.TYPE_DICT: Dict,
     # Vectors are positive scalars
-    r.TYPE_I16: scalar.i16,
-    r.TYPE_I32: scalar.i32,
-    r.TYPE_I64: scalar.i64,
-    r.TYPE_F64: scalar.f64,
-    r.TYPE_B8: scalar.b8,
-    r.TYPE_C8: scalar.c8,
+    r.TYPE_I16: scalar.I16,
+    r.TYPE_I32: scalar.I32,
+    r.TYPE_I64: scalar.I64,
+    r.TYPE_F64: scalar.F64,
+    r.TYPE_B8: scalar.B8,
+    r.TYPE_C8: scalar.C8,
     r.TYPE_SYMBOL: scalar.Symbol,
     r.TYPE_TIME: scalar.Time,
     r.TYPE_TIMESTAMP: scalar.Timestamp,
     r.TYPE_DATE: scalar.Date,
-    r.TYPE_U8: scalar.u8,
+    r.TYPE_U8: scalar.U8,
 }
 
 
@@ -606,7 +545,7 @@ def from_pythonic_to_raypy_type(
         raise ValueError("Value can not be None")
 
     if isinstance(value, r.RayObject):
-        return from_pointer_to_raypy_type(value)
+        return from_rf_to_raypy(value)
 
     if isinstance(
         value,
@@ -667,7 +606,7 @@ def from_pythonic_to_raypy_type(
     raise ValueError(f"Value type is not supported - {type(value)}")
 
 
-def from_pointer_to_raypy_type(
+def from_rf_to_raypy(
     ptr: r.RayObject,
     return_raw: bool = False,
 ) -> (
