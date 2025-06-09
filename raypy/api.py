@@ -510,6 +510,13 @@ def select(obj: r.RayObject) -> r.RayObject:
         raise ValueError("Error during select operation") from e
 
 
+def init_lambda(args: r.RayObject, expressions: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "init_lambda")(args, expressions)
+    except Exception as e:
+        raise ValueError("Error during lambda initialization") from e
+
+
 def from_python_to_rayforce_type(value: Any) -> r.RayObject:
     if isinstance(value, r.RayObject):
         return value

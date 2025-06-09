@@ -475,6 +475,36 @@ class SelectQuery:
         self.ptr = api.init_dict_from_rf_objects(query_keys, query_values)
 
 
+class Lambda:
+    ptr: r.RayObject
+
+    def __init__(
+        self,
+        arguments: list[str],
+        expressions: Iterable[Expression],
+    ) -> None:
+        lambda_args = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(arguments))
+        for idx, arg in enumerate(arguments):
+            api.insert_obj(
+                source_obj=lambda_args,
+                idx=idx,
+                value=api.from_python_to_rayforce_type(arg),
+            )
+
+        lambda_expression = api.init_list()
+        api.push_obj_to_iterable(
+            iterable=lambda_expression,
+            obj=primitive.Operation.DO.primitive,
+        )
+        for expr in expressions:
+            api.push_obj_to_iterable(
+                iterable=lambda_expression,
+                obj=expr.ptr,
+            )
+
+        self.ptr = api.init_lambda(lambda_args, lambda_expression)
+
+
 RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_I16: scalar.I16,
     r.TYPE_I16: scalar.I16,

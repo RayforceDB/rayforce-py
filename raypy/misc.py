@@ -29,3 +29,7 @@ def eval_str(expr: str) -> r.RayObject:
 
 def set_table_name(name: str, table: t.Table) -> None:
     api.set_obj_to_env(name, table.ptr)
+
+
+def set_lambda_name(name: str, _lambda: t.Lambda) -> None:
+    api.set_obj_to_env(name, _lambda.ptr)

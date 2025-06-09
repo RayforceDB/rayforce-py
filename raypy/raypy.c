@@ -466,6 +466,51 @@ static PyObject *raypy_init_vector(PyObject *self, PyObject *args)
     }
     return (PyObject *)result;
 }
+static PyObject *raypy_init_lambda(PyObject *self, PyObject *args)
+{
+    (void)self;
+    // Lambda has 3 components: args (list of argument names), body (expression), nfo (metadata)
+    RayObject *args_obj;
+    RayObject *body_obj;
+    RayObject *nfo_obj = NULL;
+
+    if (!PyArg_ParseTuple(args, "O!O!|O!", &RayObjectType, &args_obj, &RayObjectType, &body_obj, &RayObjectType, &nfo_obj)){ return NULL; }
+
+    // Validate args parameter (should be a list or vector of symbols)
+    if (args_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Arguments object cannot be NULL");
+        return NULL;
+    }
+
+    // Validate body parameter (should be an expression object)
+    if (body_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Body object cannot be NULL");
+        return NULL;
+    }
+
+    // Set default nfo if not provided
+    obj_p nfo_ptr = (nfo_obj && nfo_obj->obj) ? nfo_obj->obj : NULL_OBJ;
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        // Clone args and body because lambda will own the objects
+        obj_p clone_args = clone_obj(args_obj->obj);
+        obj_p clone_body = clone_obj(body_obj->obj);
+
+        result->obj = lambda(clone_args, clone_body, nfo_ptr);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_MemoryError, "Failed to create lambda");
+            return NULL;
+        }
+    }
+    return (PyObject *)result;
+}
 // END CONSTRUCTORS
 // ---------------------------------------------------------------------------
 
@@ -1825,6 +1870,12 @@ static PyObject *raypy_select(PyObject *self, PyObject *args)
 // END DATABASE OPERATIONS
 // ---------------------------------------------------------------------------
 
+// LAMBDA OPERATIONS
+// ---------------------------------------------------------------------------
+// TODO: Add lambda call
+// END LAMBDA OPERATIONS
+// ---------------------------------------------------------------------------
+
 
 // RayObject TYPE DEFINITION
 // ---------------------------------------------------------------------------
@@ -2197,6 +2248,7 @@ static PyMethodDef module_methods[] = {
     {"init_table", raypy_init_table, METH_VARARGS, "Create a new table object"},
     {"init_dict", raypy_init_dict, METH_VARARGS, "Create a new dictionary object"},
     {"init_vector", raypy_init_vector, METH_VARARGS, "Create a new vector object"},
+    {"init_lambda", raypy_init_lambda, METH_VARARGS, "Create a new lambda function"},
     
     // Readers
     {"read_i16", raypy_read_i16, METH_VARARGS, "Read i16 value from object"},
