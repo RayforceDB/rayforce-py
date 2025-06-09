@@ -1872,6 +1872,78 @@ static PyObject *raypy_select(PyObject *self, PyObject *args)
 
 // LAMBDA OPERATIONS
 // ---------------------------------------------------------------------------
+static PyObject *raypy_lambda_get_args(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *lambda_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &lambda_obj)) { return NULL; }
+
+    if (lambda_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Lambda object cannot be NULL");
+        return NULL;
+    }
+
+    if (lambda_obj->obj->type != TYPE_LAMBDA)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not a lambda function");
+        return NULL;
+    }
+
+    lambda_p lambda_data = AS_LAMBDA(lambda_obj->obj);
+    
+    // Return the arguments list
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = clone_obj(lambda_data->args);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_MemoryError, "Failed to clone lambda arguments");
+            return NULL;
+        }
+    }
+    
+    return (PyObject *)result;
+}
+static PyObject *raypy_lambda_get_body(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *lambda_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &lambda_obj)) { return NULL; }
+
+    if (lambda_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Lambda object cannot be NULL");
+        return NULL;
+    }
+
+    if (lambda_obj->obj->type != TYPE_LAMBDA)
+    {
+        PyErr_SetString(PyExc_TypeError, "Object is not a lambda function");
+        return NULL;
+    }
+
+    lambda_p lambda_data = AS_LAMBDA(lambda_obj->obj);
+    
+    // Return the body
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result != NULL)
+    {
+        result->obj = clone_obj(lambda_data->body);
+        if (result->obj == NULL)
+        {
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_MemoryError, "Failed to clone lambda body");
+            return NULL;
+        }
+    }
+    
+    return (PyObject *)result;
+}
 // TODO: Add lambda call
 // END LAMBDA OPERATIONS
 // ---------------------------------------------------------------------------
@@ -2265,6 +2337,10 @@ static PyMethodDef module_methods[] = {
     {"read_timestamp", raypy_read_timestamp, METH_VARARGS, "Read timestamp value from object"},
     {"read_guid", raypy_read_guid, METH_VARARGS, "Read GUID value from object"},
     
+    // Lambda operations
+    {"get_lambda_args", raypy_lambda_get_args, METH_VARARGS, "Get lambda arguments vector"},
+    {"get_lambda_body", raypy_lambda_get_body, METH_VARARGS, "Get lambda body"},
+
     // Type introspection
     {"is_vector", raypy_is_vector, METH_VARARGS, "Check if object is a vector"},
     

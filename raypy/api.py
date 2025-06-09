@@ -517,6 +517,20 @@ def init_lambda(args: r.RayObject, expressions: r.RayObject) -> r.RayObject:
         raise ValueError("Error during lambda initialization") from e
 
 
+def get_lambda_args(_lambda: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "get_lambda_args")(_lambda)
+    except Exception as e:
+        raise ValueError("Error during get_lambda_args operation") from e
+
+
+def get_lambda_body(_lambda: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "get_lambda_body")(_lambda)
+    except Exception as e:
+        raise ValueError("Error during get_lambda_body operation") from e
+
+
 def from_python_to_rayforce_type(value: Any) -> r.RayObject:
     if isinstance(value, r.RayObject):
         return value

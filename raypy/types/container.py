@@ -497,12 +497,32 @@ class Lambda:
             obj=primitive.Operation.DO.primitive,
         )
         for expr in expressions:
+            if len(expr) == 1:
+                api.push_obj_to_iterable(
+                    iterable=lambda_expression,
+                    obj=expr[0].ptr,
+                )
+                continue
             api.push_obj_to_iterable(
                 iterable=lambda_expression,
                 obj=expr.ptr,
             )
 
         self.ptr = api.init_lambda(lambda_args, lambda_expression)
+
+    @property
+    def args(self) -> Vector:
+        return from_rf_to_raypy(api.get_lambda_args(self.ptr))
+
+    @property
+    def body(self) -> Any:
+        return from_rf_to_raypy(api.get_lambda_body(self.ptr))
+
+    def __str__(self) -> str:
+        return f"Lambda with arguments ({[i for i in self.args]}) and body {[i for i in self.body]}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 RAY_TYPE_TO_CLASS_MAPPING = {
