@@ -531,6 +531,18 @@ def get_lambda_body(_lambda: r.RayObject) -> r.RayObject:
         raise ValueError("Error during get_lambda_body operation") from e
 
 
+def lambda_call(_lambda: r.RayObject, *args) -> r.RayObject:
+    func = init_list()
+    push_obj_to_iterable(func, _lambda)
+    for arg in args:
+        push_obj_to_iterable(func, arg)
+
+    try:
+        return getattr(r, "eval_obj")(func)
+    except Exception as e:
+        raise ValueError("Error during lambda call operation") from e
+
+
 def from_python_to_rayforce_type(value: Any) -> r.RayObject:
     if isinstance(value, r.RayObject):
         return value
