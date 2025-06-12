@@ -524,6 +524,16 @@ class Lambda:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def call(self, *args) -> Any:
+        result_ptr = api.lambda_call(
+            self.ptr, *[api.from_python_to_rayforce_type(arg) for arg in args]
+        )
+
+        if result_ptr.get_obj_type() == r.TYPE_ERR:
+            raise ValueError(f"Query error: {api.get_error_message(result_ptr)}")
+
+        return from_rf_to_raypy(result_ptr)
+
 
 RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_I16: scalar.I16,
