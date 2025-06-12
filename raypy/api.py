@@ -537,10 +537,54 @@ def lambda_call(_lambda: r.RayObject, *args) -> r.RayObject:
     for arg in args:
         push_obj_to_iterable(func, arg)
 
+    return eval_obj(func)
+
+
+def eval_obj(obj: r.RayObject) -> r.RayObject:
     try:
-        return getattr(r, "eval_obj")(func)
+        return getattr(r, "eval_obj")(obj)
     except Exception as e:
-        raise ValueError("Error during lambda call operation") from e
+        raise ValueError("Error during eval obj operation") from e
+
+
+def loadfn_from_file(filename: str, fn_name: str, args_count: int) -> r.RayObject:
+    try:
+        return getattr(r, "loadfn_from_file")(filename, fn_name, args_count)
+    except Exception as e:
+        raise ValueError("Error during loadfn_from_file operation") from e
+
+
+def init_string(value: str) -> r.RayObject:
+    try:
+        return getattr(r, "init_string")(value)
+    except Exception as e:
+        raise ValueError("Error during string initialization") from e
+
+
+def open_kdb_connection(fn: r.RayObject, url: str) -> r.RayObject:
+    _host = init_string(url)
+
+    args = init_list()
+    push_obj_to_iterable(args, fn)
+    push_obj_to_iterable(args, _host)
+
+    return eval_obj(args)
+
+
+def close_kdb_connection(fn: r.RayObject, conn: r.RayObject) -> None:
+    args = init_list()
+    push_obj_to_iterable(args, fn)
+    push_obj_to_iterable(args, conn)
+
+    return eval_obj(args)
+
+
+def execute_kdb_query(fn: r.RayObject, conn: r.RayObject, query: str) -> r.RayObject:
+    args = init_list()
+    push_obj_to_iterable(args, fn)
+    push_obj_to_iterable(args, conn)
+    push_obj_to_iterable(args, init_string(query))
+    return eval_obj(args)
 
 
 def from_python_to_rayforce_type(value: Any) -> r.RayObject:

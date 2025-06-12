@@ -9,11 +9,13 @@ ifeq ($(UNAME_S),Darwin)
   TARGET_LIB_NAME = $(COMPILED_LIB_NAME)
   PY_MODULE_NAME = _rayforce.so
   LIBNAME = $(PY_MODULE_NAME)
+  RAYKX_LIB_NAME = libraykx.dylib
   RELEASE_LDFLAGS = $(shell python3.13-config --ldflags)
   SHARED_COMPILE_FLAGS = -lpython3.13
 else ifeq ($(UNAME_S),Linux)
   COMPILED_LIB_NAME = rayforce.so
   TARGET_LIB_NAME = librayforce.so
+  RAYKX_LIB_NAME = libraykx.so
   PY_MODULE_NAME = rayforce.so
   LIBNAME = $$(LIBNAME)
   RELEASE_LDFLAGS = $$(RELEASE_LDFLAGS)
@@ -42,6 +44,7 @@ clean-ext:
 		raypy/_rayforce.so  \
 		raypy/_rayforce.c*.so  \
 		raypy/librayforce.* \
+		raypy/plugins/libraykx.* \
 		build/ \
 		dist/ && \
 		find . -type d -name "__pycache__" -exec rm -rf {} +
@@ -55,7 +58,9 @@ clean: clean-ext
 ext: 
 	@cp raypy/raypy.c tmp/rayforce-c/core/raypy.c
 	@cd tmp/rayforce-c && $(MAKE) python
+	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
 	@cp tmp/rayforce-c/$(PY_MODULE_NAME) raypy/_rayforce.so
+	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) raypy/plugins/$(RAYKX_LIB_NAME)
 
 all: clean pull_from_gh patch_makefile ext
 

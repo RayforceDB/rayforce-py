@@ -573,12 +573,15 @@ type RaypyType = (
 )
 
 
-def from_rf_to_raypy(ptr: r.RayObject) -> RaypyType:
+def from_rf_to_raypy(ptr: r.RayObject, return_raw: bool = False) -> RaypyType:
     """
     Convert a raw Rayforce type (RayObject) to one of the raypy types.
     """
 
     ptr_type = ptr.get_obj_type()
+
+    if ptr_type == r.TYPE_NULL:
+        return None
 
     if class_type := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
         if api.is_vector(ptr):
@@ -595,5 +598,8 @@ def from_rf_to_raypy(ptr: r.RayObject) -> RaypyType:
                 ...
             except ValueError as e2:
                 raise "Unknown Unary/Binary/Vary operation" from e1 and e2
+
+    if return_raw:
+        return ptr
 
     raise ValueError(f"RayObject type of {ptr_type} is not supported")

@@ -11,5 +11,6 @@ tmp/
 .DS_Store
 rayforce.so
 librayforce.so
+libraykx.*
 
 script.py

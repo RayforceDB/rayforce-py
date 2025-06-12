@@ -9,10 +9,12 @@ import ctypes
 # Get the correct library name based on the OS
 if sys.platform == "darwin":
     lib_name = "librayforce.dylib"
+    raykx_lib_name = "libraykx.dylib"
 elif sys.platform == "win32":
     lib_name = "rayforce.dll"
 else:  # Linux and other Unix-like
     lib_name = "_rayforce.so"
+    raykx_lib_name = "libraykx.so"
 
 lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), lib_name)
 if os.path.exists(lib_path):

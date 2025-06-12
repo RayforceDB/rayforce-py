@@ -1358,10 +1358,112 @@ static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (result->obj->type == TYPE_ERR)
+    return (PyObject *)result;
+}
+static PyObject *raypy_loadfn(PyObject *self, PyObject *args)
+{
+    (void)self;
+    const char *path;
+    const char *func_name;
+    int nargs;
+    Py_ssize_t path_len, func_len;
+
+    if (!PyArg_ParseTuple(args, "s#s#i", &path, &path_len, &func_name, &func_len, &nargs)) { return NULL; }
+
+    if (path_len == 0)
     {
-        return (PyObject *)result;
+        PyErr_SetString(PyExc_ValueError, "Library path cannot be empty");
+        return NULL;
     }
+
+    if (func_len == 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "Function name cannot be empty");
+        return NULL;
+    }
+
+    if (nargs < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "Number of arguments cannot be negative");
+        return NULL;
+    }
+
+    // Create RayObject string for path
+    RayObject *path_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (path_obj == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate path object");
+        return NULL;
+    }
+    path_obj->obj = vector(TYPE_C8, path_len);
+    if (path_obj->obj == NULL)
+    {
+        Py_DECREF(path_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to create path string");
+        return NULL;
+    }
+    memcpy(AS_C8(path_obj->obj), path, path_len);
+
+    // Create RayObject string for function name
+    RayObject *func_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (func_obj == NULL)
+    {
+        Py_DECREF(path_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate function name object");
+        return NULL;
+    }
+    func_obj->obj = vector(TYPE_C8, func_len);
+    if (func_obj->obj == NULL)
+    {
+        Py_DECREF(path_obj);
+        Py_DECREF(func_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to create function name string");
+        return NULL;
+    }
+    memcpy(AS_C8(func_obj->obj), func_name, func_len);
+
+    // Create RayObject i64 for number of arguments
+    RayObject *nargs_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (nargs_obj == NULL)
+    {
+        Py_DECREF(path_obj);
+        Py_DECREF(func_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate nargs object");
+        return NULL;
+    }
+    nargs_obj->obj = i64((long long)nargs);
+
+    // Allocate memory for result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        Py_DECREF(path_obj);
+        Py_DECREF(func_obj);
+        Py_DECREF(nargs_obj);
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Prepare arguments array for ray_loadfn
+    obj_p args_array[3];
+    args_array[0] = path_obj->obj;
+    args_array[1] = func_obj->obj;
+    args_array[2] = nargs_obj->obj;
+
+    result->obj = ray_loadfn(args_array, 3);
+
+    // Clean up temporary objects
+    Py_DECREF(path_obj);
+    Py_DECREF(func_obj);
+    Py_DECREF(nargs_obj);
+
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to load function from shared library");
+        return NULL;
+    }
+
     return (PyObject *)result;
 }
 // END MISC
@@ -2368,6 +2470,7 @@ static PyMethodDef module_methods[] = {
     {"env_get_internal_function_by_name", raypy_env_get_internal_function_by_name, METH_VARARGS, "Get internal function by name"},
     {"env_get_internal_name_by_function", raypy_env_get_internal_name_by_function, METH_VARARGS, "Get internal function name"},
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
+    {"loadfn_from_file", raypy_loadfn, METH_VARARGS, "Load function from shared library"},
     
     // Math operations
     {"math_add", raypy_math_add, METH_VARARGS, "Add two objects"},
