@@ -36,6 +36,8 @@ class Operation(enum.StrEnum):
 
     # Misc
     DO = "do"
+    QUOTE = "quote"
+    IF = "IF"
 
     @property
     def primitive(self) -> r.RayObject:

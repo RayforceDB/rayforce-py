@@ -1,6 +1,8 @@
 from .scalar import *
 from .container import *
 from .primitive import *
+from .queries import *
+from ._lambda import *
 
 __all__ = [
     # Scalars
@@ -23,6 +25,10 @@ __all__ = [
     "Table",
     "Expression",
     "SelectQuery",
+    "UpdateQuery",
+    "InsertQuery",
+    "UpsertQuery",
     # Misc
     "Operation",
+    "Lambda",
 ]

@@ -819,8 +819,13 @@ static PyObject *raypy_get_obj_type(PyObject *self, PyObject *args)
 }
 static PyObject *raypy_get_obj_attrs(PyObject *self, PyObject *args)
 {
-    (void)args;
-    RayObject *ray_obj = (RayObject *)self;
+    (void)self;
+    RayObject *ray_obj;
+    
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -834,13 +839,14 @@ static PyObject *raypy_get_obj_attrs(PyObject *self, PyObject *args)
 static PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args)
 {
     (void)self;
+    RayObject *ray_obj;
     long value;
-    if (!PyArg_ParseTuple(args, "l", &value))
+
+    if (!PyArg_ParseTuple(args, "O!l", &RayObjectType, &ray_obj, &value))
     {
         return NULL;
     }
 
-    RayObject *ray_obj = (RayObject *)self;
     if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
@@ -992,53 +998,24 @@ static PyObject *raypy_dict_keys(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    obj_p keys_list = AS_LIST(ray_obj->obj)[0];
-    if (keys_list == NULL)
+    // PyObject *py_list = PyList_New(keys_list->len);
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+
+    obj_p keys = ray_key(ray_obj->obj);
+    if (keys == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Dictionary has no keys list");
+        Py_RETURN_NONE;
+    }
+
+    result->obj = clone_obj(keys);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
         return NULL;
     }
 
-    PyObject *py_list = PyList_New(keys_list->len);
-    if (py_list == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to create Python list for keys");
-        return NULL;
-    }
-
-    // Copy each key to new list
-    for (i64_t i = 0; i < keys_list->len; i++)
-    {
-        obj_p key = at_idx(keys_list, i);
-        if (key == NULL)
-        {
-            Py_DECREF(py_list);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve key at index");
-            return NULL;
-        }
-
-        // Allocate memory for each py dict key
-        RayObject *key_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (key_obj == NULL)
-        {
-            Py_DECREF(py_list);
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate key object");
-            return NULL;
-        }
-
-        key_obj->obj = clone_obj(key);
-        if (key_obj->obj == NULL)
-        {
-            Py_DECREF(key_obj);
-            Py_DECREF(py_list);
-            PyErr_SetString(PyExc_MemoryError, "Failed to clone key");
-            return NULL;
-        }
-
-        PyList_SET_ITEM(py_list, i, (PyObject *)key_obj);
-    }
-
-    return py_list;
+    return (PyObject *)result;
 }
 static PyObject *raypy_dict_values(PyObject *self, PyObject *args)
 {
@@ -1055,53 +1032,24 @@ static PyObject *raypy_dict_values(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    obj_p values_list = AS_LIST(ray_obj->obj)[1];
-    if (values_list == NULL)
+    // PyObject *py_list = PyList_New(keys_list->len);
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+
+    obj_p keys = ray_value(ray_obj->obj);
+    if (keys == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Dictionary has no values list");
+        Py_RETURN_NONE;
+    }
+
+    result->obj = clone_obj(keys);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
         return NULL;
     }
 
-    PyObject *py_list = PyList_New(values_list->len);
-    if (py_list == NULL)
-    {
-        PyErr_SetString(PyExc_MemoryError, "Failed to create Python list for values");
-        return NULL;
-    }
-
-    // Копируем каждое значение в новый список
-    for (i64_t i = 0; i < values_list->len; i++)
-    {
-        obj_p value = at_idx(values_list, i);
-        if (value == NULL)
-        {
-            Py_DECREF(py_list);
-            PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve value at index");
-            return NULL;
-        }
-
-        // Создаем RayObject для каждого значения
-        RayObject *val_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-        if (val_obj == NULL)
-        {
-            Py_DECREF(py_list);
-            PyErr_SetString(PyExc_MemoryError, "Failed to allocate value object");
-            return NULL;
-        }
-
-        val_obj->obj = clone_obj(value);
-        if (val_obj->obj == NULL)
-        {
-            Py_DECREF(val_obj);
-            Py_DECREF(py_list);
-            PyErr_SetString(PyExc_MemoryError, "Failed to clone value");
-            return NULL;
-        }
-
-        PyList_SET_ITEM(py_list, i, (PyObject *)val_obj);
-    }
-
-    return py_list;
+    return (PyObject *)result;
 }
 static PyObject *raypy_dict_get(PyObject *self, PyObject *args)
 {
@@ -1547,6 +1495,37 @@ static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
     {
         Py_DECREF(result);
         PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate object");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+static PyObject *raypy_quote(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_quote(ray_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to quote object");
         return NULL;
     }
 
@@ -2202,6 +2181,105 @@ static PyObject *raypy_select(PyObject *self, PyObject *args)
     result->obj = EVAL_WITH_CTX(ray_select(query_dict->obj), NULL_OBJ);
     return (PyObject *)result;
 }
+static PyObject *raypy_update(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *update_dict;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &update_dict)) { return NULL; }
+
+    // Validate that the update object exists and is a dictionary
+    if (update_dict->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Update object cannot be NULL");
+        return NULL;
+    }
+
+    if (update_dict->obj->type != TYPE_DICT)
+    {
+        PyErr_SetString(PyExc_TypeError, "Update parameters must be a dictionary (TYPE_DICT)");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = EVAL_WITH_CTX(ray_update(update_dict->obj), NULL_OBJ);
+    return (PyObject *)result;
+}
+
+static PyObject *raypy_insert(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *table_obj;
+    RayObject *data_obj;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &table_obj, &RayObjectType, &data_obj))
+    {
+        return NULL;
+    }
+
+    // Validate that the objects exist
+    if (table_obj->obj == NULL || data_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Insert objects cannot be NULL");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Create array for ray_insert function call
+    obj_p ray_args[2] = {table_obj->obj, data_obj->obj};
+    
+    result->obj = EVAL_WITH_CTX(ray_insert(ray_args, 2), NULL_OBJ);
+    return (PyObject *)result;
+}
+
+static PyObject *raypy_upsert(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *table_obj;
+    RayObject *keys_obj;
+    RayObject *data_obj;
+
+    if (!PyArg_ParseTuple(args, "O!O!O!", &RayObjectType, &table_obj, &RayObjectType, &keys_obj, &RayObjectType, &data_obj))
+    {
+        return NULL;
+    }
+
+    // Validate that the objects exist
+    if (table_obj->obj == NULL || keys_obj->obj == NULL || data_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Upsert objects cannot be NULL");
+        return NULL;
+    }
+
+    // Allocate memory for py object
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    // Create array for ray_upsert function call
+    obj_p ray_args[3] = {table_obj->obj, keys_obj->obj, data_obj->obj};
+    
+    result->obj = EVAL_WITH_CTX(ray_upsert(ray_args, 3), NULL_OBJ);
+    return (PyObject *)result;
+}
+
 // END DATABASE OPERATIONS
 // ---------------------------------------------------------------------------
 
@@ -2709,7 +2787,10 @@ static PyMethodDef module_methods[] = {
     {"env_get_internal_name_by_function", raypy_env_get_internal_name_by_function, METH_VARARGS, "Get internal function name"},
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
     {"loadfn_from_file", raypy_loadfn, METH_VARARGS, "Load function from shared library"},
-
+    {"quote", raypy_quote, METH_VARARGS, "Quote (clone) object"},
+    {"get_obj_attrs", raypy_get_obj_attrs, METH_VARARGS, "Get object attributes"},
+    {"set_obj_attrs", raypy_set_obj_attrs, METH_VARARGS, "Set object attributes"},
+    
     // Math operations
     {"math_add", raypy_math_add, METH_VARARGS, "Add two objects"},
     {"math_sub", raypy_math_sub, METH_VARARGS, "Subtract two objects"},
@@ -2726,8 +2807,12 @@ static PyMethodDef module_methods[] = {
 
     // Database operations
     {"select", raypy_select, METH_VARARGS, "Perform SELECT query"},
-
-    {NULL, NULL, 0, NULL}};
+    {"update", raypy_update, METH_VARARGS, "Perform UPDATE query"},
+    {"insert", raypy_insert, METH_VARARGS, "Perform INSERT query"},
+    {"upsert", raypy_upsert, METH_VARARGS, "Perform UPSERT query"},
+    
+    {NULL, NULL, 0, NULL}
+};
 
 // Define the module
 static struct PyModuleDef rayforce_module = {

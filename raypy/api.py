@@ -393,7 +393,7 @@ def init_dict(value: dict[str, Any]) -> r.RayObject:
     for item in value.values():
         push_obj_to_iterable(dict_values, from_python_to_rayforce_type(item))
 
-    init_dict_from_rf_objects(dict_keys, dict_values)
+    return init_dict_from_rf_objects(dict_keys, dict_values)
 
 
 def init_dict_from_rf_objects(keys: r.RayObject, values: r.RayObject) -> r.RayObject:
@@ -510,6 +510,29 @@ def select(obj: r.RayObject) -> r.RayObject:
         raise ValueError("Error during select operation") from e
 
 
+def update(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "update")(obj)
+    except Exception as e:
+        raise ValueError("Error during update operation") from e
+
+
+def insert(table_obj: r.RayObject, data_obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "insert")(table_obj, data_obj)
+    except Exception as e:
+        raise ValueError("Error during insert operation") from e
+
+
+def upsert(
+    table_obj: r.RayObject, keys_obj: r.RayObject, data_obj: r.RayObject
+) -> r.RayObject:
+    try:
+        return getattr(r, "upsert")(table_obj, keys_obj, data_obj)
+    except Exception as e:
+        raise ValueError("Error during upsert operation") from e
+
+
 def init_lambda(args: r.RayObject, expressions: r.RayObject) -> r.RayObject:
     try:
         return getattr(r, "init_lambda")(args, expressions)
@@ -585,6 +608,27 @@ def execute_kdb_query(fn: r.RayObject, conn: r.RayObject, query: str) -> r.RayOb
     push_obj_to_iterable(args, conn)
     push_obj_to_iterable(args, init_string(query))
     return eval_obj(args)
+
+
+def quote(obj: r.RayObject) -> r.RayObject:
+    try:
+        return getattr(r, "quote")(obj)
+    except Exception as e:
+        raise ValueError("Error during quote operation") from e
+
+
+def get_obj_attributes(obj: r.RayObject) -> int:
+    try:
+        return getattr(r, "get_obj_attrs")(obj)
+    except Exception as e:
+        raise ValueError("Error during get_obj_attrs operation") from e
+
+
+def set_obj_attributes(obj: r.RayObject, attrs: int) -> None:
+    try:
+        return getattr(r, "set_obj_attrs")(obj, attrs)
+    except Exception as e:
+        raise ValueError("Error during set_obj_attrs operation") from e
 
 
 def from_python_to_rayforce_type(value: Any) -> r.RayObject:
