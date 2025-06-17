@@ -71,7 +71,8 @@ typedef struct
 // Deallocator for RayObject
 static void RayObject_dealloc(RayObject *self)
 {
-    if (self->obj != NULL) {
+    if (self->obj != NULL)
+    {
         drop_obj(self->obj);
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
@@ -83,7 +84,10 @@ static PyObject *raypy_init_i16(PyObject *self, PyObject *args)
 {
     (void)self;
     short value;
-    if (!PyArg_ParseTuple(args, "h", &value)){ return NULL; }
+    if (!PyArg_ParseTuple(args, "h", &value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -98,7 +102,10 @@ static PyObject *raypy_init_i32(PyObject *self, PyObject *args)
 {
     (void)self;
     int value;
-    if (!PyArg_ParseTuple(args, "i", &value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "i", &value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -112,7 +119,10 @@ static PyObject *raypy_init_i64(PyObject *self, PyObject *args)
 {
     (void)self;
     long long value;
-    if (!PyArg_ParseTuple(args, "L", &value)){ return NULL; }
+    if (!PyArg_ParseTuple(args, "L", &value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -126,7 +136,10 @@ static PyObject *raypy_init_f64(PyObject *self, PyObject *args)
 {
     (void)self;
     double value;
-    if (!PyArg_ParseTuple(args, "d", &value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "d", &value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -142,7 +155,10 @@ static PyObject *raypy_init_c8(PyObject *self, PyObject *args)
     const char *value;
     Py_ssize_t len;
 
-    if (!PyArg_ParseTuple(args, "s#", &value, &len)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "s#", &value, &len))
+    {
+        return NULL;
+    }
 
     // Validate char is single element
     if (len != 1)
@@ -168,7 +184,10 @@ static PyObject *raypy_init_string(PyObject *self, PyObject *args)
     const char *value;
     Py_ssize_t len;
 
-    if (!PyArg_ParseTuple(args, "s#", &value, &len)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "s#", &value, &len))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -193,7 +212,10 @@ static PyObject *raypy_init_symbol(PyObject *self, PyObject *args)
     const char *value;
     Py_ssize_t len;
 
-    if (!PyArg_ParseTuple(args, "s#", &value, &len)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "s#", &value, &len))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -215,7 +237,10 @@ static PyObject *raypy_init_b8(PyObject *self, PyObject *args)
     (void)self;
     int bool_value;
 
-    if (!PyArg_ParseTuple(args, "p", &bool_value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "p", &bool_value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -230,7 +255,10 @@ static PyObject *raypy_init_u8(PyObject *self, PyObject *args)
     (void)self;
     unsigned char byte_value;
 
-    if (!PyArg_ParseTuple(args, "b", &byte_value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "b", &byte_value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -246,7 +274,10 @@ static PyObject *raypy_init_date(PyObject *self, PyObject *args)
     // Date is a number of days since EPOCH
     int days_value;
 
-    if (!PyArg_ParseTuple(args, "i", &days_value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "i", &days_value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -262,7 +293,10 @@ static PyObject *raypy_init_time(PyObject *self, PyObject *args)
     // Time is a number of milliseconds within 1 day (86399999 ms max)
     int ms_value;
 
-    if (!PyArg_ParseTuple(args, "i", &ms_value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "i", &ms_value))
+    {
+        return NULL;
+    }
 
     // Check if the value is within the valid range
     if (ms_value < 0 || ms_value > 86399999)
@@ -285,7 +319,10 @@ static PyObject *raypy_init_timestamp(PyObject *self, PyObject *args)
     // Timestamp is a number of milliseconds since EPOCH
     long long ms_value;
 
-    if (!PyArg_ParseTuple(args, "L", &ms_value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "L", &ms_value))
+    {
+        return NULL;
+    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -301,7 +338,10 @@ static PyObject *raypy_init_guid(PyObject *self, PyObject *args)
     // GUID is an array of 16 bytes
     Py_buffer buffer;
 
-    if (!PyArg_ParseTuple(args, "y*", &buffer)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "y*", &buffer))
+    {
+        return NULL;
+    }
 
     // Check if the buffer size is 16 bytes (standard GUID size)
     if (buffer.len != 16)
@@ -341,7 +381,10 @@ static PyObject *raypy_init_list(PyObject *self, PyObject *args)
     (void)self;
     Py_ssize_t initial_size = 0;
 
-    if (!PyArg_ParseTuple(args, "|n", &initial_size)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "|n", &initial_size))
+    {
+        return NULL;
+    }
 
     if (initial_size < 0)
     {
@@ -372,7 +415,10 @@ static PyObject *raypy_init_table(PyObject *self, PyObject *args)
     RayObject *keys_obj;
     RayObject *vals_obj;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj))
+    {
+        return NULL;
+    }
 
     if (keys_obj->obj == NULL || keys_obj->obj->type != TYPE_SYMBOL)
     {
@@ -414,7 +460,10 @@ static PyObject *raypy_init_dict(PyObject *self, PyObject *args)
     RayObject *keys_obj;
     RayObject *vals_obj;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj))
+    {
+        return NULL;
+    }
 
     if (keys_obj->obj->len != vals_obj->obj->len)
     {
@@ -444,7 +493,10 @@ static PyObject *raypy_init_vector(PyObject *self, PyObject *args)
     int type_code;
     Py_ssize_t length;
 
-    if (!PyArg_ParseTuple(args, "in", &type_code, &length)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "in", &type_code, &length))
+    {
+        return NULL;
+    }
 
     if (length < 0)
     {
@@ -474,7 +526,10 @@ static PyObject *raypy_init_lambda(PyObject *self, PyObject *args)
     RayObject *body_obj;
     RayObject *nfo_obj = NULL;
 
-    if (!PyArg_ParseTuple(args, "O!O!|O!", &RayObjectType, &args_obj, &RayObjectType, &body_obj, &RayObjectType, &nfo_obj)){ return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!|O!", &RayObjectType, &args_obj, &RayObjectType, &body_obj, &RayObjectType, &nfo_obj))
+    {
+        return NULL;
+    }
 
     // Validate args parameter (should be a list or vector of symbols)
     if (args_obj->obj == NULL)
@@ -520,7 +575,10 @@ static PyObject *raypy_read_i16(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I16)
     {
@@ -533,7 +591,10 @@ static PyObject *raypy_read_i32(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I32)
     {
@@ -546,7 +607,10 @@ static PyObject *raypy_read_i64(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I64)
     {
@@ -559,7 +623,10 @@ static PyObject *raypy_read_f64(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_F64)
     {
@@ -572,7 +639,10 @@ static PyObject *raypy_read_c8(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_C8)
     {
@@ -585,7 +655,10 @@ static PyObject *raypy_read_string(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_C8)
     {
@@ -599,7 +672,10 @@ static PyObject *raypy_read_symbol(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_SYMBOL)
     {
@@ -623,7 +699,10 @@ static PyObject *raypy_read_b8(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_B8)
     {
@@ -640,7 +719,10 @@ static PyObject *raypy_read_u8(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_U8)
     {
@@ -654,7 +736,10 @@ static PyObject *raypy_read_date(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_DATE)
     {
@@ -668,7 +753,10 @@ static PyObject *raypy_read_time(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_TIME)
     {
@@ -682,7 +770,10 @@ static PyObject *raypy_read_timestamp(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_TIMESTAMP)
     {
@@ -696,7 +787,10 @@ static PyObject *raypy_read_guid(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_GUID)
     {
@@ -715,7 +809,7 @@ static PyObject *raypy_get_obj_type(PyObject *self, PyObject *args)
 {
     (void)args;
     RayObject *ray_obj = (RayObject *)self;
-    
+
     if (ray_obj->obj == NULL)
     {
         PyErr_SetString(PyExc_ValueError, "Object is NULL");
@@ -723,13 +817,54 @@ static PyObject *raypy_get_obj_type(PyObject *self, PyObject *args)
     }
     return PyLong_FromLong(ray_obj->obj->type);
 }
+static PyObject *raypy_get_obj_attrs(PyObject *self, PyObject *args)
+{
+    (void)args;
+    RayObject *ray_obj = (RayObject *)self;
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+
+    return PyLong_FromLong(ray_obj->obj->attrs);
+}
+
+static PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args)
+{
+    (void)self;
+    long value;
+    if (!PyArg_ParseTuple(args, "l", &value))
+    {
+        return NULL;
+    }
+
+    RayObject *ray_obj = (RayObject *)self;
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Object is NULL");
+        return NULL;
+    }
+
+    ray_obj->obj->attrs = (char)value;
+
+    return PyLong_FromLong(ray_obj->obj->attrs);
+}
+
 static PyObject *raypy_is_vector(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
-    if (ray_obj->obj == NULL) { Py_RETURN_FALSE; }
+    if (ray_obj->obj == NULL)
+    {
+        Py_RETURN_FALSE;
+    }
 
     if (ray_obj->obj->type > 0 &&
         ray_obj->obj->type != TYPE_GUID &&
@@ -758,7 +893,10 @@ static PyObject *raypy_table_keys(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_TABLE)
     {
@@ -785,7 +923,10 @@ static PyObject *raypy_table_values(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_TABLE)
     {
@@ -817,7 +958,10 @@ static PyObject *raypy_dict_length(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
@@ -837,7 +981,10 @@ static PyObject *raypy_dict_keys(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
@@ -897,7 +1044,10 @@ static PyObject *raypy_dict_values(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
@@ -958,7 +1108,10 @@ static PyObject *raypy_dict_get(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     RayObject *key_obj;
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &key_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &key_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_DICT)
     {
@@ -1004,7 +1157,10 @@ static PyObject *raypy_at_idx(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1019,7 +1175,10 @@ static PyObject *raypy_at_idx(PyObject *self, PyObject *args)
     }
 
     obj_p item = at_idx(ray_obj->obj, (i64_t)index);
-    if (item == NULL) { Py_RETURN_NONE; }
+    if (item == NULL)
+    {
+        Py_RETURN_NONE;
+    }
 
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result == NULL)
@@ -1044,8 +1203,11 @@ static PyObject *raypy_ins_obj(PyObject *self, PyObject *args)
     RayObject *ray_obj;
     Py_ssize_t index;
     RayObject *item;
-    
-    if (!PyArg_ParseTuple(args, "O!nO!", &RayObjectType, &ray_obj, &index, &RayObjectType, &item)) { return NULL; }
+
+    if (!PyArg_ParseTuple(args, "O!nO!", &RayObjectType, &ray_obj, &index, &RayObjectType, &item))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1074,7 +1236,10 @@ static PyObject *raypy_remove_idx(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     Py_ssize_t index;
-    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &index))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1102,7 +1267,10 @@ static PyObject *raypy_push_obj(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     RayObject *item;
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &item)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj, &RayObjectType, &item))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1130,7 +1298,10 @@ static PyObject *raypy_get_obj_length(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1155,7 +1326,10 @@ static PyObject *raypy_eval_str(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1191,7 +1365,10 @@ static PyObject *raypy_get_error_message(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1241,7 +1418,10 @@ static PyObject *raypy_binary_set(PyObject *self, PyObject *args)
     RayObject *symbol_or_path;
     RayObject *value;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &symbol_or_path, &RayObjectType, &value)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &symbol_or_path, &RayObjectType, &value))
+    {
+        return NULL;
+    }
 
     if (symbol_or_path->obj == NULL || value->obj == NULL)
     {
@@ -1283,7 +1463,10 @@ static PyObject *raypy_env_get_internal_function_by_name(PyObject *self, PyObjec
     const char *name;
     Py_ssize_t name_len;
 
-    if (!PyArg_ParseTuple(args, "s#", &name, &name_len)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
+    {
+        return NULL;
+    }
 
     if (name_len == 0)
     {
@@ -1292,7 +1475,7 @@ static PyObject *raypy_env_get_internal_function_by_name(PyObject *self, PyObjec
     }
 
     obj_p func_obj = env_get_internal_function(name);
-    
+
     if (func_obj == NULL_OBJ || func_obj == NULL)
     {
         Py_RETURN_NONE;
@@ -1315,7 +1498,10 @@ static PyObject *raypy_env_get_internal_name_by_function(PyObject *self, PyObjec
     (void)self;
     RayObject *ray_obj;
 
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1324,8 +1510,11 @@ static PyObject *raypy_env_get_internal_name_by_function(PyObject *self, PyObjec
     }
 
     str_p name = env_get_internal_name(ray_obj->obj);
-    
-    if (name == NULL) { Py_RETURN_NONE; }
+
+    if (name == NULL)
+    {
+        Py_RETURN_NONE;
+    }
     return PyUnicode_FromString(name);
 }
 static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
@@ -1333,7 +1522,10 @@ static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
 
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1350,7 +1542,7 @@ static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
     }
 
     result->obj = eval_obj(ray_obj->obj);
-    
+
     if (result->obj == NULL)
     {
         Py_DECREF(result);
@@ -1368,7 +1560,10 @@ static PyObject *raypy_loadfn(PyObject *self, PyObject *args)
     int nargs;
     Py_ssize_t path_len, func_len;
 
-    if (!PyArg_ParseTuple(args, "s#s#i", &path, &path_len, &func_name, &func_len, &nargs)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "s#s#i", &path, &path_len, &func_name, &func_len, &nargs))
+    {
+        return NULL;
+    }
 
     if (path_len == 0)
     {
@@ -1469,7 +1664,6 @@ static PyObject *raypy_loadfn(PyObject *self, PyObject *args)
 // END MISC
 // ---------------------------------------------------------------------------
 
-
 // MATH OPERATIONS
 // ---------------------------------------------------------------------------
 static PyObject *raypy_math_add(PyObject *self, PyObject *args)
@@ -1478,7 +1672,10 @@ static PyObject *raypy_math_add(PyObject *self, PyObject *args)
     RayObject *ray_obj1;
     RayObject *ray_obj2;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2))
+    {
+        return NULL;
+    }
 
     if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
     {
@@ -1510,7 +1707,10 @@ static PyObject *raypy_math_sub(PyObject *self, PyObject *args)
     RayObject *ray_obj1;
     RayObject *ray_obj2;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2))
+    {
+        return NULL;
+    }
 
     if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
     {
@@ -1542,7 +1742,10 @@ static PyObject *raypy_math_mul(PyObject *self, PyObject *args)
     RayObject *ray_obj1;
     RayObject *ray_obj2;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2))
+    {
+        return NULL;
+    }
 
     if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
     {
@@ -1574,7 +1777,10 @@ static PyObject *raypy_math_div(PyObject *self, PyObject *args)
     RayObject *ray_obj1;
     RayObject *ray_obj2;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2))
+    {
+        return NULL;
+    }
 
     if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
     {
@@ -1606,7 +1812,10 @@ static PyObject *raypy_math_fdiv(PyObject *self, PyObject *args)
     RayObject *ray_obj1;
     RayObject *ray_obj2;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2))
+    {
+        return NULL;
+    }
 
     if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
     {
@@ -1638,7 +1847,10 @@ static PyObject *raypy_math_mod(PyObject *self, PyObject *args)
     RayObject *ray_obj1;
     RayObject *ray_obj2;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &ray_obj1, &RayObjectType, &ray_obj2))
+    {
+        return NULL;
+    }
 
     if (ray_obj1->obj == NULL || ray_obj2->obj == NULL)
     {
@@ -1668,7 +1880,10 @@ static PyObject *raypy_math_sum(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1698,7 +1913,10 @@ static PyObject *raypy_math_avg(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1741,7 +1959,10 @@ static PyObject *raypy_math_med(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1790,7 +2011,10 @@ static PyObject *raypy_math_dev(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1839,7 +2063,10 @@ static PyObject *raypy_math_min(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1888,7 +2115,10 @@ static PyObject *raypy_math_max(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    {
+        return NULL;
+    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1943,7 +2173,10 @@ static PyObject *raypy_select(PyObject *self, PyObject *args)
     (void)self;
     RayObject *query_dict;
 
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &query_dict)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &query_dict))
+    {
+        return NULL;
+    }
 
     // Validate that the query object exists and is a dictionary
     if (query_dict->obj == NULL)
@@ -1979,7 +2212,10 @@ static PyObject *raypy_lambda_get_args(PyObject *self, PyObject *args)
     (void)self;
     RayObject *lambda_obj;
 
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &lambda_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &lambda_obj))
+    {
+        return NULL;
+    }
 
     if (lambda_obj->obj == NULL)
     {
@@ -1994,7 +2230,7 @@ static PyObject *raypy_lambda_get_args(PyObject *self, PyObject *args)
     }
 
     lambda_p lambda_data = AS_LAMBDA(lambda_obj->obj);
-    
+
     // Return the arguments list
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
@@ -2007,7 +2243,7 @@ static PyObject *raypy_lambda_get_args(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-    
+
     return (PyObject *)result;
 }
 static PyObject *raypy_lambda_get_body(PyObject *self, PyObject *args)
@@ -2015,7 +2251,10 @@ static PyObject *raypy_lambda_get_body(PyObject *self, PyObject *args)
     (void)self;
     RayObject *lambda_obj;
 
-    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &lambda_obj)) { return NULL; }
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &lambda_obj))
+    {
+        return NULL;
+    }
 
     if (lambda_obj->obj == NULL)
     {
@@ -2030,7 +2269,7 @@ static PyObject *raypy_lambda_get_body(PyObject *self, PyObject *args)
     }
 
     lambda_p lambda_data = AS_LAMBDA(lambda_obj->obj);
-    
+
     // Return the body
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
@@ -2043,13 +2282,12 @@ static PyObject *raypy_lambda_get_body(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-    
+
     return (PyObject *)result;
 }
 // TODO: Add lambda call
 // END LAMBDA OPERATIONS
 // ---------------------------------------------------------------------------
-
 
 // RayObject TYPE DEFINITION
 // ---------------------------------------------------------------------------
@@ -2403,7 +2641,7 @@ static PyMethodDef module_methods[] = {
     {"repl_get_mode", rayforce_repl_get_mode, METH_NOARGS, "Get current REPL mode"},
     {"repl_set_mode", rayforce_repl_set_mode, METH_VARARGS, "Set REPL mode (0=Rayforce, 1=Python)"},
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate a RayObject"},
-    
+
     // Constructors
     {"init_i16", raypy_init_i16, METH_VARARGS, "Create a new i16 object"},
     {"init_i32", raypy_init_i32, METH_VARARGS, "Create a new i32 object"},
@@ -2423,7 +2661,7 @@ static PyMethodDef module_methods[] = {
     {"init_dict", raypy_init_dict, METH_VARARGS, "Create a new dictionary object"},
     {"init_vector", raypy_init_vector, METH_VARARGS, "Create a new vector object"},
     {"init_lambda", raypy_init_lambda, METH_VARARGS, "Create a new lambda function"},
-    
+
     // Readers
     {"read_i16", raypy_read_i16, METH_VARARGS, "Read i16 value from object"},
     {"read_i32", raypy_read_i32, METH_VARARGS, "Read i32 value from object"},
@@ -2438,30 +2676,30 @@ static PyMethodDef module_methods[] = {
     {"read_time", raypy_read_time, METH_VARARGS, "Read time value from object"},
     {"read_timestamp", raypy_read_timestamp, METH_VARARGS, "Read timestamp value from object"},
     {"read_guid", raypy_read_guid, METH_VARARGS, "Read GUID value from object"},
-    
+
     // Lambda operations
     {"get_lambda_args", raypy_lambda_get_args, METH_VARARGS, "Get lambda arguments vector"},
     {"get_lambda_body", raypy_lambda_get_body, METH_VARARGS, "Get lambda body"},
 
     // Type introspection
     {"is_vector", raypy_is_vector, METH_VARARGS, "Check if object is a vector"},
-    
+
     // Table operations
     {"table_keys", raypy_table_keys, METH_VARARGS, "Get table keys"},
     {"table_values", raypy_table_values, METH_VARARGS, "Get table values"},
-    
+
     // Dictionary operations
     {"dict_length", raypy_dict_length, METH_VARARGS, "Get dictionary length"},
     {"dict_keys", raypy_dict_keys, METH_VARARGS, "Get dictionary keys"},
     {"dict_values", raypy_dict_values, METH_VARARGS, "Get dictionary values"},
     {"dict_get", raypy_dict_get, METH_VARARGS, "Get value from dictionary"},
-    
+
     // Vector operations
     {"at_idx", raypy_at_idx, METH_VARARGS, "Get element at index"},
     {"ins_obj", raypy_ins_obj, METH_VARARGS, "Insert object at index"},
     {"push_obj", raypy_push_obj, METH_VARARGS, "Push object to the end of iterable"},
     {"remove_idx", raypy_remove_idx, METH_VARARGS, "Remove item at index"},
-    
+
     // Misc operations
     {"get_obj_length", raypy_get_obj_length, METH_VARARGS, "Get object length"},
     {"eval_str", raypy_eval_str, METH_VARARGS, "Evaluate string expression"},
@@ -2471,7 +2709,7 @@ static PyMethodDef module_methods[] = {
     {"env_get_internal_name_by_function", raypy_env_get_internal_name_by_function, METH_VARARGS, "Get internal function name"},
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
     {"loadfn_from_file", raypy_loadfn, METH_VARARGS, "Load function from shared library"},
-    
+
     // Math operations
     {"math_add", raypy_math_add, METH_VARARGS, "Add two objects"},
     {"math_sub", raypy_math_sub, METH_VARARGS, "Subtract two objects"},
@@ -2485,12 +2723,11 @@ static PyMethodDef module_methods[] = {
     {"math_dev", raypy_math_dev, METH_VARARGS, "Standard deviation of vector elements"},
     {"math_min", raypy_math_min, METH_VARARGS, "Minimum value in vector"},
     {"math_max", raypy_math_max, METH_VARARGS, "Maximum value in vector"},
-    
+
     // Database operations
     {"select", raypy_select, METH_VARARGS, "Perform SELECT query"},
-    
-    {NULL, NULL, 0, NULL}
-};
+
+    {NULL, NULL, 0, NULL}};
 
 // Define the module
 static struct PyModuleDef rayforce_module = {
