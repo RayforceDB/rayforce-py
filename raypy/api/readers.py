@@ -73,6 +73,7 @@ def at_idx(get_from: r.RayObject, idx: int) -> r.RayObject:
 def dict_get(dict: r.RayObject, key: t.Any) -> r.RayObject:
     return r.dict_get(dict, key)
 
+
 @c_api_exception_handler
 def get_table_keys(table_ptr: r.RayObject) -> r.RayObject:
     return r.table_keys(table_ptr)
@@ -81,3 +82,13 @@ def get_table_keys(table_ptr: r.RayObject) -> r.RayObject:
 @c_api_exception_handler
 def get_table_values(table_ptr: r.RayObject) -> r.RayObject:
     return r.table_values(table_ptr)
+
+
+@c_api_exception_handler
+def get_dict_keys(ptr: r.RayObject) -> r.RayObject:
+    return r.dict_keys(ptr)
+
+
+@c_api_exception_handler
+def get_dict_values(ptr: r.RayObject) -> r.RayObject:
+    return r.dict_values(ptr)

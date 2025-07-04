@@ -27,6 +27,7 @@ def test_c8():
     with pytest.raises(exceptions.CAPIError):
         s.C8("123")
 
+
 def test_date():
     d = dt.date(year=2025, month=5, day=10)
     assert s.Date(d).value == d
@@ -68,6 +69,7 @@ def test_time():
     with pytest.raises(ValueError):
         s.Time("wrong-format")
 
+
 def test_timestamp():
     t = dt.datetime(year=2025, month=10, day=5, hour=10, minute=15, second=20)
     assert s.Timestamp(t).value == t
@@ -76,6 +78,7 @@ def test_timestamp():
 
     with pytest.raises(ValueError):
         s.Timestamp("wrong-format")
+
 
 def test_u8():
     assert s.U8(1).value == 1

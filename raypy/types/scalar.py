@@ -81,6 +81,11 @@ class B8(__RaypyScalar):
     def __bool__(self) -> bool:
         return self.value
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, B8):
+            return self.value == eq.value
+        return False
+
 
 class C8(__RaypyScalar):
     """
@@ -168,6 +173,11 @@ class F64(__RaypyScalar):
     def value(self) -> float:
         return api.read_f64(self.ptr)
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, F64):
+            return self.value == eq.value
+        return False
+
 
 class I16(__RaypyScalar):
     """
@@ -192,6 +202,11 @@ class I16(__RaypyScalar):
     @property
     def value(self) -> int:
         return api.read_i16(self.ptr)
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, (I64, I16, I32)):
+            return self.value == eq.value
+        return False
 
 
 class I32(__RaypyScalar):
@@ -218,6 +233,11 @@ class I32(__RaypyScalar):
     def value(self) -> int:
         return api.read_i32(self.ptr)
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, (I64, I16, I32)):
+            return self.value == eq.value
+        return False
+
 
 class I64(__RaypyScalar):
     """
@@ -243,6 +263,11 @@ class I64(__RaypyScalar):
     def value(self) -> int:
         return api.read_i64(self.ptr)
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, (I64, I16, I32)):
+            return self.value == eq.value
+        return False
+
 
 class Symbol(__RaypyScalar):
     """
@@ -267,6 +292,11 @@ class Symbol(__RaypyScalar):
     @property
     def value(self) -> str:
         return api.read_symbol(self.ptr)
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, Symbol):
+            return self.value == eq.value
+        return False
 
 
 class Time(__RaypyScalar):

@@ -50,7 +50,7 @@ class __RaypyContainer:
         raise NotImplementedError
 
     def __str__(self) -> str:
-        return f"{self.__name__}({self.value})"
+        return f"{self.__class__.__name__}({self.value})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -126,7 +126,7 @@ class Vector:
 
     @property
     def value(self) -> tuple[t.Any]:
-        return tuple([str(i) for i in self])
+        return tuple([i for i in self])
 
     def __len__(self) -> int:
         return api.get_obj_length(self.ptr)
@@ -148,11 +148,27 @@ class Vector:
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        api.insert_obj(insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value))
+        api.insert_obj(
+            insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value)
+        )
 
     def __iter__(self) -> t.Any:
         for i in range(len(self)):
             yield self.__getitem__(i)
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, Vector):
+            if eq.type_code != self.type_code:
+                return False
+
+            if len(eq) != len(self):
+                return False
+
+            for idx, value in enumerate(self):
+                if eq[idx] != value:
+                    return False
+            return True
+        return False
 
 
 class List(__RaypyContainer):
@@ -184,7 +200,7 @@ class List(__RaypyContainer):
 
     @property
     def value(self) -> list[t.Any]:
-        return [str(i) for i in self]
+        return [i for i in self]
 
     def append(self, item: t.Any) -> None:
         api.push_obj(iterable=self.ptr, ptr=from_python_type_to_raw_rayobject(item))
@@ -204,11 +220,24 @@ class List(__RaypyContainer):
         if idx < 0 or idx >= len(self):
             raise IndexError("List index out of range")
 
-        api.insert_obj(insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value))
+        api.insert_obj(
+            insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value)
+        )
 
     def __iter__(self) -> t.Any:
         for i in range(len(self)):
             yield self.__getitem__(i)
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, List):
+            if len(eq) != len(self):
+                return False
+
+            for idx, value in enumerate(self):
+                if eq[idx] != value:
+                    return False
+            return True
+        return False
 
 
 class Dict(__RaypyContainer):
@@ -226,8 +255,10 @@ class Dict(__RaypyContainer):
         self,
         value: dict[str | scalar.Symbol, t.Any] | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
+        super().__init__(value=value, ptr=ptr)
+
         if not getattr(self, "ptr", None):
             _keys = value.keys()
             _values = value.values()
@@ -248,21 +279,33 @@ class Dict(__RaypyContainer):
         return List(ptr=api.get_dict_values(self.ptr))
 
     def get(self, key: t.Any) -> t.Any:
-        return convert_raw_rayobject_to_raypy_type(ptr=api.dict_get(dict=self.ptr, key=key))
+        key_ptr = api.init_symbol(key)
+        return convert_raw_rayobject_to_raypy_type(
+            ptr=api.dict_get(dict=self.ptr, key=key_ptr)
+        )
 
     def __len__(self) -> int:
         return len(self.keys())
 
     def __str__(self) -> str:
         result = []
-        keys_list = self.keys()
-        for key in keys_list:
-            value = self.get(str(key))
+        keys_vector = self.keys()
+        for key in keys_vector:
+            value = self.get(key.value)
             result.append(f"\t{repr(key)}: {repr(value)}")
         return "{\n" + ",\n".join(result) + "\n}"
 
     def __repr__(self) -> str:
         return f"Dict({self.__str__()})"
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, Dict):
+            if self.keys() != eq.keys():
+                return False
+            if self.values() != eq.values():
+                return False
+            return True
+        return False
 
 
 class Table:
@@ -271,6 +314,7 @@ class Table:
 
     Type code: 98
     """
+
     ptr: r.RayObject
 
     type_code = r.TYPE_TABLE
@@ -304,7 +348,7 @@ class Table:
         table_columns = Vector(type_code=scalar.Symbol.type_code, length=len(columns))
         for idx, column in enumerate(columns):
             table_columns[idx] = column
-        
+
         table_values = List(values)
 
         self.ptr = api.init_table(columns=table_columns.ptr, values=table_values.ptr)
