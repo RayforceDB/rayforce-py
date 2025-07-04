@@ -10,6 +10,13 @@ from raypy.api.creators import (
     init_time,
     init_timestamp,
     init_u8,
+    init_dict,
+    init_guid,
+    init_table,
+    init_vector,
+    insert_obj,
+    push_obj,
+    init_list,
 )
 from raypy.api.readers import (
     read_b8,
@@ -23,6 +30,15 @@ from raypy.api.readers import (
     read_time,
     read_timestamp,
     read_u8,
+    read_guid,
+    at_idx,
+    get_table_keys,
+    get_table_values,
+    dict_get,
+)
+from raypy.api.helpers import (
+    is_vector,
+    get_obj_length,
 )
 
 
@@ -39,6 +55,14 @@ __all__ = [
     "init_time",
     "init_timestamp",
     "init_u8",
+    # COntainer creators
+    "init_dict",
+    "init_guid",
+    "init_table",
+    "init_vector",
+    "insert_obj",
+    "push_obj",
+    "init_list",
     # Scalar readers
     "read_b8",
     "read_c8",
@@ -51,4 +75,13 @@ __all__ = [
     "read_time",
     "read_timestamp",
     "read_u8",
+    # Container readers
+    "read_guid",
+    "at_idx",
+    "get_table_keys",
+    "get_table_values",
+    "dict_get",
+    # Misc
+    "is_vector",
+    "get_obj_length",
 ]

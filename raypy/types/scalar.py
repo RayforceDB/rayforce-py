@@ -16,7 +16,7 @@ class __RaypyScalar:
 
     ptr: r.RayObject
 
-    _type: int
+    type_code: int
 
     def __init__(
         self,
@@ -29,16 +29,16 @@ class __RaypyScalar:
                 f"{self.__name__} class requires at least one initialization argument."
             )
 
-        if self._type is None:
+        if self.type_code is None:
             raise AttributeError(f"{self.__name__} type code is not set")
 
         if ptr is not None:
             if (
                 not isinstance(ptr, r.RayObject)
-                or (_type := ptr.get_obj_type()) != self._type
+                or (type_code := ptr.get_obj_type()) != self.type_code
             ):
                 raise ValueError(
-                    f"Expected RayObject of type {self._type} for {self.__name__}, got {_type}",
+                    f"Expected RayObject of type {self.type_code} for {self.__name__}, got {type_code}",
                 )
 
             self.ptr = ptr
@@ -48,7 +48,7 @@ class __RaypyScalar:
         raise NotImplementedError
 
     def __str__(self) -> str:
-        return f"{self.__name__}({self.value})"
+        return f"{self.__class__.__name__}({self.value})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -61,7 +61,7 @@ class B8(__RaypyScalar):
     Type code: -1
     """
 
-    _type = -r.TYPE_B8
+    type_code = -r.TYPE_B8
 
     def __init__(
         self,
@@ -89,7 +89,7 @@ class C8(__RaypyScalar):
     Type code: -12
     """
 
-    _type = -r.TYPE_C8
+    type_code = -r.TYPE_C8
 
     def __init__(
         self,
@@ -114,7 +114,7 @@ class Date(__RaypyScalar):
     Type code: -7
     """
 
-    _type = -r.TYPE_DATE
+    type_code = -r.TYPE_DATE
 
     def __init__(
         self,
@@ -151,7 +151,7 @@ class F64(__RaypyScalar):
     Type code: -10
     """
 
-    _type = -r.TYPE_F64
+    type_code = -r.TYPE_F64
 
     def __init__(
         self,
@@ -176,7 +176,7 @@ class I16(__RaypyScalar):
     Type code: -3
     """
 
-    _type = -r.TYPE_I16
+    type_code = -r.TYPE_I16
 
     def __init__(
         self,
@@ -201,7 +201,7 @@ class I32(__RaypyScalar):
     Type code: -4
     """
 
-    _type = -r.TYPE_I32
+    type_code = -r.TYPE_I32
 
     def __init__(
         self,
@@ -226,7 +226,7 @@ class I64(__RaypyScalar):
     Type code: -5
     """
 
-    _type = -r.TYPE_I64
+    type_code = -r.TYPE_I64
 
     def __init__(
         self,
@@ -251,7 +251,7 @@ class Symbol(__RaypyScalar):
     Type code: -6
     """
 
-    _type = -r.TYPE_SYMBOL
+    type_code = -r.TYPE_SYMBOL
 
     def __init__(
         self,
@@ -276,7 +276,7 @@ class Time(__RaypyScalar):
     Type code: -8
     """
 
-    _type = -r.TYPE_TIME
+    type_code = -r.TYPE_TIME
 
     def __init__(
         self,
@@ -338,7 +338,7 @@ class Timestamp(__RaypyScalar):
     Type code: -9
     """
 
-    _type = -r.TYPE_TIMESTAMP
+    type_code = -r.TYPE_TIMESTAMP
 
     def __init__(
         self,
@@ -378,7 +378,7 @@ class U8(__RaypyScalar):
     Type code: -2
     """
 
-    _type = -r.TYPE_U8
+    type_code = -r.TYPE_U8
 
     def __init__(
         self,

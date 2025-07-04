@@ -1145,7 +1145,7 @@ static PyObject *raypy_at_idx(PyObject *self, PyObject *args)
 
     return (PyObject *)result;
 }
-static PyObject *raypy_ins_obj(PyObject *self, PyObject *args)
+static PyObject *raypy_insert_obj(PyObject *self, PyObject *args)
 {
     (void)self;
     RayObject *ray_obj;
@@ -2774,7 +2774,7 @@ static PyMethodDef module_methods[] = {
 
     // Vector operations
     {"at_idx", raypy_at_idx, METH_VARARGS, "Get element at index"},
-    {"ins_obj", raypy_ins_obj, METH_VARARGS, "Insert object at index"},
+    {"insert_obj", raypy_insert_obj, METH_VARARGS, "Insert object at index"},
     {"push_obj", raypy_push_obj, METH_VARARGS, "Push object to the end of iterable"},
     {"remove_idx", raypy_remove_idx, METH_VARARGS, "Remove item at index"},
 

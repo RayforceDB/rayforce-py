@@ -1,3 +1,5 @@
+import uuid
+import datetime as dt
 import typing as t
 
 from raypy.api.exceptions import c_api_exception_handler
@@ -57,3 +59,38 @@ def init_timestamp(value: t.Any) -> r.RayObject:
 @c_api_exception_handler
 def init_u8(value: t.Any) -> r.RayObject:
     return r.init_u8(value)
+
+
+@c_api_exception_handler
+def init_guid(value: t.Any) -> r.RayObject:
+    return r.init_guid(value)
+
+
+@c_api_exception_handler
+def init_vector(type_code: int, length: int) -> r.RayObject:
+    return r.init_vector(type_code, length)
+
+
+@c_api_exception_handler
+def push_obj(iterable: r.RayObject, ptr: r.RayObject) -> None:
+    r.push_obj(iterable, ptr)
+
+
+@c_api_exception_handler
+def insert_obj(insert_to: r.RayObject, idx: int, ptr: r.RayObject) -> None:
+    r.insert_obj(insert_to, idx, ptr)
+
+
+@c_api_exception_handler
+def init_dict(keys: r.RayObject, values: r.RayObject) -> r.RayObject:
+    return r.init_dict(keys, values)
+
+
+@c_api_exception_handler
+def init_table(columns: r.RayObject, values: r.RayObject) -> r.RayObject:
+    return r.init_table(columns, values)
+
+
+@c_api_exception_handler
+def init_list() -> r.RayObject:
+    return r.init_list()

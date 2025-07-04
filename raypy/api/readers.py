@@ -1,3 +1,5 @@
+import typing as t
+
 from raypy.api.exceptions import c_api_exception_handler
 from raypy import _rayforce as r
 
@@ -55,3 +57,27 @@ def read_timestamp(ptr: r.RayObject) -> int:
 @c_api_exception_handler
 def read_u8(ptr: r.RayObject) -> int:
     return r.read_u8(ptr)
+
+
+@c_api_exception_handler
+def read_guid(ptr: r.RayObject) -> bytes:
+    return r.read_guid(ptr)
+
+
+@c_api_exception_handler
+def at_idx(get_from: r.RayObject, idx: int) -> r.RayObject:
+    return r.at_idx(get_from, idx)
+
+
+@c_api_exception_handler
+def dict_get(dict: r.RayObject, key: t.Any) -> r.RayObject:
+    return r.dict_get(dict, key)
+
+@c_api_exception_handler
+def get_table_keys(table_ptr: r.RayObject) -> r.RayObject:
+    return r.table_keys(table_ptr)
+
+
+@c_api_exception_handler
+def get_table_values(table_ptr: r.RayObject) -> r.RayObject:
+    return r.table_values(table_ptr)
