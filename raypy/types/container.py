@@ -76,7 +76,9 @@ class Vector:
     ) -> None:
         if ray_obj is not None:
             if not api.is_vector(ray_obj):
-                raise ValueError(f"Expected Vector object, got {ray_obj.get_obj_type()}")
+                raise ValueError(
+                    f"Expected Vector object, got {ray_obj.get_obj_type()}"
+                )
 
             self.ptr = ray_obj
             return

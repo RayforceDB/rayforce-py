@@ -252,7 +252,10 @@ class InsertQuery(__Query):
         if isinstance(insert_to, c.Table):
             if isinstance(insertable, list):
                 if not all(
-                    [len(attribute) == len(insert_to.columns()) for attribute in insertable]
+                    [
+                        len(attribute) == len(insert_to.columns())
+                        for attribute in insertable
+                    ]
                 ):
                     raise ValueError(
                         "Attributes are having invalid length for table upsert."
@@ -295,6 +298,7 @@ class InsertQuery(__Query):
     def __repr__(self) -> str:
         return self.__str__()
 
+
 class UpsertQuery(__Query):
     """
     Query to perform upsert operation
@@ -316,7 +320,10 @@ class UpsertQuery(__Query):
         if isinstance(upsert_to, c.Table):
             if isinstance(upsertable, list):
                 if not all(
-                    [len(attribute) == len(upsert_to.columns()) for attribute in upsertable]
+                    [
+                        len(attribute) == len(upsert_to.columns())
+                        for attribute in upsertable
+                    ]
                 ):
                     raise ValueError(
                         "Attributes are having invalid length for table upsert."
@@ -334,7 +341,7 @@ class UpsertQuery(__Query):
         # Match low-level is a number of ordered fields provided in upsertable.
         # self.match_ptr = api.init_i64(len(self.upsertable))
         self.match_ptr = api.init_i64(3)
-        
+
         i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
         for idx, key in enumerate(self.upsertable.keys()):
             api.insert_obj(

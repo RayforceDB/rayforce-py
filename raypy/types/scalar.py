@@ -1,27 +1,75 @@
 import datetime as dt
-from typing import Any
+import typing as t
 
 from raypy import api
-from raypy.types import common
 from raypy import _rayforce as r
 
 EPOCH_DATE = dt.date(1970, 1, 1)
 
 
-class B8(common.RaypyScalar):
+class __RaypyScalar:
+    """
+    This class is an abstract object for all scalar types.
+
+    Should not be used directly.
+    """
+
+    ptr: r.RayObject
+
+    _type: int
+
+    def __init__(
+        self,
+        value: t.Any | None = None,
+        *,
+        ptr: r.RayObject | None = None,
+    ) -> None:
+        if value is None and ptr is None:
+            raise ValueError(
+                f"{self.__name__} class requires at least one initialization argument."
+            )
+
+        if self._type is None:
+            raise AttributeError(f"{self.__name__} type code is not set")
+
+        if ptr is not None:
+            if (
+                not isinstance(ptr, r.RayObject)
+                or (_type := ptr.get_obj_type()) != self._type
+            ):
+                raise ValueError(
+                    f"Expected RayObject of type {self._type} for {self.__name__}, got {_type}",
+                )
+
+            self.ptr = ptr
+
+    @property
+    def value(self) -> t.Any:
+        raise NotImplementedError
+
+    def __str__(self) -> str:
+        return f"{self.__name__}({self.value})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class B8(__RaypyScalar):
     """
     Rayforce boolean type.
+
+    Type code: -1
     """
 
     _type = -r.TYPE_B8
 
     def __init__(
         self,
-        value: Any | None = None,
+        value: t.Any | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_b8(value)
@@ -33,23 +81,12 @@ class B8(common.RaypyScalar):
     def __bool__(self) -> bool:
         return self.value
 
-    def __str__(self) -> str:
-        return str(self.value)
 
-    def __repr__(self) -> str:
-        return f"b8({self.value})"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, B8):
-            return self.value == other.value
-        if isinstance(other, bool):
-            return self.value == other
-        return False
-
-
-class C8(common.RaypyScalar):
+class C8(__RaypyScalar):
     """
-    Rayforce char type
+    Rayforce char type.
+
+    Type code: -12
     """
 
     _type = -r.TYPE_C8
@@ -58,9 +95,9 @@ class C8(common.RaypyScalar):
         self,
         value: str | int | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_c8(value)
@@ -69,23 +106,12 @@ class C8(common.RaypyScalar):
     def value(self) -> str:
         return api.read_c8(self.ptr)
 
-    def __str__(self) -> str:
-        return self.value
 
-    def __repr__(self) -> str:
-        return f"c8({self.value})"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, C8):
-            return self.value == other.value
-        if isinstance(other, str) and len(other) == 1:
-            return self.value == other
-        return False
-
-
-class Date(common.RaypyScalar):
+class Date(__RaypyScalar):
     """
-    Rayforce date class
+    Rayforce date class.
+
+    Type code: -7
     """
 
     _type = -r.TYPE_DATE
@@ -94,34 +120,35 @@ class Date(common.RaypyScalar):
         self,
         value: dt.date | int | str | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_date(value)
+            if isinstance(value, int):
+                days_since_epoch = value
+            elif isinstance(value, dt.date):
+                days_since_epoch = (value - EPOCH_DATE).days
+            elif isinstance(value, str):
+                try:
+                    date_obj = dt.date.fromisoformat(value)
+                    days_since_epoch = (date_obj - EPOCH_DATE).days
+                except ValueError as e:
+                    raise ValueError("Date string must be in format YYYY-MM-DD") from e
+
+            self.ptr = api.init_date(days_since_epoch)
 
     @property
     def value(self) -> dt.date:
-        return api.read_date(self.ptr)
-
-    def __str__(self) -> str:
-        return self.value.isoformat()
-
-    def __repr__(self) -> str:
-        return f"Date({str(self)})"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Date):
-            return self.value == other.value
-        if isinstance(other, dt.date):
-            return self.value == other
-        return False
+        days_since_epoch = api.read_date(self.ptr)
+        return EPOCH_DATE + dt.timedelta(days=days_since_epoch)
 
 
-class F64(common.RaypyScalar):
+class F64(__RaypyScalar):
     """
-    Rayforce float class
+    Rayforce float class.
+
+    Type code: -10
     """
 
     _type = -r.TYPE_F64
@@ -130,9 +157,9 @@ class F64(common.RaypyScalar):
         self,
         value: int | float | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_f64(value)
@@ -141,64 +168,12 @@ class F64(common.RaypyScalar):
     def value(self) -> float:
         return api.read_f64(self.ptr)
 
-    def __float__(self) -> float:
-        return float(self.value)
 
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def __repr__(self) -> str:
-        return f"f64({self.value})"
-
-    def __eq__(self, other: Any):
-        if isinstance(other, F64):
-            return self.value == other.value
-        return self.value == other
-
-
-class __RayInteger(common.RaypyScalar):
+class I16(__RaypyScalar):
     """
-    Base class for Rayforce integers (i16, i32, i64)
-    """
+    Rayforce 16-bit integer. Analog of Python int (-32768 to 32767).
 
-    def __int__(self) -> int:
-        return self.value
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.value})"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, __RayInteger):
-            return self.value == other.value
-        return self.value == other
-
-    def __lt__(self, other: Any) -> bool:
-        if isinstance(other, __RayInteger):
-            return self.value < other.value
-        return self.value < other
-
-    def __le__(self, other: Any) -> bool:
-        if isinstance(other, __RayInteger):
-            return self.value <= other.value
-        return self.value <= other
-
-    def __gt__(self, other: Any) -> bool:
-        if isinstance(other, __RayInteger):
-            return self.value > other.value
-        return self.value > other
-
-    def __ge__(self, other: Any) -> bool:
-        if isinstance(other, __RayInteger):
-            return self.value >= other.value
-        return self.value >= other
-
-
-class I16(__RayInteger):
-    """
-    Rayforce 16-bit integer. Analog of Python int (-32768 to 32767)
+    Type code: -3
     """
 
     _type = -r.TYPE_I16
@@ -207,9 +182,9 @@ class I16(__RayInteger):
         self,
         value: int | float | str | None = None,
         *,
-        ray_obj: Any | None = None,
+        ptr: t.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_i16(value)
@@ -219,9 +194,11 @@ class I16(__RayInteger):
         return api.read_i16(self.ptr)
 
 
-class I32(__RayInteger):
+class I32(__RaypyScalar):
     """
     Rayforce 32-bit integer. Analog of Python int (-2147483648 to 2147483647)
+
+    Type code: -4
     """
 
     _type = -r.TYPE_I32
@@ -230,9 +207,9 @@ class I32(__RayInteger):
         self,
         value: int | float | str | None = None,
         *,
-        ray_obj: Any | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_i32(value)
@@ -242,9 +219,11 @@ class I32(__RayInteger):
         return api.read_i32(self.ptr)
 
 
-class I64(__RayInteger):
+class I64(__RaypyScalar):
     """
     Rayforce 64-bit integer. Analog of Python int
+
+    Type code: -5
     """
 
     _type = -r.TYPE_I64
@@ -253,9 +232,9 @@ class I64(__RayInteger):
         self,
         value: int | float | str | None = None,
         *,
-        ray_obj: Any | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_i64(value)
@@ -265,20 +244,22 @@ class I64(__RayInteger):
         return api.read_i64(self.ptr)
 
 
-class Symbol(common.RaypyScalar):
+class Symbol(__RaypyScalar):
     """
-    Rayforce Symbol type
+    Rayforce symbol type.
+
+    Type code: -6
     """
 
     _type = -r.TYPE_SYMBOL
 
     def __init__(
         self,
-        value: str | Any | None = None,
+        value: str | t.Any | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
             self.ptr = api.init_symbol(value)
@@ -287,30 +268,12 @@ class Symbol(common.RaypyScalar):
     def value(self) -> str:
         return api.read_symbol(self.ptr)
 
-    def __str__(self) -> str:
-        return self.value
 
-    def __repr__(self) -> str:
-        return f"Symbol({self.value})"
-
-    def __eq__(self, other: Any) -> bool:
-        """Equality comparison."""
-        if isinstance(other, Symbol):
-            return self.value == other.value
-        if isinstance(other, str):
-            return self.value == other
-        return False
-
-    def __hash__(self):
-        return hash(self.value)
-
-    def __format__(self, format_spec: str) -> str:
-        return format(str(self), format_spec)
-
-
-class Time(common.RaypyScalar):
+class Time(__RaypyScalar):
     """
-    Rayforce Time type
+    Rayforce time type.
+
+    Type code: -8
     """
 
     _type = -r.TYPE_TIME
@@ -319,34 +282,60 @@ class Time(common.RaypyScalar):
         self,
         value: dt.time | int | str | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_time(value)
+            if isinstance(value, int):
+                if value < 0 or value > 86399999:  # 24*60*60*1000 - 1
+                    raise ValueError(
+                        "Time int value must be in range 0-86399999 milliseconds"
+                    )
+                ms_since_midnight = value
+            elif isinstance(value, dt.time):
+                ms_since_midnight = (
+                    value.hour * 3600 + value.minute * 60 + value.second
+                ) * 1000 + value.microsecond // 1000
+            elif isinstance(value, str):
+                try:
+                    if "." in value:
+                        # Parse with milliseconds
+                        time_obj = dt.time.fromisoformat(value)
+                    else:
+                        # Parse without milliseconds
+                        time_obj = dt.time.fromisoformat(value)
+                    ms_since_midnight = (
+                        time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second
+                    ) * 1000 + time_obj.microsecond // 1000
+                except ValueError as e:
+                    raise ValueError(
+                        "Time string must be in format HH:MM:SS or HH:MM:SS.mmm"
+                    ) from e
+
+            self.ptr = api.init_time(ms_since_midnight)
 
     @property
     def value(self) -> dt.time:
-        return api.read_time(self.ptr)
+        ms_since_midnight = api.read_time(self.ptr)
 
-    def __str__(self) -> str:
-        return self.value.isoformat("milliseconds")
+        hours = ms_since_midnight // 3600000
+        ms_since_midnight %= 3600000
 
-    def __repr__(self) -> str:
-        return f"Time({str(self)})"
+        minutes = ms_since_midnight // 60000
+        ms_since_midnight %= 60000
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Time):
-            return self.value == other.value
-        if isinstance(other, dt.time):
-            return self.value == other
-        return False
+        seconds = ms_since_midnight // 1000
+        milliseconds = ms_since_midnight % 1000
+
+        return dt.time(hours, minutes, seconds, milliseconds * 1000)
 
 
-class Timestamp(common.RaypyScalar):
+class Timestamp(__RaypyScalar):
     """
-    Rayforce Timestamp type
+    Rayforce timestamp type.
+
+    Type code: -9
     """
 
     _type = -r.TYPE_TIMESTAMP
@@ -355,46 +344,38 @@ class Timestamp(common.RaypyScalar):
         self,
         value: dt.datetime | int | str | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_timestamp(value)
+            ms_since_epoch = 0
+            if isinstance(value, int):
+                ms_since_epoch = value
+            elif isinstance(value, dt.datetime):
+                ms_since_epoch = int(value.timestamp() * 1000)
+            elif isinstance(value, str):  # Parse from string (ISO format)
+                try:
+                    dt_obj = dt.datetime.fromisoformat(value)
+                    ms_since_epoch = int(dt_obj.timestamp() * 1000)
+                except ValueError:
+                    raise ValueError("Timestamp string must be in ISO format")
+
+            self.ptr = api.init_timestamp(ms_since_epoch)
 
     @property
     def value(self) -> dt.datetime:
-        return api.read_timestamp(self.ptr)
-
-    @property
-    def date(self) -> Date:
-        return Date((self.value.date() - EPOCH_DATE).days)
-
-    @property
-    def time(self):
-        dt = self.value
-        return Time(
-            ((dt.hour * 60 + dt.minute) * 60 + dt.second) * 1000
-            + dt.microsecond // 1000
-        )
-
-    def __str__(self) -> str:
-        return self.value.isoformat(timespec="milliseconds")
-
-    def __repr__(self) -> str:
-        return f"Timestamp({str(self)})"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Timestamp):
-            return self.value == other.value
-        if isinstance(other, dt.datetime):
-            return self.value == other
-        return False
+        ms_since_epoch = api.read_timestamp(self.ptr)
+        seconds = ms_since_epoch // 1000
+        microseconds = (ms_since_epoch % 1000) * 1000
+        return dt.datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
 
 
-class U8(common.RaypyScalar):
+class U8(__RaypyScalar):
     """
-    Rayforce Unsigned type
+    Rayforce unsigned type.
+
+    Type code: -2
     """
 
     _type = -r.TYPE_U8
@@ -403,75 +384,19 @@ class U8(common.RaypyScalar):
         self,
         value: int | None = None,
         *,
-        ray_obj: r.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        super().__init__(value, ray_obj=ray_obj)
+        super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_U8(value)
+            if value < 0 or value > 255:
+                raise ValueError("Unsigned value is out of range (0-255)")
+
+            self.ptr = api.init_u8(value)
 
     @property
     def value(self) -> int:
-        return api.read_U8(self.ptr)
-
-    def __int__(self) -> int:
-        return self.value
-
-    def __index__(self) -> int:
-        return self.value
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def __repr__(self) -> str:
-        return f"U8({self.value})"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, U8):
-            return self.value == other.value
-        if isinstance(other, int):
-            return self.value == other
-        return False
-
-    def __add__(self, other: Any) -> "U8":
-        if isinstance(other, U8):
-            other = other.value
-        result = self.value + other
-        # Wrap around on overflow
-        result = result & 0xFF
-        return U8(result)
-
-    def __sub__(self, other: Any) -> "U8":
-        if isinstance(other, U8):
-            other = other.value
-        result = self.value - other
-        # Wrap around on underflow
-        result = result & 0xFF
-        return U8(result)
-
-    def __mul__(self, other: Any) -> "U8":
-        if isinstance(other, U8):
-            other = other.value
-        result = self.value * other
-        # Wrap around on overflow
-        result = result & 0xFF
-        return U8(result)
-
-    def __floordiv__(self, other: Any) -> "U8":
-        if isinstance(other, U8):
-            other = other.value
-        if other == 0:
-            raise ZeroDivisionError("division by zero")
-        result = self.value // other
-        return U8(result)
-
-    def __mod__(self, other: Any) -> "U8":
-        if isinstance(other, U8):
-            other = other.value
-        if other == 0:
-            raise ZeroDivisionError("modulo by zero")
-        result = self.value % other
-        return U8(result)
+        return api.read_u8(self.ptr)
 
 
 type ScalarType = (
