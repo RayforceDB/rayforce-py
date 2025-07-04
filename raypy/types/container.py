@@ -4,7 +4,6 @@ import uuid
 
 from raypy import api
 from raypy.types import primitive
-from raypy.types import common
 from raypy.types import scalar
 from raypy import _rayforce as r
 

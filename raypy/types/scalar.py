@@ -182,7 +182,7 @@ class I16(__RaypyScalar):
         self,
         value: int | float | str | None = None,
         *,
-        ptr: t.RayObject | None = None,
+        ptr: r.RayObject | None = None,
     ) -> None:
         super().__init__(value, ptr=ptr)
 
