@@ -69,26 +69,24 @@ class Vector:
 
     def __init__(
         self,
-        class_type: scalar.ScalarType,
+        class_type: scalar.ScalarType | None = None,
         length: int = 0,
         *,
         ray_obj: r.RayObject | None = None,
     ) -> None:
+        if ray_obj is not None:
+            if not api.is_vector(ray_obj):
+                raise ValueError(f"Expected Vector object, got {ray_obj.get_obj_type()}")
+
+            self.ptr = ray_obj
+            return
+
         if not hasattr(class_type, "_type"):
             raise ValueError(
                 "Class type has to be an Python object with _type attribute"
             )
 
         self._type = -class_type._type
-
-        if ray_obj is not None:
-            if (_type := ray_obj.get_obj_type()) != self._type:
-                raise ValueError(
-                    f"Expected Vector object of type {self._type}, got {_type}"
-                )
-
-            self.ptr = ray_obj
-            return
 
         self.ptr = api.init_vector(type_code=-self._type, length=length)
 
@@ -121,7 +119,7 @@ class Vector:
             yield self.__getitem__(i)
 
     def __str__(self) -> str:
-        return f"Vector[{self.ptr.get_obj_type()}] of len {len(self)}"
+        return f"Vector[type: {self.ptr.get_obj_type()}]({', '.join(str(i) for i in self)})"
 
     def __repr__(self) -> str:
         return str(self)
@@ -247,10 +245,14 @@ class Dict:
         self.ptr = api.init_dict(value=value or {})
 
     def keys(self) -> List:
-        return List(items=api.get_dict_keys(self.ptr))
+        keys = api.get_dict_keys(self.ptr)
+        if api.is_vector(keys):
+            return Vector(ray_obj=keys)
+
+        return List(ray_obj=keys)
 
     def values(self) -> List:
-        return List(items=api.get_dict_values(self.ptr))
+        return List(ray_obj=api.get_dict_values(self.ptr))
 
     def get(self, key: Any) -> Any:
         return from_rf_to_raypy(api.get_dict_value_by_key(self.ptr, key))

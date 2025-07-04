@@ -39,21 +39,21 @@ patch_makefile:
 	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 
-clean-ext:
-	@cd $(EXEC_DIR) && rm -rf \
-		raypy/_rayforce.so  \
-		raypy/_rayforce.c*.so  \
-		raypy/librayforce.* \
-		raypy/plugins/libraykx.* \
-		build/ \
-		dist/ && \
-		find . -type d -name "__pycache__" -exec rm -rf {} +
+# clean-ext:
+# 	@cd $(EXEC_DIR) && rm -rf \
+# 		raypy/_rayforce.so  \
+# 		raypy/_rayforce.c*.so  \
+# 		raypy/librayforce.* \
+# 		raypy/plugins/libraykx.* \
+# 		build/ \
+# 		dist/ && \
+# 		find . -type d -name "__pycache__" -exec rm -rf {} +
 
-clean: clean-ext
-	@echo "🧹 Cleaning cache and generated files..."
-	@cd $(EXEC_DIR) && rm -rf \
-		raypy/core/ \
-		tmp/ \
+# clean: clean-ext
+# 	@echo "🧹 Cleaning cache and generated files..."
+# 	@cd $(EXEC_DIR) && rm -rf \
+# 		raypy/core/ \
+# 		tmp/ \
 
 ext: 
 	@cp raypy/raypy.c tmp/rayforce-c/core/raypy.c
@@ -62,7 +62,7 @@ ext:
 	@cp tmp/rayforce-c/$(PY_MODULE_NAME) raypy/_rayforce.so
 	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) raypy/plugins/$(RAYKX_LIB_NAME)
 
-all: clean pull_from_gh patch_makefile ext
+all: pull_from_gh patch_makefile ext
 
 test:
 	pytest tests/
@@ -76,7 +76,11 @@ py:
 	from raypy import _rayforce as r; \
 	from raypy import queries as q; \
 	from raypy import api; \
-	from raypy import misc"
+	from raypy import misc; \
+	values = [['001', '002', '003', '004', '005'], ['alice', 'bob', 'charlie', 'dana', 'eli'], ['johnson', 'smith', 'kim', 'williams', 'nguyen'], ['alice.johnson@example.com', 'bob.smith@example.com', 'charlie.kim@example.com', 'dana.williams@example.com', 'eli.nguyen@example.com'], ['engineering', 'marketing', 'finance', 'hr', 'design'], [29, 34, 41, 38, 45]]; \
+	columns = ['id', 'first_name', 'last_name', 'email', 'department', 'age']; \
+	table = t.Table(columns=columns, values=values); \
+	misc.set_table_name('people', table)"
 
 lint:
 	ruff format tests/ raypy/

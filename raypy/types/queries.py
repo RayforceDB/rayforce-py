@@ -64,12 +64,6 @@ class __Query:
         )
         self._add_query_value(value=self.where.ptr)
 
-    def __str__(self) -> str:
-        return c.Dict(ray_obj=self.ptr)
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
 
 class SelectQuery(__Query):
     """
@@ -149,6 +143,12 @@ class SelectQuery(__Query):
         self.__validate(attributes=attributes, select_from=select_from, where=where)
         self.__build_query()
 
+    def __str__(self) -> str:
+        return c.Dict(ray_obj=self.ptr)
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class UpdateQuery(__Query):
     """
@@ -224,6 +224,12 @@ class UpdateQuery(__Query):
         self.__validate(update_from=update_from, attributes=attributes, where=where)
         self.__build_query()
 
+    def __str__(self) -> str:
+        return c.Dict(ray_obj=self.ptr)
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class InsertQuery(__Query):
     """
@@ -244,12 +250,18 @@ class InsertQuery(__Query):
         # If insert happens not inplace, validate columns width immediately.
         # But if it happens inplace, delegate to RF error raise if width is invalid.
         if isinstance(insert_to, c.Table):
-            if not all(
-                [len(attribute) == len(insert_to.columns) for attribute in insertable]
-            ):
-                raise ValueError(
-                    "Attributes are having invalid length for table insert."
-                )
+            if isinstance(insertable, list):
+                if not all(
+                    [len(attribute) == len(insert_to.columns()) for attribute in insertable]
+                ):
+                    raise ValueError(
+                        "Attributes are having invalid length for table upsert."
+                    )
+            else:
+                if len(insertable) != len(insert_to.columns()):
+                    raise ValueError(
+                        "Attributes are having invalid length for table upsert."
+                    )
 
         self.insert_to = insert_to
         self.insertable = insertable
@@ -275,6 +287,13 @@ class InsertQuery(__Query):
         self.__validate(insert_to=insert_to, insertable=insertable)
         self.__build_query()
 
+    def __str__(self) -> str:
+        insertable = c.from_rf_to_raypy(self.insertable_ptr)
+        insert_to = c.from_rf_to_raypy(self.insert_to_ptr)
+        return f"InsertQuery(to: {insert_to.__repr__()}) with entries: \n {insertable}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class UpsertQuery(__Query):
     """
@@ -284,7 +303,6 @@ class UpsertQuery(__Query):
     def __validate(
         self,
         upsert_to: str | c.Table,
-        match: str | list[str],
         upsertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
     ) -> None:
         if not upsert_to:
@@ -309,58 +327,34 @@ class UpsertQuery(__Query):
                         "Attributes are having invalid length for table upsert."
                     )
 
-        if not match:
-            raise ValueError("Attribute match is required.")
-
-        if isinstance(match, list) and not all(
-            [m and isinstance(m, str) for m in match]
-        ):
-            raise ValueError("Match attributes should be non-empty strings.")
-
         self.upsert_to = upsert_to
         self.upsertable = upsertable
-        self.match = match
 
     def __build_query(self) -> None:
         # Match low-level is a number of ordered fields provided in upsertable.
-        self.match_ptr = api.init_i64(len(self.match))
+        # self.match_ptr = api.init_i64(len(self.upsertable))
+        self.match_ptr = api.init_i64(3)
+        
+        i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
+        for idx, key in enumerate(self.upsertable.keys()):
+            api.insert_obj(
+                source_obj=i_keys,
+                idx=idx,
+                value=api.from_python_to_rayforce_type(key),
+            )
 
-        if isinstance(self.upsertable, list):
-            self.upsertable_ptr = api.init_list()
-            for i in self.upsertable:
-                i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(i))
-                for idx, key in enumerate(i.keys()):
-                    api.insert_obj(
-                        source_obj=i_keys,
-                        idx=idx,
-                        value=api.from_python_to_rayforce_type(key),
-                    )
-                i_values = api.init_list()
-                for value in i.values():
-                    api.push_obj_to_iterable(
-                        iterable=i_values,
-                        obj=api.from_python_to_rayforce_type(value)
-                    )
+        i_values = api.init_list()
+        for i in self.upsertable.values():
+            _l = api.init_list()
+            for value in i:
                 api.push_obj_to_iterable(
-                    iterable=self.upsertable_ptr,
-                    obj=api.init_dict_from_rf_objects(i_keys, i_values),
-                )
-        else:
-            i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
-            for idx, key in enumerate(self.upsertable.keys()):
-                api.insert_obj(
-                    source_obj=i_keys,
-                    idx=idx,
-                    value=api.from_python_to_rayforce_type(key),
-                )
-            i_values = api.init_list()
-            for value in self.upsertable.values():
-                api.push_obj_to_iterable(
-                    iterable=i_values,
-                    obj=api.from_python_to_rayforce_type(value)
+                    iterable=_l,
+                    obj=api.from_python_to_rayforce_type(value),
                 )
 
-            self.upsertable_ptr = api.init_dict_from_rf_objects(i_keys, i_values)
+            api.push_obj_to_iterable(iterable=i_values, obj=_l)
+
+        self.upsertable_ptr = api.init_dict_from_rf_objects(i_keys, i_values)
 
         if isinstance(self.upsert_to, c.Table):
             self.upsert_to_ptr = api.from_python_to_rayforce_type(self.upsert_to)
@@ -372,8 +366,15 @@ class UpsertQuery(__Query):
     def __init__(
         self,
         upsert_to: str | c.Table,
-        match: list[str],
-        upsertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
+        upsertable: dict[str, list[Any]],
     ) -> None:
-        self.__validate(upsert_to=upsert_to, match=match, upsertable=upsertable)
+        self.__validate(upsert_to=upsert_to, upsertable=upsertable)
         self.__build_query()
+
+    def __str__(self) -> str:
+        upsertable = c.from_rf_to_raypy(self.upsertable_ptr)
+        upsert_to = api.read_symbol(self.upsert_to_ptr)
+        return f"UpsertQuery(to: {upsert_to}) with entries: \n {upsertable}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
