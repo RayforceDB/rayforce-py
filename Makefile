@@ -39,21 +39,21 @@ patch_makefile:
 	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 
-# clean-ext:
-# 	@cd $(EXEC_DIR) && rm -rf \
-# 		raypy/_rayforce.so  \
-# 		raypy/_rayforce.c*.so  \
-# 		raypy/librayforce.* \
-# 		raypy/plugins/libraykx.* \
-# 		build/ \
-# 		dist/ && \
-# 		find . -type d -name "__pycache__" -exec rm -rf {} +
+clean-ext:
+	@cd $(EXEC_DIR) && rm -rf \
+		raypy/_rayforce.so  \
+		raypy/_rayforce.c*.so  \
+		raypy/librayforce.* \
+		raypy/plugins/libraykx.* \
+		build/ \
+		dist/ && \
+		find . -type d -name "__pycache__" -exec rm -rf {} +
 
-# clean: clean-ext
-# 	@echo "🧹 Cleaning cache and generated files..."
-# 	@cd $(EXEC_DIR) && rm -rf \
-# 		raypy/core/ \
-# 		tmp/ \
+clean: clean-ext
+	@echo "🧹 Cleaning cache and generated files..."
+	@cd $(EXEC_DIR) && rm -rf \
+		raypy/core/ \
+		tmp/ \
 
 ext: 
 	@cp raypy/raypy.c tmp/rayforce-c/core/raypy.c
