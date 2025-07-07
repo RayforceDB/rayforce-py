@@ -17,6 +17,7 @@ from raypy.api.creators import (
     insert_obj,
     push_obj,
     init_list,
+    init_string,
 )
 from raypy.api.readers import (
     read_b8,
@@ -41,7 +42,16 @@ from raypy.api.readers import (
 from raypy.api.helpers import (
     is_vector,
     get_obj_length,
+    get_error_message,
+    binary_set,
+    env_get_internal_function_by_name,
+    env_get_internal_name_by_function,
+    set_obj_attrs,
+    loadfn_from_file,
+    eval_obj,
+    eval_str,
 )
+from raypy.api.queries import select, update, upsert, insert
 
 
 __all__ = [
@@ -57,6 +67,7 @@ __all__ = [
     "init_time",
     "init_timestamp",
     "init_u8",
+    "init_string",
     # COntainer creators
     "init_dict",
     "init_guid",
@@ -88,4 +99,17 @@ __all__ = [
     # Misc
     "is_vector",
     "get_obj_length",
+    "get_error_message",
+    "binary_set",
+    "env_get_internal_function_by_name",
+    "env_get_internal_name_by_function",
+    "set_obj_attrs",
+    "loadfn_from_file",
+    "eval_obj",
+    "eval_str",
+    # DB queries
+    "select",
+    "update",
+    "upsert",
+    "insert",
 ]

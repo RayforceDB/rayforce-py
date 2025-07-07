@@ -5,7 +5,7 @@ import typing as t
 import uuid
 
 from raypy import api
-from raypy.types import scalar
+from raypy.types import scalar, primitive
 from raypy import _rayforce as r
 
 
@@ -35,12 +35,11 @@ class __RaypyContainer:
             raise AttributeError(f"{self.__name__} type code is not set")
 
         if ptr is not None:
-            if (
-                not isinstance(ptr, r.RayObject)
-                or (_type := ptr.get_obj_type()) != self.type_code
-            ):
+            if not isinstance(ptr, r.RayObject):
+                raise ValueError(f"{ptr} object is not RayObject")
+            if (_type := ptr.get_obj_type()) != self.type_code:
                 raise ValueError(
-                    f"Expected RayObject of type {self._type} for {self.__name__}, got {_type}",
+                    f"Expected RayObject of type {self.type_code} for {self.__class__}, got {_type}",
                 )
 
             self.ptr = ptr
@@ -50,7 +49,7 @@ class __RaypyContainer:
         raise NotImplementedError
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.value})"
+        return f"{self.__class__}({self.value})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -109,6 +108,7 @@ class Vector:
         self,
         type_code: int | None = None,
         length: int = 0,
+        items: list[t.Any] | None = None,
         *,
         ptr: r.RayObject | None = None,
     ) -> None:
@@ -123,6 +123,14 @@ class Vector:
         self.type_code = -type_code
 
         self.ptr = api.init_vector(type_code=self.type_code, length=length)
+
+        if items is not None:
+            for idx, item in enumerate(items):
+                api.insert_obj(
+                    insert_to=self.ptr,
+                    idx=idx,
+                    ptr=from_python_type_to_raw_rayobject(item),
+                )
 
     @property
     def value(self) -> tuple[t.Any]:
@@ -156,6 +164,12 @@ class Vector:
         for i in range(len(self)):
             yield self.__getitem__(i)
 
+    def __str__(self) -> str:
+        return f"Vector[{self.type_code}]({', '.join(str(i) for i in self)})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, Vector):
             if eq.type_code != self.type_code:
@@ -169,6 +183,48 @@ class Vector:
                     return False
             return True
         return False
+
+
+class String(Vector):
+    """
+    Rayforce String type (vector of C8)
+
+    Type code: 12
+    """
+
+    ptr: r.RayObject
+
+    type_code = r.TYPE_C8
+
+    def __init__(
+        self, value: str | None = None, *, ptr: r.RayObject | None = None
+    ) -> None:
+        if ptr and (_type := ptr.get_obj_type()) != self.type_code:
+            raise ValueError(f"Expected String RayObject, got {_type}")
+
+        if value is not None:
+            super().__init__(type_code=self.type_code, length=len(value), items=value)
+        else:
+            super().__init__(ptr=ptr)
+
+        # if not getattr(self, "ptr", None):
+        #     self.ptr = api.init_vector(type_code=self.type_code, length=len(value))
+        #     for idx, ch in enumerate(value):
+        #         api.insert_obj(
+        #             insert_to=self.ptr,
+        #             idx=idx,
+        #             ptr=from_python_type_to_raw_rayobject(ch),
+        #         )
+
+    @property
+    def value(self) -> str:
+        return "".join([i.value for i in super().value])
+
+    def __str__(self) -> str:
+        return f"String({self.value})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class List(__RaypyContainer):
@@ -403,6 +459,11 @@ class Table:
     def __repr__(self) -> str:
         return str(self)
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, Table):
+            return eq.columns() == self.columns() and eq.values() == self.values()
+        return False
+
 
 RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_I16: scalar.I16,
@@ -416,7 +477,7 @@ RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_B8: scalar.B8,
     r.TYPE_B8: scalar.B8,
     -r.TYPE_C8: scalar.C8,
-    r.TYPE_C8: scalar.C8,
+    r.TYPE_C8: String,
     -r.TYPE_SYMBOL: scalar.Symbol,
     r.TYPE_SYMBOL: scalar.Symbol,
     -r.TYPE_TIME: scalar.Time,
@@ -438,9 +499,15 @@ def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
     ptr_type = ptr.get_obj_type()
 
     if class_type := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
-        if api.is_vector(ptr):
+        if api.is_vector(ptr) and ptr_type != r.TYPE_C8:
             return Vector(type_code=ptr_type, ptr=ptr)
         return class_type(ptr=ptr)
+
+    if ptr_type == 102:
+        return primitive.Operation.from_ptr(ptr)
+
+    if ptr_type == r.TYPE_NULL:
+        return None
 
     raise ValueError(f"RayObject type of {ptr_type} is not supported")
 
@@ -450,6 +517,8 @@ def from_python_type_to_raw_rayobject(value: t.Any) -> r.RayObject:
         return value
     elif hasattr(value, "ptr"):
         return value.ptr
+    elif hasattr(value, "primitive"):
+        return value.primitive
     elif isinstance(value, str):
         return scalar.Symbol(value).ptr
     elif isinstance(value, int) and not isinstance(value, bool):

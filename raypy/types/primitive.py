@@ -41,7 +41,7 @@ class Operation(enum.StrEnum):
 
     @property
     def primitive(self) -> r.RayObject:
-        return api.get_primitive_function_by_name(self.value)
+        return api.env_get_internal_function_by_name(self.value)
 
     @property
     def is_binary(self) -> bool:
@@ -65,7 +65,7 @@ class Operation(enum.StrEnum):
             raise ValueError(f"Invalid object type for Operation - {_type}")
 
         try:
-            name = api.get_name_by_primitive_function(obj)
+            name = api.env_get_internal_name_by_function(obj)
             return Operation(name)
         except ValueError:
             raise ValueError(f"Unknown operation - {name}")

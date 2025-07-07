@@ -6,6 +6,7 @@ from raypy import _rayforce as r
 from raypy import api
 from raypy.types import primitive as p
 from raypy.types import container as c
+from raypy.types import scalar as s
 
 
 class Expression:
@@ -19,8 +20,8 @@ class Expression:
         self.ptr = api.init_list()
 
         for arg in args:
-            api.push_obj_to_iterable(
-                iterable=self.ptr, obj=api.from_python_to_rayforce_type(arg)
+            api.push_obj(
+                iterable=self.ptr, ptr=c.from_python_type_to_raw_rayobject(arg)
             )
 
     def __len__(self) -> int:
@@ -30,7 +31,7 @@ class Expression:
         if idx < 0 or idx >= len(self):
             raise IndexError("Expression index out of range")
 
-        return c.from_rf_to_raypy(api.get_object_at_idx(self.ptr, idx))
+        return c.convert_raw_rayobject_to_raypy_type(api.at_idx(self.ptr, idx))
 
     def __iter__(self) -> Any:
         for i in range(len(self)):
@@ -43,29 +44,7 @@ class Expression:
         return self.__str__()
 
 
-class __Query:
-    ptr: r.RayObject
-
-    _query_keys: r.RayObject
-    _query_values: r.RayObject
-
-    def _add_query_key(self, idx: int, key: r.RayObject) -> None:
-        api.insert_obj(source_obj=self._query_keys, idx=idx, value=key)
-
-    def _add_query_value(self, value: r.RayObject) -> None:
-        api.push_obj_to_iterable(iterable=self._query_values, obj=value)
-
-    def _append_where_attribute(self) -> None:
-        if self.where is None:
-            return
-
-        self._add_query_key(
-            idx=self.key_length, key=api.from_python_to_rayforce_type("where")
-        )
-        self._add_query_value(value=self.where.ptr)
-
-
-class SelectQuery(__Query):
+class SelectQuery:
     """
     Query to perform select operation.
     """
@@ -73,12 +52,11 @@ class SelectQuery(__Query):
     def __validate(
         self,
         attributes: dict[str, str | Expression],
-        select_from: str | SelectQuery,
+        select_from: str | SelectQuery | c.Table,
         where: Expression | None = None,
     ) -> None:
         self.attr_keys = attributes.keys()
         self.attr_values = attributes.values()
-        self.key_length = len(self.attr_keys) + 1
 
         if not select_from:
             raise ValueError("Attribute select_from is required.")
@@ -86,8 +64,6 @@ class SelectQuery(__Query):
         if where is not None:
             if not isinstance(where, Expression):
                 raise ValueError("Attribute where should be an Expression.")
-
-            self.key_length += 1
 
         if any([not isinstance(key, str) for key in self.attr_keys]):
             raise ValueError("Query keys should be Python strings.")
@@ -104,35 +80,54 @@ class SelectQuery(__Query):
         self.where = where
 
     def __build_query(self) -> None:
-        self._query_keys = api.init_vector(
-            type_code=-r.TYPE_SYMBOL, length=self.key_length
-        )
+        length = len(self.attr_keys) + 1 if not self.where else len(self.attr_keys) + 2
+        self._query_keys = api.init_vector(type_code=s.Symbol.type_code, length=length)
         self._query_values = api.init_list()
 
         for idx, key in enumerate(self.attr_keys):
             # Fill query keys with requested attributes
-            self._add_query_key(idx=idx, key=api.from_python_to_rayforce_type(key))
+            api.insert_obj(
+                insert_to=self._query_keys,
+                idx=idx,
+                ptr=c.from_python_type_to_raw_rayobject(key),
+            )
         else:
             # Push "from" keyword to query keys
-            key = api.from_python_to_rayforce_type("from")
-            self._add_query_key(idx=len(self.attr_keys), key=key)
+            api.insert_obj(
+                insert_to=self._query_keys,
+                idx=len(self.attr_keys),
+                ptr=c.from_python_type_to_raw_rayobject("from"),
+            )
 
         for value in self.attr_values:
             # Fill query values with requested attributes
-            self._add_query_value(value=api.from_python_to_rayforce_type(value))
+            api.push_obj(
+                iterable=self._query_values,
+                ptr=c.from_python_type_to_raw_rayobject(value),
+            )
         else:
             # Push "from" value to query values
             if isinstance(self.select_from, SelectQuery):
-                self._add_query_value(
-                    value=Expression(p.Operation.SELECT, self.select_from.ptr)
-                )
+                expr = Expression(p.Operation.SELECT, self.select_from.ptr)
+                api.push_obj(iterable=self._query_values, ptr=expr.ptr)
             else:
-                self._add_query_value(
-                    value=api.from_python_to_rayforce_type(self.select_from)
+                api.push_obj(
+                    iterable=self._query_values,
+                    ptr=c.from_python_type_to_raw_rayobject(self.select_from),
                 )
 
-        self._append_where_attribute()
-        self.ptr = api.init_dict_from_rf_objects(self._query_keys, self._query_values)
+        if self.where is not None:
+            api.insert_obj(
+                insert_to=self._query_keys,
+                idx=len(self.attr_keys) + 1,
+                ptr=c.from_python_type_to_raw_rayobject("where"),
+            )
+            api.push_obj(
+                iterable=self._query_values,
+                ptr=self.where.ptr,
+            )
+
+        self.ptr = api.init_dict(self._query_keys, self._query_values)
 
     def __init__(
         self,
@@ -144,13 +139,13 @@ class SelectQuery(__Query):
         self.__build_query()
 
     def __str__(self) -> str:
-        return c.Dict(ray_obj=self.ptr)
+        return str(c.Dict(ptr=self.ptr))
 
     def __repr__(self) -> str:
         return self.__str__()
 
 
-class UpdateQuery(__Query):
+class UpdateQuery:
     """
     Query to perform update operation
     """
@@ -163,7 +158,6 @@ class UpdateQuery(__Query):
     ) -> None:
         self.attr_keys = attributes.keys()
         self.attr_values = attributes.values()
-        self.key_length = len(self.attr_keys) + 1
 
         if not update_from:
             raise ValueError("Attribute update_from is required.")
@@ -172,52 +166,66 @@ class UpdateQuery(__Query):
             if not isinstance(where, Expression):
                 raise ValueError("Attribute where should be an Expression.")
 
-            self.key_length += 1
-
         self.attributes = attributes
         self.update_from = update_from
         self.where = where
 
     def __build_query(self) -> r.RayObject:
-        self._query_keys = api.init_vector(
-            type_code=-r.TYPE_SYMBOL, length=self.key_length
-        )
+        length = len(self.attr_keys) + 1 if not self.where else len(self.attr_keys) + 2
+        self._query_keys = api.init_vector(type_code=s.Symbol.type_code, length=length)
         self._query_values = api.init_list()
 
         for idx, key in enumerate(self.attr_keys):
             # Fill query keys with requested attributes
-            self._add_query_key(idx=idx, key=api.from_python_to_rayforce_type(key))
+            api.insert_obj(
+                insert_to=self._query_keys,
+                idx=idx,
+                ptr=c.from_python_type_to_raw_rayobject(key),
+            )
         else:
             # Push "from" keyword to query keys
-            key = api.from_python_to_rayforce_type("from")
-            self._add_query_key(idx=len(self.attr_keys), key=key)
+            api.insert_obj(
+                insert_to=self._query_keys,
+                idx=len(self.attr_keys),
+                ptr=c.from_python_type_to_raw_rayobject("from"),
+            )
 
         for value in self.attr_values:
             # Fill query values with requested attributes
-            self._add_query_value(value=api.from_python_to_rayforce_type(value))
+            api.push_obj(
+                iterable=self._query_values,
+                ptr=c.from_python_type_to_raw_rayobject(value),
+            )
         else:
             # Push "from" value to query values
-            if isinstance(self.update_from, SelectQuery):
-                self._add_query_value(
-                    value=Expression(p.Operation.SELECT, self.update_from.ptr)
-                )
-            elif isinstance(self.update_from, str):
+            if isinstance(self.update_from, str):
                 # We need to assign update_from symbol the "quoted"
                 # attribute, so inplace update can happen.
                 key = api.init_symbol(self.update_from)
-                api.set_obj_attributes(key, 8)
-                self._add_query_value(value=key)
+                api.set_obj_attrs(key, 8)
+                api.push_obj(iterable=self._query_values, ptr=key)
             else:
-                self._add_query_value(
-                    value=api.from_python_to_rayforce_type(self.update_from)
+                api.push_obj(
+                    iterable=self._query_values,
+                    ptr=c.from_python_type_to_raw_rayobject(self.update_from),
                 )
 
-        self._append_where_attribute()
-        self.ptr = api.init_dict_from_rf_objects(self._query_keys, self._query_values)
+        if self.where is not None:
+            api.insert_obj(
+                insert_to=self._query_keys,
+                idx=len(self.attr_keys) + 1,
+                ptr=c.from_python_type_to_raw_rayobject("where"),
+            )
+            api.push_obj(
+                iterable=self._query_values,
+                ptr=self.where.ptr,
+            )
+
+        self.ptr = api.init_dict(self._query_keys, self._query_values)
 
     def __init__(
         self,
-        update_from: str | SelectQuery | c.Table,
+        update_from: str | c.Table,
         attributes: dict[str, str | Expression],
         where: Expression = None,
     ) -> None:
@@ -225,13 +233,13 @@ class UpdateQuery(__Query):
         self.__build_query()
 
     def __str__(self) -> str:
-        return c.Dict(ray_obj=self.ptr)
+        return str(c.Dict(ptr=self.ptr))
 
     def __repr__(self) -> str:
         return self.__str__()
 
 
-class InsertQuery(__Query):
+class InsertQuery:
     """
     Query to perform insert operation
     """
@@ -239,7 +247,7 @@ class InsertQuery(__Query):
     def __validate(
         self,
         insert_to: str | c.Table,
-        insertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
+        insertable: list[Any],
     ) -> None:
         if not insert_to:
             raise ValueError("Attribute insert_to is required.")
@@ -247,40 +255,18 @@ class InsertQuery(__Query):
         if not insertable:
             raise ValueError("No attributes to insert.")
 
-        # If insert happens not inplace, validate columns width immediately.
-        # But if it happens inplace, delegate to RF error raise if width is invalid.
-        if isinstance(insert_to, c.Table):
-            if isinstance(insertable, list):
-                if not all(
-                    [
-                        len(attribute) == len(insert_to.columns())
-                        for attribute in insertable
-                    ]
-                ):
-                    raise ValueError(
-                        "Attributes are having invalid length for table upsert."
-                    )
-            else:
-                if len(insertable) != len(insert_to.columns()):
-                    raise ValueError(
-                        "Attributes are having invalid length for table upsert."
-                    )
-
         self.insert_to = insert_to
         self.insertable = insertable
 
     def __build_query(self) -> None:
-        if isinstance(self.insertable, list):
-            self.insertable_ptr = api.init_list()
-            for attribute in self.insertable:
-                api.push_obj_to_iterable(
-                    iterable=self.insertable_ptr,
-                    obj=api.from_python_to_rayforce_type(attribute),
-                )
-        else:
-            self.insertable_ptr = api.from_python_to_rayforce_type(self.insertable)
+        self.insertable_ptr = api.init_list()
+        for attribute in self.insertable:
+            api.push_obj(
+                iterable=self.insertable_ptr,
+                ptr=c.from_python_type_to_raw_rayobject(attribute),
+            )
 
-        self.insert_to_ptr = api.from_python_to_rayforce_type(self.insert_to)
+        self.insert_to_ptr = c.from_python_type_to_raw_rayobject(self.insert_to)
 
     def __init__(
         self,
@@ -291,15 +277,15 @@ class InsertQuery(__Query):
         self.__build_query()
 
     def __str__(self) -> str:
-        insertable = c.from_rf_to_raypy(self.insertable_ptr)
-        insert_to = c.from_rf_to_raypy(self.insert_to_ptr)
-        return f"InsertQuery(to: {insert_to.__repr__()}) with entries: \n {insertable}"
+        insertable = c.convert_raw_rayobject_to_raypy_type(self.insertable_ptr)
+        insert_to = c.convert_raw_rayobject_to_raypy_type(self.insert_to_ptr)
+        return f"InsertQuery(to: \n {insert_to.__repr__()} \n) with entries: \n {insertable} \n"
 
     def __repr__(self) -> str:
         return self.__str__()
 
 
-class UpsertQuery(__Query):
+class UpsertQuery:
     """
     Query to perform upsert operation
     """
@@ -307,6 +293,7 @@ class UpsertQuery(__Query):
     def __validate(
         self,
         upsert_to: str | c.Table,
+        match_by_first: int,
         upsertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
     ) -> None:
         if not upsert_to:
@@ -315,73 +302,61 @@ class UpsertQuery(__Query):
         if not upsertable:
             raise ValueError("No attributes to upsert.")
 
-        # If upsert happens not inplace, validate columns width immediately.
-        # But if it happens inplace, delegate to RF error raise if width is invalid.
-        if isinstance(upsert_to, c.Table):
-            if isinstance(upsertable, list):
-                if not all(
-                    [
-                        len(attribute) == len(upsert_to.columns())
-                        for attribute in upsertable
-                    ]
-                ):
-                    raise ValueError(
-                        "Attributes are having invalid length for table upsert."
-                    )
-            else:
-                if len(upsertable) != len(upsert_to.columns()):
-                    raise ValueError(
-                        "Attributes are having invalid length for table upsert."
-                    )
+        if match_by_first <= 0 or match_by_first > len(upsertable):
+            raise ValueError("Match should be by length of upsertable or lower.")
 
         self.upsert_to = upsert_to
         self.upsertable = upsertable
+        self.match_by_first = match_by_first
 
     def __build_query(self) -> None:
         # Match low-level is a number of ordered fields provided in upsertable.
-        # self.match_ptr = api.init_i64(len(self.upsertable))
-        self.match_ptr = api.init_i64(3)
+        self.match_ptr = api.init_i64(self.match_by_first)
 
         i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
         for idx, key in enumerate(self.upsertable.keys()):
             api.insert_obj(
-                source_obj=i_keys,
+                insert_to=i_keys,
                 idx=idx,
-                value=api.from_python_to_rayforce_type(key),
+                ptr=c.from_python_type_to_raw_rayobject(key),
             )
 
         i_values = api.init_list()
         for i in self.upsertable.values():
             _l = api.init_list()
             for value in i:
-                api.push_obj_to_iterable(
-                    iterable=_l,
-                    obj=api.from_python_to_rayforce_type(value),
+                api.push_obj(
+                    iterable=_l, ptr=c.from_python_type_to_raw_rayobject(value)
                 )
 
-            api.push_obj_to_iterable(iterable=i_values, obj=_l)
+            api.push_obj(iterable=i_values, ptr=_l)
 
-        self.upsertable_ptr = api.init_dict_from_rf_objects(i_keys, i_values)
+        self.upsertable_ptr = api.init_dict(i_keys, i_values)
 
         if isinstance(self.upsert_to, c.Table):
-            self.upsert_to_ptr = api.from_python_to_rayforce_type(self.upsert_to)
+            self.upsert_to_ptr = self.upsert_to.ptr
         else:
             key = api.init_symbol(self.upsert_to)
-            api.set_obj_attributes(key, 8)
-            self.upsert_to_ptr = api.from_python_to_rayforce_type(key)
+            api.set_obj_attrs(key, 8)
+            self.upsert_to_ptr = key
 
     def __init__(
         self,
         upsert_to: str | c.Table,
+        match_by_first: int,
         upsertable: dict[str, list[Any]],
     ) -> None:
-        self.__validate(upsert_to=upsert_to, upsertable=upsertable)
+        self.__validate(
+            upsert_to=upsert_to,
+            match_by_first=match_by_first,
+            upsertable=upsertable,
+        )
         self.__build_query()
 
     def __str__(self) -> str:
-        upsertable = c.from_rf_to_raypy(self.upsertable_ptr)
-        upsert_to = api.read_symbol(self.upsert_to_ptr)
-        return f"UpsertQuery(to: {upsert_to}) with entries: \n {upsertable}"
+        upsertable = c.convert_raw_rayobject_to_raypy_type(self.upsertable_ptr)
+        upsert_to = c.convert_raw_rayobject_to_raypy_type(self.upsert_to_ptr)
+        return f"UpsertQuery(to: \n {str(upsert_to)} \n) with entries: \n {str(upsertable)} \n"
 
     def __repr__(self) -> str:
         return self.__str__()

@@ -17,4 +17,4 @@ def select(q: t.SelectQuery) -> t.Table:
     if result_type != r.TYPE_TABLE:
         raise ValueError(f"Expected result of type Table (98), got {result_type}")
 
-    return t.Table(ray_obj=result_ptr)
+    return t.Table(ptr=result_ptr)

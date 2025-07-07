@@ -107,3 +107,8 @@ def test_table():
 
     assert t.columns() == comparable_vector
     assert t.values() == c.List(values)
+
+
+def test_string():
+    s = c.String("William")
+    assert s.value == "William"

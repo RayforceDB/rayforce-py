@@ -63,11 +63,25 @@ class KDBConnection:
         self.disposed_at = None
         self.is_closed = False
 
+    def __execute_kdb_query(self, query: str) -> r.RayObject:
+        # obj = types.List([_fn_send, self.ptr, query]).ptr
+        obj = api.init_list()
+        api.push_obj(obj, _fn_send)
+        api.push_obj(obj, self.ptr)
+        api.push_obj(obj, api.init_string(query))
+        return api.eval_obj(obj)
+
+    def __close_kdb_connection(self) -> r.RayObject:
+        obj = api.init_list()
+        api.push_obj(obj, _fn_hclose)
+        api.push_obj(obj, self.ptr)
+        api.eval_obj(obj)
+
     def execute(self, query: str) -> r.RayObject:
         if self.is_closed:
             raise ConnectionAlreadyClosed()
 
-        result = api.execute_kdb_query(_fn_send, self.ptr, query)
+        result = self.__execute_kdb_query(query=query)
         if result.get_obj_type() == r.TYPE_ERR:
             error_message = api.get_error_message(result)
             if error_message and error_message.startswith("'ipc_send"):
@@ -75,10 +89,10 @@ class KDBConnection:
 
             raise ValueError(f"Failed to execute statement: {error_message}")
 
-        return types.from_rf_to_raypy(result, return_raw=True)
+        return types.convert_raw_rayobject_to_raypy_type(result)
 
     def close(self) -> None:
-        api.close_kdb_connection(_fn_hclose, self.ptr)
+        self.__close_kdb_connection()
         self.is_closed = True
         self.disposed_at = datetime.now()
 
@@ -100,16 +114,21 @@ class KDBEngine:
     def __init__(self, host: str, port: int | None = None) -> None:
         self.url = f"{host}:{port}" if port is not None else host
 
+    def __open_kdb_connection(self) -> r.RayObject:
+        host = api.init_string(self.url)
+        obj = api.init_list()
+        api.push_obj(obj, _fn_hopen)
+        api.push_obj(obj, host)
+        return api.eval_obj(obj)
+
     def acquire(self) -> KDBConnection:
-        conn = api.open_kdb_connection(_fn_hopen, self.url)
+        conn = self.__open_kdb_connection()
         if conn.get_obj_type() == r.TYPE_ERR:
             raise ValueError(
                 f"Error when establishing connection: {api.get_error_message(conn)}"
             )
 
-        conn = KDBConnection(
-            engine=self, conn=api.open_kdb_connection(_fn_hopen, self.url)
-        )
+        conn = KDBConnection(engine=self, conn=self.__open_kdb_connection())
         self.pool[id(conn)] = conn
         return conn
 

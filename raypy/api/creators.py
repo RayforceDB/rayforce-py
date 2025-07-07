@@ -92,3 +92,8 @@ def init_table(columns: r.RayObject, values: r.RayObject) -> r.RayObject:
 @c_api_exception_handler
 def init_list() -> r.RayObject:
     return r.init_list()
+
+
+@c_api_exception_handler
+def init_string(value: t.Any) -> r.RayObject:
+    return r.init_string(value)
