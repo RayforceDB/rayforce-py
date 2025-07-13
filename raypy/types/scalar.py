@@ -26,7 +26,7 @@ class __RaypyScalar:
     ) -> None:
         if value is None and ptr is None:
             raise ValueError(
-                f"{self.__name__} class requires at least one initialization argument."
+                f"{self.__class__.__name__} class requires at least one initialization argument."
             )
 
         if self.type_code is None:
@@ -38,7 +38,7 @@ class __RaypyScalar:
                 or (type_code := ptr.get_obj_type()) != self.type_code
             ):
                 raise ValueError(
-                    f"Expected RayObject of type {self.type_code} for {self.__name__}, got {type_code}",
+                    f"Expected RayObject of type {self.type_code} for {self.__class__.__name__}, got {type_code}",
                 )
 
             self.ptr = ptr
@@ -419,7 +419,7 @@ class U8(__RaypyScalar):
         super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            if value < 0 or value > 255:
+            if value is not None and (value < 0 or value > 255):
                 raise ValueError("Unsigned value is out of range (0-255)")
 
             self.ptr = api.init_u8(value)

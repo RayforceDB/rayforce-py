@@ -2,7 +2,7 @@ from .scalar import *
 from .container import *
 from .primitive import *
 from .queries import *
-from ._lambda import *
+from .llambda import *
 
 __all__ = [
     # Scalars

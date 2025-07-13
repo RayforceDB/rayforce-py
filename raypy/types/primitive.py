@@ -45,15 +45,15 @@ class Operation(enum.StrEnum):
 
     @property
     def is_binary(self) -> bool:
-        return self.value.get_obj_type() == r.TYPE_BINARY
+        return self.primitive.get_obj_type() == r.TYPE_BINARY
 
     @property
     def is_unary(self) -> bool:
-        return self.value.get_obj_type() == r.TYPE_UNARY
+        return self.primitive.get_obj_type() == r.TYPE_UNARY
 
     @property
     def is_vary(self) -> bool:
-        return self.value.get_obj_type() == r.TYPE_VARY
+        return self.primitive.get_obj_type() == r.TYPE_VARY
 
     @staticmethod
     def from_ptr(obj: r.RayObject) -> "Operation":

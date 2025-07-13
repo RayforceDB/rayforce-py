@@ -49,6 +49,8 @@ class SelectQuery:
     Query to perform select operation.
     """
 
+    ptr: r.RayObject
+
     def __validate(
         self,
         attributes: dict[str, str | Expression],
@@ -150,11 +152,13 @@ class UpdateQuery:
     Query to perform update operation
     """
 
+    ptr: r.RayObject
+
     def __validate(
         self,
         update_from: str | SelectQuery | Expression | c.Table,
         attributes: dict[str, str | Expression],
-        where: Expression = None,
+        where: Expression | None = None,
     ) -> None:
         self.attr_keys = attributes.keys()
         self.attr_values = attributes.values()
@@ -227,7 +231,7 @@ class UpdateQuery:
         self,
         update_from: str | c.Table,
         attributes: dict[str, str | Expression],
-        where: Expression = None,
+        where: Expression | None = None,
     ) -> None:
         self.__validate(update_from=update_from, attributes=attributes, where=where)
         self.__build_query()
@@ -244,10 +248,12 @@ class InsertQuery:
     Query to perform insert operation
     """
 
+    ptr: r.RayObject
+
     def __validate(
         self,
         insert_to: str | c.Table,
-        insertable: list[Any],
+        insertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
     ) -> None:
         if not insert_to:
             raise ValueError("Attribute insert_to is required.")
@@ -290,6 +296,8 @@ class UpsertQuery:
     Query to perform upsert operation
     """
 
+    ptr: r.RayObject
+
     def __validate(
         self,
         upsert_to: str | c.Table,
@@ -314,7 +322,7 @@ class UpsertQuery:
         self.match_ptr = api.init_i64(self.match_by_first)
 
         i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
-        for idx, key in enumerate(self.upsertable.keys()):
+        for idx, key in enumerate(self.upsertable.keys()):  # type: ignore
             api.insert_obj(
                 insert_to=i_keys,
                 idx=idx,
@@ -322,7 +330,7 @@ class UpsertQuery:
             )
 
         i_values = api.init_list()
-        for i in self.upsertable.values():
+        for i in self.upsertable.values():  # type: ignore
             _l = api.init_list()
             for value in i:
                 api.push_obj(
@@ -344,7 +352,7 @@ class UpsertQuery:
         self,
         upsert_to: str | c.Table,
         match_by_first: int,
-        upsertable: dict[str, list[Any]],
+        upsertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
     ) -> None:
         self.__validate(
             upsert_to=upsert_to,

@@ -7,6 +7,7 @@ _rayforce.c*.so
 _rayforce.so
 .pytest_cache
 .ruff_cache
+.mypy_cache
 tmp/
 .DS_Store
 rayforce.so

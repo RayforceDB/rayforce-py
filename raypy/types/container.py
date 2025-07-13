@@ -28,11 +28,11 @@ class __RaypyContainer:
     ) -> None:
         if value is None and ptr is None:
             raise ValueError(
-                f"{self.__name__} class requires at least one initialization argument."
+                f"{self.__class__.__name__} class requires at least one initialization argument."
             )
 
         if self.type_code is None:
-            raise AttributeError(f"{self.__name__} type code is not set")
+            raise AttributeError(f"{self.__class__.__name__} type code is not set")
 
         if ptr is not None:
             if not isinstance(ptr, r.RayObject):
@@ -120,6 +120,9 @@ class Vector:
             self.type_code = ptr.get_obj_type()
             return
 
+        if type_code is None:
+            raise ValueError("Vector type code can not be None")
+
         self.type_code = -type_code
 
         self.ptr = api.init_vector(type_code=self.type_code, length=length)
@@ -203,21 +206,14 @@ class String(Vector):
             raise ValueError(f"Expected String RayObject, got {_type}")
 
         if value is not None:
-            super().__init__(type_code=self.type_code, length=len(value), items=value)
+            super().__init__(
+                type_code=self.type_code, length=len(value), items=[i for i in value]
+            )
         else:
             super().__init__(ptr=ptr)
 
-        # if not getattr(self, "ptr", None):
-        #     self.ptr = api.init_vector(type_code=self.type_code, length=len(value))
-        #     for idx, ch in enumerate(value):
-        #         api.insert_obj(
-        #             insert_to=self.ptr,
-        #             idx=idx,
-        #             ptr=from_python_type_to_raw_rayobject(ch),
-        #         )
-
     @property
-    def value(self) -> str:
+    def value(self) -> str:  # type: ignore
         return "".join([i.value for i in super().value])
 
     def __str__(self) -> str:
@@ -251,7 +247,7 @@ class List(__RaypyContainer):
         if not getattr(self, "ptr", None):
             self.ptr = api.init_list()
 
-            for item in items:
+            for item in items:  # type: ignore
                 self.append(item)
 
     @property
@@ -316,8 +312,8 @@ class Dict(__RaypyContainer):
         super().__init__(value=value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            _keys = value.keys()
-            _values = value.values()
+            _keys = value.keys()  # type: ignore
+            _values = value.values()  # type: ignore
 
             dict_keys = Vector(type_code=scalar.Symbol.type_code, length=len(_keys))
             for idx, key in enumerate(_keys):

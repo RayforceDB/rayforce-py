@@ -60,7 +60,7 @@ class KDBConnection:
         self.engine = engine
         self.ptr = conn
         self.established_at = datetime.now()
-        self.disposed_at = None
+        self.disposed_at: datetime | None = None
         self.is_closed = False
 
     def __execute_kdb_query(self, query: str) -> r.RayObject:
@@ -104,7 +104,7 @@ class KDBConnection:
 
     def __repr__(self) -> str:
         if self.is_closed:
-            return f"KDBConnection(id:{id(self)}) - disposed at {self.disposed_at.isoformat()}"
+            return f"KDBConnection(id:{id(self)}) - disposed at {self.disposed_at.isoformat() if self.disposed_at else 'Unknown'}"
         return f"KDBConnection(id:{id(self)}) - established at {self.established_at.isoformat()}"
 
 

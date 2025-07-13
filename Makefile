@@ -85,3 +85,4 @@ py:
 lint:
 	ruff format tests/ raypy/
 	ruff check raypy/ --fix
+	mypy raypy/

@@ -185,7 +185,7 @@ def test_upsert():
             "email": ["karim@lynxtrading.com"],
             "department": ["IT"],
             "age": [23],
-        }
+        },
     )
     query_inplace = q.UpsertQuery(
         upsert_to="people",
@@ -197,7 +197,7 @@ def test_upsert():
             "email": ["karim@lynxtrading.com"],
             "department": ["IT"],
             "age": [23],
-        }
+        },
     )
 
     result_by_ref = upsert(query_by_ref)
