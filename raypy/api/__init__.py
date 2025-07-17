@@ -52,6 +52,7 @@ from raypy.api.helpers import (
     eval_str,
 )
 from raypy.api.queries import select, update, upsert, insert
+from raypy.api.ipc import hclose, hopen, write
 
 
 __all__ = [
@@ -68,7 +69,7 @@ __all__ = [
     "init_timestamp",
     "init_u8",
     "init_string",
-    # COntainer creators
+    # Container creators
     "init_dict",
     "init_guid",
     "init_table",
@@ -112,4 +113,8 @@ __all__ = [
     "update",
     "upsert",
     "insert",
+    # IO
+    "hopen",
+    "hclose",
+    "write",
 ]

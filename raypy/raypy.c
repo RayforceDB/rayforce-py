@@ -2367,6 +2367,159 @@ static PyObject *raypy_lambda_get_body(PyObject *self, PyObject *args)
 // END LAMBDA OPERATIONS
 // ---------------------------------------------------------------------------
 
+// IO OPERATIONS
+// ---------------------------------------------------------------------------
+static PyObject *raypy_hopen(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *path_obj;
+    RayObject *timeout_obj = NULL;
+
+    if (!PyArg_ParseTuple(args, "O!|O!", &RayObjectType, &path_obj, &RayObjectType, &timeout_obj))
+    {
+        return NULL;
+    }
+
+    if (path_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Path object cannot be NULL");
+        return NULL;
+    }
+
+    if (path_obj->obj->type != TYPE_C8)
+    {
+        PyErr_SetString(PyExc_TypeError, "Path must be a string (TYPE_C8)");
+        return NULL;
+    }
+
+    // Prepare arguments array for ray_hopen
+    obj_p ray_args[2];
+    i64_t arg_count = 1;
+    
+    ray_args[0] = path_obj->obj;
+    
+    if (timeout_obj != NULL)
+    {
+        if (timeout_obj->obj == NULL)
+        {
+            PyErr_SetString(PyExc_ValueError, "Timeout object cannot be NULL");
+            return NULL;
+        }
+        
+        if (timeout_obj->obj->type != -TYPE_I64)
+        {
+            PyErr_SetString(PyExc_TypeError, "Timeout must be an i64");
+            return NULL;
+        }
+        
+        ray_args[1] = timeout_obj->obj;
+        arg_count = 2;
+    }
+
+    // Allocate memory for result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_hopen(ray_args, arg_count);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to open handle");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+
+static PyObject *raypy_hclose(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *handle_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &handle_obj))
+    {
+        return NULL;
+    }
+
+    if (handle_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Handle object cannot be NULL");
+        return NULL;
+    }
+
+    if (handle_obj->obj->type != -TYPE_I32 && handle_obj->obj->type != -TYPE_I64)
+    {
+        PyErr_SetString(PyExc_TypeError, "Handle must be an i32 (file descriptor) or i64 (socket descriptor)");
+        return NULL;
+    }
+
+    // Allocate memory for result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_hclose(handle_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to close handle");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+
+static PyObject *raypy_write(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *handle_obj;
+    RayObject *data_obj;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &handle_obj, &RayObjectType, &data_obj))
+    {
+        return NULL;
+    }
+
+    if (handle_obj->obj == NULL || data_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "Handle and data objects cannot be NULL");
+        return NULL;
+    }
+
+    if (handle_obj->obj->type != -TYPE_I32 && handle_obj->obj->type != -TYPE_I64)
+    {
+        PyErr_SetString(PyExc_TypeError, "Handle must be an i32 (file descriptor) or i64 (socket descriptor)");
+        return NULL;
+    }
+
+    // Allocate memory for result
+    RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result object");
+        return NULL;
+    }
+
+    result->obj = ray_write(handle_obj->obj, data_obj->obj);
+    if (result->obj == NULL)
+    {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to write data");
+        return NULL;
+    }
+
+    return (PyObject *)result;
+}
+// END IO OPERATIONS
+// ---------------------------------------------------------------------------
+
 // RayObject TYPE DEFINITION
 // ---------------------------------------------------------------------------
 static PyMethodDef RayObject_methods[] = {
@@ -2810,6 +2963,11 @@ static PyMethodDef module_methods[] = {
     {"update", raypy_update, METH_VARARGS, "Perform UPDATE query"},
     {"insert", raypy_insert, METH_VARARGS, "Perform INSERT query"},
     {"upsert", raypy_upsert, METH_VARARGS, "Perform UPSERT query"},
+
+    // IO operations
+    {"hopen", raypy_hopen, METH_VARARGS, "Open file or socket handle"},
+    {"hclose", raypy_hclose, METH_VARARGS, "Close file or socket handle"},
+    {"write", raypy_write, METH_VARARGS, "Write data to file or socket"},
     
     {NULL, NULL, 0, NULL}
 };

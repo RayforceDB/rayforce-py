@@ -64,7 +64,6 @@ class KDBConnection:
         self.is_closed = False
 
     def __execute_kdb_query(self, query: str) -> r.RayObject:
-        # obj = types.List([_fn_send, self.ptr, query]).ptr
         obj = api.init_list()
         api.push_obj(obj, _fn_send)
         api.push_obj(obj, self.ptr)
@@ -122,13 +121,13 @@ class KDBEngine:
         return api.eval_obj(obj)
 
     def acquire(self) -> KDBConnection:
-        conn = self.__open_kdb_connection()
-        if conn.get_obj_type() == r.TYPE_ERR:
+        _conn = self.__open_kdb_connection()
+        if _conn.get_obj_type() == r.TYPE_ERR:
             raise ValueError(
-                f"Error when establishing connection: {api.get_error_message(conn)}"
+                f"Error when establishing connection: {api.get_error_message(_conn)}"
             )
 
-        conn = KDBConnection(engine=self, conn=self.__open_kdb_connection())
+        conn = KDBConnection(engine=self, conn=_conn)
         self.pool[id(conn)] = conn
         return conn
 

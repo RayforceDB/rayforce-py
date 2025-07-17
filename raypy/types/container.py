@@ -207,7 +207,9 @@ class String(Vector):
 
         if value is not None:
             super().__init__(
-                type_code=self.type_code, length=len(value), items=[i for i in value]
+                type_code=self.type_code,
+                length=len(value),
+                items=[api.init_c8(i) for i in value],
             )
         else:
             super().__init__(ptr=ptr)
@@ -499,7 +501,7 @@ def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
             return Vector(type_code=ptr_type, ptr=ptr)
         return class_type(ptr=ptr)
 
-    if ptr_type == 102:
+    if ptr_type in (101, 102):
         return primitive.Operation.from_ptr(ptr)
 
     if ptr_type == r.TYPE_NULL:
@@ -508,7 +510,9 @@ def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
     raise ValueError(f"RayObject type of {ptr_type} is not supported")
 
 
-def from_python_type_to_raw_rayobject(value: t.Any) -> r.RayObject:
+def from_python_type_to_raw_rayobject(
+    value: t.Any, is_ipc: bool = False
+) -> r.RayObject:
     if isinstance(value, r.RayObject):
         return value
     elif hasattr(value, "ptr"):
