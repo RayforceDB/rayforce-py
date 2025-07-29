@@ -1,6 +1,6 @@
-# :material-database: Welcome to RayPy
+# :material-database: Welcome to raypy
 
-The RayPy is a Python interface to the RayforceDB columnar database.
+The raypy is a Python interface to the RayforceDB columnar database.
 
 <div class="grid cards" markdown>
 

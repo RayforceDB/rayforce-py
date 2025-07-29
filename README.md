@@ -1,10 +1,10 @@
-# RayPy
+# raypy
 
 Python library for RayforceDB - a high-performance, column-oriented analytical database.
 
 ## Overview
 
-RayPy provides Python bindings for RayforceDB, allowing you to interact with RayforceDB's powerful data processing capabilities from Python. These bindings are generated using SWIG and provide a direct interface to the RayforceDB C library.
+raypy provides Python bindings for RayforceDB, allowing you to interact with RayforceDB's powerful data processing capabilities from Python. These bindings are generated using SWIG and provide a direct interface to the RayforceDB C library.
 
 ## Building from Source
 
@@ -46,7 +46,7 @@ The final wheel package will be available in the `dist/` directory.
 
 ## Usage
 
-Basic example of using RayPy:
+Basic example of using raypy:
 
 ```python
 import rayforce

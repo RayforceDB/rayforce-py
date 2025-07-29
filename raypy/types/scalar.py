@@ -104,12 +104,25 @@ class C8(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
+        try:
+            _value = str(value)
+        except ValueError as e:
+            raise ValueError(f"{value} can not be represented as C8") from e
+
+        if len(_value) != 1:
+            raise ValueError(f"{value} can not be represented as C8")
+
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_c8(value)
+            self.ptr = api.init_c8(_value)
 
     @property
     def value(self) -> str:
         return api.read_c8(self.ptr)
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, C8):
+            return self.value == eq.value
+        return False
 
 
 class Date(__RaypyScalar):
@@ -166,8 +179,13 @@ class F64(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
+        try:
+            _value = float(value)
+        except ValueError as e:
+            raise ValueError(f"{value} can not be represented as F64") from e
+
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_f64(value)
+            self.ptr = api.init_f64(_value)
 
     @property
     def value(self) -> float:
@@ -196,8 +214,16 @@ class I16(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
+        try:
+            _value = int(value)
+        except ValueError as e:
+            raise ValueError(f"{value} can not be represented as I16") from e
+
+        if _value < -32767 or _value > 32767:
+            raise ValueError(f"I16 is out of range (-32767 to 32767)")
+
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_i16(value)
+            self.ptr = api.init_i16(_value)
 
     @property
     def value(self) -> int:
@@ -226,8 +252,16 @@ class I32(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
+        try:
+            _value = int(value)
+        except ValueError as e:
+            raise ValueError(f"{value} can not be represented as I32") from e
+
+        if _value < -2147483648 or _value > 2147483647:
+            raise ValueError(f"I32 is out of range (-2147483648 to 2147483647)")
+
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_i32(value)
+            self.ptr = api.init_i32(_value)
 
     @property
     def value(self) -> int:
@@ -256,8 +290,16 @@ class I64(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
+        try:
+            _value = int(value)
+        except ValueError as e:
+            raise ValueError(f"{value} can not be represented as I64") from e
+
+        if _value < -9223372036854775808 or _value > 9223372036854775808:
+            raise ValueError(f"I64 is out of range")
+
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_i64(value)
+            self.ptr = api.init_i64(_value)
 
     @property
     def value(self) -> int:
@@ -286,8 +328,13 @@ class Symbol(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
+        try:
+            _value = str(value)
+        except ValueError as e:
+            raise ValueError(f"{value} can not be represented as Symbol") from e
+
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_symbol(value)
+            self.ptr = api.init_symbol(_value)
 
     @property
     def value(self) -> str:
@@ -360,6 +407,11 @@ class Time(__RaypyScalar):
 
         return dt.time(hours, minutes, seconds, milliseconds * 1000)
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, Time):
+            return self.value == eq.value
+        return False
+
 
 class Timestamp(__RaypyScalar):
     """
@@ -400,6 +452,10 @@ class Timestamp(__RaypyScalar):
         microseconds = (ms_since_epoch % 1000) * 1000
         return dt.datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
 
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, Timestamp):
+            return self.value == eq.value
+        return False
 
 class U8(__RaypyScalar):
     """
@@ -427,6 +483,11 @@ class U8(__RaypyScalar):
     @property
     def value(self) -> int:
         return api.read_u8(self.ptr)
+
+    def __eq__(self, eq: t.Any) -> bool:
+        if isinstance(eq, U8):
+            return self.value == eq.value
+        return False
 
 
 type ScalarType = (

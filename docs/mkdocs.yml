@@ -1,4 +1,4 @@
-site_name: RayPy
+site_name: raypy
 repo_url: https://github.com/singaraiona/raypy
 repo_name: GitHub
 
@@ -52,7 +52,7 @@ extra:
       - icon: fontawesome/brands/github 
         link: https://github.com/singaraiona/raypy
 
-copyright: Copyright &copy; 2025 RayPy
+copyright: Copyright &copy; 2025 raypy
 
 plugins:
   - offline
@@ -109,5 +109,24 @@ nav:
   - Documentation:
     - Getting Started: 
       - Install: content/intro.md
+    - Types:
+      - Overview: content/types/index.md
+      - Scalar Types:
+        - Integers (I16, I32, I64): content/types/integers.md
+        - Float (F64): content/types/float.md
+        - Boolean (B8): content/types/b8.md
+        - Character (C8): content/types/c8.md
+        - Symbol: content/types/symbol.md
+        - Unsigned Integer (U8): content/types/u8.md
+        - Date: content/types/date.md
+        - Time: content/types/time.md
+        - Timestamp: content/types/timestamp.md
+      - Container Types:
+        - Vector: content/types/vector.md
+        - List: content/types/list.md
+        - String: content/types/string.md
+        - Dict: content/types/dict.md
+        - Table: content/types/table.md
+        - GUID: content/types/guid.md
   - FAQ: content/faq.md
   - License: content/license.md

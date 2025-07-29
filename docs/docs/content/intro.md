@@ -1,6 +1,6 @@
-# Introduction to RayPy
+# Introduction to raypy
 
-RayPy is a powerful Python library for ray tracing and optical simulations. This guide will help you understand the basics and get started with RayPy.
+raypy is a powerful Python library for ray tracing and optical simulations. This guide will help you understand the basics and get started with raypy.
 
 ## Installation
 
@@ -10,7 +10,7 @@ pip install raypy
 
 ## Basic Usage
 
-Here's a simple example of how to use RayPy:
+Here's a simple example of how to use raypy:
 
 ```python
 import raypy
