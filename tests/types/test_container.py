@@ -1,13 +1,5 @@
-import uuid
 from raypy.types import scalar as s
 from raypy.types import container as c
-
-
-def test_guid():
-    u_id = uuid.uuid4()
-    assert c.GUID(u_id).value == u_id
-    assert c.GUID(u_id.bytes).value == u_id
-    assert c.GUID(str(u_id)).value == u_id
 
 
 def test_vector():

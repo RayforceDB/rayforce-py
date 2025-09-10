@@ -1,8 +1,14 @@
+import uuid
 import datetime as dt
 import pytest
 
 from raypy.api import exceptions
 from raypy.types import scalar as s
+
+
+def test_guid():
+    u_id = uuid.uuid4()
+    assert s.GUID(str(u_id)).value == str(u_id)
 
 
 @pytest.mark.parametrize(
@@ -24,7 +30,7 @@ def test_c8():
     assert s.C8("1").value == "1"
     assert s.C8("A").value == "A"
 
-    with pytest.raises(exceptions.CAPIError):
+    with pytest.raises(ValueError):
         s.C8("123")
 
 
@@ -42,7 +48,7 @@ def test_f64():
     assert s.F64(123).value == 123.0
     assert s.F64(123.0).value == 123.0
 
-    with pytest.raises(exceptions.CAPIError):
+    with pytest.raises(ValueError):
         s.C8("123")
 
 
@@ -51,7 +57,7 @@ def test_integers():
     assert s.I32(123).value == 123
     assert s.I64(123).value == 123
 
-    with pytest.raises(exceptions.CAPIError):
+    with pytest.raises(ValueError):
         s.C8("wrong-format")
 
 

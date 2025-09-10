@@ -72,13 +72,14 @@ runtime:
 
 py:
 	ipython -i -c "\
+	import uuid; \
 	from raypy import types as t; \
 	from raypy import _rayforce as r; \
 	from raypy import queries as q; \
 	from raypy import api; \
 	from raypy import misc; \
-	values = [['001', '002', '003', '004', '005'], ['alice', 'bob', 'charlie', 'dana', 'eli'], ['johnson', 'smith', 'kim', 'williams', 'nguyen'], ['alice.johnson@example.com', 'bob.smith@example.com', 'charlie.kim@example.com', 'dana.williams@example.com', 'eli.nguyen@example.com'], ['engineering', 'marketing', 'finance', 'hr', 'design'], [29, 34, 41, 38, 45]]; \
-	columns = ['id', 'first_name', 'last_name', 'email', 'department', 'age']; \
+	values = [['001', '002', '003', '004', '005'], ['alice', 'bob', 'charlie', 'dana', 'eli'], ['johnson', 'smith', 'kim', 'williams', 'nguyen'], ['alice.johnson@example.com', 'bob.smith@example.com', 'charlie.kim@example.com', 'dana.williams@example.com', 'eli.nguyen@example.com'], ['engineering', 'marketing', 'finance', 'hr', 'design'], [29, 34, 41, 38, 45], [uuid.uuid4() for _ in range(5)]]; \
+	columns = ['id', 'first_name', 'last_name', 'email', 'department', 'age', 'uuid']; \
 	table = t.Table(columns=columns, values=values); \
 	misc.set_table_name('people', table)"
 

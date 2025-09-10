@@ -55,44 +55,6 @@ class __RaypyContainer:
         return self.__str__()
 
 
-class GUID(__RaypyContainer):
-    """
-    Rayforce GUID type (Globally unique identifier)
-
-    Type code: 11
-    """
-
-    type_code = r.TYPE_GUID
-
-    def __init__(
-        self,
-        value: str | uuid.UUID | bytes | bytearray | None = None,
-        *,
-        ptr: r.RayObject | None = None,
-    ) -> None:
-        super().__init__(value, ptr=ptr)
-
-        if not getattr(self, "ptr", None):
-            if isinstance(value, uuid.UUID):
-                guid_bytes = value.bytes
-            elif isinstance(value, str):
-                try:
-                    guid_bytes = uuid.UUID(value).bytes
-                except ValueError as e:
-                    raise ValueError("Invalid GUID string format") from e
-            elif isinstance(value, (bytes, bytearray)):
-                if len(value) != 16:
-                    raise ValueError("GUID must be 16 bytes")
-                guid_bytes = bytes(value)
-
-            self.ptr = api.init_guid(guid_bytes)
-
-    @property
-    def value(self) -> uuid.UUID:
-        guid_bytes = api.read_guid(self.ptr)
-        return uuid.UUID(bytes=guid_bytes)
-
-
 class Vector:
     """
     Rayforce vector type - collection of elements of scalar type.
@@ -448,9 +410,20 @@ class Table:
             )
 
         lines = [top, format_row(columns), header_sep]
-        for row in rows:
-            lines.append(format_row(row))
-        lines.append(bottom)
+        if len(rows) > 20:
+            for row in rows[:10]:
+                lines.append(format_row(row))
+
+            lines.append(format_row(["..." for _ in range(len(columns))]))
+
+            for row in rows[-10:]:
+                lines.append(format_row(row))
+
+            lines.append(bottom)
+        else:
+            for row in rows:
+                lines.append(format_row(row))
+                lines.append(bottom)
 
         return "\n".join(lines)
 
@@ -485,10 +458,11 @@ RAY_TYPE_TO_CLASS_MAPPING = {
     -r.TYPE_DATE: scalar.Date,
     r.TYPE_DATE: scalar.Date,
     -r.TYPE_U8: scalar.U8,
+    -r.TYPE_GUID: scalar.GUID,
+    r.TYPE_GUID: scalar.GUID,
     r.TYPE_U8: scalar.U8,
     r.TYPE_LIST: List,
     r.TYPE_DICT: Dict,
-    r.TYPE_GUID: GUID,
     r.TYPE_TABLE: Table,
 }
 
@@ -534,7 +508,7 @@ def from_python_type_to_raw_rayobject(
     elif isinstance(value, dt.datetime):
         return scalar.Timestamp(value).ptr
     elif isinstance(value, uuid.UUID):
-        return GUID(value).ptr
+        return scalar.GUID(value).ptr
     elif isinstance(value, dict):
         return Dict(value).ptr
     elif isinstance(value, list):

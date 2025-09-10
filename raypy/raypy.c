@@ -193,16 +193,14 @@ static PyObject *raypy_init_string(PyObject *self, PyObject *args)
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
     {
-        // String is vector of TYPE_C8, hence - create a vector with the right length
-        result->obj = vector(TYPE_C8, len);
+        // Create string object using rayforce function
+        result->obj = string_from_str(value, len);
         if (result->obj == NULL)
         {
             Py_DECREF(result);
             PyErr_SetString(PyExc_MemoryError, "Failed to create string");
             return NULL;
         }
-
-        memcpy(AS_C8(result->obj), value, len);
     }
     return (PyObject *)result;
 }
@@ -335,20 +333,18 @@ static PyObject *raypy_init_timestamp(PyObject *self, PyObject *args)
 static PyObject *raypy_init_guid(PyObject *self, PyObject *args)
 {
     (void)self;
-    // GUID is an array of 16 bytes
-    Py_buffer buffer;
+    const char *guid_str;
+    Py_ssize_t str_len;
 
-    if (!PyArg_ParseTuple(args, "y*", &buffer))
+    if (!PyArg_ParseTuple(args, "s#", &guid_str, &str_len))
     {
         return NULL;
     }
 
-    // Check if the buffer size is 16 bytes (standard GUID size)
-    if (buffer.len != 16)
+    // Check if the string length is 36 characters (standard GUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    if (str_len != 36)
     {
-        PyBuffer_Release(&buffer);
-
-        PyErr_SetString(PyExc_ValueError, "GUID must be exactly 16 bytes");
+        PyErr_SetString(PyExc_ValueError, "GUID string must be exactly 36 characters (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)");
         return NULL;
     }
 
@@ -356,23 +352,25 @@ static PyObject *raypy_init_guid(PyObject *self, PyObject *args)
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
     {
-        // Create a GUID object
-        result->obj = vector(TYPE_GUID, 16);
+        // Create a GUID object (single GUID atom) - same pattern as rayforce guid() function
+        result->obj = vector(TYPE_I64, 2);
         if (result->obj == NULL)
         {
             Py_DECREF(result);
-            PyBuffer_Release(&buffer);
-
             PyErr_SetString(PyExc_MemoryError, "Failed to create GUID");
             return NULL;
         }
+        result->obj->type = -TYPE_GUID;
 
-        // Copy the GUID value
-        memcpy(AS_U8(result->obj), buffer.buf, 16);
+        // Convert string to GUID using rayforce function
+        if (guid_from_str(guid_str, str_len, *AS_GUID(result->obj)) != 0)
+        {
+            drop_obj(result->obj);
+            Py_DECREF(result);
+            PyErr_SetString(PyExc_ValueError, "Invalid GUID format");
+            return NULL;
+        }
     }
-
-    // Release the buffer
-    PyBuffer_Release(&buffer);
 
     return (PyObject *)result;
 }
@@ -792,7 +790,7 @@ static PyObject *raypy_read_guid(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_GUID)
+    if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_GUID)
     {
         PyErr_SetString(PyExc_TypeError, "Object is not a GUID type");
         return NULL;
@@ -873,7 +871,6 @@ static PyObject *raypy_is_vector(PyObject *self, PyObject *args)
     }
 
     if (ray_obj->obj->type > 0 &&
-        ray_obj->obj->type != TYPE_GUID &&
         ray_obj->obj->type != TYPE_DICT &&
         ray_obj->obj->type != TYPE_TABLE &&
         ray_obj->obj->type != TYPE_LAMBDA &&

@@ -1,3 +1,4 @@
+import uuid
 import datetime as dt
 import typing as t
 
@@ -104,15 +105,15 @@ class C8(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
-        try:
-            _value = str(value)
-        except ValueError as e:
-            raise ValueError(f"{value} can not be represented as C8") from e
-
-        if len(_value) != 1:
-            raise ValueError(f"{value} can not be represented as C8")
-
         if not getattr(self, "ptr", None):
+            try:
+                _value = str(value)
+            except ValueError as e:
+                raise ValueError(f"{value} can not be represented as C8") from e
+            print(_value)
+            if len(_value) != 1:
+                raise ValueError(f"{value} can not be represented as C8")
+
             self.ptr = api.init_c8(_value)
 
     @property
@@ -179,12 +180,12 @@ class F64(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
-        try:
-            _value = float(value)
-        except ValueError as e:
-            raise ValueError(f"{value} can not be represented as F64") from e
+        if not getattr(self, "ptr", None) and value is not None:
+            try:
+                _value = float(value)
+            except ValueError as e:
+                raise ValueError(f"{value} can not be represented as F64") from e
 
-        if not getattr(self, "ptr", None):
             self.ptr = api.init_f64(_value)
 
     @property
@@ -214,15 +215,15 @@ class I16(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
-        try:
-            _value = int(value)
-        except ValueError as e:
-            raise ValueError(f"{value} can not be represented as I16") from e
+        if not getattr(self, "ptr", None) and value is not None:
+            try:
+                _value = int(value)
+            except ValueError as e:
+                raise ValueError(f"{value} can not be represented as I16") from e
 
-        if _value < -32767 or _value > 32767:
-            raise ValueError(f"I16 is out of range (-32767 to 32767)")
+            if _value < -32767 or _value > 32767:
+                raise ValueError("I16 is out of range (-32767 to 32767)")
 
-        if not getattr(self, "ptr", None):
             self.ptr = api.init_i16(_value)
 
     @property
@@ -252,15 +253,15 @@ class I32(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
-        try:
-            _value = int(value)
-        except ValueError as e:
-            raise ValueError(f"{value} can not be represented as I32") from e
+        if not getattr(self, "ptr", None) and value is not None:
+            try:
+                _value = int(value)
+            except ValueError as e:
+                raise ValueError(f"{value} can not be represented as I32") from e
 
-        if _value < -2147483648 or _value > 2147483647:
-            raise ValueError(f"I32 is out of range (-2147483648 to 2147483647)")
+            if _value < -2147483648 or _value > 2147483647:
+                raise ValueError("I32 is out of range (-2147483648 to 2147483647)")
 
-        if not getattr(self, "ptr", None):
             self.ptr = api.init_i32(_value)
 
     @property
@@ -290,15 +291,15 @@ class I64(__RaypyScalar):
     ) -> None:
         super().__init__(value, ptr=ptr)
 
-        try:
-            _value = int(value)
-        except ValueError as e:
-            raise ValueError(f"{value} can not be represented as I64") from e
+        if not getattr(self, "ptr", None) and value is not None:
+            try:
+                _value = int(value)
+            except ValueError as e:
+                raise ValueError(f"{value} can not be represented as I64") from e
 
-        if _value < -9223372036854775808 or _value > 9223372036854775808:
-            raise ValueError(f"I64 is out of range")
+            if _value < -9223372036854775808 or _value > 9223372036854775808:
+                raise ValueError("I64 is out of range")
 
-        if not getattr(self, "ptr", None):
             self.ptr = api.init_i64(_value)
 
     @property
@@ -309,6 +310,11 @@ class I64(__RaypyScalar):
         if isinstance(eq, (I64, I16, I32)):
             return self.value == eq.value
         return False
+
+    def __str__(self) -> str:
+        if self.value == -9223372036854775808:
+            return ""
+        return super().__str__()
 
 
 class Symbol(__RaypyScalar):
@@ -457,6 +463,7 @@ class Timestamp(__RaypyScalar):
             return self.value == eq.value
         return False
 
+
 class U8(__RaypyScalar):
     """
     Rayforce unsigned type.
@@ -490,8 +497,44 @@ class U8(__RaypyScalar):
         return False
 
 
+class GUID(__RaypyScalar):
+    """
+    Rayforce GUID type (Globally unique identifier)
+
+    Type code: -11
+    """
+
+    type_code = -r.TYPE_GUID
+
+    def __init__(
+        self,
+        value: str | uuid.UUID | bytes | bytearray | None = None,
+        *,
+        ptr: r.RayObject | None = None,
+    ) -> None:
+        super().__init__(value, ptr=ptr)
+
+        if not getattr(self, "ptr", None):
+            if isinstance(value, uuid.UUID):
+                guid = str(value)
+            elif isinstance(value, str):
+                guid = value
+            elif isinstance(value, (bytes, bytearray)):
+                guid = str(uuid.UUID(bytes=value))
+
+            self.ptr = api.init_guid(guid)
+
+    @property
+    def value(self) -> str:
+        guid_bytes = api.read_guid(self.ptr)
+        return str(uuid.UUID(bytes=guid_bytes))
+
+    def __str__(self) -> str:
+        return f"GUID({self.value})"
+
+
 type ScalarType = (
-    I16 | I32 | I64 | F64 | B8 | C8 | Date | Symbol | Time | Timestamp | U8
+    I16 | I32 | I64 | F64 | B8 | C8 | Date | Symbol | Time | Timestamp | U8 | GUID
 )
 
 __all__ = [
@@ -506,5 +549,6 @@ __all__ = [
     "Time",
     "Timestamp",
     "U8",
+    "GUID",
     "ScalarType",
 ]
