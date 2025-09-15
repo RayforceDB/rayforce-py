@@ -1,27 +1,27 @@
 # Introduction to raypy
 
-raypy is a powerful Python library for ray tracing and optical simulations. This guide will help you understand the basics and get started with raypy.
+Raypy is an interfacing library to RayforceDB which allows you to manipulate and execute with the Rayfall statements using Python language.
+
+The interaction with the Rayforce is happening via C API bus, which allows us to seamlessly operate with rayforce runtime with little-to-no practical overhead.
 
 ## Installation
 
+1. Clone the latest raypy library to your local machine
 ```bash
-pip install raypy
+git clone git@github.com:singaraiona/raypy.git
 ```
-
-## Basic Usage
-
-Here's a simple example of how to use raypy:
-
-```python
-import raypy
-
-# Your code here
+2. Drop into the lib and ensure make is installed
+```bash
+cd raypy
+apt-get install make  # Linux
+brew install make  # MacOS
 ```
-
-## Key Concepts
-
-1. Concept 1
-2. Concept 2
-3. Concept 3
-
-## Next Steps
+3. Execute make all command to build the library locally
+```bash
+make all
+```
+This will:
+    - clean the previous builds (also accessible with `make clean`)
+    - pull the latest rayforceDB repo and compile the binary from the latest master. __Subject to change once rayforce gets stable releases and versioning.__
+    - build the rayforce plugins required for the library (such as raykx, which is KDB IPC).
+    - move binaries arond so the library is able to find them.

@@ -2,14 +2,14 @@
 
 The `Date` type represents a calendar date (year, month, day) in raypy.
 
-- Dates are stored internally as days since the Unix epoch (1970-01-01)
+- Dates are stored internally as days since the Unix epoch (2001-01-01)
 - Does not contain time information
 
 ## Type Information
 
 | Type | Rayforce Object Type Code | Stored as |
 |------|---------------------------|-------|
-| `Date` | `-7` | Days since Unix epoch (1970-01-01) |
+| `Date` | `-7` | Days since (2001-01-01) |
 
 
 ### Creating Date Values
@@ -27,7 +27,7 @@ Date(2025-05-10)
 >>> t.Date("2025-05-10")
 Date(2025-05-10)
 
->>> t.Date(20218)  # Days since 1970-01-01
+>>> t.Date(20218)  # Days since 2001-01-01
 Date(2025-05-10)
 ```
 

@@ -87,15 +87,18 @@ class Vector:
 
         self.type_code = -type_code
 
-        self.ptr = api.init_vector(type_code=self.type_code, length=length)
-
         if items is not None:
+            self.ptr = api.init_vector(type_code=self.type_code, length=len(items))
             for idx, item in enumerate(items):
-                api.insert_obj(
-                    insert_to=self.ptr,
-                    idx=idx,
-                    ptr=from_python_type_to_raw_rayobject(item),
-                )
+                item_to_push = from_python_type_to_raw_rayobject(item)
+                if item_to_push.get_obj_type() != -self.type_code:
+                    raise ValueError(
+                        f"All vector values should have {-self.type_code} type"
+                    )
+
+                api.insert_obj(insert_to=self.ptr, idx=idx, ptr=item_to_push)
+        else:
+            self.ptr = api.init_vector(type_code=self.type_code, length=length)
 
     @property
     def value(self) -> tuple[t.Any]:
@@ -169,8 +172,7 @@ class String(Vector):
 
         if value is not None:
             super().__init__(
-                type_code=self.type_code,
-                length=len(value),
+                type_code=-self.type_code,
                 items=[api.init_c8(i) for i in value],
             )
         else:
@@ -225,16 +227,21 @@ class List(__RaypyContainer):
         return api.get_obj_length(self.ptr)
 
     def __getitem__(self, idx: int) -> t.Any:
-        if idx < 0 or idx >= len(self):
-            raise IndexError("List index out of range")
+        if idx < 0:
+            idx = len(self) + idx
 
-        return convert_raw_rayobject_to_raypy_type(
-            ptr=api.at_idx(get_from=self.ptr, idx=idx)
-        )
+        if not 0 <= idx < len(self):
+            raise IndexError("Vector index out of range")
+
+        item_raw = api.at_idx(self.ptr, idx)
+        return convert_raw_rayobject_to_raypy_type(item_raw)
 
     def __setitem__(self, idx: int, value: t.Any) -> None:
-        if idx < 0 or idx >= len(self):
-            raise IndexError("List index out of range")
+        if idx < 0:
+            idx = len(self) + idx
+
+        if not 0 <= idx < len(self):
+            raise IndexError("Vector index out of range")
 
         api.insert_obj(
             insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value)

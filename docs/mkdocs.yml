@@ -109,6 +109,11 @@ nav:
   - Documentation:
     - Getting Started: 
       - Install: content/intro.md
+      - Dev:
+        - Lint and type: content/lint.md
+        - Tests: content/tests.md
+    - Plugins:
+      - KDB: content/plugins/kdb.md
     - Types:
       - Overview: content/types/index.md
       - Scalar Types:
@@ -121,12 +126,11 @@ nav:
         - Date: content/types/date.md
         - Time: content/types/time.md
         - Timestamp: content/types/timestamp.md
+        - GUID: content/types/guid.md
       - Container Types:
         - Vector: content/types/vector.md
         - List: content/types/list.md
         - String: content/types/string.md
         - Dict: content/types/dict.md
         - Table: content/types/table.md
-        - GUID: content/types/guid.md
-  - FAQ: content/faq.md
   - License: content/license.md
