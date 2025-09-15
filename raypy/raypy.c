@@ -1267,6 +1267,34 @@ static PyObject *raypy_get_obj_length(PyObject *self, PyObject *args)
         return NULL;
     }
 }
+static PyObject *raypy_repr_table(PyObject *self, PyObject *args)
+{
+	(void)self;
+	RayObject *ray_obj;
+	int full = 1;
+
+	if (!PyArg_ParseTuple(args, "O!|p", &RayObjectType, &ray_obj, &full))
+	{
+		return NULL;
+	}
+
+	if (ray_obj->obj == NULL)
+	{
+		PyErr_SetString(PyExc_ValueError, "Object cannot be NULL");
+		return NULL;
+	}
+
+	obj_p item = obj_fmt(ray_obj->obj, (b8_t)full);
+	if (item == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Failed to format object");
+		return NULL;
+	}
+
+	PyObject *result = PyUnicode_FromStringAndSize(AS_C8(item), item->len);
+	drop_obj(item);
+	return result;
+}
 static PyObject *raypy_eval_str(PyObject *self, PyObject *args)
 {
     (void)self;
@@ -2915,6 +2943,7 @@ static PyMethodDef module_methods[] = {
     // Table operations
     {"table_keys", raypy_table_keys, METH_VARARGS, "Get table keys"},
     {"table_values", raypy_table_values, METH_VARARGS, "Get table values"},
+    {"repr_table", raypy_repr_table, METH_VARARGS, "Format table"},
 
     // Dictionary operations
     {"dict_length", raypy_dict_length, METH_VARARGS, "Get dictionary length"},

@@ -92,3 +92,8 @@ def get_dict_keys(ptr: r.RayObject) -> r.RayObject:
 @c_api_exception_handler
 def get_dict_values(ptr: r.RayObject) -> r.RayObject:
     return r.dict_values(ptr)
+
+
+@c_api_exception_handler
+def repr_table(ptr: r.RayObject) -> str:
+    return r.repr_table(ptr)

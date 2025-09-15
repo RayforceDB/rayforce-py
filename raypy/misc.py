@@ -31,5 +31,9 @@ def set_table_name(name: str, table: t.Table) -> None:
     api.binary_set(api.init_symbol(name), table.ptr)
 
 
+def set_var_name(name: str, var: t.Any) -> None:
+    api.binary_set(api.init_symbol(name), var.ptr)
+
+
 def set_lambda_name(name: str, _lambda: t.Lambda) -> None:  # type: ignore
     api.binary_set(api.init_symbol(name), _lambda.ptr)

@@ -87,7 +87,7 @@ class KDBConnection:
                 raise ConnectionAlreadyClosed()
 
             raise ValueError(f"Failed to execute statement: {error_message}")
-        print("Got result, converting")
+
         return types.convert_raw_rayobject_to_raypy_type(result)
 
     def close(self) -> None:

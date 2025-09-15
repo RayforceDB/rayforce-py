@@ -37,7 +37,7 @@ def test_c8():
 def test_date():
     d = dt.date(year=2025, month=5, day=10)
     assert s.Date(d).value == d
-    assert s.Date(20218).value == d
+    assert s.Date(9261).value == d
     assert s.Date("2025-05-10").value == d
 
     with pytest.raises(ValueError):

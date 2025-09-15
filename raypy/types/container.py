@@ -376,59 +376,10 @@ class Table:
         return convert_raw_rayobject_to_raypy_type(api.get_table_values(self.ptr))
 
     def __str__(self) -> str:
-        columns = self.columns()
-        values = self.values()
-
-        rows = list(zip(*values))
-
-        all_rows = [columns] + rows
-        col_widths = [max(len(str(cell)) for cell in col) for col in zip(*all_rows)]
-
-        # Box drawing chars
-        tl, tr = "┌", "┐"
-        bl, br = "└", "┘"
-        h, v = "─", "│"
-        hl, hr, hm = "├", "┤", "┼"
-        ct = "┬"
-        cb = "┴"
-
-        # Helper: line builder
-        def line(left, mid, right):
-            return left + mid.join(h * (w + 2) for w in col_widths) + right
-
-        # Top, header separator, bottom
-        top = line(tl, ct, tr)
-        header_sep = line(hl, hm, hr)
-        bottom = line(bl, cb, br)
-
-        def format_row(row):
-            # pad cell content with 1 space on each side
-            return (
-                v
-                + v.join(f" {str(cell).ljust(w)} " for cell, w in zip(row, col_widths))
-                + v
-            )
-
-        lines = [top, format_row(columns), header_sep]
-        if len(rows) > 20:
-            for row in rows[:10]:
-                lines.append(format_row(row))
-
-            lines.append(format_row(["..." for _ in range(len(columns))]))
-
-            for row in rows[-10:]:
-                lines.append(format_row(row))
-
-            lines.append(bottom)
-        else:
-            for row in rows:
-                lines.append(format_row(row))
-                lines.append(bottom)
-
-        return "\n".join(lines)
+        return api.repr_table(self.ptr)
 
     def __repr__(self) -> str:
-        return str(self)
+        return f"Table[{self.columns()}]"
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, Table):

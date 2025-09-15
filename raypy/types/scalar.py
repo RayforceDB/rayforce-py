@@ -5,7 +5,7 @@ import typing as t
 from raypy import api
 from raypy import _rayforce as r
 
-EPOCH_DATE = dt.date(1970, 1, 1)
+DATE_COUNTS_FROM = dt.date(2000, 1, 1)
 
 
 class __RaypyScalar:
@@ -147,11 +147,11 @@ class Date(__RaypyScalar):
             if isinstance(value, int):
                 days_since_epoch = value
             elif isinstance(value, dt.date):
-                days_since_epoch = (value - EPOCH_DATE).days
+                days_since_epoch = (value - DATE_COUNTS_FROM).days
             elif isinstance(value, str):
                 try:
                     date_obj = dt.date.fromisoformat(value)
-                    days_since_epoch = (date_obj - EPOCH_DATE).days
+                    days_since_epoch = (date_obj - DATE_COUNTS_FROM).days
                 except ValueError as e:
                     raise ValueError("Date string must be in format YYYY-MM-DD") from e
 
@@ -160,7 +160,7 @@ class Date(__RaypyScalar):
     @property
     def value(self) -> dt.date:
         days_since_epoch = api.read_date(self.ptr)
-        return EPOCH_DATE + dt.timedelta(days=days_since_epoch)
+        return DATE_COUNTS_FROM + dt.timedelta(days=days_since_epoch)
 
 
 class F64(__RaypyScalar):

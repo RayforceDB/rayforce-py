@@ -53,7 +53,7 @@ class SelectQuery:
 
     def __validate(
         self,
-        attributes: dict[str, str | Expression],
+        attributes: dict[str, str | Expression | dict[str, str]],
         select_from: str | SelectQuery | c.Table,
         where: Expression | None = None,
     ) -> None:
@@ -71,7 +71,10 @@ class SelectQuery:
             raise ValueError("Query keys should be Python strings.")
 
         if any(
-            [not isinstance(value, (str, Expression)) for value in self.attr_values]
+            [
+                not isinstance(value, (str, Expression, dict))
+                for value in self.attr_values
+            ]
         ):
             raise ValueError(
                 "Query values should be Python strings or Raypy expression."
@@ -133,7 +136,7 @@ class SelectQuery:
 
     def __init__(
         self,
-        attributes: dict[str, str | Expression],
+        attributes: dict[str, str | Expression | dict[str, str]],
         select_from: str | "SelectQuery",
         where: Expression | None = None,
     ) -> None:

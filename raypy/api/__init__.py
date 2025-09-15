@@ -38,6 +38,7 @@ from raypy.api.readers import (
     dict_get,
     get_dict_keys,
     get_dict_values,
+    repr_table,
 )
 from raypy.api.helpers import (
     is_vector,
@@ -94,6 +95,7 @@ __all__ = [
     "at_idx",
     "get_table_keys",
     "get_table_values",
+    "repr_table",
     "dict_get",
     "get_dict_keys",
     "get_dict_values",
