@@ -32,6 +32,9 @@ class Operation(enum.StrEnum):
     XASC = "xasc"
     XDESC = "xdesc"
 
+    # Compose
+    TIL = "til"
+
     # Comparison
     EQUALS = "=="
     NOT_EQUALS = "!="
@@ -44,6 +47,7 @@ class Operation(enum.StrEnum):
     DO = "do"
     QUOTE = "quote"
     IF = "IF"
+    COUNT = "count"
 
     @property
     def primitive(self) -> r.RayObject:
