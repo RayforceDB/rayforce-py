@@ -64,10 +64,10 @@ I64(300)
 
 Raypy supports executing a query over any type, even with the tables. See local usage example:
 ```python
->>> engine = KDBEngine(host="localhost", port=6062)  # RevoLT
+>>> engine = KDBEngine(host="localhost", port=6062)
 
 >>> with engine.acquire() as conn:
-...    result = conn.execute("0!select sum ExecQty, NotionalValue: sum ExecQty*ExecPrice by Broker, Account from RevoLT where date=2025.08.01, Broker in `SAGR")
+...    result = conn.execute("0!select sum ExecQty, NotionalValue: sum ExecQty*ExecPrice by Broker, Account from MyTable where date=2025.08.01, Broker in `Bro1`Bro2`Bro3`Bro4")
 
 >>> result
 Table[Vector[6](Symbol(Broker), Symbol(Account), Symbol(ExecQty), Symbol(NotionalValue))]
@@ -76,9 +76,9 @@ Table[Vector[6](Symbol(Broker), Symbol(Account), Symbol(ExecQty), Symbol(Notiona
 ┌────────┬─────────┬──────────────┬───────────────┐
 │ Broker │ Account │ ExecQty      │ NotionalValue │
 ├────────┼─────────┼──────────────┼───────────────┤
-│ SAGR   │ 100059  │ 404164.00    │ 754027.92     │
-│ SAGR   │ 100061  │ 9000.00      │ 1.022542e+06  │
-│ SAGR   │ 100063  │ 2900.00      │ 112745.00     │
-│ SAGR   │ 100065  │ 604252.00    │ 961689.55     │
+│ Bro1   │ 100001  │ 404164.00    │ 754027.92     │
+│ Bro2   │ 100002  │ 9000.00      │ 1.022542e+06  │
+│ Bro3   │ 100003  │ 2900.00      │ 112745.00     │
+│ Bro4   │ 100004  │ 604252.00    │ 961689.55     │
 ...
 ```
