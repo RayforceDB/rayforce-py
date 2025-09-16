@@ -26,6 +26,12 @@ class Operation(enum.StrEnum):
     # Database operations
     SELECT = "select"
 
+    # Sort
+    ASC = "asc"
+    DESC = "desc"
+    XASC = "xasc"
+    XDESC = "xdesc"
+
     # Comparison
     EQUALS = "=="
     NOT_EQUALS = "!="

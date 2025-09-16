@@ -27,6 +27,11 @@ def eval_str(expr: str) -> r.RayObject:
     return t.convert_raw_rayobject_to_raypy_type(result)
 
 
+def eval_obj(obj: r.RayObject) -> t.Any:
+    result = api.eval_obj(obj)
+    return t.convert_raw_rayobject_to_raypy_type(result)
+
+
 def set_table_name(name: str, table: t.Table) -> None:
     api.binary_set(api.init_symbol(name), table.ptr)
 
