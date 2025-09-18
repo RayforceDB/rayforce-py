@@ -48,6 +48,7 @@ class Operation(enum.StrEnum):
     QUOTE = "quote"
     IF = "IF"
     COUNT = "count"
+    AND = "and"
 
     @property
     def primitive(self) -> r.RayObject:

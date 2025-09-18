@@ -27,8 +27,9 @@ def eval_str(expr: str) -> r.RayObject:
     return t.convert_raw_rayobject_to_raypy_type(result)
 
 
-def eval_obj(obj: r.RayObject) -> t.Any:
-    result = api.eval_obj(obj)
+def eval_obj(obj: t.Any) -> t.Any:
+    _obj = getattr(obj, "ptr", obj)
+    result = api.eval_obj(_obj)
     return t.convert_raw_rayobject_to_raypy_type(result)
 
 

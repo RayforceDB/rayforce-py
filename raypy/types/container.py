@@ -433,7 +433,7 @@ def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
             return Vector(type_code=ptr_type, ptr=ptr)
         return class_type(ptr=ptr)
 
-    if ptr_type in (101, 102):
+    if ptr_type in (101, 102, 103):
         return primitive.Operation.from_ptr(ptr)
 
     if ptr_type == r.TYPE_NULL:
