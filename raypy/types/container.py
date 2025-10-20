@@ -298,8 +298,8 @@ class Dict(__RaypyContainer):
         keys = api.get_dict_keys(self.ptr)
         return Vector(ptr=keys)
 
-    def values(self) -> List:
-        return List(ptr=api.get_dict_values(self.ptr))
+    def values(self) -> t.Any:
+        return convert_raw_rayobject_to_raypy_type(ptr=api.get_dict_values(self.ptr))
 
     def get(self, key: t.Any) -> t.Any:
         key_ptr = api.init_symbol(key)
@@ -427,6 +427,9 @@ RAY_TYPE_TO_CLASS_MAPPING = {
 
 def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
     ptr_type = ptr.get_obj_type()
+
+    if ptr_type == 127:
+        return api.get_error_message(ptr)
 
     if class_type := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
         if api.is_vector(ptr) and ptr_type != r.TYPE_C8:

@@ -25,6 +25,15 @@ class Operation(enum.StrEnum):
 
     # Database operations
     SELECT = "select"
+    IJ = "inner-join"
+    WJ = "window-join"
+    WJ1 = "window-join1"
+    WHERE = "where"
+    DISTINCT = "distinct"
+    CONCAT = "concat"
+    FIRST = "first"
+    LAST = "last"
+    IN = "in"
 
     # Sort
     ASC = "asc"
@@ -43,12 +52,21 @@ class Operation(enum.StrEnum):
     LE = "<"
     LTE = "<="
 
+    # Accessors
+    AT = "at"
+
+    # Type conversion
+    LIST = "list"
+
     # Misc
     DO = "do"
     QUOTE = "quote"
     IF = "IF"
     COUNT = "count"
     AND = "and"
+    OR = "or"
+    MAP = "map"
+    MAP_LEFT = "map-left"
 
     @property
     def primitive(self) -> r.RayObject:

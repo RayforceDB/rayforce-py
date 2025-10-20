@@ -1,0 +1,1 @@
+select from resultselect from result1+11+1

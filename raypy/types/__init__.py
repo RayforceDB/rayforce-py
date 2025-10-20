@@ -17,6 +17,7 @@ __all__ = [
     "U8",
     "C8",
     "Symbol",
+    "QuotedSymbol",
     # Containers
     "GUID",
     "List",

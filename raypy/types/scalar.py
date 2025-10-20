@@ -352,6 +352,17 @@ class Symbol(__RaypyScalar):
         return False
 
 
+class QuotedSymbol(Symbol):
+    def __init__(
+        self,
+        value: str | t.Any | None = None,
+        *,
+        ptr: r.RayObject | None = None,
+    ) -> None:
+        super().__init__(value, ptr=ptr)
+        api.set_obj_attrs(self.ptr, 8)  # Quoted (')
+
+
 class Time(__RaypyScalar):
     """
     Rayforce time type.
@@ -546,6 +557,7 @@ __all__ = [
     "C8",
     "Date",
     "Symbol",
+    "QuotedSymbol",
     "Time",
     "Timestamp",
     "U8",
