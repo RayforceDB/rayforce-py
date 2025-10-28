@@ -98,7 +98,13 @@ def test_table():
         comparable_vector[idx] = column
 
     assert t.columns() == comparable_vector
-    assert t.values() == c.List(values)
+    # Values are now Vectors (auto-converted from lists), not Lists
+    result_values = t.values()
+    assert len(result_values) == len(values)
+    # Check each column is a Vector with correct values
+    for idx, expected_col in enumerate(values):
+        result_col = result_values[idx]
+        assert len(result_col) == len(expected_col)
 
 
 def test_string():

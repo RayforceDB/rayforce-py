@@ -372,7 +372,31 @@ class Table:
         for idx, column in enumerate(columns):
             table_columns[idx] = column
 
-        table_values = List(values)
+        # Convert each column to a Vector instead of keeping as List
+        table_values = List([])
+        for column_data in values:
+            # Auto-detect type and create appropriate Vector
+            if not column_data:
+                # Empty column - use generic list
+                table_values.append([])
+            elif all(isinstance(x, str) for x in column_data):
+                # String column -> Vector of Symbols
+                vec = Vector(type_code=scalar.Symbol.type_code, items=column_data)
+                table_values.append(vec)
+            elif all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in column_data):
+                # Numeric column -> detect if int or float
+                if all(isinstance(x, int) for x in column_data):
+                    vec = Vector(type_code=scalar.I64.type_code, items=column_data)
+                else:
+                    vec = Vector(type_code=scalar.F64.type_code, items=column_data)
+                table_values.append(vec)
+            elif all(isinstance(x, bool) for x in column_data):
+                # Boolean column
+                vec = Vector(type_code=scalar.B8.type_code, items=column_data)
+                table_values.append(vec)
+            else:
+                # Mixed types or complex types - keep as List
+                table_values.append(column_data)
 
         self.ptr = api.init_table(columns=table_columns.ptr, values=table_values.ptr)
 

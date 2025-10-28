@@ -22,3 +22,8 @@ if os.path.exists(lib_path):
         ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
     except Exception as e:
         print(f"Error loading library: {e}")
+
+# Expose fluent/Pythonic API
+from raypy.types.fluent import Table, Column, Expression, lookup
+
+__all__ = ['Table', 'Column', 'Expression', 'lookup']

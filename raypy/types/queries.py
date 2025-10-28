@@ -333,14 +333,33 @@ class UpsertQuery:
             )
 
         i_values = api.init_list()
-        for i in self.upsertable.values():  # type: ignore
-            _l = api.init_list()
-            for value in i:
-                api.push_obj(
-                    iterable=_l, ptr=c.from_python_type_to_raw_rayobject(value)
-                )
-
-            api.push_obj(iterable=i_values, ptr=_l)
+        for column_data in self.upsertable.values():  # type: ignore
+            # Convert to appropriate Vector type (like Table.__init__ does)
+            if not column_data:
+                api.push_obj(iterable=i_values, ptr=api.init_list())
+            elif all(isinstance(x, str) for x in column_data):
+                # String column -> Vector of Symbols
+                vec = c.Vector(type_code=s.Symbol.type_code, items=column_data)
+                api.push_obj(iterable=i_values, ptr=vec.ptr)
+            elif all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in column_data):
+                # Numeric column -> detect if int or float
+                if all(isinstance(x, int) for x in column_data):
+                    vec = c.Vector(type_code=s.I64.type_code, items=column_data)
+                else:
+                    vec = c.Vector(type_code=s.F64.type_code, items=column_data)
+                api.push_obj(iterable=i_values, ptr=vec.ptr)
+            elif all(isinstance(x, bool) for x in column_data):
+                # Boolean column
+                vec = c.Vector(type_code=s.B8.type_code, items=column_data)
+                api.push_obj(iterable=i_values, ptr=vec.ptr)
+            else:
+                # Mixed types - keep as List
+                _l = api.init_list()
+                for value in column_data:
+                    api.push_obj(
+                        iterable=_l, ptr=c.from_python_type_to_raw_rayobject(value)
+                    )
+                api.push_obj(iterable=i_values, ptr=_l)
 
         self.upsertable_ptr = api.init_dict(i_keys, i_values)
 
