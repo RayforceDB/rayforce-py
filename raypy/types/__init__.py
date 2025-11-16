@@ -2,7 +2,6 @@ from .scalar import *
 from .container import *
 from .operators import *
 from .queries import *
-from .llambda import *
 
 __all__ = [
     # Scalars
@@ -31,5 +30,4 @@ __all__ = [
     "UpsertQuery",
     # Misc
     "Operation",
-    "Lambda",
 ]

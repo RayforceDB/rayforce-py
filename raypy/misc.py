@@ -39,7 +39,3 @@ def set_table_name(name: str, table: t.Table) -> None:
 
 def set_var_name(name: str, var: t.Any) -> None:
     FFI.binary_set(FFI.init_symbol(name), var.ptr)
-
-
-def set_lambda_name(name: str, _lambda: t.Lambda) -> None:  # type: ignore
-    FFI.binary_set(FFI.init_symbol(name), _lambda.ptr)
