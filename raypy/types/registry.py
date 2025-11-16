@@ -71,8 +71,7 @@ class TypeRegistry:
             return
 
         try:
-            from raypy.types.scalars import numeric, temporal, other
-            from raypy.types.containers import collections, table
+            from raypy import types  # noqa: F401
 
             cls._initialized = True
         except ImportError:

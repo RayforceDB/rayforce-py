@@ -1,5 +1,4 @@
 from __future__ import annotations
-from math import comb
 from typing import Any, Callable
 from raypy.core import FFI
 from raypy import utils
@@ -19,9 +18,7 @@ class _Expression:
         self.ptr = FFI.init_list()
 
         for arg in args:
-            FFI.push_obj(
-                iterable=self.ptr, ptr=utils.python_to_ray(arg)
-            )
+            FFI.push_obj(iterable=self.ptr, ptr=utils.python_to_ray(arg))
 
     def __len__(self) -> int:
         return FFI.get_obj_length(self.ptr)
@@ -47,9 +44,10 @@ class Expression:
     def __init__(self, operation: Operation, *operands):
         self.operation = operation
         self.operands = operands
-    
+
     def to_low_level(self) -> _Expression:
         from raypy.types.scalars import QuotedSymbol
+
         converted_operands = []
 
         for idx, operand in enumerate(self.operands):
@@ -59,7 +57,7 @@ class Expression:
                 converted_operands.append(operand.name)
             elif isinstance(operand, FilteredColumn):
                 converted_operands.append(self._build_filtered_column(operand))
-            elif hasattr(operand, 'ptr'):
+            elif hasattr(operand, "ptr"):
                 converted_operands.append(operand)
             elif isinstance(operand, str):
                 if self.operation == Operation.AT and idx == 1:
@@ -68,7 +66,7 @@ class Expression:
                     converted_operands.append(QuotedSymbol(operand))
             else:
                 converted_operands.append(operand)
-        
+
         return _Expression(self.operation.primitive, *converted_operands)
 
     def _build_filtered_column(self, filtered_col: FilteredColumn) -> _Expression:
@@ -78,181 +76,178 @@ class Expression:
             where_expr = filtered_col.condition.name
         else:
             where_expr = filtered_col.condition
-            
+
         where_wrapped = _Expression(Operation.WHERE, where_expr)
-        
+
         return _Expression(
-            Operation.MAP,
-            Operation.AT,
-            filtered_col.column.name,
-            where_wrapped
+            Operation.MAP, Operation.AT, filtered_col.column.name, where_wrapped
         )
-    
+
     def count(self) -> Expression:
         return Expression(Operation.COUNT, self)
-    
+
     def sum(self) -> Expression:
         return Expression(Operation.SUM, self)
-    
+
     def mean(self) -> Expression:
         return Expression(Operation.AVG, self)
-    
+
     def avg(self) -> Expression:
         return Expression(Operation.AVG, self)
-    
+
     def __and__(self, other) -> Expression:
         return Expression(Operation.AND, self, other)
-    
+
     def __or__(self, other) -> Expression:
         return Expression(Operation.OR, self, other)
-    
+
     def __add__(self, other) -> Expression:
         return Expression(Operation.ADD, self, other)
-    
+
     def __sub__(self, other) -> Expression:
         return Expression(Operation.SUBTRACT, self, other)
-    
+
     def __mul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, self, other)
-    
+
     def __truediv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, self, other)
-    
+
     def __mod__(self, other) -> Expression:
         return Expression(Operation.MODULO, self, other)
-    
+
     def __eq__(self, other) -> Expression:
         return Expression(Operation.EQUALS, self, other)
-    
+
     def __ne__(self, other) -> Expression:
         return Expression(Operation.NOT_EQUALS, self, other)
-    
+
     def __lt__(self, other) -> Expression:
         return Expression(Operation.LESS_THAN, self, other)
-    
+
     def __le__(self, other) -> Expression:
         return Expression(Operation.LESS_EQUAL, self, other)
-    
+
     def __gt__(self, other) -> Expression:
         return Expression(Operation.GREATER_THAN, self, other)
-    
+
     def __ge__(self, other) -> Expression:
         return Expression(Operation.GREATER_EQUAL, self, other)
-    
+
     def __repr__(self) -> str:
         return f"Expression({self.operation.value}, {len(self.operands)} operands)"
 
 
 class Column:
-    
     def __init__(self, name: str, table: Table | None = None):
         self.name = name
         self.table = table
-    
+
     def __eq__(self, other) -> Expression:
         return Expression(Operation.EQUALS, self, other)
-    
+
     def __ne__(self, other) -> Expression:
         return Expression(Operation.NOT_EQUALS, self, other)
-    
+
     def __lt__(self, other) -> Expression:
         return Expression(Operation.LESS_THAN, self, other)
-    
+
     def __le__(self, other) -> Expression:
         return Expression(Operation.LESS_EQUAL, self, other)
-    
+
     def __gt__(self, other) -> Expression:
         return Expression(Operation.GREATER_THAN, self, other)
-    
+
     def __ge__(self, other) -> Expression:
         return Expression(Operation.GREATER_EQUAL, self, other)
-    
+
     def __add__(self, other) -> Expression:
         return Expression(Operation.ADD, self, other)
-    
+
     def __sub__(self, other) -> Expression:
         return Expression(Operation.SUBTRACT, self, other)
-    
+
     def __mul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, self, other)
-    
+
     def __truediv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, self, other)
-    
+
     def __mod__(self, other) -> Expression:
         return Expression(Operation.MODULO, self, other)
-    
+
     def __radd__(self, other) -> Expression:
         return Expression(Operation.ADD, other, self)
-    
+
     def __rsub__(self, other) -> Expression:
         return Expression(Operation.SUBTRACT, other, self)
-    
+
     def __rmul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, other, self)
-    
+
     def __rtruediv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, other, self)
-    
+
     def __and__(self, other) -> Expression:
         return Expression(Operation.AND, self, other)
-    
+
     def __or__(self, other) -> Expression:
         return Expression(Operation.OR, self, other)
-    
+
     def sum(self) -> Expression:
         return Expression(Operation.SUM, self)
-    
+
     def mean(self) -> Expression:
         return Expression(Operation.AVG, self)
-    
+
     def avg(self) -> Expression:
         return Expression(Operation.AVG, self)
-    
+
     def max(self) -> Expression:
         return Expression(Operation.MAX, self)
-    
+
     def min(self) -> Expression:
         return Expression(Operation.MIN, self)
-    
+
     def count(self) -> Expression:
         return Expression(Operation.COUNT, self)
-    
+
     def first(self) -> Expression:
         return Expression(Operation.FIRST, self)
-    
+
     def last(self) -> Expression:
         return Expression(Operation.LAST, self)
-    
+
     def median(self) -> Expression:
         return Expression(Operation.MEDIAN, self)
-    
+
     def distinct(self) -> Expression:
         return Expression(Operation.DISTINCT, self)
 
     def isin(self, values: list[Any]) -> Expression:
         from raypy.types.scalars import QuotedSymbol, Symbol
         from raypy.types.containers import List, Vector
+
         if values and isinstance(values[0], str):
             quoted_items = [QuotedSymbol(v) for v in values]
             vec = Vector(type_code=Symbol.type_code, items=quoted_items)
         else:
             vec = List(values)
-        
+
         return Expression(Operation.IN, self, vec)
 
     def where(self, condition: Expression) -> FilteredColumn:
         return FilteredColumn(self, condition)
-    
+
     def __getitem__(self, condition: Expression) -> FilteredColumn:
         return self.where(condition)
-    
+
     def asc(self) -> SortColumn:
         return SortColumn(self, ascending=True)
-    
+
     def desc(self) -> SortColumn:
         return SortColumn(self, ascending=False)
-    
+
     def __repr__(self) -> str:
         return f"Column('{self.name}')"
 
@@ -261,34 +256,34 @@ class FilteredColumn:
     def __init__(self, column: Column, condition: Expression):
         self.column = column
         self.condition = condition
-    
+
     def sum(self) -> Expression:
         return Expression(Operation.SUM, self)
-    
+
     def mean(self) -> Expression:
         return Expression(Operation.AVG, self)
-    
+
     def avg(self) -> Expression:
         return Expression(Operation.AVG, self)
-    
+
     def max(self) -> Expression:
         return Expression(Operation.MAX, self)
-    
+
     def min(self) -> Expression:
         return Expression(Operation.MIN, self)
-    
+
     def count(self) -> Expression:
         return Expression(Operation.COUNT, self)
-    
+
     def __repr__(self) -> str:
         return f"FilteredColumn({self.column.name} where ...)"
 
 
-class SortColumn:    
+class SortColumn:
     def __init__(self, column: Column, ascending: bool = True):
         self.column = column
         self.ascending = ascending
-    
+
     def __repr__(self) -> str:
         direction = "asc" if self.ascending else "desc"
         return f"{self.column.name} {direction}"
@@ -314,6 +309,7 @@ class _Table:
     ) -> None:
         from raypy.types.scalars import Symbol, I64, F64, B8
         from raypy.types.containers import Vector, List
+
         if ptr is not None:
             if (_type := ptr.get_obj_type()) != self.type_code:
                 raise ValueError(
@@ -348,7 +344,10 @@ class _Table:
                 # String column -> Vector of Symbols
                 vec = Vector(type_code=Symbol.type_code, items=column_data)
                 table_values.append(vec)
-            elif all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in column_data):
+            elif all(
+                isinstance(x, (int, float)) and not isinstance(x, bool)
+                for x in column_data
+            ):
                 # Numeric column -> detect if int or float
                 if all(isinstance(x, int) for x in column_data):
                     vec = Vector(type_code=I64.type_code, items=column_data)
@@ -383,13 +382,13 @@ class _Table:
         return False
 
 
-class Table:    
+class Table:
     def __init__(
         self,
         name_or_data: str | None = None,
         columns: list[str] | None = None,
         values: list[Any] | None = None,
-        ptr = None
+        ptr=None,
     ):
         if isinstance(name_or_data, str):
             self._table = name_or_data
@@ -404,25 +403,25 @@ class Table:
             raise ValueError("Must provide either name, columns/values, or ptr")
 
     def __getattr__(self, name: str) -> Column:
-        if name.startswith('_'):
+        if name.startswith("_"):
             return object.__getattribute__(self, name)
         return Column(name, table=self)
 
     def select(self, *cols, **computed_cols) -> QueryBuilder:
         builder = QueryBuilder(table=self._table)
         return builder.select(*cols, **computed_cols)
-    
+
     def where(self, condition: Expression | Callable) -> QueryBuilder:
         builder = QueryBuilder(table=self._table)
         return builder.where(condition)
-    
+
     def order_by(self, *cols, ascending: bool = True) -> QueryBuilder:
         builder = QueryBuilder(table=self._table)
         return builder.order_by(*cols, ascending=ascending)
-    
+
     def group_by(self, *cols) -> GroupByBuilder:
         return GroupByBuilder(table=self._table, group_cols=list(cols))
-    
+
     def concat(self, *others: Table) -> Table:
         result = self._table
         for other in others:
@@ -430,82 +429,79 @@ class Table:
             expr = Expression(Operation.CONCAT, result, other_table)
             result = utils.eval_obj(expr.to_low_level())
         return Table(ptr=result.ptr)
-    
+
     @staticmethod
     def concat_all(tables: list[Table]) -> Table:
         if not tables:
             raise ValueError("Must provide at least one table")
         return tables[0].concat(*tables[1:])
 
-    def join(
-        self,
-        other: Table,
-        on: str | list[str],
-        how: str = "inner"
-    ) -> Table:
+    def join(self, other: Table, on: str | list[str], how: str = "inner") -> Table:
         from raypy.types.containers import Vector, List
         from raypy.types.scalars import Symbol
 
         if isinstance(on, str):
             on = [on]
-        
+
         join_keys = Vector(type_code=Symbol.type_code, items=on)
-        
+
         if how == "inner":
             other_table = other._table if isinstance(other, Table) else other
             self_table = self._table
-            result = utils.eval_obj(List([Operation.IJ, join_keys, self_table, other_table]))
+            result = utils.eval_obj(
+                List([Operation.IJ, join_keys, self_table, other_table])
+            )
         else:
             raise ValueError(f"Join type '{how}' not yet supported. Use 'inner'.")
-        
+
         return Table(ptr=result.ptr)
-    
+
     def inner_join(self, other: Table, on: str | list[str]) -> Table:
         return self.join(other, on=on, how="inner")
-    
+
     def update(self, **kwargs) -> UpdateQuery:
         return UpdateQuery(self._table, **kwargs)
-    
+
     def insert(self, *args, **kwargs) -> InsertQuery:
         return InsertQuery(self._table, *args, **kwargs)
-    
+
     def upsert(
         self,
         data: dict[str, Any] | list[dict[str | Any]],
-        match_on: str | list[str] = "id"
+        match_on: str | list[str] = "id",
     ) -> UpsertQuery:
         return UpsertQuery(self._table, data, match_on)
 
     def head(self, n: int = 5) -> Table:
         return self.limit(n).execute()
-    
+
     def show(self, n: int = 20) -> None:
         if n:
             result = self.head(n)
         else:
             result = self._get_table()
         print(result)
-    
+
     def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self._table.ptr)
-    
+
     def _get_table(self) -> _Table:
         if self._is_ref:
             return utils.eval_str(self._table)
         return self._table
-    
+
     @property
     def columns(self) -> list[str]:
         if isinstance(self._table, _Table):
             cols = self._table.columns()
             return [col.value for col in cols]
         return []
-    
+
     def values(self):
         if isinstance(self._table, _Table):
             return self._table.values()
         return None
-    
+
     @property
     def shape(self) -> tuple[int]:
         if isinstance(self._table, _Table):
@@ -514,10 +510,10 @@ class Table:
             cols = len(self.columns)
             return (rows, cols)
         return (0, 0)
-    
+
     def __len__(self) -> int:
         return self.shape[0]
-    
+
     def __getitem__(self, key):
         if isinstance(key, str):
             return self.__getattr__(key)
@@ -531,32 +527,32 @@ class Table:
         columns = list(data.keys())
         values = list(data.values())
         return cls(columns=columns, values=values)
-    
+
     @classmethod
     def from_records(cls, records: list[dict[str, Any]]) -> Table:
         if not records:
             raise ValueError("Cannot create table from empty records")
-        
+
         columns = list(records[0].keys())
         values = {col: [] for col in columns}
-        
+
         for record in records:
             for col in columns:
                 values[col].append(record.get(col))
-        
+
         return cls.from_dict(values)
-    
+
     @classmethod
     def get(cls, name: str) -> Table:
         return cls(name)
-    
+
     @staticmethod
     def _create_proxy(table: str | _Table) -> Table:
         proxy = object.__new__(Table)
         proxy._table = table
         proxy._is_ref = isinstance(table, str)
         return proxy
-    
+
     def __str__(self) -> str:
         if isinstance(self._table, _Table):
             return FFI.repr_table(self._table.ptr)
@@ -564,7 +560,7 @@ class Table:
             table = utils.eval_str(self._table)
             return FFI.repr_table(table.ptr)
         return f"Table('{self._table}')"
-    
+
     def __repr__(self) -> str:
         if self._is_ref:
             return f"Table('{self._table}')"
@@ -682,7 +678,6 @@ class SelectQuery:
 
 
 class QueryBuilder:
-    
     def __init__(
         self,
         table: str | _Table,
@@ -694,7 +689,7 @@ class QueryBuilder:
         self._select_cols = select_cols
         self._where_conditions = where_conditions or []
         self._order_by_cols = order_by_cols or []
-    
+
     def select(self, *cols, **computed_cols) -> QueryBuilder:
         return QueryBuilder(
             table=self._table,
@@ -702,22 +697,22 @@ class QueryBuilder:
             where_conditions=self._where_conditions,
             order_by_cols=self._order_by_cols,
         )
-    
+
     def where(self, condition: Expression | Callable) -> QueryBuilder:
         if callable(condition):
             temp_table = Table._create_proxy(self._table)
             condition = condition(temp_table)
-        
+
         new_conditions = self._where_conditions.copy()
         new_conditions.append(condition)
-        
+
         return QueryBuilder(
             table=self._table,
             select_cols=self._select_cols,
             where_conditions=new_conditions,
             order_by_cols=self._order_by_cols,
         )
-    
+
     def order_by(self, *cols, ascending: bool = True) -> QueryBuilder:
         sort_cols = []
         for col in cols:
@@ -727,31 +722,30 @@ class QueryBuilder:
                 sort_cols.append(SortColumn(col, ascending=ascending))
             elif isinstance(col, SortColumn):
                 sort_cols.append(col)
-        
+
         return QueryBuilder(
             table=self._table,
             select_cols=self._select_cols,
             where_conditions=self._where_conditions,
             order_by_cols=self._order_by_cols + sort_cols,
         )
-    
-    
+
     def execute(self) -> Table:
         query = self._build_legacy_query()
         return utils.ray_to_python(FFI.select(query=query.ptr))
-    
+
     def _build_legacy_query(self) -> SelectQuery:
         attributes = {}
-        
+
         if self._select_cols:
             cols, computed = self._select_cols
-            
+
             for col in cols:
                 if col == "*":
                     pass
                 else:
                     attributes[col] = col
-            
+
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
                     attributes[name] = expr.to_low_level()
@@ -770,44 +764,41 @@ class QueryBuilder:
             for cond in self._where_conditions[1:]:
                 combined = combined & cond
             where_expr = combined.to_low_level()
-        
+
         return SelectQuery(
-            select_from=self._table,
-            attributes=attributes,
-            where=where_expr
+            select_from=self._table, attributes=attributes, where=where_expr
         )
-    
+
     def _convert_expr(self, expr: Expression | Column) -> _Expression | str:
         if isinstance(expr, Expression):
             return expr.to_low_level()
         elif isinstance(expr, Column):
             return expr.name
         return expr
-    
+
     def __iter__(self):
         result = self.execute()
         return iter(result.values().value)
-    
+
     def __repr__(self) -> str:
         parts = [f"QueryBuilder(table={self._table}"]
         if self._select_cols:
-            parts.append(f", select=...")
+            parts.append(", select=...")
         if self._where_conditions:
             parts.append(f", where={len(self._where_conditions)} conditions")
         return "".join(parts) + ")"
 
 
 class GroupByBuilder:
-    
     def __init__(self, table: str | _Table, group_cols: list[str]):
         self._table = table
         self._group_cols = group_cols
-    
+
     def agg(self, **aggregations) -> Table:
         attributes = {}
-        
+
         attributes["by"] = {col: col for col in self._group_cols}
-        
+
         for name, expr in aggregations.items():
             if isinstance(expr, Expression):
                 attributes[name] = expr.to_low_level()
@@ -815,14 +806,11 @@ class GroupByBuilder:
                 attributes[name] = expr.name
             else:
                 attributes[name] = expr
-        
-        query = SelectQuery(
-            select_from=self._table,
-            attributes=attributes
-        )
-        
+
+        query = SelectQuery(select_from=self._table, attributes=attributes)
+
         return utils.ray_to_python(FFI.select(query=query.ptr))
-    
+
     def __repr__(self) -> str:
         return f"GroupByBuilder(group_by={self._group_cols})"
 
@@ -886,6 +874,7 @@ class _UpdateQuery:
             # Push "from" value to query values
             if isinstance(self.update_from, str):
                 from raypy.types.scalars import QuotedSymbol
+
                 key = QuotedSymbol(self.update_from)
                 FFI.push_obj(iterable=self._query_values, ptr=key.ptr)
             else:
@@ -1002,6 +991,7 @@ class _UpsertQuery:
     def __build_query(self) -> None:
         from raypy.types.containers import Vector
         from raypy.types.scalars import Symbol, I64, F64, B8
+
         # Match low-level is a number of ordered fields provided in upsertable.
         self.match_ptr = FFI.init_i64(self.match_by_first)
 
@@ -1022,7 +1012,10 @@ class _UpsertQuery:
                 # String column -> Vector of Symbols
                 vec = Vector(type_code=Symbol.type_code, items=column_data)
                 FFI.push_obj(iterable=i_values, ptr=vec.ptr)
-            elif all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in column_data):
+            elif all(
+                isinstance(x, (int, float)) and not isinstance(x, bool)
+                for x in column_data
+            ):
                 # Numeric column -> detect if int or float
                 if all(isinstance(x, int) for x in column_data):
                     vec = Vector(type_code=I64.type_code, items=column_data)
@@ -1037,9 +1030,7 @@ class _UpsertQuery:
                 # Mixed types - keep as List
                 _l = FFI.init_list()
                 for value in column_data:
-                    FFI.push_obj(
-                        iterable=_l, ptr=utils.python_to_ray(value)
-                    )
+                    FFI.push_obj(iterable=_l, ptr=utils.python_to_ray(value))
                 FFI.push_obj(iterable=i_values, ptr=_l)
 
         self.upsertable_ptr = FFI.init_dict(i_keys, i_values)
@@ -1078,14 +1069,14 @@ class UpdateQuery:
         self._table = table
         self._attributes = attributes
         self._where_condition = None
-    
+
     def where(self, condition: Expression | Callable) -> UpdateQuery:
         if callable(condition):
             temp = Table._create_proxy(self._table)
             condition = condition(temp)
         self._where_condition = condition
         return self
-    
+
     def execute(self) -> Table | bool | str:
         where_expr = None
         if self._where_condition:
@@ -1093,7 +1084,7 @@ class UpdateQuery:
                 where_expr = self._where_condition.to_low_level()
             else:
                 where_expr = self._where_condition
-        
+
         converted_attrs = {}
         for key, value in self._attributes.items():
             if isinstance(value, Expression):
@@ -1104,14 +1095,12 @@ class UpdateQuery:
                 converted_attrs[key] = value.to_low_level()
             else:
                 converted_attrs[key] = value
-        
+
         query = _UpdateQuery(
-            update_from=self._table,
-            attributes=converted_attrs,
-            where=where_expr
+            update_from=self._table, attributes=converted_attrs, where=where_expr
         )
         return utils.ray_to_python(FFI.update(query=query.ptr))
-    
+
     def __repr__(self) -> str:
         return f"UpdateQuery(set={list(self._attributes.keys())}, where={self._where_condition is not None})"
 
@@ -1119,24 +1108,25 @@ class UpdateQuery:
 class InsertQuery:
     def __init__(self, table: str | Table, *args, **kwargs):
         self._table = table
-        
+
         if args:
             self._insertable = args[0] if len(args) == 1 else list(args)
         elif kwargs:
             self._insertable = list(kwargs.values())
         else:
             raise ValueError("No data to insert")
-    
+
     def execute(self) -> Table:
         query = _InsertQuery(insert_to=self._table, insertable=self._insertable)
-        return utils.ray_to_python(FFI.insert(table_obj=query.insert_to_ptr, data_obj=query.insertable_ptr))
-    
+        return utils.ray_to_python(
+            FFI.insert(table_obj=query.insert_to_ptr, data_obj=query.insertable_ptr)
+        )
+
     def __repr__(self) -> str:
         return f"InsertQuery({len(self._insertable)} values)"
 
 
 class UpsertQuery:
-    
     def __init__(
         self,
         table: str | _Table,
@@ -1146,7 +1136,7 @@ class UpsertQuery:
         self._table = table
         self._data = data if isinstance(data, list) else [data]
         self._match_by_first = 1 if isinstance(match_on, str) else len(match_on)
-    
+
     def execute(self) -> Table:
         upsertable = {}
         for row in self._data:
@@ -1154,11 +1144,11 @@ class UpsertQuery:
                 if key not in upsertable:
                     upsertable[key] = []
                 upsertable[key].append(value)
-        
+
         query = _UpsertQuery(
             upsert_to=self._table,
             match_by_first=self._match_by_first,
-            upsertable=upsertable
+            upsertable=upsertable,
         )
         return utils.ray_to_python(
             FFI.upsert(
@@ -1167,7 +1157,7 @@ class UpsertQuery:
                 data_obj=query.upsertable_ptr,
             )
         )
-    
+
     def __repr__(self) -> str:
         return f"UpsertQuery({len(self._data)} rows, match_by_first={self._match_by_first})"
 
@@ -1184,18 +1174,18 @@ def lookup(dict_obj, column: Column | str) -> DictLookup:
 
 
 __all__ = [
-    'Table',
-    'Column',
-    'Expression',
-    'FilteredColumn',
-    'SortColumn',
-    'QueryBuilder',
-    'GroupByBuilder',
-    'UpdateQuery',
-    'InsertQuery',
-    'UpsertQuery',
-    'DictLookup',
-    'lookup',
+    "Table",
+    "Column",
+    "Expression",
+    "FilteredColumn",
+    "SortColumn",
+    "QueryBuilder",
+    "GroupByBuilder",
+    "UpdateQuery",
+    "InsertQuery",
+    "UpsertQuery",
+    "DictLookup",
+    "lookup",
 ]
 
 TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)

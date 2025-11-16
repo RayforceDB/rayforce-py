@@ -36,5 +36,5 @@ __all__ = [
     "List",
     "Table",
     "String",
-    "RayInitException"
+    "RayInitException",
 ]

@@ -38,7 +38,7 @@ class Connection:
         if not self._closed:
             try:
                 self.close()
-            except:
+            except Exception:
                 pass
 
 

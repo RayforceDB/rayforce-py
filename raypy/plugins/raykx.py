@@ -4,7 +4,7 @@ from datetime import datetime
 
 from raypy.core import FFI
 from raypy import _rayforce as r
-from raypy import types
+from raypy import utils
 
 if sys.platform == "darwin":
     raykx_lib_name = "libraykx.dylib"
@@ -88,7 +88,7 @@ class KDBConnection:
 
             raise ValueError(f"Failed to execute statement: {error_message}")
 
-        return types.convert_raw_rayobject_to_raypy_type(result)
+        return utils.ray_to_python(result)
 
     def close(self) -> None:
         self.__close_kdb_connection()

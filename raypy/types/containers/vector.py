@@ -13,7 +13,7 @@ class Vector(Container):
     """
 
     # Vectors don't have a single type_code - they use the element type code (positive)
-    type_code = None
+    type_code: int | None = None
 
     def __init__(
         self,
@@ -114,7 +114,9 @@ class String(Vector):
     ) -> None:
         # String is a vector of C8, so it should have POSITIVE type code (r.TYPE_C8)
         if ptr and (_type := ptr.get_obj_type()) != self.type_code:
-            raise ValueError(f"Expected String RayObject (type {self.type_code}), got {_type}")
+            raise ValueError(
+                f"Expected String RayObject (type {self.type_code}), got {_type}"
+            )
 
         if value is not None:
             # Vectors have POSITIVE type codes, so use self.type_code directly (not negative!)
@@ -132,9 +134,9 @@ class String(Vector):
         for i in range(len(self)):
             c8_item = self[i]
             # Each item should be a C8 scalar, get its character value
-            if hasattr(c8_item, 'to_python'):
+            if hasattr(c8_item, "to_python"):
                 result.append(c8_item.to_python())
-            elif hasattr(c8_item, 'value'):
+            elif hasattr(c8_item, "value"):
                 result.append(c8_item.value)
             else:
                 result.append(str(c8_item))

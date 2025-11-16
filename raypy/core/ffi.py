@@ -288,8 +288,8 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def loadfn_from_file(filename: str) -> r.RayObject:
-        return r.loadfn_from_file(filename)
+    def loadfn_from_file(filename: str, fn_name: str, args_count: int) -> r.RayObject:
+        return r.loadfn_from_file(filename, fn_name, args_count)
 
     @staticmethod
     def get_error_message(error_obj: r.RayObject) -> str:

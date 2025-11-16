@@ -6,8 +6,6 @@ showing how much simpler and more readable the code becomes.
 """
 
 from raypy import Table
-from raypy.types import containers as c
-from raypy.types import scalars as s
 
 
 def test_basic_column_access():
@@ -215,10 +213,7 @@ def test_update_query():
 
     # Update with filter
     table_1 = Table.get("test_table")
-    result = (
-        table_1.update(age=100).where(table_1.age == 34).execute()
-    )
+    result = table_1.update(age=100).where(table_1.age == 34).execute()
 
     # Check result
     assert result is not None
-
