@@ -24,6 +24,6 @@ if os.path.exists(lib_path):
         print(f"Error loading library: {e}")
 
 # Expose fluent/Pythonic API
-from raypy.types.fluent import Table, Column, Expression, lookup
+# from raypy.types.fluent import Table, Column, Expression, lookup
 
-__all__ = ["Table", "Column", "Expression", "lookup"]
+# __all__ = ["Table", "Column", "Expression", "lookup"]

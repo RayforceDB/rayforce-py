@@ -14,7 +14,7 @@ class Operation(enum.StrEnum):
     FDIVIDE = "fdiv"
     MODULO = "%"
     NEGATE = "neg"
-    
+
     # Comparison
     EQUALS = "=="
     NOT_EQUALS = "!="
@@ -22,13 +22,13 @@ class Operation(enum.StrEnum):
     GREATER_EQUAL = ">="
     LESS_THAN = "<"
     LESS_EQUAL = "<="
-    
+
     # Logical
     AND = "and"
     OR = "or"
     NOT = "not"
-    
-    # Aggregation 
+
+    # Aggregation
     SUM = "sum"
     AVG = "avg"
     MEAN = "avg"
@@ -39,80 +39,80 @@ class Operation(enum.StrEnum):
     LAST = "last"
     MEDIAN = "med"
     DEVIATION = "dev"
-    
-    # Statistical 
+
+    # Statistical
     XBAR = "xbar"
-    
-    # Math 
+
+    # Math
     CEIL = "ceil"
     FLOOR = "floor"
     ROUND = "round"
     ABS = "abs"
-    
-    # Collection 
+
+    # Collection
     IN = "in"
     DISTINCT = "distinct"
     UNIQUE = "unique"
-    
-    # Query 
+
+    # Query
     SELECT = "select"
     WHERE = "where"
     GROUP_BY = "group-by"
     ORDER_BY = "order-by"
-    
-    # Join 
+
+    # Join
     INNER_JOIN = "inner-join"
-    IJ = "inner-join" 
+    IJ = "inner-join"
     WINDOW_JOIN = "window-join"
     WJ = "window-join"
     WINDOW_JOIN1 = "window-join1"
     WJ1 = "window-join1"
-    
+
     # Sort
     ASC = "asc"
     DESC = "desc"
     XASC = "xasc"
     XDESC = "xdesc"
-    
+
     # Accessor
     AT = "at"
-    
+
     # Functional
     MAP = "map"
     MAP_LEFT = "map-left"
     EACH = "each"
-    
+
     # Composition
     TIL = "til"
-    
+
     # Type
     LIST = "list"
     VECTOR = "vector"
-    
-    # Other 
+
+    # Other
     QUOTE = "quote"
     CONCAT = "concat"
     JOIN_STRINGS = "join"
-    
+
     @property
     def primitive(self) -> r.RayObject:
         """
         Get the underlying primitive (RayObject) function from the runtime.
         """
         return FFI.env_get_internal_function_by_name(self.value)
-    
+
     @property
     def is_binary(self) -> bool:
         return self.primitive.get_obj_type() == r.TYPE_BINARY
-    
+
     @property
     def is_unary(self) -> bool:
         return self.primitive.get_obj_type() == r.TYPE_UNARY
-    
+
     @property
     def is_variadic(self) -> bool:
         return self.primitive.get_obj_type() == r.TYPE_VARY
-    
+
     @staticmethod
     def from_ptr(obj: r.RayObject) -> Operation:
         obj_type = obj.get_obj_type()

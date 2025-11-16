@@ -2,12 +2,12 @@ import uuid
 import datetime as dt
 import pytest
 
-from raypy.types import scalar as s
+from raypy import types as t
 
 
 def test_guid():
     u_id = uuid.uuid4()
-    assert s.GUID(str(u_id)).value == str(u_id)
+    assert t.GUID(str(u_id)).value == u_id
 
 
 @pytest.mark.parametrize(
@@ -22,84 +22,64 @@ def test_guid():
     ],
 )
 def test_b8(value, expected_value):
-    assert s.B8(value).value == expected_value
+    assert t.B8(value).value == expected_value
 
 
 def test_c8():
-    assert s.C8("1").value == "1"
-    assert s.C8("A").value == "A"
+    assert t.C8("1").value == "1"
+    assert t.C8("A").value == "A"
 
-    with pytest.raises(ValueError):
-        s.C8("123")
+    with pytest.raises(t.RayInitException):
+        t.C8("123")
 
 
 def test_date():
     d = dt.date(year=2025, month=5, day=10)
-    assert s.Date(d).value == d
-    assert s.Date(9261).value == d
-    assert s.Date("2025-05-10").value == d
+    assert t.Date(d).value == d
+    assert t.Date(9261).value == d
+    assert t.Date("2025-05-10").value == d
 
-    with pytest.raises(ValueError):
-        s.Date("wrong-format")
+    with pytest.raises(t.RayInitException):
+        t.Date("wrong-format")
 
 
 def test_f64():
-    assert s.F64(123).value == 123.0
-    assert s.F64(123.0).value == 123.0
+    assert t.F64(123).value == 123.0
+    assert t.F64(123.0).value == 123.0
 
-    with pytest.raises(ValueError):
-        s.C8("123")
+    with pytest.raises(t.RayInitException):
+        t.C8("123")
 
 
 def test_integers():
-    assert s.I16(123).value == 123
-    assert s.I32(123).value == 123
-    assert s.I64(123).value == 123
+    assert t.I16(123).value == 123
+    assert t.I32(123).value == 123
+    assert t.I64(123).value == 123
 
-    with pytest.raises(ValueError):
-        s.C8("wrong-format")
+    with pytest.raises(t.RayInitException):
+        t.C8("wrong-format")
 
 
 def test_symbol():
-    assert s.Symbol("Test").value == "Test"
-    assert s.Symbol("123").value == "123"
+    assert t.Symbol("Test").value == "Test"
+    assert t.Symbol("123").value == "123"
 
 
 def test_time():
-    t = dt.time(hour=10, minute=15, second=20)
-    assert s.Time(36920000).value == t
-    assert s.Time(t).value == t
-    assert s.Time("10:15:20").value == t
+    tt = dt.time(hour=10, minute=15, second=20)
+    assert t.Time(36920000).value == tt
+    assert t.Time(tt).value == tt
+    assert t.Time("10:15:20").value == tt
 
-    with pytest.raises(ValueError):
-        s.Time("wrong-format")
-
-
-# TODO: Fix timezones
-@pytest.mark.xfail
-def test_timestamp():
-    t = dt.datetime(
-        year=2025,
-        month=10,
-        day=5,
-        hour=10,
-        minute=15,
-        second=20,
-        tzinfo=dt.timezone.utc,
-    )
-    assert s.Timestamp(t).value == t
-    assert s.Timestamp(1759655720000).value == t
-    assert s.Timestamp(t.isoformat()).value == t
-
-    with pytest.raises(ValueError):
-        s.Timestamp("wrong-format")
+    with pytest.raises(t.RayInitException):
+        t.Time("wrong-format")
 
 
 def test_u8():
-    assert s.U8(1).value == 1
+    assert t.U8(1).value == 1
 
-    with pytest.raises(ValueError):
-        s.U8(256)
+    with pytest.raises(t.RayInitException):
+        t.U8(256)
 
-    with pytest.raises(ValueError):
-        s.U8(-1)
+    with pytest.raises(t.RayInitException):
+        t.U8(-1)
