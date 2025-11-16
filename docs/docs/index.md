@@ -1,5 +1,5 @@
-# :material-database: Welcome to raypy
+# :material-database: Welcome to RayPy documentation
 
-The raypy is a Python interface to the RayforceDB columnar database.
+RayPy is a Python interface to the RayforceDB columnar database. RayforceDB is a very fast columnar vector database written in pure C.
 
 <asciinema-player src="assets/demo.cast" preload rows="24" loop=1></asciinema-player>

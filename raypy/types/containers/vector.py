@@ -69,7 +69,7 @@ class Vector(Container):
         return tuple(result)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.type_code})"
+        return f"{self.__class__.__name__}({self.ptr.get_obj_type()})"
 
     def __len__(self) -> int:
         return FFI.get_obj_length(self.ptr)

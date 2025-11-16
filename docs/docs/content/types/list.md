@@ -7,13 +7,13 @@ The `List` type represents a heterogeneous collection. Unlike vectors, lists can
 ### Creating List Values
 
 ```python
-from raypy.types.container import List
+from raypy import List
 
 # From Python list
 mixed_list = List([1, "hello", 3.14, True])
 
 # From raypy objects
-from raypy.types.scalar import I64, Symbol, F64, B8
+from raypy import I64, Symbol, F64, B8
 mixed_list = List([
     I64(42),
     Symbol("test"),
@@ -59,14 +59,6 @@ nested_data = List([
         "notifications", True
     ])
 ])
-
-print("Nested Data Structure:")
-print(f"Length: {len(nested_data)}")
-
-# Access nested elements
-users_list = nested_data[1]
-first_user = users_list[0]
-print(f"First user: {[item.value for item in first_user]}")
 ```
 
 ## Notes

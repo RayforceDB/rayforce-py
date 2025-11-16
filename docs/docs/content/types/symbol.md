@@ -1,6 +1,6 @@
 # Symbol
 
-The `Symbol` type represents an symbolic identified in raypy, which is not mutable. Symbols are commonly used for function and env var names.
+The `Symbol` type represents an symbolic identified in raypy, which is not mutable. Symbols are commonly used for table column names.
 
 - Any Python value can be converted to a Symbol (via string conversion)
 - Symbols are immutable once created
@@ -34,35 +34,4 @@ Symbol("symbol")
 
 >>> s.value
 "symbol"
-```
-
-### Comparison
-
-```python
->>> s1 = t.Symbol("test")
->>> s2 = t.Symbol("test")
->>> s3 = t.Symbol("other")
-
->>> s1 == s2
-True
-
->>> s1 == s3
-False
-```
-
-### Type Conversion
-
-```python
->>> t.Symbol("hello")
-Symbol("hello")
-
->>> t.Symbol(42)
-Symbol(42)
-
->>> Symbol(3.14)
-Symbol(3.14)
-
->>> Symbol(True)
-Symbol(True)
-
 ```

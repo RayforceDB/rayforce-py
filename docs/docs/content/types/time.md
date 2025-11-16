@@ -39,17 +39,3 @@ Time(14:30:20)
 >>> ti.value
 datetime.time(14, 30, 20)
 ```
-
-### Comparison
-
-```python
->>> time1 = t.Time("10:30:00")
->>> time2 = t.Time("10:30:00")
->>> time3 = t.Time("15:45:00")
-
->>> time1 == time2
-True
-
->>> time1 == time3
-False
-```

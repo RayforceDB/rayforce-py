@@ -428,7 +428,7 @@ class Table:
             other_table = other._table if isinstance(other, Table) else other
             expr = Expression(Operation.CONCAT, result, other_table)
             result = utils.eval_obj(expr.to_low_level())
-        return Table(ptr=result.ptr)
+        return Table(ptr=result._table.ptr)
 
     @staticmethod
     def concat_all(tables: list[Table]) -> Table:
@@ -454,7 +454,7 @@ class Table:
         else:
             raise ValueError(f"Join type '{how}' not yet supported. Use 'inner'.")
 
-        return Table(ptr=result.ptr)
+        return Table(ptr=result._table.ptr)
 
     def inner_join(self, other: Table, on: str | list[str]) -> Table:
         return self.join(other, on=on, how="inner")
@@ -471,16 +471,6 @@ class Table:
         match_on: str | list[str] = "id",
     ) -> UpsertQuery:
         return UpsertQuery(self._table, data, match_on)
-
-    def head(self, n: int = 5) -> Table:
-        return self.limit(n).execute()
-
-    def show(self, n: int = 20) -> None:
-        if n:
-            result = self.head(n)
-        else:
-            result = self._get_table()
-        print(result)
 
     def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self._table.ptr)

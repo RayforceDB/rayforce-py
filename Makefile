@@ -65,23 +65,7 @@ ext:
 all: pull_from_gh patch_makefile ext
 
 test:
-	pytest tests/
-
-runtime:
-	python3 -c 'from raypy import repl; repl.start_repl()'
-
-py:
-	ipython -i -c "\
-	import uuid; \
-	from raypy import types as t; \
-	from raypy import _rayforce as r; \
-	from raypy import queries as q; \
-	from raypy.core import FFI; \
-	from raypy import misc; \
-	values = [['001', '002', '003', '004', '005'], ['alice', 'bob', 'charlie', 'dana', 'eli'], ['johnson', 'smith', 'kim', 'williams', 'nguyen'], ['alice.johnson@example.com', 'bob.smith@example.com', 'charlie.kim@example.com', 'dana.williams@example.com', 'eli.nguyen@example.com'], ['engineering', 'marketing', 'finance', 'hr', 'design'], [29, 34, 41, 38, 45], [uuid.uuid4() for _ in range(5)]]; \
-	columns = ['id', 'first_name', 'last_name', 'email', 'department', 'age', 'uuid']; \
-	table = t.Table(columns=columns, values=values); \
-	misc.set_table_name('people', table)"
+	pytest -x -vv tests/
 
 lint:
 	ruff format tests/ raypy/

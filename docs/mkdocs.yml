@@ -1,18 +1,15 @@
-site_name: raypy
+site_name: RayPy
 repo_url: https://github.com/singaraiona/raypy
 repo_name: GitHub
 
 theme:
   name: material
-  # custom_dir: overrides
   icon:
     repo: fontawesome/brands/github 
-  # logo: assets/logo.png
   favicon: images/favicon.png
   features:
     - header.autohide
     - announce.dismiss
-    # - navigation.tabs
     - navigation.sections
     - navigation.top
     - navigation.indexes
@@ -20,29 +17,28 @@ theme:
     - search.highlight
     - navigation.footer
     - content.code.copy
-    # - content.action.view
     - toc.follow
 
   palette:
-    # Light mode
+    # Light mode - Soft, accessible colors
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: blue       # Milvus-style blue
-      accent: light blue # Lighter accent like Milvus
+      primary: red
+      accent: red
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    # Dark mode    
+    # Dark mode - Deep charcoal, not pure black
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: blue      # Keep consistent branding
-      accent: light blue # Keep consistent accent
+      primary: red
+      accent: red
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
   font:
     text: Roboto
-    code: JetBrains Mono  # Changed to JetBrains Mono for better code readability
+    code: JetBrains Mono
   icon:
     logo: fontawesome/brands/ravelry
 
@@ -52,14 +48,12 @@ extra:
       - icon: fontawesome/brands/github 
         link: https://github.com/singaraiona/raypy
 
-copyright: Copyright &copy; 2025 raypy
+copyright: Copyright &copy; 2025 RayPy
 
 plugins:
   - offline
   - search:
       separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-  # - minify:
-  #     minify_html: true
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -112,25 +106,37 @@ nav:
       - Dev:
         - Lint and type: content/lint.md
         - Tests: content/tests.md
+    - Query Guide:
+      - Overview: content/queries/index.md
+      - Creating Tables: content/queries/tables.md
+      - SELECT: content/queries/select.md
+      - WHERE: content/queries/where.md
+      - ORDER BY: content/queries/order-by.md
+      - GROUP BY: content/queries/group-by.md
+      - JOIN: content/queries/join.md
+      - UPDATE: content/queries/update.md
+      - INSERT: content/queries/insert.md
+      - UPSERT: content/queries/upsert.md
+      - Table Management: content/queries/management.md
+    - Types Overview:
+      - Overview: content/types/index.md
+    - Scalar Types:
+      - Integers (I16, I32, I64): content/types/integers.md
+      - Float (F64): content/types/float.md
+      - Boolean (B8): content/types/b8.md
+      - Character (C8): content/types/c8.md
+      - Symbol: content/types/symbol.md
+      - Unsigned Integer (U8): content/types/u8.md
+      - Date: content/types/date.md
+      - Time: content/types/time.md
+      - Timestamp: content/types/timestamp.md
+      - GUID: content/types/guid.md
+    - Container Types:
+      - Vector: content/types/vector.md
+      - List: content/types/list.md
+      - String: content/types/string.md
+      - Dict: content/types/dict.md
+      - Table: content/types/table.md
     - Plugins:
       - KDB: content/plugins/kdb.md
-    - Types:
-      - Overview: content/types/index.md
-      - Scalar Types:
-        - Integers (I16, I32, I64): content/types/integers.md
-        - Float (F64): content/types/float.md
-        - Boolean (B8): content/types/b8.md
-        - Character (C8): content/types/c8.md
-        - Symbol: content/types/symbol.md
-        - Unsigned Integer (U8): content/types/u8.md
-        - Date: content/types/date.md
-        - Time: content/types/time.md
-        - Timestamp: content/types/timestamp.md
-        - GUID: content/types/guid.md
-      - Container Types:
-        - Vector: content/types/vector.md
-        - List: content/types/list.md
-        - String: content/types/string.md
-        - Dict: content/types/dict.md
-        - Table: content/types/table.md
   - License: content/license.md

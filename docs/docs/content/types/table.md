@@ -6,7 +6,7 @@ The `Table` type represents a structured data table. It consists of named column
 ### Creating Table Values
 
 ```python
-from raypy.types.container import Table
+from raypy import Table
 
 # Create table with columns and data
 columns = ["id", "name", "age", "salary"]

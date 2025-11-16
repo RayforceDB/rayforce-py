@@ -45,17 +45,3 @@ Timestamp(2025-01-15 14:30:20)
 >>> ts.value
 datetime.datetime(2025, 1, 15, 14, 30, 20)
 ```
-
-### Comparison
-
-```python
->>> ts1 = t.Timestamp("2025-01-15T10:30:00")
->>> ts2 = t.Timestamp("2025-01-15T10:30:00")
->>> ts3 = t.Timestamp("2025-01-15T15:45:00")
-
->>> ts1 == ts2
-True
-
->>> ts1 == ts3
-False
-```

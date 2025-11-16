@@ -4,4 +4,3 @@ exclude = ["__init__.pyi"]
 
 [tool.mypy]
 follow_imports = "skip"
-exclude = ["raypy/event_loop.py", "raypy/types/llambda.py", "raypy/repl.py"]

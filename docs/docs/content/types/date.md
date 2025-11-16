@@ -41,17 +41,3 @@ Date(2025-01-15)
 >>> d.value
 datetime.date(2025, 1, 15)
 ```
-
-### Comparison
-
-```python
->>> date1 = Date("2025-01-01")
->>> date2 = Date("2025-01-01")
->>> date3 = Date("2025-12-31")
-
->>> date1 == date2
-True
-
->>> date1 == date3
-False
-```

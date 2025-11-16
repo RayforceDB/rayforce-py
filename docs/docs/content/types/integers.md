@@ -50,17 +50,3 @@ I32(32)
 >>> int_val.value
 42
 ```
-
-### Comparison
-
-```python
->>> a = I32(100)
->>> b = I32(100)
->>> c = I64(100)
-
->>> a == b
-True
-
->>> a == c  # cross-type comparison
-True
-```
