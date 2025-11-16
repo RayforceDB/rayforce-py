@@ -4,6 +4,7 @@ import datetime as dt
 import uuid
 
 from raypy import _rayforce as r
+from raypy.types.operators import Operation
 from raypy.types.registry import TypeRegistry
 
 
@@ -29,6 +30,8 @@ def python_to_ray(value: t.Any) -> r.RayObject:
 
     if isinstance(value, r.RayObject):
         return value
+    elif isinstance(value, Operation):
+        return value.primitive
     elif isinstance(value, bool):
         return B8(value).ptr
     elif isinstance(value, int):

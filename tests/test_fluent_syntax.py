@@ -6,8 +6,8 @@ showing how much simpler and more readable the code becomes.
 """
 
 from raypy import Table
-from raypy.types import container as c
-from raypy.types import scalar as s
+from raypy.types import containers as c
+from raypy.types import scalars as s
 
 
 def test_basic_column_access():
@@ -214,96 +214,11 @@ def test_update_query():
     table.save("test_table")
 
     # Update with filter
+    table_1 = Table.get("test_table")
     result = (
-        Table.get("test_table").update(age=100).where(lambda t: t.age == 34).execute()
+        table_1.update(age=100).where(table_1.age == 34).execute()
     )
 
     # Check result
     assert result is not None
 
-
-def test_comparison_old_vs_new_syntax():
-    """
-    Side-by-side comparison showing the improvement.
-
-    This test doesn't assert anything, it just demonstrates
-    the syntax difference for documentation purposes.
-    """
-    from raypy.types import queries as q
-    from raypy.types import operators as p
-
-    table = Table(
-        columns=["id", "name", "age"],
-        values=[["001", "002"], ["alice", "bob"], [29, 34]],
-    )
-
-    # OLD SYNTAX (verbose)
-    old_query = q.SelectQuery(
-        select_from=table._table,
-        attributes={
-            "id": "id",
-            "name": "name",
-            "age_doubled": q.Expression(p.Operation.MULTIPLY, "age", 2),
-        },
-        where=q.Expression(p.Operation.GREATER_EQUAL, "age", 30),
-    )
-
-    # NEW SYNTAX (concise and readable)
-    new_result = (
-        table.select("id", "name", age_doubled=table.age * 2)
-        .where(table.age >= 30)
-        .execute()
-    )
-
-    # Both should work!
-    assert new_result is not None
-
-
-if __name__ == "__main__":
-    # Run a simple test
-    print("Testing fluent syntax...")
-    test_basic_column_access()
-    print("✅ Basic column access works")
-
-    test_simple_select_with_filter()
-    print("✅ Simple select with filter works")
-
-    test_computed_columns()
-    print("✅ Computed columns work")
-
-    test_complex_filter_conditions()
-    print("✅ Complex filter conditions work")
-
-    test_group_by_with_aggregations()
-    print("✅ GROUP BY with aggregations works")
-
-    test_filtered_aggregation()
-    print("✅ Filtered aggregations work")
-
-    test_isin_filter()
-    print("✅ isin() filter works")
-
-    test_complex_query_like_user_example()
-    print("✅ Complex query (like your exec_costs example) works!")
-
-    test_table_from_dict()
-    print("✅ Table.from_dict() works")
-
-    test_table_from_records()
-    print("✅ Table.from_records() works")
-
-    print("\n🎉 All tests passed! The new Pythonic syntax is ready to use!")
-    print("\nYour complex query now looks like this:")
-    print("""
-    exec_costs = (
-        executed_orders
-        .group_by("Entity", "Broker", "Client")
-        .agg(
-            ExecQty=executed_orders.ExecQty.sum(),
-            ExecQtyP=executed_orders.ExecQty.where(
-                executed_orders.ExecCapacity.isin(["CrossAsPrincipal", "Principal"])
-            ).sum(),
-            ClientComm=executed_orders.ClientComm.sum()
-        )
-    )
-    """)

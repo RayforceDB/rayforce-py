@@ -81,7 +81,7 @@ def test_table():
     for idx, column in enumerate(columns):
         comparable_vector[idx] = column
 
-    assert table.columns() == comparable_vector
+    assert table.columns == [name for name in comparable_vector]
     # Values are now Vectors (auto-converted from lists), not Lists
     result_values = table.values()
     assert len(result_values) == len(values)
