@@ -11,7 +11,6 @@ class Operation(enum.StrEnum):
     SUBTRACT = "-"
     MULTIPLY = "*"
     DIVIDE = "/"
-    FDIVIDE = "fdiv"
     MODULO = "%"
     NEGATE = "neg"
 
@@ -47,18 +46,14 @@ class Operation(enum.StrEnum):
     CEIL = "ceil"
     FLOOR = "floor"
     ROUND = "round"
-    ABS = "abs"
 
     # Collection
     IN = "in"
     DISTINCT = "distinct"
-    UNIQUE = "unique"
 
     # Query
     SELECT = "select"
     WHERE = "where"
-    GROUP_BY = "group-by"
-    ORDER_BY = "order-by"
 
     # Join
     INNER_JOIN = "inner-join"
@@ -80,19 +75,16 @@ class Operation(enum.StrEnum):
     # Functional
     MAP = "map"
     MAP_LEFT = "map-left"
-    EACH = "each"
 
     # Composition
     TIL = "til"
 
     # Type
     LIST = "list"
-    VECTOR = "vector"
 
     # Other
     QUOTE = "quote"
     CONCAT = "concat"
-    JOIN_STRINGS = "join"
 
     @property
     def primitive(self) -> r.RayObject:

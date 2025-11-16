@@ -498,9 +498,10 @@ class Table:
         return []
 
     def values(self):
-        if isinstance(self._table, _Table):
-            return self._table.values()
-        return None
+        if self._is_ref:
+            table = utils.eval_str(self._table)
+            return table.values()
+        return self._table.values()
 
     @property
     def shape(self) -> tuple[int]:
@@ -558,7 +559,7 @@ class Table:
             return FFI.repr_table(self._table.ptr)
         elif isinstance(self._table, str):
             table = utils.eval_str(self._table)
-            return FFI.repr_table(table.ptr)
+            return FFI.repr_table(table._table.ptr)
         return f"Table('{self._table}')"
 
     def __repr__(self) -> str:
@@ -990,7 +991,7 @@ class _UpsertQuery:
 
     def __build_query(self) -> None:
         from raypy.types.containers import Vector
-        from raypy.types.scalars import Symbol, I64, F64, B8
+        from raypy.types.scalars import Symbol, I64, F64, B8, QuotedSymbol
 
         # Match low-level is a number of ordered fields provided in upsertable.
         self.match_ptr = FFI.init_i64(self.match_by_first)
@@ -1000,7 +1001,8 @@ class _UpsertQuery:
             FFI.insert_obj(
                 insert_to=i_keys,
                 idx=idx,
-                ptr=utils.python_to_ray(key),
+                ptr=QuotedSymbol(key).ptr,
+                # ptr=utils.python_to_ray(key),
             )
 
         i_values = FFI.init_list()
@@ -1040,7 +1042,7 @@ class _UpsertQuery:
         else:
             from raypy.types.scalars import QuotedSymbol
 
-            self.upsert_to_ptr = QuotedSymbol(self.upsert_to)
+            self.upsert_to_ptr = QuotedSymbol(self.upsert_to).ptr
 
     def __init__(
         self,
