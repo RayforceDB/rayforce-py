@@ -75,15 +75,15 @@ def test_table():
         ["engineering", "marketing", "finance", "hr", "design"],  # department
         [29, 34, 41, 38, 45],  # age (as int)
     ]
-    t = t.Table(columns=columns, values=values)
+    table = t.Table(columns=columns, values=values)
 
     comparable_vector = t.Vector(type_code=t.Symbol.type_code, length=len(columns))
     for idx, column in enumerate(columns):
         comparable_vector[idx] = column
 
-    assert t.columns() == comparable_vector
+    assert table.columns() == comparable_vector
     # Values are now Vectors (auto-converted from lists), not Lists
-    result_values = t.values()
+    result_values = table.values()
     assert len(result_values) == len(values)
     # Check each column is a Vector with correct values
     for idx, expected_col in enumerate(values):
