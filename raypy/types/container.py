@@ -5,7 +5,7 @@ import typing as t
 import uuid
 
 from raypy.core import FFI
-from raypy.types import scalar, primitive
+from raypy.types import scalar, operators
 from raypy import _rayforce as r
 
 
@@ -464,7 +464,7 @@ def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
         return class_type(ptr=ptr)
 
     if ptr_type in (101, 102, 103):
-        return primitive.Operation.from_ptr(ptr)
+        return operators.Operation.from_ptr(ptr)
 
     if ptr_type == r.TYPE_NULL:
         return None

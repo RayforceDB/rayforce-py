@@ -1,6 +1,6 @@
 from raypy.queries import select, update, upsert, insert
 from raypy.types import queries as q
-from raypy.types import primitive as p
+from raypy.types import operators as p
 from raypy.types import scalar as s
 from raypy.types import container as c
 from raypy import misc
@@ -47,7 +47,7 @@ def test_select():
             "age_doubled": q.Expression(p.Operation.MULTIPLY, "age", 2),
             "age": "age",
         },
-        where=q.Expression(p.Operation.GTE, "age", 40),
+        where=q.Expression(p.Operation.GREATER_EQUAL, "age", 40),
     )
 
     # Select inplace
@@ -60,7 +60,7 @@ def test_select():
             "age_doubled": q.Expression(p.Operation.MULTIPLY, "age", 2),
             "age": "age",
         },
-        where=q.Expression(p.Operation.GTE, "age", 40),
+        where=q.Expression(p.Operation.GREATER_EQUAL, "age", 40),
     )
 
     result_by_ref = select(query_by_ref)
@@ -96,7 +96,7 @@ def test_select():
                 "age_doubled": q.Expression(p.Operation.MULTIPLY, "age", 2),
                 "age": "age",
             },
-            where=q.Expression(p.Operation.GTE, "age", 40),
+            where=q.Expression(p.Operation.GREATER_EQUAL, "age", 40),
         ),
         attributes={
             "id": "id",
@@ -106,7 +106,7 @@ def test_select():
             "age_doubled": "age_doubled",
             "age": "age",
         },
-        where=q.Expression(p.Operation.GTE, "age_doubled", 50),
+        where=q.Expression(p.Operation.GREATER_EQUAL, "age_doubled", 50),
     )
     result_from_selectable = select(query_from_selectable)
     assert result_from_selectable == expected_table

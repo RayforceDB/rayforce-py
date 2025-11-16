@@ -1,7 +1,7 @@
 from typing import Any, Iterable
 from raypy.types import container as c
 from raypy.core import FFI
-from raypy.types import primitive as p
+from raypy.types import operators
 from raypy.types import queries as q
 from raypy import _rayforce as r
 
@@ -25,7 +25,7 @@ class Lambda:
         lambda_expression = FFI.init_list()
         FFI.push_obj_to_iterable(
             iterable=lambda_expression,
-            obj=p.Operation.DO.primitive,
+            obj=operators.Operation.DO.primitive,
         )
         for expr in expressions:
             if len(expr) == 1:

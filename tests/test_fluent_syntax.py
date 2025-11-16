@@ -230,7 +230,7 @@ def test_comparison_old_vs_new_syntax():
     the syntax difference for documentation purposes.
     """
     from raypy.types import queries as q
-    from raypy.types import primitive as p
+    from raypy.types import operators as p
 
     table = Table(
         columns=["id", "name", "age"],
@@ -245,7 +245,7 @@ def test_comparison_old_vs_new_syntax():
             "name": "name",
             "age_doubled": q.Expression(p.Operation.MULTIPLY, "age", 2),
         },
-        where=q.Expression(p.Operation.GTE, "age", 30),
+        where=q.Expression(p.Operation.GREATER_EQUAL, "age", 30),
     )
 
     # NEW SYNTAX (concise and readable)

@@ -4,7 +4,7 @@ from typing import Any
 
 from raypy import _rayforce as r
 from raypy.core import FFI
-from raypy.types import primitive as p
+from raypy.types import operators as p
 from raypy.types import container as c
 from raypy.types import scalar as s
 

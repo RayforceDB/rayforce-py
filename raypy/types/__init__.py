@@ -1,6 +1,6 @@
 from .scalar import *
 from .container import *
-from .primitive import *
+from .operators import *
 from .queries import *
 from .llambda import *
 

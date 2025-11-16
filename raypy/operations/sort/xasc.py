@@ -2,7 +2,7 @@ import typing as t
 
 from raypy import misc
 from raypy.types.container import List, Vector
-from raypy.types.primitive import Operation
+from raypy.types.operators import Operation
 from raypy.types.scalar import Symbol
 
 

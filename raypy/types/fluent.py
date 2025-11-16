@@ -3,7 +3,7 @@ from typing import Callable, Union, List, Dict, Tuple, Optional
 
 from raypy.core import FFI
 from raypy.types import queries as q
-from raypy.types import primitive as p
+from raypy.types import operators as p
 from raypy.types import container as c
 from raypy.types import scalar as s
 from raypy.queries import select as legacy_select
@@ -78,7 +78,7 @@ class Expression:
         return Expression(p.Operation.ADD, self, other)
 
     def __sub__(self, other) -> Expression:
-        return Expression(p.Operation.SUBSTRACT, self, other)
+        return Expression(p.Operation.SUBTRACT, self, other)
 
     def __mul__(self, other) -> Expression:
         return Expression(p.Operation.MULTIPLY, self, other)
@@ -99,13 +99,13 @@ class Expression:
         return Expression(p.Operation.LE, self, other)
 
     def __le__(self, other) -> Expression:
-        return Expression(p.Operation.LTE, self, other)
+        return Expression(p.Operation.LESS_EQUAL, self, other)
 
     def __gt__(self, other) -> Expression:
         return Expression(p.Operation.GE, self, other)
 
     def __ge__(self, other) -> Expression:
-        return Expression(p.Operation.GTE, self, other)
+        return Expression(p.Operation.GREATER_EQUAL, self, other)
 
     def __repr__(self) -> str:
         return f"Expression({self.operation.value}, {len(self.operands)} operands)"
@@ -126,19 +126,19 @@ class Column:
         return Expression(p.Operation.LE, self, other)
 
     def __le__(self, other) -> Expression:
-        return Expression(p.Operation.LTE, self, other)
+        return Expression(p.Operation.LESS_EQUAL, self, other)
 
     def __gt__(self, other) -> Expression:
         return Expression(p.Operation.GE, self, other)
 
     def __ge__(self, other) -> Expression:
-        return Expression(p.Operation.GTE, self, other)
+        return Expression(p.Operation.GREATER_EQUAL, self, other)
 
     def __add__(self, other) -> Expression:
         return Expression(p.Operation.ADD, self, other)
 
     def __sub__(self, other) -> Expression:
-        return Expression(p.Operation.SUBSTRACT, self, other)
+        return Expression(p.Operation.SUBTRACT, self, other)
 
     def __mul__(self, other) -> Expression:
         return Expression(p.Operation.MULTIPLY, self, other)
@@ -153,7 +153,7 @@ class Column:
         return Expression(p.Operation.ADD, other, self)
 
     def __rsub__(self, other) -> Expression:
-        return Expression(p.Operation.SUBSTRACT, other, self)
+        return Expression(p.Operation.SUBTRACT, other, self)
 
     def __rmul__(self, other) -> Expression:
         return Expression(p.Operation.MULTIPLY, other, self)
