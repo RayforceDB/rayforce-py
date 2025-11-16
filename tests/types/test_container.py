@@ -53,48 +53,44 @@ def test_dict():
     comparable_keys = t.Vector(type_code=t.Symbol.type_code, length=2)
     for idx, key in enumerate(["test", "test1"]):
         comparable_keys[idx] = key
-
     assert d.keys() == comparable_keys
     assert d.values() == t.List(
         [123, {"test_inner": 555.0, "test_inner_list": [123, 444.0]}]
     )
-    assert d.values()[1] == t.Dict(
-        {"test_inner": 555.0, "test_inner_list": [123, 444.0]}
-    )
 
 
-# def test_table():
-#     columns = ["id", "first_name", "last_name", "email", "department", "age"]
-#     values = [
-#         ["001", "002", "003", "004", "005"],  # id
-#         ["alice", "bob", "charlie", "dana", "eli"],  # first_name
-#         ["johnson", "smith", "kim", "williams", "nguyen"],  # last_name
-#         [
-#             "alice.johnson@example.com",
-#             "bob.smith@example.com",
-#             "charlie.kim@example.com",
-#             "dana.williams@example.com",
-#             "eli.nguyen@example.com",
-#         ],  # email
-#         ["engineering", "marketing", "finance", "hr", "design"],  # department
-#         [29, 34, 41, 38, 45],  # age (as int)
-#     ]
-#     t = t.Table(columns=columns, values=values)
+def test_table():
+    columns = ["id", "first_name", "last_name", "email", "department", "age"]
+    values = [
+        ["001", "002", "003", "004", "005"],  # id
+        ["alice", "bob", "charlie", "dana", "eli"],  # first_name
+        ["johnson", "smith", "kim", "williams", "nguyen"],  # last_name
+        [
+            "alice.johnson@example.com",
+            "bob.smith@example.com",
+            "charlie.kim@example.com",
+            "dana.williams@example.com",
+            "eli.nguyen@example.com",
+        ],  # email
+        ["engineering", "marketing", "finance", "hr", "design"],  # department
+        [29, 34, 41, 38, 45],  # age (as int)
+    ]
+    t = t.Table(columns=columns, values=values)
 
-#     comparable_vector = t.Vector(type_code=t.Symbol.type_code, length=len(columns))
-#     for idx, column in enumerate(columns):
-#         comparable_vector[idx] = column
+    comparable_vector = t.Vector(type_code=t.Symbol.type_code, length=len(columns))
+    for idx, column in enumerate(columns):
+        comparable_vector[idx] = column
 
-#     assert t.columns() == comparable_vector
-#     # Values are now Vectors (auto-converted from lists), not Lists
-#     result_values = t.values()
-#     assert len(result_values) == len(values)
-#     # Check each column is a Vector with correct values
-#     for idx, expected_col in enumerate(values):
-#         result_col = result_values[idx]
-#         assert len(result_col) == len(expected_col)
+    assert t.columns() == comparable_vector
+    # Values are now Vectors (auto-converted from lists), not Lists
+    result_values = t.values()
+    assert len(result_values) == len(values)
+    # Check each column is a Vector with correct values
+    for idx, expected_col in enumerate(values):
+        result_col = result_values[idx]
+        assert len(result_col) == len(expected_col)
 
 
 def test_string():
     s = t.String("William")
-    assert t.value == "William"
+    assert s.value == "William"

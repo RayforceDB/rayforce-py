@@ -43,7 +43,7 @@ class TypeRegistry:
             raise Exception(f"Expected RayObject, got {type(ptr)}")
 
         type_code = ptr.get_obj_type()
-        if type_code > 0:
+        if type_code > 0 and type_code not in (r.TYPE_DICT, r.TYPE_LIST, r.TYPE_TABLE):
             from raypy.types import Vector
 
             return Vector(ptr=ptr, type_code=type_code)
@@ -54,7 +54,7 @@ class TypeRegistry:
             raise Exception(
                 f"Unknown type code {type_code}. Type not registered in TypeRegistry."
             )
-        print(type_class)
+
         return type_class(ptr=ptr)
 
     @classmethod

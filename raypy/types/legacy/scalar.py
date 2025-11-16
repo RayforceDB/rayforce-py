@@ -110,7 +110,7 @@ class C8(__RaypyScalar):
                 _value = str(value)
             except ValueError as e:
                 raise ValueError(f"{value} can not be represented as C8") from e
-            print(_value)
+
             if len(_value) != 1:
                 raise ValueError(f"{value} can not be represented as C8")
 

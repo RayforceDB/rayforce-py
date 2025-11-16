@@ -54,7 +54,6 @@ class Dict(Container):
 
         keys_obj = TypeRegistry.from_ptr(keys_ptr)
         values_obj = TypeRegistry.from_ptr(values_ptr)
-
         result = {}
         for k, v in zip(keys_obj, values_obj):
             py_key = k.to_python() if hasattr(k, "to_python") else k
