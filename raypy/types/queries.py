@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from raypy import _rayforce as r
-from raypy import api
+from raypy.core import FFI
 from raypy.types import primitive as p
 from raypy.types import container as c
 from raypy.types import scalar as s
@@ -17,21 +17,21 @@ class Expression:
     ptr: r.RayObject
 
     def __init__(self, *args) -> None:
-        self.ptr = api.init_list()
+        self.ptr = FFI.init_list()
 
         for arg in args:
-            api.push_obj(
+            FFI.push_obj(
                 iterable=self.ptr, ptr=c.from_python_type_to_raw_rayobject(arg)
             )
 
     def __len__(self) -> int:
-        return api.get_obj_length(self.ptr)
+        return FFI.get_obj_length(self.ptr)
 
     def __getitem__(self, idx: int) -> Any:
         if idx < 0 or idx >= len(self):
             raise IndexError("Expression index out of range")
 
-        return c.convert_raw_rayobject_to_raypy_type(api.at_idx(self.ptr, idx))
+        return c.convert_raw_rayobject_to_raypy_type(FFI.at_idx(self.ptr, idx))
 
     def __iter__(self) -> Any:
         for i in range(len(self)):
@@ -86,19 +86,19 @@ class SelectQuery:
 
     def __build_query(self) -> None:
         length = len(self.attr_keys) + 1 if not self.where else len(self.attr_keys) + 2
-        self._query_keys = api.init_vector(type_code=s.Symbol.type_code, length=length)
-        self._query_values = api.init_list()
+        self._query_keys = FFI.init_vector(type_code=s.Symbol.type_code, length=length)
+        self._query_values = FFI.init_list()
 
         for idx, key in enumerate(self.attr_keys):
             # Fill query keys with requested attributes
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=idx,
                 ptr=c.from_python_type_to_raw_rayobject(key),
             )
         else:
             # Push "from" keyword to query keys
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=len(self.attr_keys),
                 ptr=c.from_python_type_to_raw_rayobject("from"),
@@ -106,7 +106,7 @@ class SelectQuery:
 
         for value in self.attr_values:
             # Fill query values with requested attributes
-            api.push_obj(
+            FFI.push_obj(
                 iterable=self._query_values,
                 ptr=c.from_python_type_to_raw_rayobject(value),
             )
@@ -114,25 +114,25 @@ class SelectQuery:
             # Push "from" value to query values
             if isinstance(self.select_from, SelectQuery):
                 expr = Expression(p.Operation.SELECT, self.select_from.ptr)
-                api.push_obj(iterable=self._query_values, ptr=expr.ptr)
+                FFI.push_obj(iterable=self._query_values, ptr=expr.ptr)
             else:
-                api.push_obj(
+                FFI.push_obj(
                     iterable=self._query_values,
                     ptr=c.from_python_type_to_raw_rayobject(self.select_from),
                 )
 
         if self.where is not None:
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=len(self.attr_keys) + 1,
                 ptr=c.from_python_type_to_raw_rayobject("where"),
             )
-            api.push_obj(
+            FFI.push_obj(
                 iterable=self._query_values,
                 ptr=self.where.ptr,
             )
 
-        self.ptr = api.init_dict(self._query_keys, self._query_values)
+        self.ptr = FFI.init_dict(self._query_keys, self._query_values)
 
     def __init__(
         self,
@@ -179,19 +179,19 @@ class UpdateQuery:
 
     def __build_query(self) -> r.RayObject:
         length = len(self.attr_keys) + 1 if not self.where else len(self.attr_keys) + 2
-        self._query_keys = api.init_vector(type_code=s.Symbol.type_code, length=length)
-        self._query_values = api.init_list()
+        self._query_keys = FFI.init_vector(type_code=s.Symbol.type_code, length=length)
+        self._query_values = FFI.init_list()
 
         for idx, key in enumerate(self.attr_keys):
             # Fill query keys with requested attributes
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=idx,
                 ptr=c.from_python_type_to_raw_rayobject(key),
             )
         else:
             # Push "from" keyword to query keys
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=len(self.attr_keys),
                 ptr=c.from_python_type_to_raw_rayobject("from"),
@@ -199,7 +199,7 @@ class UpdateQuery:
 
         for value in self.attr_values:
             # Fill query values with requested attributes
-            api.push_obj(
+            FFI.push_obj(
                 iterable=self._query_values,
                 ptr=c.from_python_type_to_raw_rayobject(value),
             )
@@ -208,27 +208,27 @@ class UpdateQuery:
             if isinstance(self.update_from, str):
                 # We need to assign update_from symbol the "quoted"
                 # attribute, so inplace update can happen.
-                key = api.init_symbol(self.update_from)
-                api.set_obj_attrs(key, 8)
-                api.push_obj(iterable=self._query_values, ptr=key)
+                key = FFI.init_symbol(self.update_from)
+                FFI.set_obj_attrs(key, 8)
+                FFI.push_obj(iterable=self._query_values, ptr=key)
             else:
-                api.push_obj(
+                FFI.push_obj(
                     iterable=self._query_values,
                     ptr=c.from_python_type_to_raw_rayobject(self.update_from),
                 )
 
         if self.where is not None:
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=len(self.attr_keys) + 1,
                 ptr=c.from_python_type_to_raw_rayobject("where"),
             )
-            api.push_obj(
+            FFI.push_obj(
                 iterable=self._query_values,
                 ptr=self.where.ptr,
             )
 
-        self.ptr = api.init_dict(self._query_keys, self._query_values)
+        self.ptr = FFI.init_dict(self._query_keys, self._query_values)
 
     def __init__(
         self,
@@ -268,9 +268,9 @@ class InsertQuery:
         self.insertable = insertable
 
     def __build_query(self) -> None:
-        self.insertable_ptr = api.init_list()
+        self.insertable_ptr = FFI.init_list()
         for attribute in self.insertable:
-            api.push_obj(
+            FFI.push_obj(
                 iterable=self.insertable_ptr,
                 ptr=c.from_python_type_to_raw_rayobject(attribute),
             )
@@ -322,52 +322,55 @@ class UpsertQuery:
 
     def __build_query(self) -> None:
         # Match low-level is a number of ordered fields provided in upsertable.
-        self.match_ptr = api.init_i64(self.match_by_first)
+        self.match_ptr = FFI.init_i64(self.match_by_first)
 
-        i_keys = api.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
+        i_keys = FFI.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
         for idx, key in enumerate(self.upsertable.keys()):  # type: ignore
-            api.insert_obj(
+            FFI.insert_obj(
                 insert_to=i_keys,
                 idx=idx,
                 ptr=c.from_python_type_to_raw_rayobject(key),
             )
 
-        i_values = api.init_list()
+        i_values = FFI.init_list()
         for column_data in self.upsertable.values():  # type: ignore
             # Convert to appropriate Vector type (like Table.__init__ does)
             if not column_data:
-                api.push_obj(iterable=i_values, ptr=api.init_list())
+                FFI.push_obj(iterable=i_values, ptr=FFI.init_list())
             elif all(isinstance(x, str) for x in column_data):
                 # String column -> Vector of Symbols
                 vec = c.Vector(type_code=s.Symbol.type_code, items=column_data)
-                api.push_obj(iterable=i_values, ptr=vec.ptr)
-            elif all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in column_data):
+                FFI.push_obj(iterable=i_values, ptr=vec.ptr)
+            elif all(
+                isinstance(x, (int, float)) and not isinstance(x, bool)
+                for x in column_data
+            ):
                 # Numeric column -> detect if int or float
                 if all(isinstance(x, int) for x in column_data):
                     vec = c.Vector(type_code=s.I64.type_code, items=column_data)
                 else:
                     vec = c.Vector(type_code=s.F64.type_code, items=column_data)
-                api.push_obj(iterable=i_values, ptr=vec.ptr)
+                FFI.push_obj(iterable=i_values, ptr=vec.ptr)
             elif all(isinstance(x, bool) for x in column_data):
                 # Boolean column
                 vec = c.Vector(type_code=s.B8.type_code, items=column_data)
-                api.push_obj(iterable=i_values, ptr=vec.ptr)
+                FFI.push_obj(iterable=i_values, ptr=vec.ptr)
             else:
                 # Mixed types - keep as List
-                _l = api.init_list()
+                _l = FFI.init_list()
                 for value in column_data:
-                    api.push_obj(
+                    FFI.push_obj(
                         iterable=_l, ptr=c.from_python_type_to_raw_rayobject(value)
                     )
-                api.push_obj(iterable=i_values, ptr=_l)
+                FFI.push_obj(iterable=i_values, ptr=_l)
 
-        self.upsertable_ptr = api.init_dict(i_keys, i_values)
+        self.upsertable_ptr = FFI.init_dict(i_keys, i_values)
 
         if isinstance(self.upsert_to, c.Table):
             self.upsert_to_ptr = self.upsert_to.ptr
         else:
-            key = api.init_symbol(self.upsert_to)
-            api.set_obj_attrs(key, 8)
+            key = FFI.init_symbol(self.upsert_to)
+            FFI.set_obj_attrs(key, 8)
             self.upsert_to_ptr = key
 
     def __init__(

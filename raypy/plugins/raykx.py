@@ -2,7 +2,7 @@ import sys
 import os
 from datetime import datetime
 
-from raypy import api
+from raypy.core import FFI
 from raypy import _rayforce as r
 from raypy import types
 
@@ -20,19 +20,19 @@ c_plugin_compiled_path = os.path.join(
 
 
 # (.kx.hopen "127.0.0.1:5101")
-_fn_hopen = api.loadfn_from_file(
+_fn_hopen = FFI.loadfn_from_file(
     filename=c_plugin_compiled_path,
     fn_name="raykx_hopen",
     args_count=1,
 )
 # (.kx.hclose h)
-_fn_hclose = api.loadfn_from_file(
+_fn_hclose = FFI.loadfn_from_file(
     filename=c_plugin_compiled_path,
     fn_name="raykx_hclose",
     args_count=1,
 )
 # (.kx.send h "1+2")
-_fn_send = api.loadfn_from_file(
+_fn_send = FFI.loadfn_from_file(
     filename=c_plugin_compiled_path,
     fn_name="raykx_send",
     args_count=2,
@@ -64,17 +64,17 @@ class KDBConnection:
         self.is_closed = False
 
     def __execute_kdb_query(self, query: str) -> r.RayObject:
-        obj = api.init_list()
-        api.push_obj(obj, _fn_send)
-        api.push_obj(obj, self.ptr)
-        api.push_obj(obj, api.init_string(query))
-        return api.eval_obj(obj)
+        obj = FFI.init_list()
+        FFI.push_obj(obj, _fn_send)
+        FFI.push_obj(obj, self.ptr)
+        FFI.push_obj(obj, FFI.init_string(query))
+        return FFI.eval_obj(obj)
 
     def __close_kdb_connection(self) -> r.RayObject:
-        obj = api.init_list()
-        api.push_obj(obj, _fn_hclose)
-        api.push_obj(obj, self.ptr)
-        api.eval_obj(obj)
+        obj = FFI.init_list()
+        FFI.push_obj(obj, _fn_hclose)
+        FFI.push_obj(obj, self.ptr)
+        FFI.eval_obj(obj)
 
     def execute(self, query: str) -> r.RayObject:
         if self.is_closed:
@@ -82,7 +82,7 @@ class KDBConnection:
 
         result = self.__execute_kdb_query(query=query)
         if result.get_obj_type() == r.TYPE_ERR:
-            error_message = api.get_error_message(result)
+            error_message = FFI.get_error_message(result)
             if error_message and error_message.startswith("'ipc_send"):
                 raise ConnectionAlreadyClosed()
 
@@ -114,17 +114,17 @@ class KDBEngine:
         self.url = f"{host}:{port}" if port is not None else host
 
     def __open_kdb_connection(self) -> r.RayObject:
-        host = api.init_string(self.url)
-        obj = api.init_list()
-        api.push_obj(obj, _fn_hopen)
-        api.push_obj(obj, host)
-        return api.eval_obj(obj)
+        host = FFI.init_string(self.url)
+        obj = FFI.init_list()
+        FFI.push_obj(obj, _fn_hopen)
+        FFI.push_obj(obj, host)
+        return FFI.eval_obj(obj)
 
     def acquire(self) -> KDBConnection:
         _conn = self.__open_kdb_connection()
         if _conn.get_obj_type() == r.TYPE_ERR:
             raise ValueError(
-                f"Error when establishing connection: {api.get_error_message(_conn)}"
+                f"Error when establishing connection: {FFI.get_error_message(_conn)}"
             )
 
         conn = KDBConnection(engine=self, conn=_conn)

@@ -26,4 +26,4 @@ if os.path.exists(lib_path):
 # Expose fluent/Pythonic API
 from raypy.types.fluent import Table, Column, Expression, lookup
 
-__all__ = ['Table', 'Column', 'Expression', 'lookup']
+__all__ = ["Table", "Column", "Expression", "lookup"]

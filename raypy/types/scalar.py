@@ -2,7 +2,7 @@ import uuid
 import datetime as dt
 import typing as t
 
-from raypy import api
+from raypy.core import FFI
 from raypy import _rayforce as r
 
 DATE_COUNTS_FROM = dt.date(2000, 1, 1)
@@ -73,11 +73,11 @@ class B8(__RaypyScalar):
         super().__init__(value, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_b8(value)
+            self.ptr = FFI.init_b8(value)
 
     @property
     def value(self) -> bool:
-        return api.read_b8(self.ptr)
+        return FFI.read_b8(self.ptr)
 
     def __bool__(self) -> bool:
         return self.value
@@ -114,11 +114,11 @@ class C8(__RaypyScalar):
             if len(_value) != 1:
                 raise ValueError(f"{value} can not be represented as C8")
 
-            self.ptr = api.init_c8(_value)
+            self.ptr = FFI.init_c8(_value)
 
     @property
     def value(self) -> str:
-        return api.read_c8(self.ptr)
+        return FFI.read_c8(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, C8):
@@ -155,11 +155,11 @@ class Date(__RaypyScalar):
                 except ValueError as e:
                     raise ValueError("Date string must be in format YYYY-MM-DD") from e
 
-            self.ptr = api.init_date(days_since_epoch)
+            self.ptr = FFI.init_date(days_since_epoch)
 
     @property
     def value(self) -> dt.date:
-        days_since_epoch = api.read_date(self.ptr)
+        days_since_epoch = FFI.read_date(self.ptr)
         return DATE_COUNTS_FROM + dt.timedelta(days=days_since_epoch)
 
 
@@ -186,11 +186,11 @@ class F64(__RaypyScalar):
             except ValueError as e:
                 raise ValueError(f"{value} can not be represented as F64") from e
 
-            self.ptr = api.init_f64(_value)
+            self.ptr = FFI.init_f64(_value)
 
     @property
     def value(self) -> float:
-        return api.read_f64(self.ptr)
+        return FFI.read_f64(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, F64):
@@ -224,11 +224,11 @@ class I16(__RaypyScalar):
             if _value < -32767 or _value > 32767:
                 raise ValueError("I16 is out of range (-32767 to 32767)")
 
-            self.ptr = api.init_i16(_value)
+            self.ptr = FFI.init_i16(_value)
 
     @property
     def value(self) -> int:
-        return api.read_i16(self.ptr)
+        return FFI.read_i16(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, (I64, I16, I32)):
@@ -262,11 +262,11 @@ class I32(__RaypyScalar):
             if _value < -2147483648 or _value > 2147483647:
                 raise ValueError("I32 is out of range (-2147483648 to 2147483647)")
 
-            self.ptr = api.init_i32(_value)
+            self.ptr = FFI.init_i32(_value)
 
     @property
     def value(self) -> int:
-        return api.read_i32(self.ptr)
+        return FFI.read_i32(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, (I64, I16, I32)):
@@ -300,11 +300,11 @@ class I64(__RaypyScalar):
             if _value < -9223372036854775808 or _value > 9223372036854775808:
                 raise ValueError("I64 is out of range")
 
-            self.ptr = api.init_i64(_value)
+            self.ptr = FFI.init_i64(_value)
 
     @property
     def value(self) -> int:
-        return api.read_i64(self.ptr)
+        return FFI.read_i64(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, (I64, I16, I32)):
@@ -340,11 +340,11 @@ class Symbol(__RaypyScalar):
             raise ValueError(f"{value} can not be represented as Symbol") from e
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_symbol(_value)
+            self.ptr = FFI.init_symbol(_value)
 
     @property
     def value(self) -> str:
-        return api.read_symbol(self.ptr)
+        return FFI.read_symbol(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, Symbol):
@@ -360,7 +360,7 @@ class QuotedSymbol(Symbol):
         ptr: r.RayObject | None = None,
     ) -> None:
         super().__init__(value, ptr=ptr)
-        api.set_obj_attrs(self.ptr, 8)  # Quoted (')
+        FFI.set_obj_attrs(self.ptr, 8)  # Quoted (')
 
 
 class Time(__RaypyScalar):
@@ -407,11 +407,11 @@ class Time(__RaypyScalar):
                         "Time string must be in format HH:MM:SS or HH:MM:SS.mmm"
                     ) from e
 
-            self.ptr = api.init_time(ms_since_midnight)
+            self.ptr = FFI.init_time(ms_since_midnight)
 
     @property
     def value(self) -> dt.time:
-        ms_since_midnight = api.read_time(self.ptr)
+        ms_since_midnight = FFI.read_time(self.ptr)
 
         hours = ms_since_midnight // 3600000
         ms_since_midnight %= 3600000
@@ -460,11 +460,11 @@ class Timestamp(__RaypyScalar):
                 except ValueError:
                     raise ValueError("Timestamp string must be in ISO format")
 
-            self.ptr = api.init_timestamp(ms_since_epoch)
+            self.ptr = FFI.init_timestamp(ms_since_epoch)
 
     @property
     def value(self) -> dt.datetime:
-        ms_since_epoch = api.read_timestamp(self.ptr)
+        ms_since_epoch = FFI.read_timestamp(self.ptr)
         seconds = ms_since_epoch // 1000
         microseconds = (ms_since_epoch % 1000) * 1000
         return dt.datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
@@ -496,11 +496,11 @@ class U8(__RaypyScalar):
             if value is not None and (value < 0 or value > 255):
                 raise ValueError("Unsigned value is out of range (0-255)")
 
-            self.ptr = api.init_u8(value)
+            self.ptr = FFI.init_u8(value)
 
     @property
     def value(self) -> int:
-        return api.read_u8(self.ptr)
+        return FFI.read_u8(self.ptr)
 
     def __eq__(self, eq: t.Any) -> bool:
         if isinstance(eq, U8):
@@ -533,11 +533,11 @@ class GUID(__RaypyScalar):
             elif isinstance(value, (bytes, bytearray)):
                 guid = str(uuid.UUID(bytes=value))
 
-            self.ptr = api.init_guid(guid)
+            self.ptr = FFI.init_guid(guid)
 
     @property
     def value(self) -> str:
-        guid_bytes = api.read_guid(self.ptr)
+        guid_bytes = FFI.read_guid(self.ptr)
         return str(uuid.UUID(bytes=guid_bytes))
 
     def __str__(self) -> str:

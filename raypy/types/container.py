@@ -4,7 +4,7 @@ import datetime as dt
 import typing as t
 import uuid
 
-from raypy import api
+from raypy.core import FFI
 from raypy.types import scalar, primitive
 from raypy import _rayforce as r
 
@@ -75,7 +75,7 @@ class Vector:
         ptr: r.RayObject | None = None,
     ) -> None:
         if ptr is not None:
-            if not api.is_vector(ptr):
+            if not FFI.is_vector(ptr):
                 raise ValueError(f"Expected vector object, got {ptr.get_obj_type()}")
 
             self.ptr = ptr
@@ -88,7 +88,7 @@ class Vector:
         self.type_code = -type_code
 
         if items is not None:
-            self.ptr = api.init_vector(type_code=self.type_code, length=len(items))
+            self.ptr = FFI.init_vector(type_code=self.type_code, length=len(items))
             for idx, item in enumerate(items):
                 item_to_push = from_python_type_to_raw_rayobject(item)
                 if item_to_push.get_obj_type() != -self.type_code:
@@ -96,16 +96,16 @@ class Vector:
                         f"All vector values should have {-self.type_code} type"
                     )
 
-                api.insert_obj(insert_to=self.ptr, idx=idx, ptr=item_to_push)
+                FFI.insert_obj(insert_to=self.ptr, idx=idx, ptr=item_to_push)
         else:
-            self.ptr = api.init_vector(type_code=self.type_code, length=length)
+            self.ptr = FFI.init_vector(type_code=self.type_code, length=length)
 
     @property
     def value(self) -> tuple[t.Any]:
         return tuple([i for i in self])
 
     def __len__(self) -> int:
-        return api.get_obj_length(self.ptr)
+        return FFI.get_obj_length(self.ptr)
 
     def __getitem__(self, idx: int) -> t.Any:
         if idx < 0:
@@ -114,7 +114,7 @@ class Vector:
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        item_raw = api.at_idx(self.ptr, idx)
+        item_raw = FFI.at_idx(self.ptr, idx)
         return convert_raw_rayobject_to_raypy_type(item_raw)
 
     def __setitem__(self, idx: int, value: t.Any) -> None:
@@ -124,7 +124,7 @@ class Vector:
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        api.insert_obj(
+        FFI.insert_obj(
             insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value)
         )
 
@@ -173,7 +173,7 @@ class String(Vector):
         if value is not None:
             super().__init__(
                 type_code=-self.type_code,
-                items=[api.init_c8(i) for i in value],
+                items=[FFI.init_c8(i) for i in value],
             )
         else:
             super().__init__(ptr=ptr)
@@ -211,7 +211,7 @@ class List(__RaypyContainer):
         super().__init__(value=items, ptr=ptr)
 
         if not getattr(self, "ptr", None):
-            self.ptr = api.init_list()
+            self.ptr = FFI.init_list()
 
             for item in items:  # type: ignore
                 self.append(item)
@@ -221,10 +221,10 @@ class List(__RaypyContainer):
         return [i for i in self]
 
     def append(self, item: t.Any) -> None:
-        api.push_obj(iterable=self.ptr, ptr=from_python_type_to_raw_rayobject(item))
+        FFI.push_obj(iterable=self.ptr, ptr=from_python_type_to_raw_rayobject(item))
 
     def __len__(self) -> int:
-        return api.get_obj_length(self.ptr)
+        return FFI.get_obj_length(self.ptr)
 
     def __getitem__(self, idx: int) -> t.Any:
         if idx < 0:
@@ -233,7 +233,7 @@ class List(__RaypyContainer):
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        item_raw = api.at_idx(self.ptr, idx)
+        item_raw = FFI.at_idx(self.ptr, idx)
         return convert_raw_rayobject_to_raypy_type(item_raw)
 
     def __setitem__(self, idx: int, value: t.Any) -> None:
@@ -243,7 +243,7 @@ class List(__RaypyContainer):
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        api.insert_obj(
+        FFI.insert_obj(
             insert_to=self.ptr, idx=idx, ptr=from_python_type_to_raw_rayobject(value)
         )
 
@@ -292,19 +292,19 @@ class Dict(__RaypyContainer):
 
             dict_values = List(_values)
 
-            self.ptr = api.init_dict(dict_keys.ptr, dict_values.ptr)
+            self.ptr = FFI.init_dict(dict_keys.ptr, dict_values.ptr)
 
     def keys(self) -> Vector:
-        keys = api.get_dict_keys(self.ptr)
+        keys = FFI.get_dict_keys(self.ptr)
         return Vector(ptr=keys)
 
     def values(self) -> t.Any:
-        return convert_raw_rayobject_to_raypy_type(ptr=api.get_dict_values(self.ptr))
+        return convert_raw_rayobject_to_raypy_type(ptr=FFI.get_dict_values(self.ptr))
 
     def get(self, key: t.Any) -> t.Any:
-        key_ptr = api.init_symbol(key)
+        key_ptr = FFI.init_symbol(key)
         return convert_raw_rayobject_to_raypy_type(
-            ptr=api.dict_get(dict=self.ptr, key=key_ptr)
+            ptr=FFI.dict_get(dict=self.ptr, key=key_ptr)
         )
 
     def __len__(self) -> int:
@@ -383,7 +383,10 @@ class Table:
                 # String column -> Vector of Symbols
                 vec = Vector(type_code=scalar.Symbol.type_code, items=column_data)
                 table_values.append(vec)
-            elif all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in column_data):
+            elif all(
+                isinstance(x, (int, float)) and not isinstance(x, bool)
+                for x in column_data
+            ):
                 # Numeric column -> detect if int or float
                 if all(isinstance(x, int) for x in column_data):
                     vec = Vector(type_code=scalar.I64.type_code, items=column_data)
@@ -398,16 +401,16 @@ class Table:
                 # Mixed types or complex types - keep as List
                 table_values.append(column_data)
 
-        self.ptr = api.init_table(columns=table_columns.ptr, values=table_values.ptr)
+        self.ptr = FFI.init_table(columns=table_columns.ptr, values=table_values.ptr)
 
     def columns(self) -> t.Any:
-        return convert_raw_rayobject_to_raypy_type(api.get_table_keys(self.ptr))
+        return convert_raw_rayobject_to_raypy_type(FFI.get_table_keys(self.ptr))
 
     def values(self) -> t.Any:
-        return convert_raw_rayobject_to_raypy_type(api.get_table_values(self.ptr))
+        return convert_raw_rayobject_to_raypy_type(FFI.get_table_values(self.ptr))
 
     def __str__(self) -> str:
-        return api.repr_table(self.ptr)
+        return FFI.repr_table(self.ptr)
 
     def __repr__(self) -> str:
         return f"Table[{self.columns()}]"
@@ -453,10 +456,10 @@ def convert_raw_rayobject_to_raypy_type(ptr: r.RayObject) -> t.Any:
     ptr_type = ptr.get_obj_type()
 
     if ptr_type == 127:
-        return api.get_error_message(ptr)
+        return FFI.get_error_message(ptr)
 
     if class_type := RAY_TYPE_TO_CLASS_MAPPING.get(ptr_type):
-        if api.is_vector(ptr) and ptr_type != r.TYPE_C8:
+        if FFI.is_vector(ptr) and ptr_type != r.TYPE_C8:
             return Vector(type_code=ptr_type, ptr=ptr)
         return class_type(ptr=ptr)
 

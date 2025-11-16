@@ -2,9 +2,9 @@ from __future__ import annotations
 from datetime import datetime
 import typing as t
 
-from raypy import api
 from raypy import types
 from raypy import _rayforce as r
+from raypy.core import FFI
 
 
 class ConnectionAlreadyClosed(Exception):
@@ -32,10 +32,10 @@ class RayforceConnection:
         self.is_closed = False
 
     def __execute_rf_query(self, query: r.RayObject) -> r.RayObject:
-        return api.write(self.ptr, query)
+        return FFI.write(self.ptr, query)
 
     def __close_rf_connection(self) -> r.RayObject:
-        return api.hclose(self.ptr)
+        return FFI.hclose(self.ptr)
 
     def execute(self, query: t.Any) -> r.RayObject:
         if self.is_closed:
@@ -45,7 +45,7 @@ class RayforceConnection:
             query=types.from_python_type_to_raw_rayobject(query, is_ipc=True),
         )
         if result.get_obj_type() == r.TYPE_ERR:
-            error_message = api.get_error_message(result)
+            error_message = FFI.get_error_message(result)
             if error_message and error_message.startswith("'ipc_send"):
                 raise ConnectionAlreadyClosed()
 
@@ -83,15 +83,15 @@ class RayforceConnectionPool:
         self.timeout = timeout
 
     def __open_rf_connection(self) -> r.RayObject:
-        host = api.init_string(self.url)
-        timeout = api.init_i64(self.timeout)
-        return api.hopen(host, timeout)
+        host = FFI.init_string(self.url)
+        timeout = FFI.init_i64(self.timeout)
+        return FFI.hopen(host, timeout)
 
     def acquire(self) -> RayforceConnection:
         _conn = self.__open_rf_connection()
         if _conn.get_obj_type() == r.TYPE_ERR:
             raise ValueError(
-                f"Error when establishing connection: {api.get_error_message(_conn)}"
+                f"Error when establishing connection: {FFI.get_error_message(_conn)}"
             )
 
         conn = RayforceConnection(pool=self, conn=_conn)

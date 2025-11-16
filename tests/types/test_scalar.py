@@ -2,7 +2,6 @@ import uuid
 import datetime as dt
 import pytest
 
-from raypy.api import exceptions
 from raypy.types import scalar as s
 
 

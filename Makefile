@@ -28,7 +28,7 @@ pull_from_gh:
 	@rm -rf $(EXEC_DIR)/tmp/rayforce-c && \
 	echo "⬇️  Cloning rayforce repo from GitHub..."; \
 	git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c && \
-	cp -r $(EXEC_DIR)/tmp/rayforce-c/core $(EXEC_DIR)/raypy/core
+	cp -r $(EXEC_DIR)/tmp/rayforce-c/core $(EXEC_DIR)/raypy/rayforce
 
 patch_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
@@ -52,7 +52,7 @@ clean-ext:
 clean: clean-ext
 	@echo "🧹 Cleaning cache and generated files..."
 	@cd $(EXEC_DIR) && rm -rf \
-		raypy/core/ \
+		raypy/rayforce/ \
 		tmp/ \
 
 ext: 
@@ -76,7 +76,7 @@ py:
 	from raypy import types as t; \
 	from raypy import _rayforce as r; \
 	from raypy import queries as q; \
-	from raypy import api; \
+	from raypy.core import FFI; \
 	from raypy import misc; \
 	values = [['001', '002', '003', '004', '005'], ['alice', 'bob', 'charlie', 'dana', 'eli'], ['johnson', 'smith', 'kim', 'williams', 'nguyen'], ['alice.johnson@example.com', 'bob.smith@example.com', 'charlie.kim@example.com', 'dana.williams@example.com', 'eli.nguyen@example.com'], ['engineering', 'marketing', 'finance', 'hr', 'design'], [29, 34, 41, 38, 45], [uuid.uuid4() for _ in range(5)]]; \
 	columns = ['id', 'first_name', 'last_name', 'email', 'department', 'age', 'uuid']; \

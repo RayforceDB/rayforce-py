@@ -1,14 +1,14 @@
 from raypy import types as t
-from raypy import api
+from raypy.core import FFI
 from raypy import _rayforce as r
 
 
 def insert(q: t.InsertQuery) -> t.Table | bool:
-    result_ptr = api.insert(table_obj=q.insert_to_ptr, data_obj=q.insertable_ptr)
+    result_ptr = FFI.insert(table_obj=q.insert_to_ptr, data_obj=q.insertable_ptr)
     result_type = result_ptr.get_obj_type()
 
     if result_type == r.TYPE_ERR:
-        raise ValueError(f"Query error: {api.get_error_message(result_ptr)}")
+        raise ValueError(f"Query error: {FFI.get_error_message(result_ptr)}")
 
     # Inplace insert does not return a table as result.
     if result_type == -r.TYPE_SYMBOL:
