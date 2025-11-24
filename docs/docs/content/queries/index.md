@@ -99,20 +99,20 @@ senior_engineers = (
     .where(employees_table.dept == "eng")
     .where(employees_table.age >= 35)
     .where(employees_table.salary > 100000)
-    .order_by("salary", ascending=False)
+    .by(salary=employees_table.salary.desc())
     .execute()
 )
 
 # Aggregate: Department statistics
 dept_stats = (
     Table.get("employees")
-    .group_by("dept")
-    .agg(
+    .select(
         avg_age=Table.get("employees").age.mean(),
         total_salary=Table.get("employees").salary.sum(),
         avg_salary=Table.get("employees").salary.mean(),
         count=Table.get("employees").id.count(),
     )
+    .by("dept")
     .execute()
 )
 

@@ -8,9 +8,10 @@ Sort results using the `order_by()` method:
 
 ```python
 result = (
-    table.select("id", "name", "age")
+    table
+    .select("id", "name", "age")
     .where(table.age >= 30)
-    .order_by("age", ascending=True)
+    .by(age=table.age.asc())
     .execute()
 )
 ```
@@ -18,7 +19,11 @@ result = (
 ## Descending Order
 
 ```python
-result = table.order_by("age", ascending=False).execute()
+result = (
+    table
+    .by(age=table.age.desc())
+    .execute()
+)
 ```
 
 ## Multiple Sort Columns
@@ -27,17 +32,12 @@ Sort by multiple columns:
 
 ```python
 result = (
-    table.select("dept", "name", "salary")
-    .order_by("dept", "salary", ascending=True)
+    table
+    .select("dept", "name", "salary")
+    .by(
+        dept=table.dept.asc(),
+        salary=table.salary.desc(),
+    )
     .execute()
 )
 ```
-
-## Using Column Methods
-
-You can also use `.asc()` and `.desc()` methods on columns:
-
-```python
-result = table.order_by(table.age.asc(), table.name.desc()).execute()
-```
-

@@ -68,6 +68,8 @@ class Operation(enum.StrEnum):
     DESC = "desc"
     XASC = "xasc"
     XDESC = "xdesc"
+    IASC = "iasc"
+    IDESC = "idesc"
 
     # Accessor
     AT = "at"

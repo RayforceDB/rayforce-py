@@ -242,11 +242,23 @@ class Column:
     def __getitem__(self, condition: Expression) -> FilteredColumn:
         return self.where(condition)
 
-    def asc(self) -> SortColumn:
-        return SortColumn(self, ascending=True)
+    def asc(self) -> Expression:
+        return Expression(Operation.ASC, self)
 
-    def desc(self) -> SortColumn:
-        return SortColumn(self, ascending=False)
+    def desc(self) -> Expression:
+        return Expression(Operation.DESC, self)
+
+    def xasc(self) -> Expression:
+        return Expression(Operation.XASC, self)
+
+    def xdesc(self) -> Expression:
+        return Expression(Operation.XDESC, self)
+
+    def iasc(self) -> Expression:
+        return Expression(Operation.IASC, self)
+
+    def idesc(self) -> Expression:
+        return Expression(Operation.IDESC, self)
 
     def __repr__(self) -> str:
         return f"Column('{self.name}')"
@@ -277,16 +289,6 @@ class FilteredColumn:
 
     def __repr__(self) -> str:
         return f"FilteredColumn({self.column.name} where ...)"
-
-
-class SortColumn:
-    def __init__(self, column: Column, ascending: bool = True):
-        self.column = column
-        self.ascending = ascending
-
-    def __repr__(self) -> str:
-        direction = "asc" if self.ascending else "desc"
-        return f"{self.column.name} {direction}"
 
 
 class _Table:
@@ -407,20 +409,17 @@ class Table:
             return object.__getattribute__(self, name)
         return Column(name, table=self)
 
-    def select(self, *cols, **computed_cols) -> QueryBuilder:
-        builder = QueryBuilder(table=self._table)
+    def select(self, *cols, **computed_cols) -> SelectQueryBuilder:
+        builder = SelectQueryBuilder(table=self._table)
         return builder.select(*cols, **computed_cols)
 
-    def where(self, condition: Expression | Callable) -> QueryBuilder:
-        builder = QueryBuilder(table=self._table)
+    def where(self, condition: Expression | Callable) -> SelectQueryBuilder:
+        builder = SelectQueryBuilder(table=self._table)
         return builder.where(condition)
 
-    def order_by(self, *cols, ascending: bool = True) -> QueryBuilder:
-        builder = QueryBuilder(table=self._table)
-        return builder.order_by(*cols, ascending=ascending)
-
-    def group_by(self, *cols) -> GroupByBuilder:
-        return GroupByBuilder(table=self._table, group_cols=list(cols))
+    def by(self, *cols, **computed_cols) -> SelectQueryBuilder:
+        builder = SelectQueryBuilder(table=self._table)
+        return builder.by(*cols, **computed_cols)
 
     def concat(self, *others: Table) -> Table:
         result = self._table
@@ -584,16 +583,6 @@ class SelectQuery:
         if any([not isinstance(key, str) for key in self.attr_keys]):
             raise ValueError("Query keys should be Python strings.")
 
-        if any(
-            [
-                not isinstance(value, (str, _Expression, dict))
-                for value in self.attr_values
-            ]
-        ):
-            raise ValueError(
-                "Query values should be Python strings or Raypy expression."
-            )
-
         self.attributes = attributes
         self.select_from = select_from
         self.where = where
@@ -668,28 +657,28 @@ class SelectQuery:
         return self.__str__()
 
 
-class QueryBuilder:
+class SelectQueryBuilder:
     def __init__(
         self,
         table: str | _Table,
         select_cols: tuple[Any] | None = None,
         where_conditions: list[Expression] | None = None,
-        order_by_cols: list[SortColumn] | None = None,
+        by_cols: dict[str, Expression | str] | None = None,
     ):
         self._table = table
         self._select_cols = select_cols
         self._where_conditions = where_conditions or []
-        self._order_by_cols = order_by_cols or []
+        self._by_cols = by_cols or {}
 
-    def select(self, *cols, **computed_cols) -> QueryBuilder:
-        return QueryBuilder(
+    def select(self, *cols, **computed_cols) -> SelectQueryBuilder:
+        return SelectQueryBuilder(
             table=self._table,
             select_cols=(cols, computed_cols),
             where_conditions=self._where_conditions,
-            order_by_cols=self._order_by_cols,
+            by_cols=self._by_cols,
         )
 
-    def where(self, condition: Expression | Callable) -> QueryBuilder:
+    def where(self, condition: Expression | Callable) -> SelectQueryBuilder:
         if callable(condition):
             temp_table = Table._create_proxy(self._table)
             condition = condition(temp_table)
@@ -697,28 +686,19 @@ class QueryBuilder:
         new_conditions = self._where_conditions.copy()
         new_conditions.append(condition)
 
-        return QueryBuilder(
+        return SelectQueryBuilder(
             table=self._table,
             select_cols=self._select_cols,
             where_conditions=new_conditions,
-            order_by_cols=self._order_by_cols,
+            by_cols=self._by_cols,
         )
 
-    def order_by(self, *cols, ascending: bool = True) -> QueryBuilder:
-        sort_cols = []
-        for col in cols:
-            if isinstance(col, str):
-                sort_cols.append(SortColumn(Column(col), ascending=ascending))
-            elif isinstance(col, Column):
-                sort_cols.append(SortColumn(col, ascending=ascending))
-            elif isinstance(col, SortColumn):
-                sort_cols.append(col)
-
-        return QueryBuilder(
+    def by(self, *cols, **computed_cols) -> SelectQueryBuilder:
+        return SelectQueryBuilder(
             table=self._table,
             select_cols=self._select_cols,
             where_conditions=self._where_conditions,
-            order_by_cols=self._order_by_cols + sort_cols,
+            by_cols=(cols, computed_cols),
         )
 
     def execute(self) -> Table:
@@ -756,6 +736,23 @@ class QueryBuilder:
                 combined = combined & cond
             where_expr = combined.to_low_level()
 
+        if self._by_cols:
+            by_attributes = {}
+            cols, computed = self._by_cols
+
+            for col in cols:
+                by_attributes[col] = col
+
+            for name, expr in computed.items():
+                if isinstance(expr, Expression):
+                    by_attributes[name] = expr.to_low_level()
+                elif isinstance(expr, Column):
+                    by_attributes[name] = expr.name
+                else:
+                    by_attributes[name] = expr
+
+            attributes["by"] = by_attributes
+
         return SelectQuery(
             select_from=self._table, attributes=attributes, where=where_expr
         )
@@ -772,7 +769,7 @@ class QueryBuilder:
         return iter(result.values().value)
 
     def __repr__(self) -> str:
-        parts = [f"QueryBuilder(table={self._table}"]
+        parts = [f"SelectQueryBuilder(table={self._table}"]
         if self._select_cols:
             parts.append(", select=...")
         if self._where_conditions:
@@ -780,38 +777,17 @@ class QueryBuilder:
         return "".join(parts) + ")"
 
 
-class GroupByBuilder:
-    def __init__(self, table: str | _Table, group_cols: list[str]):
-        self._table = table
-        self._group_cols = group_cols
-
-    def agg(self, **aggregations) -> Table:
-        attributes = {}
-
-        attributes["by"] = {col: col for col in self._group_cols}
-
-        for name, expr in aggregations.items():
-            if isinstance(expr, Expression):
-                attributes[name] = expr.to_low_level()
-            elif isinstance(expr, Column):
-                attributes[name] = expr.name
-            else:
-                attributes[name] = expr
-
-        query = SelectQuery(select_from=self._table, attributes=attributes)
-
-        return utils.ray_to_python(FFI.select(query=query.ptr))
-
-    def __repr__(self) -> str:
-        return f"GroupByBuilder(group_by={self._group_cols})"
-
-
-class _UpdateQuery:
+class UpdateQuery:
     """
     Query to perform update operation
     """
 
     ptr: r.RayObject
+
+    def __init__(self, table: str | Table, **attributes):
+        self._table = table
+        self._attributes = attributes
+        self._where_condition = None
 
     def __validate(
         self,
@@ -831,12 +807,12 @@ class _UpdateQuery:
 
         self.attributes = attributes
         self.update_from = update_from
-        self.where = where
+        self._where = where
 
     def __build_query(self) -> r.RayObject:
         from raypy.types.scalars import Symbol
 
-        length = len(self.attr_keys) + 1 if not self.where else len(self.attr_keys) + 2
+        length = len(self.attr_keys) + 1 if not self._where else len(self.attr_keys) + 2
         self._query_keys = FFI.init_vector(type_code=Symbol.type_code, length=length)
         self._query_values = FFI.init_list()
 
@@ -874,7 +850,7 @@ class _UpdateQuery:
                     ptr=utils.python_to_ray(self.update_from),
                 )
 
-        if self.where is not None:
+        if self._where is not None:
             FFI.insert_obj(
                 insert_to=self._query_keys,
                 idx=len(self.attr_keys) + 1,
@@ -882,35 +858,60 @@ class _UpdateQuery:
             )
             FFI.push_obj(
                 iterable=self._query_values,
-                ptr=self.where.ptr,
+                ptr=self._where.ptr,
             )
 
         self.ptr = FFI.init_dict(self._query_keys, self._query_values)
 
-    def __init__(
-        self,
-        update_from: str | _Table,
-        attributes: dict[str, str | Expression],
-        where: Expression | None = None,
-    ) -> None:
-        self.__validate(update_from=update_from, attributes=attributes, where=where)
+    def where(self, condition: Expression | Callable) -> UpdateQuery:
+        if callable(condition):
+            temp = Table._create_proxy(self._table)
+            condition = condition(temp)
+        self._where_condition = condition
+        return self
+
+    def execute(self) -> Table | bool | str:
+        where_expr = None
+        if self._where_condition:
+            if isinstance(self._where_condition, Expression):
+                where_expr = self._where_condition.to_low_level()
+            else:
+                where_expr = self._where_condition
+
+        converted_attrs = {}
+        for key, value in self._attributes.items():
+            if isinstance(value, Expression):
+                converted_attrs[key] = value.to_low_level()
+            elif isinstance(value, Column):
+                converted_attrs[key] = value.name
+            elif isinstance(value, DictLookup):
+                converted_attrs[key] = value.to_low_level()
+            else:
+                converted_attrs[key] = value
+
+        self.__validate(
+            update_from=self._table,
+            attributes=converted_attrs,
+            where=where_expr,
+        )
         self.__build_query()
 
-    def __str__(self) -> str:
-        from raypy.types.containers import Dict
-
-        return str(Dict(ptr=self.ptr))
+        return utils.ray_to_python(FFI.update(query=self.ptr))
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return f"UpdateQuery(set={list(self._attributes.keys())}, where={self._where_condition is not None})"
 
 
-class _InsertQuery:
-    """
-    Query to perform insert operation
-    """
+class InsertQuery:
+    def __init__(self, table: str | Table, *args, **kwargs):
+        self._table = table
 
-    ptr: r.RayObject
+        if args:
+            self._insertable = args[0] if len(args) == 1 else list(args)
+        elif kwargs:
+            self._insertable = list(kwargs.values())
+        else:
+            raise ValueError("No data to insert")
 
     def __validate(
         self,
@@ -936,29 +937,28 @@ class _InsertQuery:
 
         self.insert_to_ptr = utils.python_to_ray(self.insert_to)
 
-    def __init__(
-        self,
-        insert_to: str | _Table,
-        insertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
-    ) -> None:
-        self.__validate(insert_to=insert_to, insertable=insertable)
+    def execute(self) -> Table:
+        self.__validate(insert_to=self._table, insertable=self._insertable)
         self.__build_query()
 
-    def __str__(self) -> str:
-        insertable = utils.ray_to_python(self.insertable_ptr)
-        insert_to = utils.ray_to_python(self.insert_to_ptr)
-        return f"InsertQuery(to: \n {insert_to.__repr__()} \n) with entries: \n {insertable} \n"
+        return utils.ray_to_python(
+            FFI.insert(table_obj=self.insert_to_ptr, data_obj=self.insertable_ptr)
+        )
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return f"InsertQuery({len(self._insertable)} values)"
 
 
-class _UpsertQuery:
-    """
-    Query to perform upsert operation
-    """
-
-    ptr: r.RayObject
+class UpsertQuery:
+    def __init__(
+        self,
+        table: str | _Table,
+        data: dict[str, Any] | list[dict[str, Any]],
+        match_on: str | list[str],
+    ):
+        self._table = table
+        self._data = data if isinstance(data, list) else [data]
+        self._match_by_first = 1 if isinstance(match_on, str) else len(match_on)
 
     def __validate(
         self,
@@ -1034,101 +1034,6 @@ class _UpsertQuery:
 
             self.upsert_to_ptr = QuotedSymbol(self.upsert_to).ptr
 
-    def __init__(
-        self,
-        upsert_to: str | _Table,
-        match_by_first: int,
-        upsertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
-    ) -> None:
-        self.__validate(
-            upsert_to=upsert_to,
-            match_by_first=match_by_first,
-            upsertable=upsertable,
-        )
-        self.__build_query()
-
-    def __str__(self) -> str:
-        upsertable = utils.ray_to_python(self.upsertable_ptr)
-        upsert_to = utils.ray_to_python(self.upsert_to_ptr)
-        return f"UpsertQuery(to: \n {str(upsert_to)} \n) with entries: \n {str(upsertable)} \n"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-class UpdateQuery:
-    def __init__(self, table: str | Table, **attributes):
-        self._table = table
-        self._attributes = attributes
-        self._where_condition = None
-
-    def where(self, condition: Expression | Callable) -> UpdateQuery:
-        if callable(condition):
-            temp = Table._create_proxy(self._table)
-            condition = condition(temp)
-        self._where_condition = condition
-        return self
-
-    def execute(self) -> Table | bool | str:
-        where_expr = None
-        if self._where_condition:
-            if isinstance(self._where_condition, Expression):
-                where_expr = self._where_condition.to_low_level()
-            else:
-                where_expr = self._where_condition
-
-        converted_attrs = {}
-        for key, value in self._attributes.items():
-            if isinstance(value, Expression):
-                converted_attrs[key] = value.to_low_level()
-            elif isinstance(value, Column):
-                converted_attrs[key] = value.name
-            elif isinstance(value, DictLookup):
-                converted_attrs[key] = value.to_low_level()
-            else:
-                converted_attrs[key] = value
-
-        query = _UpdateQuery(
-            update_from=self._table, attributes=converted_attrs, where=where_expr
-        )
-        return utils.ray_to_python(FFI.update(query=query.ptr))
-
-    def __repr__(self) -> str:
-        return f"UpdateQuery(set={list(self._attributes.keys())}, where={self._where_condition is not None})"
-
-
-class InsertQuery:
-    def __init__(self, table: str | Table, *args, **kwargs):
-        self._table = table
-
-        if args:
-            self._insertable = args[0] if len(args) == 1 else list(args)
-        elif kwargs:
-            self._insertable = list(kwargs.values())
-        else:
-            raise ValueError("No data to insert")
-
-    def execute(self) -> Table:
-        query = _InsertQuery(insert_to=self._table, insertable=self._insertable)
-        return utils.ray_to_python(
-            FFI.insert(table_obj=query.insert_to_ptr, data_obj=query.insertable_ptr)
-        )
-
-    def __repr__(self) -> str:
-        return f"InsertQuery({len(self._insertable)} values)"
-
-
-class UpsertQuery:
-    def __init__(
-        self,
-        table: str | _Table,
-        data: dict[str, Any] | list[dict[str, Any]],
-        match_on: str | list[str],
-    ):
-        self._table = table
-        self._data = data if isinstance(data, list) else [data]
-        self._match_by_first = 1 if isinstance(match_on, str) else len(match_on)
-
     def execute(self) -> Table:
         upsertable = {}
         for row in self._data:
@@ -1137,16 +1042,17 @@ class UpsertQuery:
                     upsertable[key] = []
                 upsertable[key].append(value)
 
-        query = _UpsertQuery(
+        self.__validate(
             upsert_to=self._table,
             match_by_first=self._match_by_first,
             upsertable=upsertable,
         )
+        self.__build_query()
         return utils.ray_to_python(
             FFI.upsert(
-                table_obj=query.upsert_to_ptr,
-                keys_obj=query.match_ptr,
-                data_obj=query.upsertable_ptr,
+                table_obj=self.upsert_to_ptr,
+                keys_obj=self.match_ptr,
+                data_obj=self.upsertable_ptr,
             )
         )
 
@@ -1170,9 +1076,7 @@ __all__ = [
     "Column",
     "Expression",
     "FilteredColumn",
-    "SortColumn",
-    "QueryBuilder",
-    "GroupByBuilder",
+    "SelectQueryBuilder",
     "UpdateQuery",
     "InsertQuery",
     "UpsertQuery",

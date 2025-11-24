@@ -100,10 +100,14 @@ def test_group_by_single_column():
         ],
     )
 
-    result = table.group_by("dept").agg(
-        avg_age=table.age.mean(),
-        total_salary=table.salary.sum(),
-        count=table.age.count(),
+    result = (
+        table.select(
+            avg_age=table.age.mean(),
+            total_salary=table.salary.sum(),
+            count=table.age.count(),
+        )
+        .by("dept")
+        .execute()
     )
 
     assert len(result.columns) >= 4
@@ -160,9 +164,13 @@ def test_group_by_multiple_columns():
         ],
     )
 
-    result = table.group_by("dept", "level").agg(
-        total_salary=table.salary.sum(),
-        avg_salary=table.salary.mean(),
+    result = (
+        table.select(
+            total_salary=table.salary.sum(),
+            avg_salary=table.salary.mean(),
+        )
+        .by("dept", "level")
+        .execute()
     )
 
     assert len(result.columns) >= 4
@@ -222,10 +230,14 @@ def test_group_by_with_filtered_aggregation():
         ],
     )
 
-    result = table.group_by("category").agg(
-        total=table.amount.sum(),
-        active_total=table.amount.where(table.status == "active").sum(),
-        count=table.amount.count(),
+    result = (
+        table.select(
+            total=table.amount.sum(),
+            active_total=table.amount.where(table.status == "active").sum(),
+            count=table.amount.count(),
+        )
+        .by("category")
+        .execute()
     )
 
     assert "total" in result.columns
@@ -447,14 +459,12 @@ def test_select_with_order_by():
         ],
     )
 
-    result = (
-        table.select("id", "name", "age")
-        .where(table.age >= 30)
-        .order_by("age", ascending=True)
-        .execute()
-    )
+    result = table.select("name").by(age=table.age.desc()).execute()
 
     values = result.values()
-    assert len(values) == 3
-    if len(values[2]) >= 2:
-        assert values[2][0].value <= values[2][1].value
+    assert (
+        values[0][0].value
+        > values[0][1].value
+        > values[0][2].value
+        > values[0][3].value
+    )

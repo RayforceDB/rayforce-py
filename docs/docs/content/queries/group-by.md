@@ -7,11 +7,15 @@ Group rows by one or more columns and compute aggregations using `group_by()` an
 Group by a single column and compute aggregations:
 
 ```python
-result = table.group_by("dept").agg(
-    avg_age=table.age.mean(),
-    total_salary=table.salary.sum(),
-    count=table.age.count(),
-)
+result = (
+    table
+    .select(
+        avg_age=table.age.mean(),
+        total_salary=table.salary.sum(),
+        count=table.age.count(),
+    )
+    .by("dept")
+    .execute()
 ```
 
 ## Multiple Group Columns
@@ -19,9 +23,14 @@ result = table.group_by("dept").agg(
 Group by multiple columns:
 
 ```python
-result = table.group_by("dept", "level").agg(
-    total_salary=table.salary.sum(),
-    avg_salary=table.salary.mean(),
+result = (
+    table
+    .select(
+        total_salary=table.salary.sum(),
+        avg_salary=table.salary.mean(),
+    )
+    .by("dept", "level")
+    .execute()
 )
 ```
 
@@ -44,10 +53,15 @@ RayPy provides the following aggregation functions:
 You can apply filters to aggregations using the `where()` method on columns:
 
 ```python
-result = table.group_by("category").agg(
-    total=table.amount.sum(),
-    active_total=table.amount.where(table.status == "active").sum(),
-    count=table.amount.count(),
+result = (
+    table
+    .select(
+        total=table.amount.sum(),
+        active_total=table.amount.where(table.status == "active").sum(),
+        count=table.amount.count(),
+    )
+    .by("category")
+    .execute()
 )
 ```
 
@@ -65,9 +79,14 @@ table = Table(
     ],
 )
 
-result = table.group_by("dept").agg(
-    avg_age=table.age.mean(),
-    total_salary=table.salary.sum(),
-    count=table.age.count(),
+result = (
+    table
+    .select(
+        avg_age=table.age.mean(),
+        total_salary=table.salary.sum(),
+        count=table.age.count(),
+    )
+    .by("dept")
+    .execute()
 )
 ```
