@@ -417,7 +417,7 @@ class Table:
             raise ValueError("Must provide at least one table")
         return tables[0].concat(*tables[1:])
 
-    def join(self, other: Table, on: str | list[str], how: str = "inner") -> Table:
+    def inner_join(self, other: Table, on: str | list[str]) -> Table:
         from raypy.types.containers import Vector, List
         from raypy.types.scalars import Symbol
 
@@ -425,20 +425,13 @@ class Table:
             on = [on]
 
         join_keys = Vector(type_code=Symbol.type_code, items=on)
-
-        if how == "inner":
-            other_table = other._table if isinstance(other, Table) else other
-            self_table = self._table
-            result = utils.eval_obj(
-                List([Operation.IJ, join_keys, self_table, other_table])
-            )
-        else:
-            raise ValueError(f"Join type '{how}' not yet supported. Use 'inner'.")
+        other_table = other._table if isinstance(other, Table) else other
+        self_table = self._table
+        result = utils.eval_obj(
+            List([Operation.IJ, join_keys, self_table, other_table])
+        )
 
         return Table(ptr=result._table.ptr)
-
-    def inner_join(self, other: Table, on: str | list[str]) -> Table:
-        return self.join(other, on=on, how="inner")
 
     def update(self, **kwargs) -> UpdateQuery:
         return UpdateQuery(self._table, **kwargs)

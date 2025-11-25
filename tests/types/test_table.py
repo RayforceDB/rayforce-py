@@ -6,7 +6,12 @@ group by, update, insert, and upsert operations.
 """
 
 from raypy import Table
-from raypy.types.scalars import Symbol
+from raypy.types import I64, QuotedSymbol, Vector
+from raypy.types.containers import List
+from raypy.types.operators import Operation
+from raypy.types.scalars import Symbol, Time
+from raypy.types.table import Expression
+from raypy.utils import eval_obj
 
 
 def test_select_with_single_where():
@@ -476,3 +481,64 @@ def test_order_by():
         > values[2][1].value
         > values[2][0].value
     )
+
+
+def test_inner_join():
+    trades = Table(
+        columns=["Sym", "Ts", "Price"],
+        values=[
+            ["AAPL", "AAPL", "GOOGL", "GOOGL"],
+            [
+                Time("09:00:29.998"),
+                Time("09:00:20.998"),
+                Time("09:00:10.998"),
+                Time("09:00:00.998"),
+            ],
+            [100, 200, 300, 400],
+        ],
+    )
+
+    quotes = Table(
+        columns=["Sym", "Bid", "Ask"],
+        values=[
+            ["AAPL", "GOOGL"],
+            [50, 100],
+            [75, 150],
+        ],
+    )
+
+    result = trades.inner_join(quotes, "Sym")
+
+    # Verify result is a table
+    assert isinstance(result, Table)
+
+    # Should have all columns from both tables
+    assert len(result.columns) == 5
+    assert "Sym" in result.columns
+    assert "Ts" in result.columns
+    assert "Price" in result.columns
+    assert "Bid" in result.columns
+    assert "Ask" in result.columns
+
+    # Should have 4 rows (2 AAPL trades + 2 GOOGL trades)
+    values = result.values()
+    assert len(values) == 5  # 5 columns
+    assert len(values[0]) == 4  # 4 rows
+
+    # Verify AAPL trades are matched with AAPL quote (Bid=50, Ask=75)
+    # Verify GOOGL trades are matched with GOOGL quote (Bid=100, Ask=150)
+    sym_col = values[result.columns.index("Sym")]
+    bid_col = values[result.columns.index("Bid")]
+    ask_col = values[result.columns.index("Ask")]
+
+    for i in range(len(sym_col)):
+        sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
+        bid_val = bid_col[i].value if hasattr(bid_col[i], "value") else bid_col[i]
+        ask_val = ask_col[i].value if hasattr(ask_col[i], "value") else ask_col[i]
+
+        if sym_val == "AAPL":
+            assert bid_val == 50
+            assert ask_val == 75
+        elif sym_val == "GOOGL":
+            assert bid_val == 100
+            assert ask_val == 150
