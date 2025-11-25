@@ -1,7 +1,9 @@
 from __future__ import annotations
+import datetime
 from typing import Any, Callable
 from raypy.core import FFI
 from raypy import utils
+from raypy.types import List, Time
 from raypy.types.operators import Operation
 from raypy import _rayforce as r
 from raypy.types.registry import TypeRegistry
@@ -342,6 +344,11 @@ class _Table:
                 # Boolean column
                 vec = Vector(type_code=B8.type_code, items=column_data)
                 table_values.append(vec)
+            elif all(isinstance(x, datetime.time) for x in column_data) or all(
+                isinstance(x, Time) for x in column_data
+            ):
+                vec = Vector(type_code=Time.type_code, items=column_data)
+                table_values.append(vec)
             else:
                 # Mixed types or complex types - keep as List
                 table_values.append(column_data)
@@ -432,6 +439,79 @@ class Table:
         )
 
         return Table(ptr=result._table.ptr)
+
+    def window_join(
+        self,
+        on: list[str],
+        join_with: list[Any],
+        interval: TableColumnInterval,
+        **aggregations,
+    ) -> Table:
+        return self._wj(
+            method=Operation.WJ,
+            on=on,
+            join_with=join_with,
+            interval=interval,
+            **aggregations,
+        )
+
+    def window_join1(
+        self,
+        on: list[str],
+        join_with: list[Any],
+        interval: TableColumnInterval,
+        **aggregations,
+    ) -> Table:
+        return self._wj(
+            method=Operation.WJ1,
+            on=on,
+            join_with=join_with,
+            interval=interval,
+            **aggregations,
+        )
+
+    def _wj(
+        self,
+        method: Operation,
+        on: list[str],
+        join_with: list[Any],
+        interval: TableColumnInterval,
+        **aggregations,
+    ) -> Table:
+        from raypy.types import Vector, Symbol
+
+        agg_dict = {}
+        for name, expr in aggregations.items():
+            if isinstance(expr, Expression):
+                agg_dict[name] = expr.to_low_level()
+            elif isinstance(expr, Column):
+                agg_dict[name] = expr.name
+            else:
+                agg_dict[name] = expr
+
+        join_keys = Vector(type_code=Symbol.type_code, items=on)
+
+        result = utils.eval_obj(
+            List(
+                [
+                    method,
+                    join_keys,
+                    interval.compile(),
+                    self._table,
+                    *[t.ptr for t in join_with],
+                    agg_dict,
+                ]
+            )
+        )
+
+        return Table(ptr=result._table.ptr)
+
+    @property
+    def ptr(self) -> r.RayObject:
+        if isinstance(self._table, str):
+            self._table = utils.eval_str(self._table)
+
+        return self._table.ptr
 
     def update(self, **kwargs) -> UpdateQuery:
         return UpdateQuery(self._table, **kwargs)
@@ -1068,6 +1148,42 @@ def lookup(dict_obj, column: Column | str) -> DictLookup:
     return DictLookup(dict_obj, column)
 
 
+class TableColumnInterval:
+    def __init__(
+        self,
+        lower: int,
+        upper: int,
+        table: str | Table,
+        column: str | Column,
+    ) -> None:
+        self.lower = lower
+        self.upper = upper
+        self.table = table
+        self.column = column
+
+    def compile(self) -> List:
+        from raypy.types import Vector, I64, QuotedSymbol
+
+        return List(
+            [
+                Operation.MAP_LEFT,
+                Operation.ADD,
+                Vector([self.lower, self.upper], type_code=I64.type_code),
+                List(
+                    [
+                        Operation.AT,
+                        self.table,
+                        QuotedSymbol(
+                            self.column.name
+                            if isinstance(self.column, Column)
+                            else self.column
+                        ),
+                    ]
+                ),
+            ]
+        )
+
+
 __all__ = [
     "Table",
     "Column",
@@ -1079,6 +1195,7 @@ __all__ = [
     "UpsertQuery",
     "DictLookup",
     "lookup",
+    "TableColumnInterval",
 ]
 
 TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)

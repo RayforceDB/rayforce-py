@@ -44,6 +44,7 @@ from .types import (  # noqa: E402
     Table,
     String,
     RayInitException,
+    TableColumnInterval,
 )
 from .plugins.raykx import KDBConnection, KDBEngine, ConnectionAlreadyClosed  # noqa: E402
 from .io.ipc import IPCException, Connection, hopen  # noqa: E402
@@ -74,4 +75,5 @@ __all__ = [
     "IPCException",
     "Connection",
     "hopen",
+    "TableColumnInterval",
 ]

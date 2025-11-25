@@ -14,7 +14,7 @@ from .scalars import (
     Timestamp,
     Time,
 )
-from .table import Table
+from .table import Table, TableColumnInterval
 from .exceptions import RayInitException
 
 __all__ = [
@@ -37,4 +37,5 @@ __all__ = [
     "Table",
     "String",
     "RayInitException",
+    "TableColumnInterval",
 ]
