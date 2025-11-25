@@ -242,24 +242,6 @@ class Column:
     def __getitem__(self, condition: Expression) -> FilteredColumn:
         return self.where(condition)
 
-    def asc(self) -> Expression:
-        return Expression(Operation.ASC, self)
-
-    def desc(self) -> Expression:
-        return Expression(Operation.DESC, self)
-
-    def xasc(self) -> Expression:
-        return Expression(Operation.XASC, self)
-
-    def xdesc(self) -> Expression:
-        return Expression(Operation.XDESC, self)
-
-    def iasc(self) -> Expression:
-        return Expression(Operation.IASC, self)
-
-    def idesc(self) -> Expression:
-        return Expression(Operation.IDESC, self)
-
     def __repr__(self) -> str:
         return f"Column('{self.name}')"
 
@@ -555,6 +537,28 @@ class Table:
         if self._is_ref:
             return f"Table('{self._table}')"
         return f"Table(columns={self.columns})"
+
+    def xasc(self, *cols) -> Table:
+        from raypy.types import List, Vector, Symbol
+
+        return utils.eval_obj(
+            List(
+                [Operation.XASC, self._table, Vector(cols, type_code=-Symbol.type_code)]
+            )
+        )
+
+    def xdesc(self, *cols) -> Table:
+        from raypy.types import List, Vector, Symbol
+
+        return utils.eval_obj(
+            List(
+                [
+                    Operation.XDESC,
+                    self._table,
+                    Vector(cols, type_code=-Symbol.type_code),
+                ]
+            )
+        )
 
 
 class SelectQuery:

@@ -33,25 +33,22 @@ result = query.execute()
 
 ## Best Practices
 
-1. **Save Before Modifying**: Always call `save()` on a table before using `update()`, `insert()`, or `upsert()`.
-
-2. **Chain Methods**: Take advantage of the fluent API to build readable queries:
+1. **Chain Methods**: Take advantage of the fluent API to build readable queries:
    ```python
-   result = (
-       table.select("id", "name", "salary")
-       .where(table.age >= 30)
-       .where(table.dept == "eng")
-       .order_by("salary", ascending=False)
-       .execute()
+    result = (
+        table.select("id", "name", "salary")
+        .where(table.age >= 30)
+        .where(table.dept == "eng")
+        .execute()
    )
    ```
 
-3. **Complex Conditions**: Use boolean operators for complex conditions:
+2. **Complex Conditions**: Use boolean operators for complex conditions:
    ```python
    result = table.where((table.age >= 30) & (table.salary > 100000)).execute()
    ```
 
-4. **Computed Columns**: Use computed columns to derive new data without modifying the original table:
+3. **Computed Columns**: Use computed columns to derive new data without modifying the original table:
    ```python
    result = table.select(
        "id",
@@ -61,12 +58,17 @@ result = query.execute()
    ).execute()
    ```
 
-5. **Filtered Aggregations**: Use filtered aggregations in `group_by()` to compute conditional statistics:
+4. **Filtered Aggregations**: Use filtered aggregations in `by()` to compute conditional statistics:
    ```python
-   result = table.group_by("dept").agg(
-       total=table.salary.sum(),
-       high_earners=table.salary.where(table.salary > 100000).sum(),
-   ).execute()
+   result = (
+        table
+        .select(
+            total=table.salary.sum(),
+            high_earners=table.salary.where(table.salary > 100000).sum(),
+        )
+        .by("dept")
+        .execute()
+   )
    ```
 
 ## Complete Example
@@ -99,7 +101,6 @@ senior_engineers = (
     .where(employees_table.dept == "eng")
     .where(employees_table.age >= 35)
     .where(employees_table.salary > 100000)
-    .by(salary=employees_table.salary.desc())
     .execute()
 )
 
@@ -132,8 +133,3 @@ Table.get("employees").upsert(
     {"id": "001", "name": "alice_updated", "age": 30, "dept": "eng", "salary": 110000},
     match_on="id",
 ).execute()
-
-# View results
-Table.get("employees").show(n=10)
-```
-

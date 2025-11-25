@@ -449,7 +449,7 @@ def test_complex_select_with_computed_columns():
     assert len(values[0]) == 2
 
 
-def test_select_with_order_by():
+def test_order_by():
     table = Table(
         columns=["id", "name", "age"],
         values=[
@@ -459,12 +459,20 @@ def test_select_with_order_by():
         ],
     )
 
-    result = table.select("name").by(age=table.age.desc()).execute()
-
+    result = table.xdesc("age")
     values = result.values()
     assert (
-        values[0][0].value
-        > values[0][1].value
-        > values[0][2].value
-        > values[0][3].value
+        values[2][0].value
+        > values[2][1].value
+        > values[2][2].value
+        > values[2][3].value
+    )
+
+    result = table.xasc("age")
+    values = result.values()
+    assert (
+        values[2][3].value
+        > values[2][2].value
+        > values[2][1].value
+        > values[2][0].value
     )
