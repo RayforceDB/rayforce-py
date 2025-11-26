@@ -11,6 +11,7 @@ from raypy.utils.conversion import ray_to_python
 
 class Dict(Container):
     type_code = r.TYPE_DICT
+    ray_name = "Dict"
 
     def __init__(
         self,

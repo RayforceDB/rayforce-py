@@ -87,6 +87,7 @@ class Operation(enum.StrEnum):
     # Other
     QUOTE = "quote"
     CONCAT = "concat"
+    READ_CSV = "read-csv"
 
     @property
     def primitive(self) -> r.RayObject:

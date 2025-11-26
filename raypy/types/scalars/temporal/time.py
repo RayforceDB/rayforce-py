@@ -14,6 +14,7 @@ class Time(Scalar):
     """
 
     type_code = -r.TYPE_TIME
+    ray_name = "Time"
 
     def _create_from_value(self, value: dt.time | int | str) -> r.RayObject:
         if isinstance(value, dt.time):

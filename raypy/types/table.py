@@ -3,7 +3,8 @@ import datetime
 from typing import Any, Callable
 from raypy.core import FFI
 from raypy import utils
-from raypy.types import List, Time
+from raypy.types import List, String, Symbol, Time, Timestamp, Vector
+from raypy.types.base import RayObject
 from raypy.types.operators import Operation
 from raypy import _rayforce as r
 from raypy.types.registry import TypeRegistry
@@ -349,6 +350,9 @@ class _Table:
             ):
                 vec = Vector(type_code=Time.type_code, items=column_data)
                 table_values.append(vec)
+            elif all(isinstance(x, Timestamp) for x in column_data):
+                vec = Vector(type_code=Timestamp.type_code, items=column_data)
+                table_values.append(vec)
             else:
                 # Mixed types or complex types - keep as List
                 table_values.append(column_data)
@@ -574,18 +578,19 @@ class Table:
         return cls(columns=columns, values=values)
 
     @classmethod
-    def from_records(cls, records: list[dict[str, Any]]) -> Table:
-        if not records:
-            raise ValueError("Cannot create table from empty records")
-
-        columns = list(records[0].keys())
-        values = {col: [] for col in columns}
-
-        for record in records:
-            for col in columns:
-                values[col].append(record.get(col))
-
-        return cls.from_dict(values)
+    def from_csv(
+        cls,
+        column_types: list[RayObject],
+        path: str,
+    ) -> Table:
+        query = List(
+            [
+                Operation.READ_CSV,
+                Vector([c.ray_name for c in column_types], type_code=Symbol.type_code),
+                String(path),
+            ]
+        )
+        return utils.eval_obj(query)
 
     @classmethod
     def get(cls, name: str) -> Table:

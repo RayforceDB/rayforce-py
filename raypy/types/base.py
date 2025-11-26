@@ -21,6 +21,7 @@ class RayObject(ABC):
 
     ptr: r.RayObject
     type_code: t.ClassVar[int]
+    ray_name: t.ClassVar[str]
 
     def __init__(
         self,

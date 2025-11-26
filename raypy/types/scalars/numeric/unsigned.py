@@ -11,6 +11,7 @@ class U8(Scalar):
     """8-bit unsigned integer"""
 
     type_code = -r.TYPE_U8
+    ray_name = "U8"
 
     def _create_from_value(self, value: int) -> r.RayObject:
         try:

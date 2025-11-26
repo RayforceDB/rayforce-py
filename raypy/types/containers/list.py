@@ -13,6 +13,7 @@ class List(Container):
     """
 
     type_code = r.TYPE_LIST
+    ray_name = "List"
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
         from raypy.utils.conversion import python_to_ray

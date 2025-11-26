@@ -11,6 +11,7 @@ class C8(Scalar):
     """Single character"""
 
     type_code = -r.TYPE_C8
+    ray_name = "C8"
 
     def _create_from_value(self, value: str) -> r.RayObject:
         if not isinstance(value, str) or len(value) != 1:

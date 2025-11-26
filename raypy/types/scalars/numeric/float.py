@@ -10,6 +10,7 @@ class F64(Scalar):
     """64-bit floating point number"""
 
     type_code = -r.TYPE_F64
+    ray_name = "F64"
 
     def _create_from_value(self, value: float) -> r.RayObject:
         return FFI.init_f64(float(value))

@@ -14,6 +14,7 @@ class Vector(Container):
 
     # Vectors don't have a single type_code - they use the element type code (positive)
     type_code: int | None = None
+    ray_name: str | None = None
 
     def __init__(
         self,
