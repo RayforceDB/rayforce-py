@@ -33,7 +33,7 @@ def test_python_to_ray_datetime():
     dt_obj = dt.datetime(2025, 5, 10, 14, 30, 45, tzinfo=dt.timezone.utc)
     result = python_to_ray(dt_obj)
     assert isinstance(result, r.RayObject)
-    assert isinstance(t.Timestamp(ptr=result).value, dt.datetime)
+    assert isinstance(t.Timestamp(ptr=result).dt(), dt.datetime)
 
 
 def test_python_to_ray_date():
