@@ -58,6 +58,8 @@ class Operation(enum.StrEnum):
     # Join
     INNER_JOIN = "inner-join"
     IJ = "inner-join"
+    LEFT_JOIN = "left-join"
+    LJ = "left-join"
     WINDOW_JOIN = "window-join"
     WJ = "window-join"
     WINDOW_JOIN1 = "window-join1"

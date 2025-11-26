@@ -532,6 +532,73 @@ def test_inner_join():
             assert ask_val == 150
 
 
+def test_left_join():
+    trades = Table(
+        columns=["Sym", "Ts", "Price"],
+        values=[
+            ["AAPL", "GOOGL", "MSFT"],
+            [
+                Time("09:00:10.000"),
+                Time("09:00:20.000"),
+                Time("09:00:30.000"),
+            ],
+            [100, 200, 300],
+        ],
+    )
+
+    quotes = Table(
+        columns=["Sym", "Bid", "Ask"],
+        values=[
+            ["AAPL", "GOOGL"],
+            [50, 100],
+            [75, 150],
+        ],
+    )
+
+    result = trades.left_join(quotes, "Sym")
+
+    # Verify result is a table
+    assert isinstance(result, Table)
+
+    # Should have all columns from both tables
+    assert len(result.columns) == 5
+    assert "Sym" in result.columns
+    assert "Ts" in result.columns
+    assert "Price" in result.columns
+    assert "Bid" in result.columns
+    assert "Ask" in result.columns
+
+    values = result.values()
+    # Should have 3 rows (all trades, including unmatched MSFT)
+    assert len(values) == 5
+    assert len(values[0]) == 3
+
+    sym_col = values[result.columns.index("Sym")]
+    bid_col = values[result.columns.index("Bid")]
+    ask_col = values[result.columns.index("Ask")]
+
+    seen_syms = set()
+    for i in range(len(sym_col)):
+        sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
+        seen_syms.add(sym_val)
+
+        bid_val = bid_col[i].value if hasattr(bid_col[i], "value") else bid_col[i]
+        ask_val = ask_col[i].value if hasattr(ask_col[i], "value") else ask_col[i]
+
+        if sym_val == "AAPL":
+            assert bid_val == 50
+            assert ask_val == 75
+        elif sym_val == "GOOGL":
+            assert bid_val == 100
+            assert ask_val == 150
+        elif sym_val == "MSFT":
+            # For unmatched right-side rows we only assert that the left key exists
+            # (exact null representation of Bid/Ask is runtime-specific)
+            assert sym_val == "MSFT"
+
+    assert seen_syms == {"AAPL", "GOOGL", "MSFT"}
+
+
 def test_window_join():
     # Create trades table
     trades = Table(

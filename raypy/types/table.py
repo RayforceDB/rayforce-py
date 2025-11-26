@@ -444,6 +444,22 @@ class Table:
 
         return Table(ptr=result._table.ptr)
 
+    def left_join(self, other: Table, on: str | list[str]) -> Table:
+        from raypy.types.containers import Vector, List
+        from raypy.types.scalars import Symbol
+
+        if isinstance(on, str):
+            on = [on]
+
+        join_keys = Vector(type_code=Symbol.type_code, items=on)
+        other_table = other._table if isinstance(other, Table) else other
+        self_table = self._table
+        result = utils.eval_obj(
+            List([Operation.LJ, join_keys, self_table, other_table])
+        )
+
+        return Table(ptr=result._table.ptr)
+
     def window_join(
         self,
         on: list[str],
