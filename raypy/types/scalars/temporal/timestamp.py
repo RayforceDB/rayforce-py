@@ -1,5 +1,4 @@
 from __future__ import annotations
-import numpy as np
 import datetime as dt
 
 from raypy import _rayforce as r
@@ -8,7 +7,6 @@ from raypy.types.base import Scalar
 from raypy.types.registry import TypeRegistry
 from raypy.types import exceptions
 
-epoch2000 = np.datetime64("2000-01-01T00:00:00", "ns")
 epoch2000_py = dt.datetime(2000, 1, 1, tzinfo=dt.timezone.utc)
 
 
@@ -51,12 +49,9 @@ class Timestamp(Scalar):
                 f"Cannot create Timestamp from {type(value)}"
             )
 
-    def to_python(self) -> np.datetime64:
+    def to_python(self) -> dt.datetime:
         nano = FFI.read_timestamp(self.ptr)
-        return epoch2000 + np.timedelta64(nano, "ns")
-
-    def dt(self) -> dt.datetime:
-        return self.to_python().astype("datetime64[us]").astype(dt.datetime)
+        return epoch2000_py + dt.timedelta(microseconds=nano // 1000)
 
     def to_millis(self) -> int:
         return FFI.read_timestamp(self.ptr)
