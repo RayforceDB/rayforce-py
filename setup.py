@@ -3,7 +3,6 @@ from setuptools.dist import Distribution
 
 
 class BinaryDistribution(Distribution):
-    """Force platform-specific wheel."""
     def has_ext_modules(self):
         return True
 
@@ -18,16 +17,20 @@ setup(
     },
     include_package_data=True,
     zip_safe=False,
-    python_requires='>=3.13',
+    python_requires='>=3.11',
     description='Python bindings for RayforceDB',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    author='Karim',
+    author='FalsePublicEnemy',
     license='MIT',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
+        'Intended Audience :: Financial and Insurance Industry',
+        'Intended Audience :: Information Technology',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
         'Programming Language :: C',
     ],

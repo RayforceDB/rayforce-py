@@ -1,20 +1,27 @@
-librayforce.dylib
+# Tests
+.ruff_cache
+.pytest_cache
+.mypy_cache
+
+# Binaries
 rayforce/rayforce/
+rayforce.so
+_rayforce_c.so
+_rayforce_c.dylib
+librayforce.so
+librayforce.dylib
+libraykx.so
+libraykx.dylib
+
+# Wheel Build
 build/
+tmp/
+dist/
+wheelhouse/
+*.egg-info/
+
+# Misc
 .vscode
 __pycache__
-_rayforce.c*.so
-_rayforce_c.so
-.pytest_cache
-.ruff_cache
-.mypy_cache
-tmp/
-.DS_Store
-rayforce.so
-librayforce.so
-libraykx.*
-
 script.py
-
-dist/
-*.egg-info/
+.DS_Store

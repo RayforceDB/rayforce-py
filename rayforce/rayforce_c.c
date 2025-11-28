@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include <string.h>
 #include <Python.h>
 #include "rayforce.h"
