@@ -21,7 +21,7 @@ pull_from_gh:
 	@rm -rf $(EXEC_DIR)/tmp/rayforce-c && \
 	echo "⬇️  Cloning rayforce repo from GitHub..."; \
 	git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c && \
-	cp -r $(EXEC_DIR)/tmp/rayforce-c/core $(EXEC_DIR)/raypy/rayforce
+	cp -r $(EXEC_DIR)/tmp/rayforce-c/core $(EXEC_DIR)/rayforce/rayforce
 
 patch_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
@@ -34,26 +34,27 @@ patch_makefile:
 
 clean-ext:
 	@cd $(EXEC_DIR) && rm -rf \
-		raypy/_rayforce_c.so  \
-		raypy/_rayforce.c*.so  \
-		raypy/librayforce.* \
-		raypy/plugins/libraykx.* \
+		rayforce/_rayforce_c.so  \
+		rayforce/_rayforce.c*.so  \
+		rayforce/librayforce.* \
+		rayforce/plugins/libraykx.* \
 		build/ \
+		*.egg-info \
 		dist/ && \
 		find . -type d -name "__pycache__" -exec rm -rf {} +
 
 clean: clean-ext
 	@echo "🧹 Cleaning cache and generated files..."
 	@cd $(EXEC_DIR) && rm -rf \
-		raypy/rayforce/ \
+		rayforce/rayforce/ \
 		tmp/ \
 
 ext: 
-	@cp raypy/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
+	@cp rayforce/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
-	@cp tmp/rayforce-c/$(LIBNAME) raypy/_rayforce_c.so
-	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) raypy/plugins/$(RAYKX_LIB_NAME)
+	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
+	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) rayforce/plugins/$(RAYKX_LIB_NAME)
 
 all: pull_from_gh patch_makefile ext
 
@@ -61,9 +62,9 @@ test:
 	pytest -x -vv tests/
 
 lint:
-	ruff format tests/ raypy/
-	ruff check raypy/ --fix
-	mypy raypy/
+	ruff format tests/ rayforce/
+	ruff check rayforce/ --fix
+	mypy rayforce/
 
 wheel:
 	@echo "📦 Building wheel package..." 
