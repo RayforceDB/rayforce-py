@@ -1,7 +1,7 @@
 include README.md
 include LICENSE
-recursive-include raypy *.so
-recursive-include raypy *.dylib
-recursive-include raypy/plugins *.so
-recursive-include raypy/plugins *.dylib
-recursive-include raypy *.pyi
+recursive-include rayforce *.so
+recursive-include rayforce *.dylib
+recursive-include rayforce/plugins *.so
+recursive-include rayforce/plugins *.dylib
+recursive-include rayforce *.pyi

@@ -1,4 +1,12 @@
 from setuptools import setup, find_packages
+from setuptools.dist import Distribution
+
+
+class BinaryDistribution(Distribution):
+    """Force platform-specific wheel."""
+    def has_ext_modules(self):
+        return True
+
 
 setup(
     name='rayforce_py',
@@ -23,4 +31,5 @@ setup(
         'Programming Language :: Python :: 3.13',
         'Programming Language :: C',
     ],
+    distclass=BinaryDistribution,
 )
