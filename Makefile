@@ -1,6 +1,6 @@
 UNAME_S := $(shell uname -s)
 
-RAYFORCE_GITHUB = git@github.com:singaraiona/rayforce.git
+RAYFORCE_GITHUB = https://github.com/RayforceDB/rayforce.git
 EXEC_DIR = $(shell pwd)
 LIBNAME = _rayforce.so
 
