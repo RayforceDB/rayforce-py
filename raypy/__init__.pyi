@@ -1,1 +1,1 @@
-import raypy._rayforcecapi  # type: ignore
+import raypy._rayforce_c  # type: ignore

@@ -26,7 +26,7 @@ pull_from_gh:
 patch_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'PY_OBJECTS = core/raypy.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@echo 'PY_OBJECTS = core/rayforce_c.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) $$(shell python3.13-config --includes)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
@@ -49,7 +49,7 @@ clean: clean-ext
 		tmp/ \
 
 ext: 
-	@cp raypy/raypy.c tmp/rayforce-c/core/raypy.c
+	@cp raypy/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) raypy/_rayforce_c.so
