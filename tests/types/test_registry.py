@@ -1,5 +1,5 @@
 import pytest
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.types.registry import TypeRegistry
 from raypy.types import exceptions
 from raypy import types as t

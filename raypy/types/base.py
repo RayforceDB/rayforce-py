@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import typing as t
 
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.types import exceptions
 
 if t.TYPE_CHECKING:

@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 from raypy.core import FFI
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy import utils
 
 if sys.platform == "darwin":

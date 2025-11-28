@@ -6,7 +6,7 @@ from raypy import utils
 from raypy.types import List, String, Symbol, Time, Timestamp, Vector
 from raypy.types.base import RayObject
 from raypy.types.operators import Operation
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.types.registry import TypeRegistry
 
 

@@ -1,7 +1,7 @@
 import datetime as dt
 import uuid
 import pytest
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.utils.conversion import python_to_ray, ray_to_python, RayConversionError
 from raypy.types.operators import Operation
 from raypy import types as t

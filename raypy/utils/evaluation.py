@@ -1,7 +1,7 @@
 from __future__ import annotations
 import typing as t
 
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.core.ffi import FFI
 from raypy.utils.conversion import ray_to_python
 

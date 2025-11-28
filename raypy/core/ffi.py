@@ -2,7 +2,7 @@ from __future__ import annotations
 import typing as t
 from functools import wraps
 
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 
 
 def exception_handler(func: t.Callable) -> t.Callable:

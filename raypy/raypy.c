@@ -2551,7 +2551,7 @@ static PyMethodDef RayObject_methods[] = {
     {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
     {NULL, NULL, 0, NULL}};
 static PyTypeObject RayObjectType = {
-    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce.RayObject",
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce_c.RayObject",
     .tp_basicsize = sizeof(RayObject),
     .tp_itemsize = 0,
     .tp_dealloc = (destructor)RayObject_dealloc,
@@ -3001,14 +3001,14 @@ static PyMethodDef module_methods[] = {
 // Define the module
 static struct PyModuleDef rayforce_module = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "_rayforce",
+    .m_name = "_rayforce_c",
     .m_doc = "Python interface to Rayforce",
     .m_size = -1,
     .m_methods = module_methods,
 };
 
 // Module initialization function
-PyMODINIT_FUNC PyInit__rayforce(void)
+PyMODINIT_FUNC PyInit__rayforce_c(void)
 {
     PyObject *m;
 

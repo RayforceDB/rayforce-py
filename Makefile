@@ -2,22 +2,15 @@ UNAME_S := $(shell uname -s)
 
 RAYFORCE_GITHUB = git@github.com:singaraiona/rayforce.git
 EXEC_DIR = $(shell pwd)
+LIBNAME = _rayforce.so
 
 
 ifeq ($(UNAME_S),Darwin)
-  COMPILED_LIB_NAME = librayforce.dylib
-  TARGET_LIB_NAME = $(COMPILED_LIB_NAME)
-  PY_MODULE_NAME = _rayforce.so
-  LIBNAME = $(PY_MODULE_NAME)
   RAYKX_LIB_NAME = libraykx.dylib
   RELEASE_LDFLAGS = $(shell python3.13-config --ldflags)
   SHARED_COMPILE_FLAGS = -lpython3.13
 else ifeq ($(UNAME_S),Linux)
-  COMPILED_LIB_NAME = rayforce.so
-  TARGET_LIB_NAME = librayforce.so
   RAYKX_LIB_NAME = libraykx.so
-  PY_MODULE_NAME = rayforce.so
-  LIBNAME = $$(LIBNAME)
   RELEASE_LDFLAGS = $$(RELEASE_LDFLAGS)
   SHARED_COMPILE_FLAGS = 
 else
@@ -41,7 +34,7 @@ patch_makefile:
 
 clean-ext:
 	@cd $(EXEC_DIR) && rm -rf \
-		raypy/_rayforce.so  \
+		raypy/_rayforce_c.so  \
 		raypy/_rayforce.c*.so  \
 		raypy/librayforce.* \
 		raypy/plugins/libraykx.* \
@@ -59,7 +52,7 @@ ext:
 	@cp raypy/raypy.c tmp/rayforce-c/core/raypy.c
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
-	@cp tmp/rayforce-c/$(PY_MODULE_NAME) raypy/_rayforce.so
+	@cp tmp/rayforce-c/$(LIBNAME) raypy/_rayforce_c.so
 	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) raypy/plugins/$(RAYKX_LIB_NAME)
 
 all: pull_from_gh patch_makefile ext

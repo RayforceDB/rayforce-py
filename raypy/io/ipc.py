@@ -1,4 +1,4 @@
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.core.ffi import FFI
 
 

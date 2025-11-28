@@ -3,7 +3,7 @@ import typing as t
 import datetime as dt
 import uuid
 
-from raypy import _rayforce as r
+from raypy import _rayforce_c as r
 from raypy.types.operators import Operation
 from raypy.types.registry import TypeRegistry
 
