@@ -7,13 +7,13 @@ The `List` type represents a heterogeneous collection. Unlike vectors, lists can
 ### Creating List Values
 
 ```python
-from raypy import List
+from rayforce import List
 
 # From Python list
 mixed_list = List([1, "hello", 3.14, True])
 
-# From raypy objects
-from raypy import I64, Symbol, F64, B8
+# from rayforce objects
+from rayforce import I64, Symbol, F64, B8
 mixed_list = List([
     I64(42),
     Symbol("test"),

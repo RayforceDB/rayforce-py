@@ -17,7 +17,7 @@ The `Time` type represents a time of day (hours, minutes, seconds, milliseconds)
 
 ```python
 >>> import datetime as dt
->>> from raypy import types as t
+>>> from rayforce import types as t
 
 >>> t.Time(dt.time(9, 30, 0))
 Time(09:30:00)

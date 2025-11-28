@@ -8,7 +8,7 @@ The `Vector` type represents a collection of elements of a specific type and of 
 ### Creating Vector
 
 ```python
-from raypy import Vector, I64, Symbol
+from rayforce import Vector, I64, Symbol
 
 # Empty vector with specific type
 int_vector = Vector(type_code=I64.type_code, length=5)
@@ -40,7 +40,7 @@ print(vector.value)  # (I64(100), I64(200), I64(300))
 ### Integer Vectors
 
 ```python
-from raypy import Vector, I64
+from rayforce import Vector, I64
 
 # Create integer vector
 numbers = Vector(type_code=I64.type_code, length=5)

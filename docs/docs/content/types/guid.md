@@ -15,7 +15,7 @@ The `GUID` type represents a globally unique identifier in raypy. It's equivalen
 ### Creating GUID Values
 
 ```python
-from raypy import GUID
+from rayforce import GUID
 import uuid
 
 # From UUID objects

@@ -1,10 +1,10 @@
 import datetime as dt
 import uuid
 import pytest
-from raypy import _rayforce_c as r
-from raypy.utils.conversion import python_to_ray, ray_to_python, RayConversionError
-from raypy.types.operators import Operation
-from raypy import types as t
+from rayforce import _rayforce_c as r
+from rayforce.utils.conversion import python_to_ray, ray_to_python, RayConversionError
+from rayforce.types.operators import Operation
+from rayforce import types as t
 
 
 def test_python_to_ray_bool():

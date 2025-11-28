@@ -7,7 +7,7 @@ The `Dict` type represents a key-value mapping in raypy. It's similar to Python 
 ### Creating Dict Values
 
 ```python
-from raypy import Dict
+from rayforce import Dict
 
 # From Python dictionary
 user_data = Dict({

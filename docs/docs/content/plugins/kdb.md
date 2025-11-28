@@ -9,7 +9,7 @@ The connection with KDB database is being established via a dedicated `KDBEngine
 
 To open the connection, first import the `KDBEngine` into your runtime:
 ```python
->>> from raypy.plugins.raykx import KDBEngine
+>>> from rayforce.plugins.raykx import KDBEngine
 ```
 
 Then initialize the engine for a specific domain and port:

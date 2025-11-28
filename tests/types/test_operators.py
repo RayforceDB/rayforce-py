@@ -1,5 +1,5 @@
-from raypy import _rayforce_c as r
-from raypy.types.operators import Operation
+from rayforce import _rayforce_c as r
+from rayforce.types.operators import Operation
 
 
 def test_all_operations_have_primitives():

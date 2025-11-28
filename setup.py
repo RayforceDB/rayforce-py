@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='raypy',
-    version='1.3.0',
+    name='rayforce_py',
+    version='1.3.0-beta',
     packages=find_packages(),
     package_data={
-        'raypy': ['*.so', '*.dylib', '*.pyi'],
-        'raypy.plugins': ['*.so', '*.dylib'],
+        'rayforce': ['*.so', '*.dylib', '*.pyi'],
+        'rayforce.plugins': ['*.so', '*.dylib'],
     },
     include_package_data=True,
     zip_safe=False,

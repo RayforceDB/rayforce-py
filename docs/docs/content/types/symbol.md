@@ -16,7 +16,7 @@ The `Symbol` type represents an symbolic identified in raypy, which is not mutab
 ### Creating Symbol Values
 
 ```python
-from raypy import types as t
+from rayforce import types as t
 
 >>> t.Symbol("this is a symbol")
 Symbol(this is a symbol)

@@ -19,7 +19,7 @@ There are three integer types in raypy - `I16`, `I32`, `I64`
 ### Creating Integer Values
 
 ```python
->>> from raypy import types as t
+>>> from rayforce import types as t
 
 # From integer values
 >>> t.I16(1000)

@@ -76,7 +76,7 @@ result = query.execute()
 Here's a complete example that demonstrates many query features:
 
 ```python
-from raypy import Table
+from rayforce import Table
 
 # Create a table
 employees = Table(

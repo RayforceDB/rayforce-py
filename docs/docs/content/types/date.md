@@ -16,7 +16,7 @@ The `Date` type represents a calendar date (year, month, day) in raypy.
 
 ```python
 >>> import datetime as dt
->>> from raypy import types as t
+>>> from rayforce import types as t
 
 >>> t.Date(dt.date.today())
 Date(2025-02-25)

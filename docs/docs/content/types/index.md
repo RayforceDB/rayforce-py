@@ -78,7 +78,7 @@ Container types hold collections of data and provide structured storage for comp
 raypy automatically converts Python types to appropriate raypy types:
 
 ```python
-from raypy import I32, F64, B8, Symbol, List, Dict
+from rayforce import I32, F64, B8, Symbol, List, Dict
 
 # Automatic conversion from Python types
 number = I32(42)        # int -> I32
@@ -96,7 +96,7 @@ config = Dict({"debug": True, "port": 8080})  # Converts values
 Each type enforces its constraints:
 
 ```python
-from raypy import U8, C8
+from rayforce import U8, C8
 
 # Range validation
 byte_val = U8(255)  # Valid: 0-255
@@ -112,7 +112,7 @@ C8("ABC")  # Error: multiple characters
 ### Basic Type Usage
 
 ```python
-from raypy.types import I64, F64, Symbol, Date, Vector, List, Dict, Table
+from rayforce.types import I64, F64, Symbol, Date, Vector, List, Dict, Table
 
 # Scalar types
 user_id = I64(12345)
@@ -135,7 +135,7 @@ leaderboard = Table(columns=columns, values=values)
 
 ```python
 # Types work together seamlessly
-from raypy import List, Dict, Symbol, I64, F64
+from rayforce import List, Dict, Symbol, I64, F64
 
 # Nested structures
 user_data = Dict({

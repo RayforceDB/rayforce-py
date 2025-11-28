@@ -1,5 +1,5 @@
-from raypy import Table, TableColumnInterval
-from raypy.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
+from rayforce import Table, TableColumnInterval
+from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
 
 
 def test_select_with_single_where():

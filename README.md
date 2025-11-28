@@ -12,7 +12,7 @@
 ## 🚀 Quick Start
 
 ```python
-from raypy import Table
+from rayforce import Table
 
 demo = Table(
     columns=["id", "name", "age", "salary"],

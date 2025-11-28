@@ -7,7 +7,7 @@ The `String` type represents a vector of `c8` in raypy.
 ### Creating String Values
 
 ```python
-from raypy import String
+from rayforce import String
 
 # From string literals
 name = String("Hello, World!")

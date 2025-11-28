@@ -17,7 +17,7 @@ The `Timestamp` type represents a specific point in time (date and time) in rayp
 
 ```python
 >>> import datetime as dt
->>> from raypy import types as t
+>>> from rayforce import types as t
 
 >>> t.Timestamp(dt.datetime.now())
 Timestamp(2025-02-25 22:18:05.435000)

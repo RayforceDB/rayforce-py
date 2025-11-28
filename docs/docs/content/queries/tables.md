@@ -7,7 +7,7 @@ Before you can query data, you need to create a table. RayPy provides several wa
 The most straightforward way is to provide columns and values as lists:
 
 ```python
-from raypy import Table
+from rayforce import Table
 
 table = Table(
     columns=["id", "name", "age", "salary", "dept"],

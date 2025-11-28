@@ -13,7 +13,7 @@ The `F64` type represents floating-point number in raypy.
 ### Creating F64 Values
 
 ```python
->>> from raypy import types as t
+>>> from rayforce import types as t
 
 >>> t.F64(3.14159)
 F64(3.14159)

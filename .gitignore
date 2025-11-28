@@ -1,5 +1,5 @@
 librayforce.dylib
-rayforce/
+rayforce/rayforce/
 build/
 .vscode
 __pycache__

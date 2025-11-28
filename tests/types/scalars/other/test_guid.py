@@ -1,5 +1,5 @@
 import uuid
-from raypy import types as t
+from rayforce import types as t
 
 
 def test_guid():
