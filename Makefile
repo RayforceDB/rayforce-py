@@ -71,3 +71,12 @@ lint:
 	ruff format tests/ raypy/
 	ruff check raypy/ --fix
 	mypy raypy/
+
+wheel:
+	@echo "📦 Building wheel package..." 
+	@rm -rf build/ dist/ *.egg-info/ 
+	@python3 setup.py bdist_wheel 
+
+install-wheel: wheel
+	@echo "🔧 Installing wheel locally..."
+	@pip3 install --force-reinstall dist/*.whl
