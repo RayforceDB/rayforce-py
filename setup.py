@@ -9,7 +9,7 @@ class BinaryDistribution(Distribution):
 
 setup(
     name='rayforce_py',
-    version='1.3.0-beta',
+    version='0.0.2',
     packages=find_packages(),
     package_data={
         'rayforce': ['*.so', '*.dylib', '*.pyi'],

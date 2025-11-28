@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayforce_py"
-version = "1.3.0-beta"
+version = "0.0.2"
 description = "Python bindings for RayforceDB"
 readme = "README.md"
 authors = [{name = "Karim"}]
@@ -23,11 +23,10 @@ classifiers = [
 ]
 
 [tool.cibuildwheel]
-build = "cp310-* cp311-* cp312-* cp313-*"
+build = "cp311-* cp312-* cp313-*"
 skip = "*-win32 *-manylinux_i686 *-musllinux_*"
 archs = ["auto64"]
 before-build = "bash {project}/scripts/prepare_build.sh"
-repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 test-skip = "*"  # Skip tests for now
 
