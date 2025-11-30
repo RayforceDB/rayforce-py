@@ -96,6 +96,26 @@ class FFI:
 
     @staticmethod
     @exception_handler
+    def init_vector(type_code: int, length: int) -> r.RayObject:
+        return r.init_vector(type_code, length)
+
+    @staticmethod
+    @exception_handler
+    def init_list() -> r.RayObject:
+        return r.init_list()
+
+    @staticmethod
+    @exception_handler
+    def init_dict(keys: r.RayObject, values: r.RayObject) -> r.RayObject:
+        return r.init_dict(keys, values)
+
+    @staticmethod
+    @exception_handler
+    def init_table(columns: r.RayObject, values: r.RayObject) -> r.RayObject:
+        return r.init_table(columns, values)
+
+    @staticmethod
+    @exception_handler
     def read_i16(obj: r.RayObject) -> int:
         return r.read_i16(obj)
 
@@ -153,26 +173,6 @@ class FFI:
     @exception_handler
     def read_guid(obj: r.RayObject) -> t.Any:
         return r.read_guid(obj)
-
-    @staticmethod
-    @exception_handler
-    def init_vector(type_code: int, length: int) -> r.RayObject:
-        return r.init_vector(type_code, length)
-
-    @staticmethod
-    @exception_handler
-    def init_list() -> r.RayObject:
-        return r.init_list()
-
-    @staticmethod
-    @exception_handler
-    def init_dict(keys: r.RayObject, values: r.RayObject) -> r.RayObject:
-        return r.init_dict(keys, values)
-
-    @staticmethod
-    @exception_handler
-    def init_table(columns: r.RayObject, values: r.RayObject) -> r.RayObject:
-        return r.init_table(columns, values)
 
     @staticmethod
     @exception_handler
@@ -300,8 +300,8 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def hopen(host: str, port: int) -> r.RayObject:
-        return r.hopen(host, port)
+    def hopen(path: r.RayObject) -> r.RayObject:
+        return r.hopen(path)
 
     @staticmethod
     @exception_handler

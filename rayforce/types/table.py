@@ -612,6 +612,15 @@ class Table:
     def get(cls, name: str) -> Table:
         return cls(name)
 
+    @property
+    def ipc(self) -> r.RayObject:
+        if isinstance(self._table, str):
+            return Symbol(self._table).ptr
+        elif isinstance(self._table, _Table):
+            return self._table.ptr
+        else:
+            raise ValueError("No IPC alternative found")
+
     @staticmethod
     def _create_proxy(table: str | _Table) -> Table:
         proxy = object.__new__(Table)
@@ -854,6 +863,11 @@ class SelectQueryBuilder:
         return SelectQuery(
             select_from=self._table, attributes=attributes, where=where_expr
         )
+
+    @property
+    def ipc(self) -> r.RayObject:
+        query = self._build_legacy_query()
+        return Expression(Operation.SELECT, query).to_low_level().ptr
 
     def _convert_expr(self, expr: Expression | Column) -> _Expression | str:
         if isinstance(expr, Expression):

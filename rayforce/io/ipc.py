@@ -1,4 +1,6 @@
+from typing import Any
 from rayforce import _rayforce_c as r
+from rayforce.utils import ray_to_python
 from rayforce.core.ffi import FFI
 
 
@@ -17,11 +19,19 @@ class Connection:
         self.handle = handle
         self._closed = False
 
-    def execute(self, data: str) -> None:
+    def execute(self, data: str | Any) -> None:
         if self._closed:
             raise IPCException("Cannot write to closed connection")
 
-        FFI.write(self.handle, FFI.init_string(data))
+        if isinstance(data, str):
+            _data = FFI.init_string(data)
+        elif hasattr(data, 'ipc'):
+            _data = data.ipc
+        else:
+            raise IPCException(f"Unable to send object to remote process - {type(data)}")
+
+        result = FFI.write(self.handle, _data)
+        return ray_to_python(result)
 
     def close(self) -> None:
         if not self._closed:
@@ -42,5 +52,6 @@ class Connection:
                 pass
 
 
-def hopen(host: str, port: int) -> Connection:
-    return Connection(FFI.hopen(host, port))
+def hopen(path: str) -> Connection:
+    _path = FFI.init_string(path)
+    return Connection(FFI.hopen(_path))
