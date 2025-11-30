@@ -5,6 +5,8 @@ import os
 import sys
 import ctypes
 
+version = "0.0.2"
+
 if sys.platform == "linux":
     lib_name = "_rayforce_c.so"
     raykx_lib_name = "libraykx.so"

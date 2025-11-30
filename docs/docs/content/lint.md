@@ -1,6 +1,6 @@
-# Raypy lint
+# Lint
 
-Raypy is using mypy and ruff to perform linting and typing across the library. Accessible with
+Rayforce-Py is using mypy and ruff to perform linting and typing across the library. Accessible with
 ```bash
 make lint
 ```

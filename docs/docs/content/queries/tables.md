@@ -1,6 +1,6 @@
 # Creating Tables
 
-Before you can query data, you need to create a table. RayPy provides several ways to create tables:
+Before you can query data, you need to create a table. Rayforce-Py provides several ways to create tables:
 
 ## From Columns and Values
 
@@ -21,6 +21,17 @@ table = Table(
 )
 ```
 
+## From CSV
+
+Create a table from a CSV file:
+
+```python
+table = Table.from_csv([I64, Symbol, F64, Time], "table.csv")
+```
+
+In order for rayforce to know how to parse the values from the file,
+you need to provide a list of RayforcePy types as first argument.
+
 ## From Dictionary
 
 You can create a table from a dictionary where keys are column names:
@@ -31,18 +42,6 @@ table = Table.from_dict({
     "name": ["alice", "bob", "charlie"],
     "age": [29, 34, 41],
 })
-```
-
-## From Records
-
-Create a table from a list of dictionaries (records):
-
-```python
-table = Table.from_records([
-    {"id": "001", "name": "alice", "age": 29},
-    {"id": "002", "name": "bob", "age": 34},
-    {"id": "003", "name": "charlie", "age": 41},
-])
 ```
 
 ## Loading Existing Tables

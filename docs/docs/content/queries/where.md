@@ -37,7 +37,7 @@ result = (
 
 ## Comparison Operators
 
-RayPy supports all standard comparison operators:
+Rayforce-Py supports all standard comparison operators:
 
 - `==` - Equal to
 - `!=` - Not equal to

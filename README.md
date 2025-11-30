@@ -1,55 +1,68 @@
-# 🐍 RayPy - Python bindings for RayforceDB
+# ⚡ High-Performance Python Interface for [RayforceDB](https://github.com/RayforceDB/rayforce)
 
-**Python interface to RayforceDB** - a very fast columnar vector database written in pure C.
+![Documentation](https://img.shields.io/website?url=https%3A%2F%2Fraypy.rayforcedb.com%2F) [![Tests](https://img.shields.io/badge/Tests-passing-success?logo=github&style=flat)](soon) [![Coverage](https://img.shields.io/badge/Coverage-passing-brightgreen?style=flat&logo=github)](soon) [![Release](https://img.shields.io/github/v/release/RayforceDB/rayforce-py)](https://github.com/RayforceDB/rayforce-py/releases)
+![Python Version](https://img.shields.io/pypi/pyversions/rayforce-py.svg)
+
 
 ## Features
 
 - **Pythonic API** - Chainable, fluent query syntax that feels pythonic
-- **Seamless Integration** - Direct C API access with controlled garbage collection
-- **High Performance** - Minimal overhead between Python and RayforceDB runtime
+- **High Performance** - Minimal overhead between Python and RayforceDB runtime thanks to C API usage
 - **Active Development** - Continuously expanding functionality
+
+
+## 📦 Installation
+
+Package is available on [Pypi](https://pypi.org/project/rayforce-py/0.0.2/)
+```bash
+pip install rayforce-py
+```
 
 ## 🚀 Quick Start
 
 ```python
-from rayforce import Table
+>>> from datetime import time
+>>> from rayforce import Table
 
-demo = Table(
-    columns=["id", "name", "age", "salary"],
-    values=[
-        ["001", "002", "003", "004"],
-        ["alice", "bob", "charlie", "dana"],
-        [29, 34, 41, 38],
-        [100000, 120000, 90000, 85000],
-    ],
-)
+>>> quotes = Table(
+        columns=["symbol", "time", "bid", "ask"],
+        values=[
+            ["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"],
+            [
+                time.fromisoformat("09:00:00.095"),
+                time.fromisoformat("09:00:00.105"),
+                time.fromisoformat("09:00:00.295"),
+                time.fromisoformat("09:00:00.145"),
+                time.fromisoformat("09:00:00.155"),
+                time.fromisoformat("09:00:00.345"),
+            ],
+            [100.0, 101.0, 102.0, 200.0, 201.0, 202.0],
+            [110.0, 111.0, 112.0, 210.0, 211.0, 212.0],
+        ],
+    )
 
-result = demo.select("id", "name", "age").where(demo.age >= 35).execute()
-
-print(result)
-┌─────┬─────────┬──────────────────────┐
-│ id  │ name    │ age                  │
-├─────┼─────────┼──────────────────────┤
-│ 003 │ charlie │ 41                   │
-│ 004 │ dana    │ 38                   │
-├─────┴─────────┴──────────────────────┤
-│ 2 rows (2 shown) 3 columns (3 shown) │
-└──────────────────────────────────────┘
+>>> result = (
+        quotes
+        .select(
+            max_bid=quotes.bid.max(),
+            min_bid=quotes.bid.min(),
+            avg_ask=quotes.ask.mean(),
+            records_count=quotes.time.count(),
+            first_bid=quotes.time.first(),
+        )
+        .by("symbol")
+        .execute()
+    )
+>>> print(result)
+┌────────┬─────────┬─────────┬─────────┬───────────────┬──────────────┐
+│ symbol │ max_bid │ min_bid │ avg_ask │ records_count │ first_bid    │
+├────────┼─────────┼─────────┼─────────┼───────────────┼──────────────┤
+│ AAPL   │ 102.00  │ 100.00  │ 111.00  │ 3             │ 09:00:00.095 │
+│ GOOG   │ 202.00  │ 200.00  │ 211.00  │ 3             │ 09:00:00.145 │
+├────────┴─────────┴─────────┴─────────┴───────────────┴──────────────┤
+│ 2 rows (2 shown) 6 columns (6 shown)                                │
+└─────────────────────────────────────────────────────────────────────┘
 ```
-
-## 📦 Installation
-
-```bash
-make all
-```
-
-This command will:
-- Pull the latest RayforceDB version from GitHub
-- Patch headers for Python support
-- Build the core library and required plugins
-- Set up everything you need to get started
-
-## 📚 Documentation
 
 **Full documentation available at:** https://raypy.rayforcedb.com/
 

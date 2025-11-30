@@ -1,6 +1,6 @@
 # Date
 
-The `Date` type represents a calendar date (year, month, day) in raypy.
+The `Date` type represents a calendar date (year, month, day).
 
 - Dates are stored internally as days since the Unix epoch (2001-01-01)
 - Does not contain time information

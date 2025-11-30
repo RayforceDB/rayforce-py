@@ -1,6 +1,6 @@
 # String
 
-The `String` type represents a vector of `c8` in raypy.
+The `String` type represents a vector of `c8`.
 
 ## Usage
 
@@ -11,7 +11,7 @@ from rayforce import String
 
 # From string literals
 name = String("Hello, World!")
-greeting = String("Welcome to raypy")
+greeting = String("Welcome to Rayforce-Py")
 ```
 
 ### Accessing Values

@@ -1,6 +1,6 @@
 # Integer Types
 
-There are three integer types in raypy - `I16`, `I32`, `I64`
+There are three integer types - `I16`, `I32`, `I64`
 
 - All integer types support conversion from `int`, `float`, and `str`.
 - Float values are truncated (not rounded) when converted.

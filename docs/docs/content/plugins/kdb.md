@@ -3,7 +3,7 @@
 
 ### Initializing an engine
 
-Raypy allows you to access KDB databases using a seamless raykx IPC.
+Rayforce-Py allows you to access KDB databases using a seamless raykx IPC.
 
 The connection with KDB database is being established via a dedicated `KDBEngine` type, which holds all connections to the specific KDB instance.
 
@@ -62,7 +62,7 @@ In order to execute a KDB query, the `.execute()` method has to be called with t
 I64(300)
 ```
 
-Raypy supports executing a query over any type, even with the tables. See local usage example:
+Rayforce-Py supports executing a query over any type, even with the tables. See local usage example:
 ```python
 >>> engine = KDBEngine(host="localhost", port=6062)
 

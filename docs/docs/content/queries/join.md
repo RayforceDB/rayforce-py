@@ -46,6 +46,11 @@ result = trades.inner_join(quotes, on="sym")
 result = table1.inner_join(table2, on=["col1", "col2"])
 ```
 
+## Left Join
+```python
+result = table1.left_join(table2, on=["col1", "col2"])
+```
+
 ## Window Join
 
 Window join matches records on specified columns and aggregates values from another table within time windows. This is useful for financial data where you want to aggregate quotes that occurred near each trade.

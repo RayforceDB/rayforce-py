@@ -1,6 +1,6 @@
-# Raypy test
+# Test
 
-Raypy has a number of tests which are accessible with the makefile command:
+Rayforce-Py has a number of tests which are accessible with the makefile command:
 ```bash
 make test
 ```

@@ -1,6 +1,6 @@
 # Timestamp
 
-The `Timestamp` type represents a specific point in time (date and time) in raypy. 
+The `Timestamp` type represents a specific point in time (date and time). 
 
 - Timestamp strings must be in ISO format: "YYYY-MM-DDTHH:MM:SS"
 - Invalid timestamp formats will raise `ValueError`

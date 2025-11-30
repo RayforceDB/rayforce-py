@@ -1,22 +1,22 @@
 # Query Guide
 
-RayPy provides a powerful, chainable query API that makes it easy to work with data in RayforceDB. This guide covers all aspects of querying tables, from basic selections to complex aggregations and data modifications.
+Rayforce-Py provides a powerful, chainable query API that makes it easy to work with data in RayforceDB. This guide covers all aspects of querying tables, from basic selections to complex aggregations and data modifications.
 
 ## Overview
 
-RayPy's query API is designed to be intuitive and Pythonic. All queries are built using a fluent, chainable interface that reads naturally from left to right.
+Rayforce-Py query API is designed to be intuitive and Pythonic. All queries are built using a fluent, chainable interface that reads naturally from left to right.
 
 ## Query Types
 
 - **[Creating Tables](tables.md)** - Different ways to create and load tables
 - **[SELECT](select.md)** - Selecting columns and computing new ones
+- **[UPDATE](update.md)** - Modifying existing rows
+- **[INSERT](insert.md)** - Adding new rows
+- **[UPSERT](upsert.md)** - Update or insert rows
 - **[WHERE](where.md)** - Filtering rows with conditions
 - **[ORDER BY](order-by.md)** - Sorting query results
 - **[GROUP BY](group-by.md)** - Grouping and aggregating data
 - **[JOIN](join.md)** - Combining data from multiple tables
-- **[UPDATE](update.md)** - Modifying existing rows
-- **[INSERT](insert.md)** - Adding new rows
-- **[UPSERT](upsert.md)** - Update or insert rows
 - **[Table Management](management.md)** - Saving, loading, and viewing tables
 
 ## Query Execution

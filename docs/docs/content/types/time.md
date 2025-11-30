@@ -1,6 +1,6 @@
 # Time
 
-The `Time` type represents a time of day (hours, minutes, seconds, milliseconds) in raypy.
+The `Time` type represents a time of day (hours, minutes, seconds, milliseconds).
 
 - Time strings must be in ISO format: "HH:MM:SS" or "HH:MM:SS.mmm"
 - Valid range: 00:00:00.000 to 23:59:59.999

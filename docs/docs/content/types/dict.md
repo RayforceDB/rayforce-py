@@ -1,6 +1,6 @@
 # Dict (Dictionary)
 
-The `Dict` type represents a key-value mapping in raypy. It's similar to Python dictionaries.
+The `Dict` type represents a key-value mapping. It's similar to Python dictionaries.
 
 ## Usage
 

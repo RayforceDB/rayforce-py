@@ -1,15 +1,15 @@
 # Data Types
 
-RayPy provides a comprehensive type system with both scalar and container types, designed for efficient data processing and type safety.
+Rayforce-Py provides a comprehensive type system with both scalar and container types, designed for efficient data processing and type safety.
 
 ## Type System Overview
 
-RayPy's type system is built around two main categories:
+Rayforce-Py type system is built around two main categories:
 
 - **Scalar Types**: Single values with specific data types
 - **Container Types**: Collections and complex data structures
 
-All types in RayPy have unique type codes and provide efficient storage and operations optimized for data processing workflows.
+All types in Rayforce-Py have unique type codes and provide efficient storage and operations optimized for data processing workflows.
 
 ## Scalar Types
 
@@ -75,7 +75,7 @@ Container types hold collections of data and provide structured storage for comp
 
 ### Automatic Conversion
 
-raypy automatically converts Python types to appropriate raypy types:
+Rayforce-Py automatically converts Python types to appropriate types:
 
 ```python
 from rayforce import I32, F64, B8, Symbol, List, Dict

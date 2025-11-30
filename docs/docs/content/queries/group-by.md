@@ -1,6 +1,6 @@
 # GROUP BY and Aggregations
 
-Group rows by one or more columns and compute aggregations using `group_by()` and `agg()`.
+Group rows by one or more columns and compute aggregations using `by()`
 
 ## Basic Group By
 
@@ -36,7 +36,7 @@ result = (
 
 ## Available Aggregation Functions
 
-RayPy provides the following aggregation functions:
+Rayforce-Py provides the following aggregation functions:
 
 - **`sum()`** - Sum of values
 - **`mean()`** or **`avg()`** - Average of values
@@ -66,27 +66,3 @@ result = (
 ```
 
 This computes the total for all rows, but only sums active rows for `active_total`.
-
-## Example: Department Statistics
-
-```python
-table = Table(
-    columns=["dept", "age", "salary"],
-    values=[
-        ["eng", "eng", "marketing", "marketing", "hr"],
-        [29, 34, 41, 38, 35],
-        [100000, 120000, 90000, 85000, 80000],
-    ],
-)
-
-result = (
-    table
-    .select(
-        avg_age=table.age.mean(),
-        total_salary=table.salary.sum(),
-        count=table.age.count(),
-    )
-    .by("dept")
-    .execute()
-)
-```

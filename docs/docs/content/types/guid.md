@@ -1,6 +1,6 @@
 # GUID (Globally Unique Identifier)
 
-The `GUID` type represents a globally unique identifier in raypy. It's equivalent to Python's `uuid.UUID` type and stores a 16-char identifier.
+The `GUID` type represents a globally unique identifier. It's equivalent to Python's `uuid.UUID` type and stores a 16-char identifier.
 
 
 ## Type Information

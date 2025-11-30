@@ -244,35 +244,132 @@
 .md-header {
   background-color: var(--accent-primary) !important;
   color: var(--text-inverse);
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: none;
 }
 
 .md-tabs {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-primary);
+  background-color: transparent;
+  border: none;
+  padding: 0.5rem 0;
+  box-shadow: none;
+}
+
+/* Transparent tabs for light mode */
+[data-md-color-scheme="default"] .md-tabs {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Remove any borders from tab container on home page */
+body:has(.hero-section) .md-tabs {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .md-tabs__link {
-  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.6rem 1.2rem;
+  margin: 0 0.25rem;
+  border-radius: 8px 8px 0 0;
+  display: inline-block;
 }
 
-.md-tabs__link--active,
 .md-tabs__link:hover {
-  color: var(--accent-primary);
+  opacity: 1;
+  background-color: rgba(197, 48, 48, 0.2);
+}
+
+.md-tabs__link--active {
+  opacity: 1;
+}
+
+/* Bookmark-style tabs for light mode - default (non-home pages) */
+[data-md-color-scheme="default"] .md-tabs__link {
+  color: #4a5568 !important;
+  opacity: 0.9;
+  background-color: transparent;
+}
+
+[data-md-color-scheme="default"] .md-tabs__link:hover {
+  color: #1a1a1a !important;
+  opacity: 1;
+  background-color: rgba(197, 48, 48, 0.1);
+}
+
+/* White tabs only on home page with hero section */
+body:has(.hero-section) [data-md-color-scheme="default"] .md-tabs__link {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body:has(.hero-section) [data-md-color-scheme="default"] .md-tabs__link:hover {
+  color: rgba(255, 255, 255, 1) !important;
+  background-color: rgba(197, 48, 48, 0.3);
+}
+
+[data-md-color-scheme="default"] .md-tabs__link--active {
+  background-color: var(--accent-primary);
+  color: white !important;
+  font-weight: 700;
+  opacity: 1;
+  box-shadow: 0 -2px 8px rgba(197, 48, 48, 0.2);
+}
+
+/* Bookmark-style tabs for dark mode */
+[data-md-color-scheme="slate"] .md-tabs__link {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link:hover {
+  color: var(--accent-primary) !important;
+  background-color: rgba(248, 113, 113, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link--active {
+  background-color: rgba(248, 113, 113, 0.2);
+  color: var(--accent-primary) !important;
+  font-weight: 700;
+  box-shadow: 0 -2px 8px rgba(248, 113, 113, 0.15);
 }
 
 /* Search */
 .md-search__input {
   background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-inverse);
 }
 
-.md-search__input::placeholder {
+/* Light mode - dark text */
+[data-md-color-scheme="default"] .md-search__input {
+  color: #1a1a1a !important;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: rgba(26, 26, 26, 0.6);
+}
+
+/* Dark mode - white text */
+[data-md-color-scheme="slate"] .md-search__input {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-search__input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
 
-[data-md-color-scheme="slate"] .md-search__input {
-  background-color: rgba(255, 255, 255, 0.1);
+/* General input fields styling */
+[data-md-color-scheme="default"] input,
+[data-md-color-scheme="default"] textarea,
+[data-md-color-scheme="default"] select {
+  color: #1a1a1a !important;
+}
+
+[data-md-color-scheme="slate"] input,
+[data-md-color-scheme="slate"] textarea,
+[data-md-color-scheme="slate"] select {
+  color: white !important;
 }
 
 /* Navigation */
@@ -291,7 +388,7 @@
 
 /* Sidebar */
 .md-sidebar {
-  background-color: var(--bg-secondary);
+  background-color: transparent;
 }
 
 /* Tables */

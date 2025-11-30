@@ -1,6 +1,6 @@
 # F64 (Float)
 
-The `F64` type represents floating-point number in raypy.
+The `F64` type represents floating-point number.
 
 - Conversion from integers preserves the numeric value as a float
 - String conversion supports standard float string formats
