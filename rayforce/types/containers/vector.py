@@ -111,7 +111,10 @@ class String(Vector):
     type_code = r.TYPE_C8
 
     def __init__(
-        self, value: str | None = None, *, ptr: r.RayObject | None = None
+        self,
+        value: str | Vector | None = None,
+        *,
+        ptr: r.RayObject | None = None,
     ) -> None:
         # String is a vector of C8, so it should have POSITIVE type code (r.TYPE_C8)
         if ptr and (_type := ptr.get_obj_type()) != self.type_code:
@@ -119,7 +122,14 @@ class String(Vector):
                 f"Expected String RayObject (type {self.type_code}), got {_type}"
             )
 
-        if value is not None:
+        if isinstance(value, Vector):
+            if (_type := value.ptr.get_obj_type()) != r.TYPE_C8:
+                raise ValueError(
+                    f"Expected Vector (type {self.type_code}), got {_type}"
+                )
+
+            self.ptr = value.ptr
+        elif value is not None:
             # Vectors have POSITIVE type codes, so use self.type_code directly (not negative!)
             super().__init__(
                 type_code=self.type_code,  # r.TYPE_C8 is already positive

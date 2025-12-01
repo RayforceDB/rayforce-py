@@ -1,6 +1,7 @@
 """
 Python bindings for RayforceDB
 """
+
 import os
 import sys
 import ctypes
@@ -19,7 +20,9 @@ else:
     raise ImportError(f"Platform not supported: {sys.platform}")
 
 lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), lib_name)
-raykx_lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plugins", raykx_lib_name)
+raykx_lib_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "plugins", raykx_lib_name
+)
 if os.path.exists(lib_path) and os.path.exists(raykx_lib_path):
     try:
         ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
@@ -61,6 +64,9 @@ from .types import (  # noqa: E402
 )
 from .plugins.raykx import KDBConnection, KDBEngine, ConnectionAlreadyClosed  # noqa: E402
 from .io.ipc import IPCException, Connection, hopen  # noqa: E402
+from .utils.evaluation import eval_str  # noqa: E402
+
+core_version = String(eval_str("(sysinfo)")["hash"]).value
 
 __all__ = [
     "F64",
@@ -89,4 +95,7 @@ __all__ = [
     "Connection",
     "hopen",
     "TableColumnInterval",
+    "eval_str",
+    "version",
+    "core_version",
 ]

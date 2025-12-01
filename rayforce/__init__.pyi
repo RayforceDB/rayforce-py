@@ -1,1 +1,1 @@
-import raypy._rayforce_c  # type: ignore
+import rayforce._rayforce_c  # noqa # type: ignore

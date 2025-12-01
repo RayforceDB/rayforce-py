@@ -44,7 +44,10 @@ class TypeRegistry:
 
         type_code = ptr.get_obj_type()
         if type_code > 0 and type_code not in (r.TYPE_DICT, r.TYPE_LIST, r.TYPE_TABLE):
-            from rayforce.types import Vector
+            from rayforce.types import Vector, String
+
+            if type_code == r.TYPE_C8:
+                return String(ptr=ptr)
 
             return Vector(ptr=ptr, type_code=type_code)
 
