@@ -1,9 +1,10 @@
 from __future__ import annotations
+from collections.abc import Iterable
 import datetime
 from typing import Any, Callable
 from rayforce.core import FFI
 from rayforce import utils
-from rayforce.types import List, String, Symbol, Time, Timestamp, Vector
+from rayforce.types import Dict, List, String, Symbol, Time, Timestamp, Vector
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce import _rayforce_c as r
@@ -1003,48 +1004,65 @@ class UpdateQuery:
 class InsertQuery:
     def __init__(self, table: str | Table, *args, **kwargs):
         self._table = table
+        self.args = args
+        self.kwargs = kwargs
+
+        if args and kwargs:
+            raise ValueError("Insert query accepts args OR kwargs, not both")
 
         if args:
-            self._insertable = args[0] if len(args) == 1 else list(args)
+            first = args[0]
+
+            if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
+                _args = List([])
+                for sub in args:
+                    _args.append(
+                        Vector(
+                            items=sub, type_code=utils.python_to_ray(sub[0]).get_obj_type()
+                        )
+                    )
+                self.insertable_ptr = _args.ptr
+
+            else:
+                self.insertable_ptr = List(args).ptr
+
         elif kwargs:
-            self._insertable = list(kwargs.values())
+            values = list(kwargs.values())
+            first_val = values[0]
+
+            if isinstance(first_val, Iterable) and not isinstance(
+                first_val, (str, bytes)
+            ):
+                keys = Vector(items=list(kwargs.keys()), type_code=Symbol.type_code)
+                _values = List([])
+
+                for val in values:
+                    _values.append(
+                        Vector(
+                            items=val,
+                            type_code=utils.python_to_ray(val[0]).get_obj_type(),
+                        )
+                    )
+                self.insertable_ptr = Dict(keys=keys, values=_values).ptr
+
+            else:
+                self.insertable_ptr = Dict(kwargs).ptr
         else:
             raise ValueError("No data to insert")
 
-    def __validate(
-        self,
-        insert_to: str | _Table,
-        insertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
-    ) -> None:
-        if not insert_to:
-            raise ValueError("Attribute insert_to is required.")
-
-        if not insertable:
-            raise ValueError("No attributes to insert.")
-
-        self.insert_to = insert_to
-        self.insertable = insertable
-
-    def __build_query(self) -> None:
-        self.insertable_ptr = FFI.init_list()
-        for attribute in self.insertable:
-            FFI.push_obj(
-                iterable=self.insertable_ptr,
-                ptr=utils.python_to_ray(attribute),
-            )
-
-        self.insert_to_ptr = utils.python_to_ray(self.insert_to)
-
     def execute(self) -> Table:
-        self.__validate(insert_to=self._table, insertable=self._insertable)
-        self.__build_query()
-
-        return utils.ray_to_python(
-            FFI.insert(table_obj=self.insert_to_ptr, data_obj=self.insertable_ptr)
+        new_table = FFI.insert(
+            table_obj=utils.python_to_ray(self._table),
+            data_obj=self.insertable_ptr,
         )
 
+        if new_table.get_obj_type() == Symbol.type_code:
+            return Table(Symbol(new_table).value)
+        self._table.ptr = new_table
+        return Table(ptr=self._table.ptr)
+
     def __repr__(self) -> str:
-        return f"InsertQuery({len(self._insertable)} values)"
+        return f"InsertQuery({self.args} {self.kwargs})"
 
 
 class UpsertQuery:

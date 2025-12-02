@@ -1,3 +1,4 @@
+from unittest import result
 from rayforce import Table, TableColumnInterval
 from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
 
@@ -326,11 +327,31 @@ def test_insert_single_row():
         .execute()
     )
 
-    assert isinstance(result, Symbol)
+    assert isinstance(result, Table)
 
     result = Table.get("test_insert_table")
     print(result.values())
     values = result.values()
+    assert len(values[0]) == 3
+    assert values[0][2].value == "003"
+    assert values[1][2].value == "charlie"
+    assert values[2][2].value == 41
+
+
+def test_insert_inplace_single_row():
+    table = Table(
+        columns=["id", "name", "age"],
+        values=[["001", "002"], ["alice", "bob"], [29, 34]],
+    )
+
+    result_inplace = table.insert(id="003", name="charlie", age=41).execute()
+
+    print(type(result_inplace))
+    print(Table)
+    assert isinstance(result_inplace, Table)
+
+    print(result_inplace.values())
+    values = result_inplace.values()
     assert len(values[0]) == 3
     assert values[0][2].value == "003"
     assert values[1][2].value == "charlie"
