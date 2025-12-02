@@ -50,6 +50,7 @@ pip install rayforce-py
             records_count=quotes.time.count(),
             first_bid=quotes.time.first(),
         )
+        .where((quotes.bid >= 110) & (quotes.ask > 100))
         .by("symbol")
         .execute()
     )
@@ -57,10 +58,9 @@ pip install rayforce-py
 ┌────────┬─────────┬─────────┬─────────┬───────────────┬──────────────┐
 │ symbol │ max_bid │ min_bid │ avg_ask │ records_count │ first_bid    │
 ├────────┼─────────┼─────────┼─────────┼───────────────┼──────────────┤
-│ AAPL   │ 102.00  │ 100.00  │ 111.00  │ 3             │ 09:00:00.095 │
 │ GOOG   │ 202.00  │ 200.00  │ 211.00  │ 3             │ 09:00:00.145 │
 ├────────┴─────────┴─────────┴─────────┴───────────────┴──────────────┤
-│ 2 rows (2 shown) 6 columns (6 shown)                                │
+│ 1 rows (1 shown) 6 columns (6 shown)                                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
