@@ -222,6 +222,13 @@ class Column:
     def last(self) -> Expression:
         return Expression(Operation.LAST, self)
 
+    def is_(self, other: bool) -> Expression:
+        if other is True:
+            return Expression(Operation.EVAL, self)
+        elif other is False:
+            return Expression(Operation.EVAL, Expression(Operation.NOT, self))
+        raise ValueError("is_ argument has to be bool")
+
     def median(self) -> Expression:
         return Expression(Operation.MEDIAN, self)
 

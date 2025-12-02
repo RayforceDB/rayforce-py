@@ -87,6 +87,7 @@ class Operation(enum.StrEnum):
     LIST = "list"
 
     # Other
+    EVAL = "eval"
     QUOTE = "quote"
     CONCAT = "concat"
     READ_CSV = "read-csv"
