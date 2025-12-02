@@ -21,7 +21,7 @@ You can manually clone latest github repo and build it yourself
 ~ $ cd rayforce-py
 ~/rayforce-py $ make all
 ~/rayforce-py $ python -c "import rayforce; print(rayforce.version)"
-0.0.3
+0.0.4
 ```
 
 This will:
