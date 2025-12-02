@@ -1,3 +1,4 @@
+import pytest
 from unittest import result
 from rayforce import Table, TableColumnInterval
 from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
@@ -314,23 +315,25 @@ def test_update_multiple_rows():
         assert len(values) == 3
 
 
-def test_insert_single_row():
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_insert_single_row_kwargs(is_inplace):
     table = Table(
         columns=["id", "name", "age"],
         values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
-    table.save("test_insert_table")
+    if is_inplace:
+        result = table.insert(id="003", name="charlie", age=41).execute()
+    else:
+        table.save("test_insert_table")
+        result = (
+            Table.get("test_insert_table")
+            .insert(id="003", name="charlie", age=41)
+            .execute()
+        )
 
-    result = (
-        Table.get("test_insert_table")
-        .insert(id="003", name="charlie", age=41)
-        .execute()
-    )
 
     assert isinstance(result, Table)
 
-    result = Table.get("test_insert_table")
-    print(result.values())
     values = result.values()
     assert len(values[0]) == 3
     assert values[0][2].value == "003"
@@ -338,100 +341,228 @@ def test_insert_single_row():
     assert values[2][2].value == 41
 
 
-def test_insert_inplace_single_row():
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_insert_single_row_args(is_inplace):
     table = Table(
         columns=["id", "name", "age"],
         values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
+    if is_inplace:
+        result = table.insert("003", "charlie", 41).execute()
+    else:
+        table.save("test_insert_table")
+        result = (
+            Table.get("test_insert_table")
+            .insert("003", "charlie", 41)
+            .execute()
+        )
 
-    result_inplace = table.insert(id="003", name="charlie", age=41).execute()
 
-    print(type(result_inplace))
-    print(Table)
-    assert isinstance(result_inplace, Table)
+    assert isinstance(result, Table)
 
-    print(result_inplace.values())
-    values = result_inplace.values()
+    values = result.values()
     assert len(values[0]) == 3
     assert values[0][2].value == "003"
     assert values[1][2].value == "charlie"
     assert values[2][2].value == 41
 
 
-def test_upsert_single_row():
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_insert_multiple_rows_kwargs(is_inplace):
     table = Table(
         columns=["id", "name", "age"],
         values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
-    table.save("test_upsert_table")
+    if is_inplace:
+        result = table.insert(id=["003", "004"], name=["charlie", "megan"], age=[41, 30]).execute()
+    else:
+        table.save("test_insert_table")
+        result = (
+            Table.get("test_insert_table")
+            .insert(id=["003", "004"], name=["charlie", "megan"], age=[41, 30])
+            .execute()
+        )
+    
+    assert isinstance(result, Table)
 
-    result = (
-        Table.get("test_upsert_table")
-        .upsert({"id": "001", "name": "alice_updated", "age": 30}, match_on="id")
-        .execute()
+    values = result.values()
+    assert len(values[0]) == 4
+    assert values[0][2].value == "003"
+    assert values[1][2].value == "charlie"
+    assert values[2][2].value == 41
+
+    assert values[0][3].value == "004"
+    assert values[1][3].value == "megan"
+    assert values[2][3].value == 30
+
+
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_insert_multiple_rows_args(is_inplace):
+    table = Table(
+        columns=["id", "name", "age"],
+        values=[["001", "002"], ["alice", "bob"], [29, 34]],
+    )
+    if is_inplace:
+        result = table.insert(["003", "004"], ["charlie", "megan"], [41, 30]).execute()
+    else:
+        table.save("test_insert_table")
+        result = (
+            Table.get("test_insert_table")
+            .insert(["003", "004"], ["charlie", "megan"], [41, 30])
+            .execute()
+        )
+    
+    assert isinstance(result, Table)
+
+    values = result.values()
+    assert len(values[0]) == 4
+    assert values[0][2].value == "003"
+    assert values[1][2].value == "charlie"
+    assert values[2][2].value == 41
+
+    assert values[0][3].value == "004"
+    assert values[1][3].value == "megan"
+    assert values[2][3].value == 30
+
+
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_upsert_single_row_kwargs(is_inplace):
+    table = Table(
+        columns=["id", "name", "age"],
+        values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
 
-    assert isinstance(result, Symbol)
+    if is_inplace:
+        result = (
+            table
+            .upsert(id="001", name="alice_updated", age=30, match_by_first=1)
+            .execute()
+        )
+    else:
+        table.save("test_upsert_table")
+        result = (
+            Table.get("test_upsert_table")
+            .upsert(id="001", name="alice_updated", age=30, match_by_first=1)
+            .execute()
+        )
 
-    result = Table.get("test_upsert_table")
+    assert isinstance(result, Table)
+
     values = result.values()
     assert len(values[0]) == 2
     assert values[1][0].value == "alice_updated"
     assert values[2][0].value == 30
 
 
-def test_upsert_multiple_rows():
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_upsert_single_row_args(is_inplace):
     table = Table(
         columns=["id", "name", "age"],
         values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
-    table.save("test_upsert_multi")
 
-    result = (
-        Table.get("test_upsert_multi")
-        .upsert(
-            [
-                {"id": "001", "name": "alice_new", "age": 30},
-                {"id": "003", "name": "charlie", "age": 41},
-            ],
-            match_on="id",
+    if is_inplace:
+        result = (
+            table
+            .upsert("001", "alice_updated", 30, match_by_first=1)
+            .execute()
         )
-        .execute()
+    else:
+        table.save("test_upsert_table")
+        result = (
+            Table.get("test_upsert_table")
+            .upsert("001", "alice_updated", 30, match_by_first=1)
+            .execute()
+        )
+
+    assert isinstance(result, Table)
+
+    values = result.values()
+    assert len(values[0]) == 2
+    assert values[1][0].value == "alice_updated"
+    assert values[2][0].value == 30
+
+
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_upsert_multiple_rows_kwargs(is_inplace):
+    table = Table(
+        columns=["id", "name", "age"],
+        values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
 
-    assert isinstance(result, Symbol)
+    if is_inplace:
+        result = (
+            table
+            .upsert(
+                id=["001", "003"],
+                name=["alice_new", "charlie"],
+                age=[30, 41],
+                match_by_first=1,
+            )
+            .execute()
+        )
+    else:
+        table.save("test_upsert_multi")
+        result = (
+            Table.get("test_upsert_multi")
+            .upsert(
+                id=["001", "003"],
+                name=["alice_new", "charlie"],
+                age=[30, 41],
+                match_by_first=1,
+            )
+            .execute()
+        )
 
-    result = Table.get("test_upsert_multi")
+    assert isinstance(result, Table)
+
     values = result.values()
     assert len(values[0]) >= 2
     assert values[1][0].value == "alice_new"
+    assert values[2][0].value == 30
+    assert values[1][2].value == "charlie"
+    assert values[2][2].value == 41
 
 
-def test_upsert_with_multiple_match_keys():
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_upsert_multiple_rows_args(is_inplace):
     table = Table(
-        columns=["id", "version", "value"],
-        values=[
-            ["001", "001", "002"],
-            ["v1", "v2", "v1"],
-            [100, 200, 300],
-        ],
+        columns=["id", "name", "age"],
+        values=[["001", "002"], ["alice", "bob"], [29, 34]],
     )
-    table.save("test_upsert_match_keys")
 
-    result = (
-        Table.get("test_upsert_match_keys")
-        .upsert(
-            {"id": "001", "version": "v1", "value": 150},
-            match_on=["id", "version"],
+    if is_inplace:
+        result = (
+            table
+            .upsert(
+                ["001", "003"],
+                ["alice_new", "charlie"],
+                [30, 41],
+                match_by_first=1,
+            )
+            .execute()
         )
-        .execute()
-    )
+    else:
+        table.save("test_upsert_multi")
+        result = (
+            Table.get("test_upsert_multi")
+            .upsert(
+                ["001", "003"],
+                ["alice_new", "charlie"],
+                [30, 41],
+                match_by_first=1,
+            )
+            .execute()
+        )
 
-    assert isinstance(result, Symbol)
+    assert isinstance(result, Table)
 
-    result = Table.get("test_upsert_match_keys")
     values = result.values()
-    assert len(values) == 3
+    assert len(values[0]) >= 2
+    assert values[1][0].value == "alice_new"
+    assert values[2][0].value == 30
+    assert values[1][2].value == "charlie"
+    assert values[2][2].value == 41
 
 
 def test_complex_select_with_computed_columns():

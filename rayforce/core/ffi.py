@@ -268,6 +268,16 @@ class FFI:
 
     @staticmethod
     @exception_handler
+    def quote(obj: r.RayObject) -> r.RayObject:
+        return r.quote(obj)
+
+    @staticmethod
+    @exception_handler
+    def rc_obj(obj: r.RayObject) -> int:
+        return r.rc_obj(obj)
+
+    @staticmethod
+    @exception_handler
     def binary_set(name: r.RayObject, value: r.RayObject) -> None:
         return r.binary_set(name, value)
 

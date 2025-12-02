@@ -4,7 +4,7 @@ import datetime
 from typing import Any, Callable
 from rayforce.core import FFI
 from rayforce import utils
-from rayforce.types import Dict, List, String, Symbol, Time, Timestamp, Vector
+from rayforce.types import I64, Dict, List, String, Symbol, Time, Timestamp, Vector
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce import _rayforce_c as r
@@ -542,10 +542,11 @@ class Table:
 
     def upsert(
         self,
-        data: dict[str, Any] | list[dict[str | Any]],
-        match_on: str | list[str] = "id",
+        *args,
+        match_by_first: int,
+        **kwargs,
     ) -> UpsertQuery:
-        return UpsertQuery(self._table, data, match_on)
+        return UpsertQuery(self._table, *args, match_by_first=match_by_first, **kwargs)
 
     def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self._table.ptr)
@@ -988,8 +989,12 @@ class UpdateQuery:
             else:
                 converted_attrs[key] = value
 
+        table_obj = utils.python_to_ray(self._table)
+        cloned_table = FFI.quote(table_obj)
+        cloned_table_python = utils.ray_to_python(cloned_table)
+
         self.__validate(
-            update_from=self._table,
+            update_from=cloned_table_python,
             attributes=converted_attrs,
             where=where_expr,
         )
@@ -1018,7 +1023,8 @@ class InsertQuery:
                 for sub in args:
                     _args.append(
                         Vector(
-                            items=sub, type_code=utils.python_to_ray(sub[0]).get_obj_type()
+                            items=sub,
+                            type_code=utils.python_to_ray(sub[0]).get_obj_type(),
                         )
                     )
                 self.insertable_ptr = _args.ptr
@@ -1051,15 +1057,18 @@ class InsertQuery:
             raise ValueError("No data to insert")
 
     def execute(self) -> Table:
+        table_obj = utils.python_to_ray(self._table)
+        cloned_table = FFI.quote(table_obj)
+
         new_table = FFI.insert(
-            table_obj=utils.python_to_ray(self._table),
+            table_obj=cloned_table,
             data_obj=self.insertable_ptr,
         )
 
         if new_table.get_obj_type() == Symbol.type_code:
-            return Table(Symbol(new_table).value)
-        self._table.ptr = new_table
-        return Table(ptr=self._table.ptr)
+            return Table(Symbol(ptr=new_table).value)
+
+        return Table(ptr=new_table)
 
     def __repr__(self) -> str:
         return f"InsertQuery({self.args} {self.kwargs})"
@@ -1068,112 +1077,100 @@ class InsertQuery:
 class UpsertQuery:
     def __init__(
         self,
-        table: str | _Table,
-        data: dict[str, Any] | list[dict[str, Any]],
-        match_on: str | list[str],
+        table: str | Table,
+        *args,
+        match_by_first: int,
+        **kwargs,
     ):
         self._table = table
-        self._data = data if isinstance(data, list) else [data]
-        self._match_by_first = 1 if isinstance(match_on, str) else len(match_on)
+        self.args = args
+        self.kwargs = kwargs
 
-    def __validate(
-        self,
-        upsert_to: str | _Table,
-        match_by_first: int,
-        upsertable: dict[str, str | Expression] | list[dict[str, str | Expression]],
-    ) -> None:
-        if not upsert_to:
-            raise ValueError("Attribute upsert_to is required.")
+        if args and kwargs:
+            raise ValueError("Upsert query accepts args OR kwargs, not both")
 
-        if not upsertable:
-            raise ValueError("No attributes to upsert.")
+        if args:
+            first = args[0]
 
-        if match_by_first <= 0 or match_by_first > len(upsertable):
-            raise ValueError("Match should be by length of upsertable or lower.")
+            if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
+                _args = List([])
+                for sub in args:
+                    _args.append(
+                        Vector(
+                            items=sub,
+                            type_code=utils.python_to_ray(sub[0]).get_obj_type(),
+                        )
+                    )
+                self.upsertable_ptr = _args.ptr
 
-        self.upsert_to = upsert_to
-        self.upsertable = upsertable
-        self.match_by_first = match_by_first
-
-    def __build_query(self) -> None:
-        from rayforce.types.containers import Vector
-        from rayforce.types.scalars import Symbol, I64, F64, B8, QuotedSymbol
-
-        # Match low-level is a number of ordered fields provided in upsertable.
-        self.match_ptr = FFI.init_i64(self.match_by_first)
-
-        i_keys = FFI.init_vector(type_code=-r.TYPE_SYMBOL, length=len(self.upsertable))
-        for idx, key in enumerate(self.upsertable.keys()):  # type: ignore
-            FFI.insert_obj(
-                insert_to=i_keys,
-                idx=idx,
-                ptr=QuotedSymbol(key).ptr,
-                # ptr=utils.python_to_ray(key),
-            )
-
-        i_values = FFI.init_list()
-        for column_data in self.upsertable.values():  # type: ignore
-            # Convert to appropriate Vector type (like Table.__init__ does)
-            if not column_data:
-                FFI.push_obj(iterable=i_values, ptr=FFI.init_list())
-            elif all(isinstance(x, str) for x in column_data):
-                # String column -> Vector of Symbols
-                vec = Vector(type_code=Symbol.type_code, items=column_data)
-                FFI.push_obj(iterable=i_values, ptr=vec.ptr)
-            elif all(
-                isinstance(x, (int, float)) and not isinstance(x, bool)
-                for x in column_data
-            ):
-                # Numeric column -> detect if int or float
-                if all(isinstance(x, int) for x in column_data):
-                    vec = Vector(type_code=I64.type_code, items=column_data)
-                else:
-                    vec = Vector(type_code=F64.type_code, items=column_data)
-                FFI.push_obj(iterable=i_values, ptr=vec.ptr)
-            elif all(isinstance(x, bool) for x in column_data):
-                # Boolean column
-                vec = Vector(type_code=B8.type_code, items=column_data)
-                FFI.push_obj(iterable=i_values, ptr=vec.ptr)
             else:
-                # Mixed types - keep as List
-                _l = FFI.init_list()
-                for value in column_data:
-                    FFI.push_obj(iterable=_l, ptr=utils.python_to_ray(value))
-                FFI.push_obj(iterable=i_values, ptr=_l)
+                _args = List([])
+                for sub in args:
+                    _args.append(
+                        Vector(
+                            items=[sub],
+                            type_code=utils.python_to_ray(sub).get_obj_type(),
+                        )
+                    )
+                self.upsertable_ptr = _args.ptr
 
-        self.upsertable_ptr = FFI.init_dict(i_keys, i_values)
+        # TODO: for consistency with insert, allow to use single values isntead of vectors
+        elif kwargs:
+            values = list(kwargs.values())
+            first_val = values[0]
 
-        if isinstance(self.upsert_to, _Table):
-            self.upsert_to_ptr = self.upsert_to.ptr
+            if isinstance(first_val, Iterable) and not isinstance(
+                first_val, (str, bytes)
+            ):
+                keys = Vector(items=list(kwargs.keys()), type_code=Symbol.type_code)
+                _values = List([])
+
+                for val in values:
+                    _values.append(
+                        Vector(
+                            items=val,
+                            type_code=utils.python_to_ray(val[0]).get_obj_type(),
+                        )
+                    )
+                self.upsertable_ptr = Dict(keys=keys, values=_values).ptr
+
+            else:
+                keys = Vector(items=list(kwargs.keys()), type_code=Symbol.type_code)
+                _values = List([])
+
+                for val in values:
+                    _values.append(
+                        Vector(
+                            items=[val],
+                            type_code=utils.python_to_ray(val).get_obj_type(),
+                        )
+                    )
+                self.upsertable_ptr = Dict(keys=keys, values=_values).ptr
         else:
-            from rayforce.types.scalars import QuotedSymbol
+            raise ValueError("No data to insert")
 
-            self.upsert_to_ptr = QuotedSymbol(self.upsert_to).ptr
+        if match_by_first <= 0:
+            raise ValueError("Match by first has to be greater than 0")
+
+        self._match_by_first = I64(match_by_first)
 
     def execute(self) -> Table:
-        upsertable = {}
-        for row in self._data:
-            for key, value in row.items():
-                if key not in upsertable:
-                    upsertable[key] = []
-                upsertable[key].append(value)
+        table_obj = utils.python_to_ray(self._table)
+        cloned_table = FFI.quote(table_obj)
 
-        self.__validate(
-            upsert_to=self._table,
-            match_by_first=self._match_by_first,
-            upsertable=upsertable,
+        new_table = FFI.upsert(
+            table_obj=cloned_table,
+            keys_obj=self._match_by_first.ptr,
+            data_obj=self.upsertable_ptr,
         )
-        self.__build_query()
-        return utils.ray_to_python(
-            FFI.upsert(
-                table_obj=self.upsert_to_ptr,
-                keys_obj=self.match_ptr,
-                data_obj=self.upsertable_ptr,
-            )
-        )
+
+        if new_table.get_obj_type() == Symbol.type_code:
+            return Table(Symbol(ptr=new_table).value)
+
+        return Table(ptr=new_table)
 
     def __repr__(self) -> str:
-        return f"UpsertQuery({len(self._data)} rows, match_by_first={self._match_by_first})"
+        return f"UpsertQuery({self.args} {self.kwargs}, match_by_first={self._match_by_first})"
 
 
 class DictLookup(Expression):

@@ -1557,6 +1557,22 @@ static PyObject *raypy_quote(PyObject *self, PyObject *args)
 
     return (PyObject *)result;
 }
+static PyObject *raypy_rc(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+
+    if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj)) { return NULL; }
+
+    if (ray_obj->obj == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "RayObject cannot be NULL");
+        return NULL;
+    }
+
+    u32_t rc = rc_obj(ray_obj->obj);
+    return PyLong_FromUnsignedLong(rc);
+}
 static PyObject *raypy_loadfn(PyObject *self, PyObject *args)
 {
     (void)self;
@@ -2968,6 +2984,7 @@ static PyMethodDef module_methods[] = {
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
     {"loadfn_from_file", raypy_loadfn, METH_VARARGS, "Load function from shared library"},
     {"quote", raypy_quote, METH_VARARGS, "Quote (clone) object"},
+    {"rc_obj", raypy_rc, METH_VARARGS, "Get reference count of object"},
     {"get_obj_attrs", raypy_get_obj_attrs, METH_VARARGS, "Get object attributes"},
     {"set_obj_attrs", raypy_set_obj_attrs, METH_VARARGS, "Set object attributes"},
     
