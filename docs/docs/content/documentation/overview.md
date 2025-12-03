@@ -1,38 +1,12 @@
-# :material-human-greeting-variant: Introduction to Rayforce-Py
+# :material-file-document: Start your journey here
 
-Rayforce-Py is an library which allows you to effectively execute statements inside RayforceDB runtime using handy Pythonic syntax.
+Rayforce-Py allows you to operate with Rayforce runtime in a seamless manner, utilising handy
+Pythonic chainable syntax with little-to-no performance overhead.
 
-The interaction with the RayforceDB is happening via C API bus, which allows us to seamlessly operate with your local rayforce runtime with little-to-no practical overhead.
-
-## Installation
-
-Supported Python versions: `3.11`, `3.12`, `3.13`
-
-### with pip (recommended)
-Distribution is available via pypi for Linux and MacOS (Windows support is in progress):
-```bash
-python -m pip install rayforce-py
-```
-
-### from source
-You can manually clone latest github repo and build it yourself
-```zsh
-~ $ git clone https://github.com/RayforceDB/rayforce-py.git
-~ $ cd rayforce-py
-~/rayforce-py $ make all
-~/rayforce-py $ python -c "import rayforce; print(rayforce.version)"
-0.0.5
-```
-
-This will:
-
-- Pull the latest RayforceDB version from Github
-- Build .so binaries specifically for your platform
+To achieve this, library provides instruments to operate with the runtime, along with data types and other handy things you may utilise on your way to fast performance when operating with the data!
 
 
-
-
-## Making your first queries
+## :material-run: Quick Start
 
 Initialise a table using `rayforce.Table`:
 ```python
@@ -56,9 +30,10 @@ Initialise a table using `rayforce.Table`:
     ],
 )
 ```
-You are able to initialize table in multiple ways. See [TODO]
+!!! note ""
+    You are able to initialize table in multiple handy ways. See [TODO]
 
-## Example query
+Then, query the table using `select` statement:
 ```python
 >>> result = (
     quotes
@@ -82,5 +57,6 @@ You are able to initialize table in multiple ways. See [TODO]
 │ 2 rows (2 shown) 6 columns (6 shown)                                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+Try it out!
 
-Discover the full queries potential in documentation!
+### :material-arrow-right: Next: Discover [Data Types]() and [Queries]()

@@ -1,4 +1,6 @@
-# Data Types
+
+
+## :octicons-database-16: Data Types
 
 Rayforce-Py provides a comprehensive type system with both scalar and container types, designed for efficient data processing and type safety.
 

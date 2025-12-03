@@ -24,21 +24,21 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: red
-      accent: red
+      primary: amber
+      accent: amber
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
 
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: red
-      accent: red
+      primary: amber
+      accent: amber
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
   font:
-    text: Roboto
+    text: Outfit
     code: JetBrains Mono
   logo: assets/logo.png
 
@@ -90,27 +90,33 @@ markdown_extensions:
   - footnotes
 
 extra_css:
+  - https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap
   - https://adobe-fonts.github.io/source-code-pro/source-code-pro.css
   - css/custom.css
   - css/hero.css
 
 nav:
   - Home: index.md
-  - Get Started: content/get-started.md
+  - Get Started:
+    - Overview: content/get-started/overview.md
+    - Performance: content/get-started/performance.md
+    - Contributing: content/get-started/contributing.md
   - Documentation:
+    - Overview: content/documentation/overview.md
+    - Data Types:
+      - Overview: content/documentation/data-types/overview.md
+      - Integers: content/documentation/data-types/integers.md
+      - Float: content/documentation/data-types/float.md
+      - Unsigned Integer: content/documentation/data-types/unsigned-integer.md
+      - Char: content/documentation/data-types/char.md
+      - Symbol: content/documentation/data-types/symbol.md
+      - Boolean: content/documentation/data-types/boolean.md
+      - Temporal: content/documentation/data-types/temporal.md
+      - GUID: content/documentation/data-types/guid.md
+      - String: content/documentation/data-types/string.md
+
+    # REWORK:
     - Types Overview:
-      - Overview: content/types/index.md
-      - Scalar Types:
-        - Integers (I16, I32, I64): content/types/integers.md
-        - Float (F64): content/types/float.md
-        - Boolean (B8): content/types/b8.md
-        - Character (C8): content/types/c8.md
-        - Symbol: content/types/symbol.md
-        - Unsigned Integer (U8): content/types/u8.md
-        - Date: content/types/date.md
-        - Time: content/types/time.md
-        - Timestamp: content/types/timestamp.md
-        - GUID: content/types/guid.md
       - Container Types:
         - Vector: content/types/vector.md
         - List: content/types/list.md

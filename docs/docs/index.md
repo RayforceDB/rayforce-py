@@ -13,8 +13,11 @@
       a blazing fast columnar vector database written in <b>pure C</b>.
     </p>
     <div class="hero-buttons">
-      <a href="content/get-started.html" class="md-button md-button--primary">Get Started</a>
-      <a href="https://github.com/RayforceDB/rayforce-py" class="md-button">View on GitHub</a>
+      <a href="content/get-started/overview.html" class="md-button md-button--primary">Get Started</a>
+      <!-- <div class="hero-buttons-secondary"> -->
+        <a href="https://github.com/RayforceDB/rayforce-py" class="md-button">View on PyPi</a>
+        <a href="https://github.com/RayforceDB/rayforce-py" class="md-button">View on GitHub</a>
+      <!-- </div> -->
     </div>
   </div>
 </div>

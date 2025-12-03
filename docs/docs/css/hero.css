@@ -41,7 +41,7 @@
   height: 100%;
   z-index: 0;
   overflow: hidden;
-  background-color: #0f172a; /* Fallback background */
+  background-color: var(--navy-900); /* Fallback background */
 }
 
 /* Full-screen background video */
@@ -68,8 +68,8 @@
   height: 100%;
   background: linear-gradient(
     135deg,
-    rgba(197, 48, 48, 0.3) 0%,
-    rgba(15, 23, 42, 0.5) 100%
+    rgba(233, 163, 32, 0.3) 0%,
+    rgba(10, 14, 23, 0.5) 100%
   );
   z-index: 1;
 }
@@ -77,8 +77,8 @@
 [data-md-color-scheme="slate"] .hero-background::after {
   background: linear-gradient(
     135deg,
-    rgba(15, 23, 42, 0.5) 0%,
-    rgba(197, 48, 48, 0.3) 100%
+    rgba(10, 14, 23, 0.5) 0%,
+    rgba(233, 163, 32, 0.3) 100%
   );
 }
 
@@ -138,6 +138,13 @@
   gap: 1rem;
   justify-content: flex-end; /* Align buttons to right */
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.hero-buttons-secondary {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .hero-buttons .md-button {
@@ -216,6 +223,13 @@
     gap: 0.75rem !important;
   }
   
+  .hero-buttons-secondary {
+    flex-direction: row !important;
+    width: 100% !important;
+    justify-content: center !important;
+    gap: 0.75rem !important;
+  }
+  
   .hero-buttons .md-button {
     width: 100% !important;
     max-width: 280px !important;
@@ -223,12 +237,17 @@
     padding: 0.75rem 1.5rem !important;
   }
   
+  .hero-buttons-secondary .md-button {
+    flex: 1 !important;
+    max-width: 280px !important;
+  }
+  
   /* Lighten overlay on mobile for better video visibility */
   .hero-background::after {
     background: linear-gradient(
       135deg,
-      rgba(197, 48, 48, 0.4) 0%,
-      rgba(15, 23, 42, 0.6) 100%
+      rgba(233, 163, 32, 0.4) 0%,
+      rgba(10, 14, 23, 0.6) 100%
     ) !important;
   }
 }
@@ -270,12 +289,24 @@
     width: 100% !important;
   }
   
+  .hero-buttons-secondary {
+    flex-direction: row !important;
+    width: 100% !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+  }
+  
+  .hero-buttons-secondary .md-button {
+    flex: 1 !important;
+    max-width: 280px !important;
+  }
+  
   /* Lighter overlay for better readability on small screens */
   .hero-background::after {
     background: linear-gradient(
       135deg,
-      rgba(197, 48, 48, 0.6) 0%,
-      rgba(15, 23, 42, 0.7) 100%
+      rgba(233, 163, 32, 0.6) 0%,
+      rgba(10, 14, 23, 0.7) 100%
     ) !important;
   }
 }
