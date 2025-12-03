@@ -4,7 +4,17 @@ import datetime
 from typing import Any, Callable
 from rayforce.core import FFI
 from rayforce import utils
-from rayforce.types import I64, Dict, List, String, Symbol, Time, Timestamp, Vector
+from rayforce.types import (
+    I64,
+    Dict,
+    List,
+    QuotedSymbol,
+    String,
+    Symbol,
+    Time,
+    Timestamp,
+    Vector,
+)
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce import _rayforce_c as r
@@ -808,6 +818,14 @@ class SelectQueryBuilder:
             by_cols=(cols, computed_cols),
         )
 
+    @property
+    def ipc(self) -> r.RayObject:
+        return (
+            Expression(Operation.SELECT, self._build_legacy_query().ptr)
+            .to_low_level()
+            .ptr
+        )
+
     def execute(self) -> Table:
         query = self._build_legacy_query()
         return utils.ray_to_python(FFI.select(query=query.ptr))
@@ -1062,6 +1080,23 @@ class InsertQuery:
                 self.insertable_ptr = Dict(kwargs).ptr
         else:
             raise ValueError("No data to insert")
+
+    @property
+    def ipc(self) -> r.RayObject:
+        if isinstance(self._table, str):
+            _table = QuotedSymbol(self._table)
+        else:
+            _table = self._table
+
+        return (
+            Expression(
+                Operation.INSERT,
+                _table,
+                self.insertable_ptr,
+            )
+            .to_low_level()
+            .ptr
+        )
 
     def execute(self) -> Table:
         table_obj = utils.python_to_ray(self._table)

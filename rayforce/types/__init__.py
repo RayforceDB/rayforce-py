@@ -16,6 +16,7 @@ from .scalars import (
 )
 from .table import Table, TableColumnInterval
 from .exceptions import RayInitException
+from .operators import Operation
 
 __all__ = [
     "F64",
@@ -38,4 +39,5 @@ __all__ = [
     "String",
     "RayInitException",
     "TableColumnInterval",
+    "Operation",
 ]

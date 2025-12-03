@@ -53,6 +53,7 @@ class Operation(enum.StrEnum):
 
     # Query
     SELECT = "select"
+    INSERT = "insert"
     WHERE = "where"
 
     # Join
@@ -91,6 +92,7 @@ class Operation(enum.StrEnum):
     QUOTE = "quote"
     CONCAT = "concat"
     READ_CSV = "read-csv"
+    SET = "set"
 
     @property
     def primitive(self) -> r.RayObject:

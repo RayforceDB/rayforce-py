@@ -61,6 +61,7 @@ from .types import (  # noqa: E402
     String,
     RayInitException,
     TableColumnInterval,
+    Operation,
 )
 from .plugins.raykx import KDBConnection, KDBEngine, ConnectionAlreadyClosed  # noqa: E402
 from .io.ipc import IPCException, Connection, hopen  # noqa: E402
@@ -98,4 +99,5 @@ __all__ = [
     "eval_str",
     "version",
     "core_version",
+    "Operation",
 ]

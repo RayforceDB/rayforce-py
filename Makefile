@@ -74,3 +74,7 @@ wheel:
 install-wheel: wheel
 	@echo "🔧 Installing wheel locally..."
 	@pip3 install --force-reinstall dist/*.whl
+
+
+ipython:
+	ipython -i -c "from rayforce import *"

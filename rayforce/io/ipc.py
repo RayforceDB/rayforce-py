@@ -1,3 +1,6 @@
+from typing import Any
+from rayforce.types.containers.vector import String
+from rayforce.utils import ray_to_python
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
 
@@ -17,11 +20,20 @@ class Connection:
         self.handle = handle
         self._closed = False
 
-    def execute(self, data: str) -> None:
+    def execute(self, data: Any) -> Any:
         if self._closed:
             raise IPCException("Cannot write to closed connection")
 
-        FFI.write(self.handle, FFI.init_string(data))
+        if isinstance(data, str):
+            result = FFI.write(self.handle, FFI.init_string(data))
+        elif hasattr(data, "ptr"):
+            result = FFI.write(self.handle, data.ptr)
+        elif hasattr(data, "ipc"):
+            result = FFI.write(self.handle, data.ipc)
+        else:
+            raise IPCException(f"Unsupported IPC data to send: {type(data)}")
+
+        return ray_to_python(result)
 
     def close(self) -> None:
         if not self._closed:
@@ -43,4 +55,5 @@ class Connection:
 
 
 def hopen(host: str, port: int) -> Connection:
-    return Connection(FFI.hopen(host, port))
+    path = String(f"{host}:{port}")
+    return Connection(FFI.hopen(path.ptr))

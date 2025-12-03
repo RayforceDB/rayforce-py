@@ -310,8 +310,8 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def hopen(host: str, port: int) -> r.RayObject:
-        return r.hopen(host, port)
+    def hopen(path: r.RayObject) -> r.RayObject:
+        return r.hopen(path)
 
     @staticmethod
     @exception_handler
