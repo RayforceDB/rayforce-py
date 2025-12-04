@@ -1,4 +1,4 @@
-# :material-clock-fast: Performance Overview
+# :material-clock-fast: Technical Details
 
 ### :material-wrench: How Rayforce-Py Operates
 
@@ -33,7 +33,3 @@ I64(123)
 
 Python maintains reference counts for that object, hence Rayforce's GC doesn't remove the object unless
 the reference count of that object becomes 0. This mechanism works vice versa - Python also checks for RayObject pointers with a reference count of 0 within the runtime so that the GC can collect the object.
-
-### :material-calculator: Benchmarks
-
-TBD

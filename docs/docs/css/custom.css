@@ -629,3 +629,78 @@ body:has(.hero-section) [data-md-color-scheme="default"] .md-tabs__link:hover {
   white-space-collapse: preserve;
   text-wrap: nowrap;
 }
+
+/* ============================================================================
+   BENCHMARK VISUAL ELEMENTS
+   ============================================================================ */
+
+/* Benchmark stat cards */
+.benchmark-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.benchmark-stats > div {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.benchmark-stats > div:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(233, 163, 32, 0.2);
+}
+
+/* Progress bars for performance comparisons */
+.benchmark-progress-bar {
+  background: var(--bg-tertiary);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.benchmark-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width var(--transition-base);
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Performance cards */
+.performance-card {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.performance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.performance-card--highlight {
+  border: 2px solid var(--gold-500);
+  box-shadow: 0 4px 12px rgba(233, 163, 32, 0.15);
+}
+
+/* Feature cards */
+.feature-card {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid var(--gold-500);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.feature-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(233, 163, 32, 0.1);
+}

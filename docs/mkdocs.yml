@@ -99,7 +99,8 @@ nav:
   - Home: index.md
   - Get Started:
     - Overview: content/get-started/overview.md
-    - Performance: content/get-started/performance.md
+    - Benchmarks: content/get-started/benchmarks.md
+    - Technical Details: content/get-started/technical-details.md
   - Documentation:
     - Overview: content/documentation/overview.md
     - Data Types:

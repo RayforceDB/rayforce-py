@@ -24,7 +24,17 @@ Rayforce-Py is a powerful library which allows you to effectively execute statem
     The interaction with the RayforceDB is happening via C API bus, which allows us to seamlessly operate with your local rayforce runtime with <b>little-to-no</b> practical overhead.
 
     This library is operating under <b>0 dependency</b> - it's run on pure python, without any external libraries.
-    Read more about the underlying implementation in [:material-clock-fast: Performance](./performance.md) section.
+    Read more about the underlying implementation in [:material-clock-fast: Performance](./technical-details.md) section.
+
+
+<div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-primary); margin: 2rem 0;">
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <div style="font-size: 3rem; font-weight: 800; color: var(--gold-500); margin-bottom: 0.5rem;">+0.88%</div>
+    <div style="color: var(--text-secondary); font-size: 1.1rem;">Average Overhead</div>
+    <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-top: 0.5rem;">Nearly identical to native performance</div>
+  </div>
+</div>
+
 
 ## :octicons-package-16: Installation
 
