@@ -6,29 +6,18 @@ from rayforce import _rayforce_c as r
 
 
 def exception_handler(func: t.Callable) -> t.Callable:
-    """
-    Decorator to handle exceptions from C API calls.
-    """
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if isinstance(result, r.RayObject):
-            obj_type = result.get_obj_type()
-            # Check if result is an error object
-            if obj_type == r.TYPE_ERR:
+            if result.get_obj_type() == r.TYPE_ERR:
                 error_msg = FFI.get_error_message(result)
                 raise Exception(f"C API error: {error_msg}")
         return result
-
     return wrapper
 
 
 class FFI:
-    """
-    Foreign Function Interface to the C API.
-    """
-
     @staticmethod
     @exception_handler
     def init_i16(value: int) -> r.RayObject:
