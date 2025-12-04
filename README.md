@@ -11,6 +11,8 @@
 - **Active Development** - Continuously expanding functionality
 
 
+![RayforcePy Benchmarks](docs/docs/assets/benchmark.png)
+
 ## 📦 Installation
 
 Package is available on [Pypi](https://pypi.org/project/rayforce-py/0.0.5/)
