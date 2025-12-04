@@ -54,7 +54,6 @@ static void RayObject_dealloc(RayObject *self)
 {
     if (self->obj != NULL)
         drop_obj(self->obj);
-
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -65,17 +64,13 @@ static PyObject *raypy_init_i16(PyObject *self, PyObject *args)
     (void)self;
     short value;
     if (!PyArg_ParseTuple(args, "h", &value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
 
     if (result != NULL)
-    {
         result->obj = i16(value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_i32(PyObject *self, PyObject *args)
@@ -83,16 +78,12 @@ static PyObject *raypy_init_i32(PyObject *self, PyObject *args)
     (void)self;
     int value;
     if (!PyArg_ParseTuple(args, "i", &value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = i32(value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_i64(PyObject *self, PyObject *args)
@@ -100,16 +91,12 @@ static PyObject *raypy_init_i64(PyObject *self, PyObject *args)
     (void)self;
     long long value;
     if (!PyArg_ParseTuple(args, "L", &value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = i64(value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_f64(PyObject *self, PyObject *args)
@@ -117,16 +104,12 @@ static PyObject *raypy_init_f64(PyObject *self, PyObject *args)
     (void)self;
     double value;
     if (!PyArg_ParseTuple(args, "d", &value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = f64(value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_c8(PyObject *self, PyObject *args)
@@ -136,9 +119,7 @@ static PyObject *raypy_init_c8(PyObject *self, PyObject *args)
     Py_ssize_t len;
 
     if (!PyArg_ParseTuple(args, "s#", &value, &len))
-    {
         return NULL;
-    }
 
     // Validate char is single element
     if (len != 1)
@@ -150,9 +131,7 @@ static PyObject *raypy_init_c8(PyObject *self, PyObject *args)
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = c8(value[0]);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_string(PyObject *self, PyObject *args)
@@ -165,9 +144,7 @@ static PyObject *raypy_init_string(PyObject *self, PyObject *args)
     Py_ssize_t len;
 
     if (!PyArg_ParseTuple(args, "s#", &value, &len))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -191,9 +168,7 @@ static PyObject *raypy_init_symbol(PyObject *self, PyObject *args)
     Py_ssize_t len;
 
     if (!PyArg_ParseTuple(args, "s#", &value, &len))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -216,16 +191,12 @@ static PyObject *raypy_init_b8(PyObject *self, PyObject *args)
     int bool_value;
 
     if (!PyArg_ParseTuple(args, "p", &bool_value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = b8(bool_value ? 1 : 0);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_u8(PyObject *self, PyObject *args)
@@ -234,16 +205,12 @@ static PyObject *raypy_init_u8(PyObject *self, PyObject *args)
     unsigned char byte_value;
 
     if (!PyArg_ParseTuple(args, "b", &byte_value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = u8(byte_value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_date(PyObject *self, PyObject *args)
@@ -253,16 +220,12 @@ static PyObject *raypy_init_date(PyObject *self, PyObject *args)
     int days_value;
 
     if (!PyArg_ParseTuple(args, "i", &days_value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = adate(days_value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_time(PyObject *self, PyObject *args)
@@ -272,9 +235,7 @@ static PyObject *raypy_init_time(PyObject *self, PyObject *args)
     int ms_value;
 
     if (!PyArg_ParseTuple(args, "i", &ms_value))
-    {
         return NULL;
-    }
 
     // Check if the value is within the valid range
     if (ms_value < 0 || ms_value > 86399999)
@@ -286,9 +247,7 @@ static PyObject *raypy_init_time(PyObject *self, PyObject *args)
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = atime(ms_value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_timestamp(PyObject *self, PyObject *args)
@@ -298,16 +257,12 @@ static PyObject *raypy_init_timestamp(PyObject *self, PyObject *args)
     long long ms_value;
 
     if (!PyArg_ParseTuple(args, "L", &ms_value))
-    {
         return NULL;
-    }
 
     // Allocate memory for py object
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
-    {
         result->obj = timestamp(ms_value);
-    }
     return (PyObject *)result;
 }
 static PyObject *raypy_init_guid(PyObject *self, PyObject *args)
@@ -317,9 +272,7 @@ static PyObject *raypy_init_guid(PyObject *self, PyObject *args)
     Py_ssize_t str_len;
 
     if (!PyArg_ParseTuple(args, "s#", &guid_str, &str_len))
-    {
         return NULL;
-    }
 
     // Check if the string length is 36 characters (standard GUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     if (str_len != 36)
@@ -360,9 +313,7 @@ static PyObject *raypy_init_list(PyObject *self, PyObject *args)
     Py_ssize_t initial_size = 0;
 
     if (!PyArg_ParseTuple(args, "|n", &initial_size))
-    {
         return NULL;
-    }
 
     if (initial_size < 0)
     {
@@ -394,9 +345,7 @@ static PyObject *raypy_init_table(PyObject *self, PyObject *args)
     RayObject *vals_obj;
 
     if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj))
-    {
         return NULL;
-    }
 
     if (keys_obj->obj == NULL || keys_obj->obj->type != TYPE_SYMBOL)
     {
@@ -439,9 +388,7 @@ static PyObject *raypy_init_dict(PyObject *self, PyObject *args)
     RayObject *vals_obj;
 
     if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType, &vals_obj))
-    {
         return NULL;
-    }
 
     if (keys_obj->obj->len != vals_obj->obj->len)
     {
@@ -472,9 +419,7 @@ static PyObject *raypy_init_vector(PyObject *self, PyObject *args)
     Py_ssize_t length;
 
     if (!PyArg_ParseTuple(args, "in", &type_code, &length))
-    {
         return NULL;
-    }
 
     if (length < 0)
     {
@@ -505,9 +450,7 @@ static PyObject *raypy_init_lambda(PyObject *self, PyObject *args)
     RayObject *nfo_obj = NULL;
 
     if (!PyArg_ParseTuple(args, "O!O!|O!", &RayObjectType, &args_obj, &RayObjectType, &body_obj, &RayObjectType, &nfo_obj))
-    {
         return NULL;
-    }
 
     // Validate args parameter (should be a list or vector of symbols)
     if (args_obj->obj == NULL)
@@ -554,9 +497,7 @@ static PyObject *raypy_read_i16(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I16)
     {
@@ -570,9 +511,7 @@ static PyObject *raypy_read_i32(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I32)
     {
@@ -586,9 +525,7 @@ static PyObject *raypy_read_i64(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_I64)
     {
@@ -602,9 +539,7 @@ static PyObject *raypy_read_f64(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_F64)
     {
@@ -618,9 +553,7 @@ static PyObject *raypy_read_c8(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_C8)
     {
@@ -634,9 +567,7 @@ static PyObject *raypy_read_string(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != TYPE_C8)
     {
@@ -651,9 +582,7 @@ static PyObject *raypy_read_symbol(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_SYMBOL)
     {
@@ -667,9 +596,7 @@ static PyObject *raypy_read_symbol(PyObject *self, PyObject *args)
     // Get the string representation
     const char *str = str_from_symbol(symbol_id);
     if (str == NULL)
-    {
         Py_RETURN_NONE;
-    }
 
     return PyUnicode_FromString(str);
 }
@@ -678,9 +605,7 @@ static PyObject *raypy_read_b8(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_B8)
     {
@@ -698,9 +623,7 @@ static PyObject *raypy_read_u8(PyObject *self, PyObject *args)
     (void)self;
     RayObject *ray_obj;
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL || ray_obj->obj->type != -TYPE_U8)
     {
@@ -1476,9 +1399,7 @@ static PyObject *raypy_eval_obj(PyObject *self, PyObject *args)
     RayObject *ray_obj;
 
     if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
-    {
         return NULL;
-    }
 
     if (ray_obj->obj == NULL)
     {
@@ -1561,9 +1482,7 @@ static PyObject *raypy_loadfn(PyObject *self, PyObject *args)
     Py_ssize_t path_len, func_len;
 
     if (!PyArg_ParseTuple(args, "s#s#i", &path, &path_len, &func_name, &func_len, &nargs))
-    {
         return NULL;
-    }
 
     if (path_len == 0)
     {
