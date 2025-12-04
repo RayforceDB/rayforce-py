@@ -100,7 +100,6 @@ nav:
   - Get Started:
     - Overview: content/get-started/overview.md
     - Performance: content/get-started/performance.md
-    - Contributing: content/get-started/contributing.md
   - Documentation:
     - Overview: content/documentation/overview.md
     - Data Types:
@@ -114,30 +113,27 @@ nav:
       - Temporal: content/documentation/data-types/temporal.md
       - GUID: content/documentation/data-types/guid.md
       - String: content/documentation/data-types/string.md
-
-    # REWORK:
-    - Types Overview:
-      - Container Types:
-        - Vector: content/types/vector.md
-        - List: content/types/list.md
-        - String: content/types/string.md
-        - Dict: content/types/dict.md
-        - Table: content/types/table.md
+      - Vector: content/documentation/data-types/vector.md
+      - List: content/documentation/data-types/list.md
+      - Dict: content/documentation/data-types/dict.md
+      - Table:
+        - Overview: content/documentation/data-types/table/overview.md
+        - Create: content/documentation/data-types/table/create.md
+        - Access Values: content/documentation/data-types/table/access-values.md
+        - Save and Fetch: content/documentation/data-types/table/save-and-fetch.md
+        - Set Splayed: content/documentation/data-types/table/set-splayed.md
     - Query Guide:
-      - Overview: content/queries/index.md
-      - Creating Tables: content/queries/tables.md
-      - SELECT: content/queries/select.md
-      - WHERE: content/queries/where.md
-      - ORDER BY: content/queries/order-by.md
-      - GROUP BY: content/queries/group-by.md
-      - JOIN: content/queries/join.md
-      - UPDATE: content/queries/update.md
-      - INSERT: content/queries/insert.md
-      - UPSERT: content/queries/upsert.md
-      - Table Management: content/queries/management.md
+      - Overview: content/documentation/query-guide/overview.md
+      - Select: content/documentation/query-guide/select.md
+      - Insert: content/documentation/query-guide/insert.md
+      - Upsert: content/documentation/query-guide/upsert.md
+      - Update: content/documentation/query-guide/update.md
+      - Joins: content/documentation/query-guide/joins.md
+      - Order By: content/documentation/query-guide/order-by.md
+      - Group By: content/documentation/query-guide/group-by.md
     - Plugins:
-      - KDB: content/plugins/kdb.md
-    - Dev:
-      - Lint and type: content/lint.md
-      - Tests: content/tests.md
+      - Overview: content/documentation/plugins/overview.md
+      - KDB: content/documentation/plugins/kdb.md
+    - Development:
+      - Overview: content/documentation/development/overview.md
   - License: content/license.md

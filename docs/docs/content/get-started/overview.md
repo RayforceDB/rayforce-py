@@ -65,6 +65,6 @@ You can manually clone latest github repo and build it yourself
 
 ## Discover
 
-If you would like to become a contributor, please see [:simple-github: Contibuting](./contributing.md) section
+If you would like to become a contributor, please see [:simple-github: Contibuting](../documentation/development/overview.md) section
 
 If you are a developer, please see [:material-file-document: Documentation](../documentation/overview.md)

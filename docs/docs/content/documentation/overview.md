@@ -31,7 +31,7 @@ Initialise a table using `rayforce.Table`:
 )
 ```
 !!! note ""
-    You are able to initialize table in multiple handy ways. See [TODO]
+    You are able to initialize table in multiple handy ways. See [:material-table-plus: Create a Table](./data-types/table/create.md)
 
 Then, query the table using `select` statement:
 ```python
@@ -59,4 +59,4 @@ Then, query the table using `select` statement:
 ```
 Try it out!
 
-### :material-arrow-right: Next: Discover [Data Types]() and [Queries]()
+### :material-arrow-right: Next: Discover [:octicons-database-16: Data Types](./data-types/overview.md) and [:material-database-eye-outline: Query Guide](./query-guide/overview.md)

@@ -452,22 +452,51 @@ body:has(.hero-section) [data-md-color-scheme="default"] .md-tabs__link:hover {
   background-color: transparent;
 }
 
-/* Tables */
-.md-typeset table:not([class]) {
+/* Tables - Full width of content area */
+.md-typeset table {
+  display: table;
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto;
   border: 1px solid var(--border-primary);
+  border-collapse: collapse;
+  margin: 1rem 0;
+  box-sizing: border-box;
 }
 
-.md-typeset table:not([class]) th {
+/* Ensure all table variants use full width */
+.md-typeset > table,
+.md-typeset table:not([class]),
+.md-content__inner table,
+.md-typeset .highlight table {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: table;
+}
+
+.md-typeset table th,
+.md-typeset table td {
+  border: 1px solid var(--border-primary);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+/* Remove max-width constraints to allow full-width tables */
+.md-content {
+  max-width: 100% !important;
+}
+
+.md-content__inner {
+  max-width: 100% !important;
+}
+
+.md-typeset table th {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  border-bottom: 2px solid var(--border-secondary);
 }
 
-.md-typeset table:not([class]) td {
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.md-typeset table:not([class]) tr:hover {
+.md-typeset table tr:hover {
   background-color: var(--bg-tertiary);
 }
 
