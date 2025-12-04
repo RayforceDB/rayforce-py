@@ -260,9 +260,6 @@ class Column:
     def where(self, condition: Expression) -> FilteredColumn:
         return FilteredColumn(self, condition)
 
-    def __getitem__(self, condition: Expression) -> FilteredColumn:
-        return self.where(condition)
-
     def __repr__(self) -> str:
         return f"Column('{self.name}')"
 
