@@ -1,0 +1,91 @@
+def intro():
+    print("=" * 70)
+    print("Rayforce-Py vs Pandas vs Rayforce Benchmark")
+    print("Based on H2OAI Group By Benchmark")
+    print("=" * 70)
+
+
+def print_results(
+    query_name,
+    rayforce_py_time,
+    pandas_time,
+    native_rayforce_time,
+    std_rayforce_py=0,
+    std_pandas=0,
+    std_native_rayforce=0,
+):
+    """Print benchmark results in a formatted table."""
+    print(f"\n{query_name}:")
+    print(f"  Rayforce-Py:    {rayforce_py_time:,.2f} μs (±{std_rayforce_py:,.2f})")
+    print(f"  Pandas:         {pandas_time:,.2f} μs (±{std_pandas:,.2f})")
+    print(
+        f"  Native Rayforce: {native_rayforce_time:,.2f} μs (±{std_native_rayforce:,.2f})"
+    )
+
+    if native_rayforce_time > 0:
+        speedup_vs_native = (
+            native_rayforce_time / rayforce_py_time if rayforce_py_time > 0 else 0
+        )
+        print(f"  Rayforce-Py vs Native: {speedup_vs_native:.2f}x")
+
+    speedup_vs_pandas = pandas_time / rayforce_py_time if rayforce_py_time > 0 else 0
+    print(f"  Rayforce-Py vs Pandas: {speedup_vs_pandas:.2f}x")
+
+
+def outro():
+    print("\n" + "=" * 140)
+    print("SUMMARY")
+    print("=" * 140)
+    print(
+        f"{'Query':<40} {'Rayforce-Py':<15} {'Pandas':<15} {'Native Rayforce':<18} {'vs Native':<12} {'vs Pandas':<12}"
+    )
+    print("-" * 140)
+
+
+def results(results):
+    for result in results:
+        if len(result) == 7:
+            query_name, rf_py_time, pd_time, native_time, std_rf, std_pd, std_native = (
+                result
+            )
+        else:
+            # Backward compatibility
+            query_name, rf_py_time, pd_time, native_time = result
+
+        speedup_vs_native = native_time / rf_py_time if rf_py_time > 0 else 0
+        speedup_vs_pandas = pd_time / rf_py_time if rf_py_time > 0 else 0
+        print(
+            f"{query_name:<40} {rf_py_time:>12,.0f}μs {pd_time:>12,.0f}μs {native_time:>15,.0f}μs "
+            f"{speedup_vs_native:>9.2f}x {speedup_vs_pandas:>9.2f}x"
+        )
+
+    avg_speedup_vs_native = (
+        sum(
+            native_time / rf_py_time
+            for result in results
+            if len(result) >= 4
+            and (rf_py_time := result[1]) > 0
+            and (native_time := result[3]) > 0
+        )
+        / len(results)
+        if results
+        else 0
+    )
+
+    avg_speedup_vs_pandas = (
+        sum(
+            pd_time / rf_py_time
+            for result in results
+            if len(result) >= 3
+            and (rf_py_time := result[1]) > 0
+            and (pd_time := result[2]) > 0
+        )
+        / len(results)
+        if results
+        else 0
+    )
+
+    print("-" * 140)
+    print(
+        f"{'Average Speedup':<37} {'':<15} {'':<15} {'':<18} {avg_speedup_vs_native:>9.2f}x {avg_speedup_vs_pandas:>9.2f}x"
+    )

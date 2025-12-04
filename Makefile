@@ -78,3 +78,6 @@ install-wheel: wheel
 
 ipython:
 	ipython -i -c "from rayforce import *"
+
+benchmarkdb:
+	python3 benchmark/run.py $(ARGS)
