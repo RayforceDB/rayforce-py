@@ -25,3 +25,4 @@ wheelhouse/
 __pycache__
 script.py
 .DS_Store
+docs/site/
