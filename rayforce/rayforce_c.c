@@ -125,6 +125,12 @@ static PyObject *raypy_init_c8(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#", &value, &len))
         return NULL;
 
+    if (len != 1)
+    {
+        PyErr_SetString(PyExc_ValueError, "Character must be a single character");
+        return NULL;
+    }
+
     RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
     if (result != NULL)
         result->obj = c8(value[0]);
