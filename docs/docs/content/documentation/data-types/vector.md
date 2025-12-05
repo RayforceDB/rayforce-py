@@ -8,16 +8,16 @@ The `Vector` type represents a collection of elements of a specific type. All el
 ```python
 >>> from rayforce import Vector, I64, Symbol
 
->>> int_vector = Vector(type_code=I64.type_code, length=3)
+>>> int_vector = Vector(ray_type=I64, length=3)
 >>> int_vector
 Vector(5)  # 5 represents a type code of I64
 
->>> symbol_vector = Vector(type_code=Symbol.type_code, items=["apple", "banana", "cherry"])
+>>> symbol_vector = Vector(ray_type=Symbol, items=["apple", "banana", "cherry"])
 >>> symbol_vector
 Vector(5)  # 6 represents a type code of Symbol
 
 >>> timestamp_vector = Vector(
-    type_code=Timestamp.type_code,
+    ray_type=Timestamp,
     items=[
         "2025-05-10T14:30:45+00:00",
         "2025-05-10T14:30:45+00:00",

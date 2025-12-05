@@ -251,7 +251,7 @@ class Column:
 
         if values and isinstance(values[0], str):
             quoted_items = [QuotedSymbol(v) for v in values]
-            vec = Vector(type_code=Symbol.type_code, items=quoted_items)
+            vec = Vector(ray_type=Symbol, items=quoted_items)
         else:
             vec = List(values)
 
@@ -331,7 +331,7 @@ class _Table:
         if len(columns) != len(values):
             raise ValueError("Keys and values lists must have the same length")
 
-        table_columns = Vector(type_code=Symbol.type_code, length=len(columns))
+        table_columns = Vector(ray_type=Symbol, length=len(columns))
         for idx, column in enumerate(columns):
             table_columns[idx] = column
 
@@ -344,7 +344,7 @@ class _Table:
                 table_values.append([])
             elif all(isinstance(x, str) for x in column_data):
                 # String column -> Vector of Symbols
-                vec = Vector(type_code=Symbol.type_code, items=column_data)
+                vec = Vector(ray_type=Symbol, items=column_data)
                 table_values.append(vec)
             elif all(
                 isinstance(x, (int, float)) and not isinstance(x, bool)
@@ -352,21 +352,21 @@ class _Table:
             ):
                 # Numeric column -> detect if int or float
                 if all(isinstance(x, int) for x in column_data):
-                    vec = Vector(type_code=I64.type_code, items=column_data)
+                    vec = Vector(ray_type=I64, items=column_data)
                 else:
-                    vec = Vector(type_code=F64.type_code, items=column_data)
+                    vec = Vector(ray_type=F64, items=column_data)
                 table_values.append(vec)
             elif all(isinstance(x, bool) for x in column_data):
                 # Boolean column
-                vec = Vector(type_code=B8.type_code, items=column_data)
+                vec = Vector(ray_type=B8, items=column_data)
                 table_values.append(vec)
             elif all(isinstance(x, datetime.time) for x in column_data) or all(
                 isinstance(x, Time) for x in column_data
             ):
-                vec = Vector(type_code=Time.type_code, items=column_data)
+                vec = Vector(ray_type=Time, items=column_data)
                 table_values.append(vec)
             elif all(isinstance(x, Timestamp) for x in column_data):
-                vec = Vector(type_code=Timestamp.type_code, items=column_data)
+                vec = Vector(ray_type=Timestamp, items=column_data)
                 table_values.append(vec)
             else:
                 # Mixed types or complex types - keep as List
@@ -450,7 +450,7 @@ class Table:
         if isinstance(on, str):
             on = [on]
 
-        join_keys = Vector(type_code=Symbol.type_code, items=on)
+        join_keys = Vector(ray_type=Symbol, items=on)
         other_table = other._table if isinstance(other, Table) else other
         self_table = self._table
         result = utils.eval_obj(
@@ -466,7 +466,7 @@ class Table:
         if isinstance(on, str):
             on = [on]
 
-        join_keys = Vector(type_code=Symbol.type_code, items=on)
+        join_keys = Vector(ray_type=Symbol, items=on)
         other_table = other._table if isinstance(other, Table) else other
         self_table = self._table
         result = utils.eval_obj(
@@ -524,7 +524,7 @@ class Table:
             else:
                 agg_dict[name] = expr
 
-        join_keys = Vector(type_code=Symbol.type_code, items=on)
+        join_keys = Vector(ray_type=Symbol, items=on)
 
         result = utils.eval_obj(
             List(
@@ -618,7 +618,7 @@ class Table:
         query = List(
             [
                 Operation.READ_CSV,
-                Vector([c.ray_name for c in column_types], type_code=Symbol.type_code),
+                Vector([c.ray_name for c in column_types], ray_type=Symbol),
                 String(path),
             ]
         )
@@ -652,9 +652,7 @@ class Table:
         from rayforce.types import List, Vector, Symbol
 
         return utils.eval_obj(
-            List(
-                [Operation.XASC, self._table, Vector(cols, type_code=-Symbol.type_code)]
-            )
+            List([Operation.XASC, self._table, Vector(cols, ray_type=Symbol)])
         )
 
     def xdesc(self, *cols) -> Table:
@@ -665,7 +663,7 @@ class Table:
                 [
                     Operation.XDESC,
                     self._table,
-                    Vector(cols, type_code=-Symbol.type_code),
+                    Vector(cols, ray_type=Symbol),
                 ]
             )
         )
@@ -1046,7 +1044,7 @@ class InsertQuery:
                     _args.append(
                         Vector(
                             items=sub,
-                            type_code=utils.python_to_ray(sub[0]).get_obj_type(),
+                            ray_type=utils.python_to_ray(sub[0]).get_obj_type(),
                         )
                     )
                 self.insertable_ptr = _args.ptr
@@ -1061,14 +1059,14 @@ class InsertQuery:
             if isinstance(first_val, Iterable) and not isinstance(
                 first_val, (str, bytes)
             ):
-                keys = Vector(items=list(kwargs.keys()), type_code=Symbol.type_code)
+                keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
                 for val in values:
                     _values.append(
                         Vector(
                             items=val,
-                            type_code=utils.python_to_ray(val[0]).get_obj_type(),
+                            ray_type=utils.python_to_ray(val[0]).get_obj_type(),
                         )
                     )
                 self.insertable_ptr = Dict(keys=keys, values=_values).ptr
@@ -1137,7 +1135,7 @@ class UpsertQuery:
                     _args.append(
                         Vector(
                             items=sub,
-                            type_code=utils.python_to_ray(sub[0]).get_obj_type(),
+                            ray_type=utils.python_to_ray(sub[0]).get_obj_type(),
                         )
                     )
                 self.upsertable_ptr = _args.ptr
@@ -1148,7 +1146,7 @@ class UpsertQuery:
                     _args.append(
                         Vector(
                             items=[sub],
-                            type_code=utils.python_to_ray(sub).get_obj_type(),
+                            ray_type=utils.python_to_ray(sub).get_obj_type(),
                         )
                     )
                 self.upsertable_ptr = _args.ptr
@@ -1161,27 +1159,27 @@ class UpsertQuery:
             if isinstance(first_val, Iterable) and not isinstance(
                 first_val, (str, bytes)
             ):
-                keys = Vector(items=list(kwargs.keys()), type_code=Symbol.type_code)
+                keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
                 for val in values:
                     _values.append(
                         Vector(
                             items=val,
-                            type_code=utils.python_to_ray(val[0]).get_obj_type(),
+                            ray_type=utils.python_to_ray(val[0]).get_obj_type(),
                         )
                     )
                 self.upsertable_ptr = Dict(keys=keys, values=_values).ptr
 
             else:
-                keys = Vector(items=list(kwargs.keys()), type_code=Symbol.type_code)
+                keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
                 for val in values:
                     _values.append(
                         Vector(
                             items=[val],
-                            type_code=utils.python_to_ray(val).get_obj_type(),
+                            ray_type=utils.python_to_ray(val).get_obj_type(),
                         )
                     )
                 self.upsertable_ptr = Dict(keys=keys, values=_values).ptr
@@ -1243,7 +1241,7 @@ class TableColumnInterval:
             [
                 Operation.MAP_LEFT,
                 Operation.ADD,
-                Vector([self.lower, self.upper], type_code=I64.type_code),
+                Vector([self.lower, self.upper], ray_type=I64),
                 List(
                     [
                         Operation.AT,

@@ -49,7 +49,7 @@ class TypeRegistry:
             if type_code == r.TYPE_C8:
                 return String(ptr=ptr)
 
-            return Vector(ptr=ptr, type_code=type_code)
+            return Vector(ptr=ptr, ray_type=cls._types.get(-type_code))
 
         type_class = cls._types.get(type_code)
 

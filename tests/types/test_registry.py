@@ -56,7 +56,7 @@ def test_from_ptr_scalar():
 
 
 def test_from_ptr_vector():
-    vec = t.Vector(type_code=t.Symbol.type_code, items=["test1", "test2"])
+    vec = t.Vector(ray_type=t.Symbol, items=["test1", "test2"])
     result = TypeRegistry.from_ptr(vec.ptr)
 
     assert isinstance(result, t.Vector)

@@ -43,7 +43,7 @@ class Dict(Container):
         from rayforce.types import Symbol
 
         return FFI.init_dict(
-            keys=Vector(items=value.keys(), type_code=Symbol.type_code).ptr,
+            keys=Vector(items=value.keys(), ray_type=Symbol).ptr,
             values=List([v for v in value.values()]).ptr,
         )
 

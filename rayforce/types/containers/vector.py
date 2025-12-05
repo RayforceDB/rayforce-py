@@ -3,16 +3,11 @@ import typing as t
 
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
-from rayforce.types.base import Container
+from rayforce.types.base import Container, RayObject
 from rayforce.types import exceptions
 
 
 class Vector(Container):
-    """
-    Homogeneous vector type.
-    """
-
-    # Vectors don't have a single type_code - they use the element type code (positive)
     type_code: int | None = None
     ray_name: str | None = None
 
@@ -21,56 +16,53 @@ class Vector(Container):
         items: t.Sequence[t.Any] = None,
         *,
         ptr: r.RayObject | None = None,
-        type_code: int | None = None,
+        ray_type: RayObject | int | None = None,
         length: int | None = None,
     ):
-        self._element_type_code = type_code
+        self._element_ray_type = ray_type
 
         if ptr is not None:
             self.ptr = ptr
             self._validate_ptr(ptr)
+
         elif items is not None:
-            if type_code is None:
+            if ray_type is None:
                 raise exceptions.RayInitException(
-                    "type_code required when creating Vector from value"
+                    "ray_type required when creating Vector from value"
                 )
             self.ptr = self._create_from_value(items)
-        elif length is not None and type_code is not None:
-            # Create empty vector with specified length
-            self.ptr = FFI.init_vector(type_code, length)
+
+        elif length is not None and ray_type is not None:
+            self.ptr = FFI.init_vector(ray_type.type_code, length)
+
         else:
             raise exceptions.RayInitException(
-                "Vector requires either value, ptr, or (type_code + length)"
+                "Vector requires either value, ptr, or (ray_type + length)"
             )
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
-        if self._element_type_code is None:
+        from rayforce.utils.conversion import python_to_ray
+
+        if self._element_ray_type is None:
             raise exceptions.RayInitException(
-                "Element type_code must be specified for Vector"
+                "Element ray_type must be specified for Vector"
             )
 
-        vec_ptr = FFI.init_vector(self._element_type_code, len(value))
-
+        vec_ptr = FFI.init_vector(
+            type_code=(
+                self._element_ray_type
+                if isinstance(self._element_ray_type, int)
+                else self._element_ray_type.type_code
+            ),
+            length=len(value),
+        )
         for idx, item in enumerate(value):
-            if isinstance(item, Container) or hasattr(item, "ptr"):
-                item_ptr = item.ptr
-            else:
-                from rayforce.utils.conversion import python_to_ray
-
-                item_ptr = python_to_ray(item)
-
-            FFI.insert_obj(vec_ptr, idx, item_ptr)
+            FFI.insert_obj(vec_ptr, idx, python_to_ray(item))
 
         return vec_ptr
 
-    def to_python(self) -> tuple:
-        result = []
-        for item in self:
-            result.append(item)
-        return tuple(result)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.ptr.get_obj_type()})"
+    def to_python(self) -> list:
+        return [i for i in self]
 
     def __len__(self) -> int:
         return FFI.get_obj_length(self.ptr)
@@ -90,7 +82,6 @@ class Vector(Container):
 
         if idx < 0:
             idx = len(self) + idx
-
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
@@ -102,12 +93,7 @@ class Vector(Container):
 
 
 class String(Vector):
-    """
-    Vector of C8
-    """
-
     ptr: r.RayObject
-
     type_code = r.TYPE_C8
 
     def __init__(
@@ -116,7 +102,6 @@ class String(Vector):
         *,
         ptr: r.RayObject | None = None,
     ) -> None:
-        # String is a vector of C8, so it should have POSITIVE type code (r.TYPE_C8)
         if ptr and (_type := ptr.get_obj_type()) != self.type_code:
             raise ValueError(
                 f"Expected String RayObject (type {self.type_code}), got {_type}"
@@ -127,34 +112,16 @@ class String(Vector):
                 raise ValueError(
                     f"Expected Vector (type {self.type_code}), got {_type}"
                 )
-
             self.ptr = value.ptr
+
         elif value is not None:
-            # Vectors have POSITIVE type codes, so use self.type_code directly (not negative!)
             super().__init__(
-                type_code=self.type_code,  # r.TYPE_C8 is already positive
+                ray_type=String,
                 items=[FFI.init_c8(i) for i in value],
             )
+
         else:
             super().__init__(ptr=ptr)
 
-    @property
-    def value(self) -> str:
-        # Convert vector of C8 scalars to string
-        result = []
-        for i in range(len(self)):
-            c8_item = self[i]
-            # Each item should be a C8 scalar, get its character value
-            if hasattr(c8_item, "to_python"):
-                result.append(c8_item.to_python())
-            elif hasattr(c8_item, "value"):
-                result.append(c8_item.value)
-            else:
-                result.append(str(c8_item))
-        return "".join(result)
-
-    def __str__(self) -> str:
-        return f"String({self.value})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
+    def to_python(self) -> str:
+        return "".join(i.value for i in self)

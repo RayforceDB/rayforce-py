@@ -67,7 +67,7 @@ from .plugins.raykx import KDBConnection, KDBEngine, ConnectionAlreadyClosed  # 
 from .io.ipc import IPCException, Connection, hopen  # noqa: E402
 from .utils.evaluation import eval_str  # noqa: E402
 
-core_version = String(eval_str("(sysinfo)")["hash"]).value
+core_version = String(eval_str("(sysinfo)")["hash"]).to_python()
 
 __all__ = [
     "F64",
