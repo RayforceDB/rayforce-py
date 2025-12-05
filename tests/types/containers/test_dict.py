@@ -14,3 +14,7 @@ def test_dict():
     assert len(values) == 2
     assert values[0].value == 123
     assert values[1].value == "value2"
+
+    d["key1"] = 222
+
+    assert d["key1"] == 222

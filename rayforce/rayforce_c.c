@@ -827,6 +827,36 @@ static PyObject *raypy_push_obj(PyObject *self, PyObject *args)
     push_obj(&ray_obj->obj, clone);
     Py_RETURN_NONE;
 }
+static PyObject *raypy_set_obj(PyObject *self, PyObject *args)
+{
+    (void)self;
+    RayObject *ray_obj;
+    RayObject *idx_obj;
+    RayObject *val_obj;
+
+    if (!PyArg_ParseTuple(args, "O!O!O!", &RayObjectType, &ray_obj, &RayObjectType, &idx_obj, &RayObjectType, &val_obj))
+        return NULL;
+
+    obj_p clone = clone_obj(val_obj->obj);
+    obj_p old_obj = ray_obj->obj;
+    obj_p result_obj = set_obj(&ray_obj->obj, idx_obj->obj, clone);
+    
+    if (result_obj == NULL || result_obj->type == TYPE_ERR)
+    {
+        drop_obj(clone);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to set object");
+        return NULL;
+    }
+
+    if (result_obj != old_obj)
+    {
+        drop_obj(old_obj);
+        ray_obj->obj = result_obj;
+    }
+
+    Py_INCREF((PyObject *)ray_obj);
+    return (PyObject *)ray_obj;
+}
 // END VECTOR OPERATIONS
 // ---------------------------------------------------------------------------
 
@@ -1292,6 +1322,7 @@ static PyMethodDef module_methods[] = {
     {"at_idx", raypy_at_idx, METH_VARARGS, "Get element at index"},
     {"insert_obj", raypy_insert_obj, METH_VARARGS, "Insert object at index"},
     {"push_obj", raypy_push_obj, METH_VARARGS, "Push object to the end of iterable"},
+    {"set_obj", raypy_set_obj, METH_VARARGS, "Set object at index"},
 
     // Misc operations
     {"get_obj_length", raypy_get_obj_length, METH_VARARGS, "Get object length"},

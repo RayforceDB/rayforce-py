@@ -300,3 +300,8 @@ class FFI:
     @exception_handler
     def write(handle: r.RayObject, data: r.RayObject) -> None:
         return r.write(handle, data)
+
+    @staticmethod
+    @exception_handler
+    def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> r.RayObject:
+        return r.set_obj(obj, idx, value)

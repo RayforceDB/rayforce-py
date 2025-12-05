@@ -5,6 +5,7 @@ from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
 from rayforce.types.base import Container
 from rayforce.types.registry import TypeRegistry
+from rayforce.utils.conversion import python_to_ray
 
 
 class List(Container):
@@ -12,8 +13,6 @@ class List(Container):
     ray_name = "List"
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
-        from rayforce.utils.conversion import python_to_ray
-
         list_ptr = FFI.init_list()
         for item in value:
             FFI.push_obj(iterable=list_ptr, ptr=python_to_ray(item))
@@ -26,9 +25,7 @@ class List(Container):
     def __len__(self) -> int:
         return FFI.get_obj_length(self.ptr)
 
-    def __setitem__(self, idx: int, value: t.Any):
-        from rayforce.utils.conversion import python_to_ray
-
+    def __setitem__(self, idx: int, value: t.Any) -> None:
         FFI.insert_obj(
             iterable=self.ptr,
             ptr=python_to_ray(value),
@@ -48,8 +45,6 @@ class List(Container):
             yield self[i]
 
     def append(self, value: t.Any) -> None:
-        from rayforce.utils.conversion import python_to_ray
-
         FFI.push_obj(iterable=self.ptr, ptr=python_to_ray(value))
 
 

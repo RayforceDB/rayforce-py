@@ -5,40 +5,24 @@ from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
 from rayforce.types.base import Container
 from rayforce.types.registry import TypeRegistry
-from rayforce.types import exceptions
-from rayforce.utils.conversion import ray_to_python
+from rayforce.utils.conversion import python_to_ray, ray_to_python
 
 
 class Dict(Container):
     type_code = r.TYPE_DICT
     ray_name = "Dict"
 
-    def __init__(
-        self,
-        value: dict = None,
-        *,
-        ptr: r.RayObject | None = None,
-        keys: t.Any = None,
-        values: t.Any = None,
-    ):
-        if ptr is not None:
-            self.ptr = ptr
-            self._validate_ptr(ptr)
+    @classmethod
+    def from_items(
+        cls,
+        keys: t.Any,
+        values: t.Any,
+    ) -> t.Self:
+        keys_ptr = keys.ptr if hasattr(keys, "ptr") else keys
+        values_ptr = values.ptr if hasattr(values, "ptr") else values
+        return cls(ptr=FFI.init_dict(keys_ptr, values_ptr))
 
-        elif value is not None:
-            self.ptr = self._create_from_value(value)
-
-        elif keys is not None and values is not None:
-            keys_ptr = keys.ptr if hasattr(keys, "ptr") else keys
-            values_ptr = values.ptr if hasattr(values, "ptr") else values
-            self.ptr = FFI.init_dict(keys_ptr, values_ptr)
-
-        else:
-            raise exceptions.RayInitException(
-                "Dict requires either value, ptr, or (keys + values)"
-            )
-
-    def _create_from_value(self, value: dict) -> r.RayObject:
+    def _create_from_value(self, value: dict[t.Any, t.Any]) -> r.RayObject:
         from rayforce.types.containers import Vector, List
         from rayforce.types import Symbol
 
@@ -61,11 +45,14 @@ class Dict(Container):
     def __len__(self) -> int:
         return FFI.get_obj_length(FFI.get_dict_keys(self.ptr))
 
-    # TODO: Add __setitem__
+    def __setitem__(self, key: t.Any, value: t.Any) -> None:
+        FFI.set_obj(
+            obj=self.ptr,
+            idx=python_to_ray(key),
+            value=python_to_ray(value),
+        )
 
     def __getitem__(self, key: t.Any) -> t.Any:
-        from rayforce.utils.conversion import python_to_ray
-
         return ray_to_python(FFI.dict_get(self.ptr, python_to_ray(key)))
 
     def __iter__(self) -> t.Iterator[t.Any]:

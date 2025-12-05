@@ -1069,7 +1069,7 @@ class InsertQuery:
                             ray_type=utils.python_to_ray(val[0]).get_obj_type(),
                         )
                     )
-                self.insertable_ptr = Dict(keys=keys, values=_values).ptr
+                self.insertable_ptr = Dict.from_items(keys=keys, values=_values).ptr
 
             else:
                 self.insertable_ptr = Dict(kwargs).ptr
@@ -1169,7 +1169,7 @@ class UpsertQuery:
                             ray_type=utils.python_to_ray(val[0]).get_obj_type(),
                         )
                     )
-                self.upsertable_ptr = Dict(keys=keys, values=_values).ptr
+                self.upsertable_ptr = Dict.from_items(keys=keys, values=_values).ptr
 
             else:
                 keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
@@ -1182,7 +1182,7 @@ class UpsertQuery:
                             ray_type=utils.python_to_ray(val).get_obj_type(),
                         )
                     )
-                self.upsertable_ptr = Dict(keys=keys, values=_values).ptr
+                self.upsertable_ptr = Dict.from_items(keys=keys, values=_values).ptr
         else:
             raise ValueError("No data to insert")
 
