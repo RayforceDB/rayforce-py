@@ -100,6 +100,10 @@ class Operation(enum.StrEnum):
         return FFI.env_get_internal_function_by_name(self.value)
 
     @property
+    def ptr(self) -> r.RayObject:
+        return self.primitive
+
+    @property
     def is_binary(self) -> bool:
         return self.primitive.get_obj_type() == r.TYPE_BINARY
 

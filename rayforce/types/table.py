@@ -53,6 +53,21 @@ class AggregationMixin:
     def distinct(self) -> Expression:
         return Expression(Operation.DISTINCT, self)
 
+    def is_(self, other: bool) -> Expression:
+        if not isinstance(other, bool):
+            raise ValueError("is_ argument has to be bool")
+        if other is True:
+            return Expression(Operation.EVAL, self)
+        return Expression(Operation.EVAL, Expression(Operation.NOT, self))
+
+    def isin(self, values: list[Any]) -> Expression:
+        if values and isinstance(values[0], str):
+            vec = Vector(ray_type=Symbol, items=[QuotedSymbol(v) for v in values])
+        else:
+            vec = List(values)
+
+        return Expression(Operation.IN, self, vec)
+
 
 class OperatorMixin:
     def __and__(self, other) -> Expression:
@@ -112,36 +127,36 @@ class Expression(AggregationMixin, OperatorMixin):
         self.operation = operation
         self.operands = operands
 
-    def to_low_level(self) -> r.RayObject:
-        from rayforce.types.scalars import QuotedSymbol
+    def compile(self) -> r.RayObject:
+        if (
+            self.operation == Operation.MAP
+            and len(self.operands) == 2
+            and isinstance(self.operands[0], Column)
+            and isinstance(self.operands[1], Expression)
+        ):
+            return List(
+                [
+                    Operation.MAP,
+                    Operation.AT,
+                    self.operands[0].name,
+                    List([Operation.WHERE, self.operands[1].compile()]),
+                ]
+            ).ptr
 
+        # Standard expression compilation
         converted_operands = []
-
-        for idx, operand in enumerate(self.operands):
+        for operand in self.operands:
             if isinstance(operand, Expression):
-                converted_operands.append(operand.to_low_level())
+                converted_operands.append(operand.compile())
             elif isinstance(operand, Column):
                 converted_operands.append(operand.name)
-            elif isinstance(operand, FilteredColumn):
-                converted_operands.append(operand.compile())
             elif hasattr(operand, "ptr"):
                 converted_operands.append(operand)
             elif isinstance(operand, str):
-                if self.operation == Operation.AT and idx == 1:
-                    converted_operands.append(operand)
-                else:
-                    converted_operands.append(QuotedSymbol(operand))
+                converted_operands.append(QuotedSymbol(operand))
             else:
                 converted_operands.append(operand)
-
-        ptr = FFI.init_list()
-
-        for arg in [self.operation.primitive, *converted_operands]:
-            FFI.push_obj(iterable=ptr, ptr=utils.python_to_ray(arg))
-        return ptr
-
-    def __repr__(self) -> str:
-        return f"Expression({self.operation.value}, {len(self.operands)} operands)"
+        return List([self.operation, *converted_operands]).ptr
 
 
 class Column(AggregationMixin, OperatorMixin):
@@ -149,63 +164,8 @@ class Column(AggregationMixin, OperatorMixin):
         self.name = name
         self.table = table
 
-    def is_(self, other: bool) -> Expression:
-        if other is True:
-            return Expression(Operation.EVAL, self)
-        elif other is False:
-            return Expression(Operation.EVAL, Expression(Operation.NOT, self))
-        raise ValueError("is_ argument has to be bool")
-
-    def isin(self, values: list[Any]) -> Expression:
-        from rayforce.types.scalars import QuotedSymbol, Symbol
-        from rayforce.types.containers import List, Vector
-
-        if values and isinstance(values[0], str):
-            quoted_items = [QuotedSymbol(v) for v in values]
-            vec = Vector(ray_type=Symbol, items=quoted_items)
-        else:
-            vec = List(values)
-
-        return Expression(Operation.IN, self, vec)
-
-    def where(self, condition: Expression) -> FilteredColumn:
-        return FilteredColumn(self, condition)
-
-    def __repr__(self) -> str:
-        return f"Column('{self.name}')"
-
-
-class FilteredColumn(AggregationMixin):
-    def __init__(self, column: Column, condition: Expression):
-        self.column = column
-        self.condition = condition
-
-    def compile(self) -> r.RayObject:
-        if isinstance(self.condition, Expression):
-            where_expr = self.condition.to_low_level()
-        elif isinstance(self.condition, Column):
-            where_expr = self.condition.name
-        else:
-            where_expr = self.condition
-
-        where_wrapped = FFI.init_list()
-
-        for arg in [Operation.WHERE.primitive, where_expr]:
-            FFI.push_obj(iterable=where_wrapped, ptr=utils.python_to_ray(arg))
-
-        result = FFI.init_list()
-        for arg in [
-            Operation.MAP.primitive,
-            Operation.AT.primitive,
-            self.column.name,
-            where_wrapped,
-        ]:
-            FFI.push_obj(iterable=result, ptr=utils.python_to_ray(arg))
-
-        return result
-
-    def __repr__(self) -> str:
-        return f"FilteredColumn({self.column.name} where ...)"
+    def where(self, condition: Expression) -> Expression:
+        return Expression(Operation.MAP, self, condition)
 
 
 class _Table:
@@ -351,7 +311,7 @@ class Table:
         for other in others:
             other_table = other._table if isinstance(other, Table) else other
             expr = Expression(Operation.CONCAT, result, other_table)
-            result = utils.eval_obj(expr.to_low_level())
+            result = utils.eval_obj(expr.compile())
         return Table(ptr=result._table.ptr)
 
     @staticmethod
@@ -435,7 +395,7 @@ class Table:
         agg_dict = {}
         for name, expr in aggregations.items():
             if isinstance(expr, Expression):
-                agg_dict[name] = expr.to_low_level()
+                agg_dict[name] = expr.compile()
             elif isinstance(expr, Column):
                 agg_dict[name] = expr.name
             else:
@@ -733,9 +693,7 @@ class SelectQueryBuilder:
     @property
     def ipc(self) -> r.RayObject:
         return (
-            Expression(Operation.SELECT, self._build_legacy_query().ptr)
-            .to_low_level()
-            .ptr
+            Expression(Operation.SELECT, self._build_legacy_query().ptr).compile().ptr
         )
 
     def execute(self) -> Table:
@@ -756,7 +714,7 @@ class SelectQueryBuilder:
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
-                    attributes[name] = expr.to_low_level()
+                    attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
                     attributes[name] = expr.name
                 elif callable(expr):
@@ -771,7 +729,7 @@ class SelectQueryBuilder:
             combined = self._where_conditions[0]
             for cond in self._where_conditions[1:]:
                 combined = combined & cond
-            where_expr = combined.to_low_level()
+            where_expr = combined.compile()
 
         if self._by_cols:
             by_attributes = {}
@@ -782,7 +740,7 @@ class SelectQueryBuilder:
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
-                    by_attributes[name] = expr.to_low_level()
+                    by_attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
                     by_attributes[name] = expr.name
                 else:
@@ -796,7 +754,7 @@ class SelectQueryBuilder:
 
     def _convert_expr(self, expr: Expression | Column) -> r.RayObject | str:
         if isinstance(expr, Expression):
-            return expr.to_low_level()
+            return expr.compile()
         elif isinstance(expr, Column):
             return expr.name
         return expr
@@ -911,18 +869,18 @@ class UpdateQuery:
         where_expr = None
         if self._where_condition:
             if isinstance(self._where_condition, Expression):
-                where_expr = self._where_condition.to_low_level()
+                where_expr = self._where_condition.compile()
             else:
                 where_expr = self._where_condition
 
         converted_attrs = {}
         for key, value in self._attributes.items():
             if isinstance(value, Expression):
-                converted_attrs[key] = value.to_low_level()
+                converted_attrs[key] = value.compile()
             elif isinstance(value, Column):
                 converted_attrs[key] = value.name
             elif isinstance(value, DictLookup):
-                converted_attrs[key] = value.to_low_level()
+                converted_attrs[key] = value.compile()
             else:
                 converted_attrs[key] = value
 
@@ -1006,7 +964,7 @@ class InsertQuery:
                 _table,
                 self.insertable_ptr,
             )
-            .to_low_level()
+            .compile()
             .ptr
         )
 
@@ -1178,7 +1136,6 @@ __all__ = [
     "Table",
     "Column",
     "Expression",
-    "FilteredColumn",
     "SelectQueryBuilder",
     "UpdateQuery",
     "InsertQuery",
