@@ -94,7 +94,7 @@ class Vector(Container):
         if not 0 <= idx < len(self):
             raise IndexError("Vector index out of range")
 
-        FFI.insert_obj(insert_to=self.ptr, idx=idx, ptr=python_to_ray(value))
+        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=python_to_ray(value))
 
     def __iter__(self) -> t.Iterator[t.Any]:
         for i in range(len(self)):

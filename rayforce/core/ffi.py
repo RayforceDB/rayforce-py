@@ -14,6 +14,7 @@ def exception_handler(func: t.Callable) -> t.Callable:
                 error_msg = FFI.get_error_message(result)
                 raise Exception(f"C API error: {error_msg}")
         return result
+
     return wrapper
 
 
@@ -170,23 +171,18 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def insert_obj(insert_to: r.RayObject, idx: int, ptr: r.RayObject) -> None:
-        return r.insert_obj(insert_to, idx, ptr)
+    def insert_obj(iterable: r.RayObject, idx: int, ptr: r.RayObject) -> None:
+        return r.insert_obj(iterable, idx, ptr)
 
     @staticmethod
     @exception_handler
-    def at_idx(obj: r.RayObject, idx: int) -> r.RayObject:
-        return r.at_idx(obj, idx)
+    def at_idx(iterable: r.RayObject, idx: int) -> r.RayObject:
+        return r.at_idx(iterable, idx)
 
     @staticmethod
     @exception_handler
     def get_obj_length(obj: r.RayObject) -> int:
         return r.get_obj_length(obj)
-
-    @staticmethod
-    @exception_handler
-    def is_vector(obj: r.RayObject) -> bool:
-        return r.is_vector(obj)
 
     @staticmethod
     @exception_handler
@@ -205,18 +201,18 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def dict_get(dictionary: r.RayObject, key: r.RayObject) -> r.RayObject:
-        return r.dict_get(dictionary, key)
+    def dict_get(dict: r.RayObject, key: r.RayObject) -> r.RayObject:
+        return r.dict_get(dict, key)
 
     @staticmethod
     @exception_handler
-    def get_dict_keys(dictionary: r.RayObject) -> r.RayObject:
-        return r.dict_keys(dictionary)
+    def get_dict_keys(dict: r.RayObject) -> r.RayObject:
+        return r.dict_keys(dict)
 
     @staticmethod
     @exception_handler
-    def get_dict_values(dictionary: r.RayObject) -> r.RayObject:
-        return r.dict_values(dictionary)
+    def get_dict_values(dict: r.RayObject) -> r.RayObject:
+        return r.dict_values(dict)
 
     @staticmethod
     @exception_handler
@@ -230,25 +226,18 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def insert(
-        table_obj: r.RayObject,
-        data_obj: r.RayObject,
-    ) -> r.RayObject:
-        return r.insert(table_obj, data_obj)
+    def insert(table: r.RayObject, data: r.RayObject) -> r.RayObject:
+        return r.insert(table, data)
 
     @staticmethod
     @exception_handler
-    def upsert(
-        table_obj: r.RayObject,
-        keys_obj: r.RayObject,
-        data_obj: r.RayObject,
-    ) -> r.RayObject:
-        return r.upsert(table_obj, keys_obj, data_obj)
+    def upsert(table: r.RayObject, keys: r.RayObject, data: r.RayObject) -> r.RayObject:
+        return r.upsert(table, keys, data)
 
     @staticmethod
     @exception_handler
-    def eval_str(expr: r.RayObject) -> r.RayObject:
-        return r.eval_str(expr)
+    def eval_str(obj: r.RayObject) -> r.RayObject:
+        return r.eval_str(obj)
 
     @staticmethod
     @exception_handler
@@ -267,8 +256,8 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def binary_set(name: r.RayObject, value: r.RayObject) -> None:
-        return r.binary_set(name, value)
+    def binary_set(name: r.RayObject, obj: r.RayObject) -> None:
+        return r.binary_set(name, obj)
 
     @staticmethod
     @exception_handler
@@ -277,13 +266,13 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def env_get_internal_name_by_function(func: r.RayObject) -> str:
-        return r.env_get_internal_name_by_function(func)
+    def env_get_internal_name_by_function(obj: r.RayObject) -> str:
+        return r.env_get_internal_name_by_function(obj)
 
     @staticmethod
     @exception_handler
-    def set_obj_attrs(obj: r.RayObject, attrs: r.RayObject) -> None:
-        return r.set_obj_attrs(obj, attrs)
+    def set_obj_attrs(obj: r.RayObject, attr: int) -> None:
+        return r.set_obj_attrs(obj, attr)
 
     @staticmethod
     @exception_handler

@@ -711,14 +711,14 @@ class SelectQuery:
         for idx, key in enumerate(self.attr_keys):
             # Fill query keys with requested attributes
             FFI.insert_obj(
-                insert_to=self._query_keys,
+                iterable=self._query_keys,
                 idx=idx,
                 ptr=utils.python_to_ray(key),
             )
         else:
             # Push "from" keyword to query keys
             FFI.insert_obj(
-                insert_to=self._query_keys,
+                iterable=self._query_keys,
                 idx=len(self.attr_keys),
                 ptr=utils.python_to_ray("from"),
             )
@@ -742,7 +742,7 @@ class SelectQuery:
 
         if self.where is not None:
             FFI.insert_obj(
-                insert_to=self._query_keys,
+                iterable=self._query_keys,
                 idx=len(self.attr_keys) + 1,
                 ptr=utils.python_to_ray("where"),
             )
@@ -941,14 +941,14 @@ class UpdateQuery:
         for idx, key in enumerate(self.attr_keys):
             # Fill query keys with requested attributes
             FFI.insert_obj(
-                insert_to=self._query_keys,
+                iterable=self._query_keys,
                 idx=idx,
                 ptr=utils.python_to_ray(key),
             )
         else:
             # Push "from" keyword to query keys
             FFI.insert_obj(
-                insert_to=self._query_keys,
+                iterable=self._query_keys,
                 idx=len(self.attr_keys),
                 ptr=utils.python_to_ray("from"),
             )
@@ -974,7 +974,7 @@ class UpdateQuery:
 
         if self._where is not None:
             FFI.insert_obj(
-                insert_to=self._query_keys,
+                iterable=self._query_keys,
                 idx=len(self.attr_keys) + 1,
                 ptr=utils.python_to_ray("where"),
             )
@@ -1100,8 +1100,8 @@ class InsertQuery:
         cloned_table = FFI.quote(table_obj)
 
         new_table = FFI.insert(
-            table_obj=cloned_table,
-            data_obj=self.insertable_ptr,
+            table=cloned_table,
+            data=self.insertable_ptr,
         )
 
         if new_table.get_obj_type() == Symbol.type_code:
@@ -1198,9 +1198,9 @@ class UpsertQuery:
         cloned_table = FFI.quote(table_obj)
 
         new_table = FFI.upsert(
-            table_obj=cloned_table,
-            keys_obj=self._match_by_first.ptr,
-            data_obj=self.upsertable_ptr,
+            table=cloned_table,
+            keys=self._match_by_first.ptr,
+            data=self.upsertable_ptr,
         )
 
         if new_table.get_obj_type() == Symbol.type_code:
