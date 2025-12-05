@@ -54,7 +54,60 @@ class AggregationMixin:
         return Expression(Operation.DISTINCT, self)
 
 
-class Expression(AggregationMixin):
+class OperatorMixin:
+    def __and__(self, other) -> Expression:
+        return Expression(Operation.AND, self, other)
+
+    def __or__(self, other) -> Expression:
+        return Expression(Operation.OR, self, other)
+
+    def __add__(self, other) -> Expression:
+        return Expression(Operation.ADD, self, other)
+
+    def __sub__(self, other) -> Expression:
+        return Expression(Operation.SUBTRACT, self, other)
+
+    def __mul__(self, other) -> Expression:
+        return Expression(Operation.MULTIPLY, self, other)
+
+    def __truediv__(self, other) -> Expression:
+        return Expression(Operation.DIVIDE, self, other)
+
+    def __mod__(self, other) -> Expression:
+        return Expression(Operation.MODULO, self, other)
+
+    def __eq__(self, other) -> Expression:
+        return Expression(Operation.EQUALS, self, other)
+
+    def __ne__(self, other) -> Expression:
+        return Expression(Operation.NOT_EQUALS, self, other)
+
+    def __lt__(self, other) -> Expression:
+        return Expression(Operation.LESS_THAN, self, other)
+
+    def __le__(self, other) -> Expression:
+        return Expression(Operation.LESS_EQUAL, self, other)
+
+    def __gt__(self, other) -> Expression:
+        return Expression(Operation.GREATER_THAN, self, other)
+
+    def __ge__(self, other) -> Expression:
+        return Expression(Operation.GREATER_EQUAL, self, other)
+
+    def __radd__(self, other) -> Expression:
+        return Expression(Operation.ADD, other, self)
+
+    def __rsub__(self, other) -> Expression:
+        return Expression(Operation.SUBTRACT, other, self)
+
+    def __rmul__(self, other) -> Expression:
+        return Expression(Operation.MULTIPLY, other, self)
+
+    def __rtruediv__(self, other) -> Expression:
+        return Expression(Operation.DIVIDE, other, self)
+
+
+class Expression(AggregationMixin, OperatorMixin):
     def __init__(self, operation: Operation, *operands: t.Any) -> None:
         self.operation = operation
         self.operands = operands
@@ -87,104 +140,14 @@ class Expression(AggregationMixin):
             FFI.push_obj(iterable=ptr, ptr=utils.python_to_ray(arg))
         return ptr
 
-    def __and__(self, other) -> Expression:
-        return Expression(Operation.AND, self, other)
-
-    def __or__(self, other) -> Expression:
-        return Expression(Operation.OR, self, other)
-
-    def __add__(self, other) -> Expression:
-        return Expression(Operation.ADD, self, other)
-
-    def __sub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, self, other)
-
-    def __mul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, self, other)
-
-    def __truediv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, self, other)
-
-    def __mod__(self, other) -> Expression:
-        return Expression(Operation.MODULO, self, other)
-
-    def __eq__(self, other) -> Expression:
-        return Expression(Operation.EQUALS, self, other)
-
-    def __ne__(self, other) -> Expression:
-        return Expression(Operation.NOT_EQUALS, self, other)
-
-    def __lt__(self, other) -> Expression:
-        return Expression(Operation.LESS_THAN, self, other)
-
-    def __le__(self, other) -> Expression:
-        return Expression(Operation.LESS_EQUAL, self, other)
-
-    def __gt__(self, other) -> Expression:
-        return Expression(Operation.GREATER_THAN, self, other)
-
-    def __ge__(self, other) -> Expression:
-        return Expression(Operation.GREATER_EQUAL, self, other)
-
     def __repr__(self) -> str:
         return f"Expression({self.operation.value}, {len(self.operands)} operands)"
 
 
-class Column(AggregationMixin):
+class Column(AggregationMixin, OperatorMixin):
     def __init__(self, name: str, table: Table | None = None):
         self.name = name
         self.table = table
-
-    def __eq__(self, other) -> Expression:
-        return Expression(Operation.EQUALS, self, other)
-
-    def __ne__(self, other) -> Expression:
-        return Expression(Operation.NOT_EQUALS, self, other)
-
-    def __lt__(self, other) -> Expression:
-        return Expression(Operation.LESS_THAN, self, other)
-
-    def __le__(self, other) -> Expression:
-        return Expression(Operation.LESS_EQUAL, self, other)
-
-    def __gt__(self, other) -> Expression:
-        return Expression(Operation.GREATER_THAN, self, other)
-
-    def __ge__(self, other) -> Expression:
-        return Expression(Operation.GREATER_EQUAL, self, other)
-
-    def __add__(self, other) -> Expression:
-        return Expression(Operation.ADD, self, other)
-
-    def __sub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, self, other)
-
-    def __mul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, self, other)
-
-    def __truediv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, self, other)
-
-    def __mod__(self, other) -> Expression:
-        return Expression(Operation.MODULO, self, other)
-
-    def __radd__(self, other) -> Expression:
-        return Expression(Operation.ADD, other, self)
-
-    def __rsub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, other, self)
-
-    def __rmul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, other, self)
-
-    def __rtruediv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, other, self)
-
-    def __and__(self, other) -> Expression:
-        return Expression(Operation.AND, self, other)
-
-    def __or__(self, other) -> Expression:
-        return Expression(Operation.OR, self, other)
 
     def is_(self, other: bool) -> Expression:
         if other is True:
