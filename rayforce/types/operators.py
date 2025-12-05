@@ -3,6 +3,7 @@ import enum
 
 from rayforce import _rayforce_c as r
 from rayforce.core import FFI
+from rayforce.types.registry import TypeRegistry
 
 
 class Operation(enum.StrEnum):
@@ -96,9 +97,6 @@ class Operation(enum.StrEnum):
 
     @property
     def primitive(self) -> r.RayObject:
-        """
-        Get the underlying primitive (RayObject) function from the runtime.
-        """
         return FFI.env_get_internal_function_by_name(self.value)
 
     @property
@@ -115,8 +113,16 @@ class Operation(enum.StrEnum):
 
     @staticmethod
     def from_ptr(obj: r.RayObject) -> Operation:
-        obj_type = obj.get_obj_type()
-        if obj_type not in (r.TYPE_UNARY, r.TYPE_BINARY, r.TYPE_VARY):
+        if (obj_type := obj.get_obj_type()) not in (
+            r.TYPE_UNARY,
+            r.TYPE_BINARY,
+            r.TYPE_VARY,
+        ):
             raise ValueError(f"Object is not an operation (type: {obj_type})")
 
         return Operation(FFI.env_get_internal_name_by_function(obj))
+
+
+TypeRegistry.register(r.TYPE_UNARY, Operation)
+TypeRegistry.register(r.TYPE_BINARY, Operation)
+TypeRegistry.register(r.TYPE_VARY, Operation)

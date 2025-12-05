@@ -6,18 +6,15 @@ from rayforce.types import exceptions
 
 if t.TYPE_CHECKING:
     from rayforce.types.base import RayObject
+    from rayforce.types.operators import Operation
 
 
 class TypeRegistry:
-    """
-    Central registry for all raypy types.
-    """
-
-    _types: dict[int, type[RayObject]] = {}
+    _types: dict[int, type[RayObject | Operation]] = {}
     _initialized: bool = False
 
     @classmethod
-    def register(cls, type_code: int, type_class: type[RayObject]) -> None:
+    def register(cls, type_code: int, type_class: type[RayObject | Operation]) -> None:
         if type_code in cls._types:
             existing = cls._types[type_code]
             if existing != type_class:
@@ -43,6 +40,13 @@ class TypeRegistry:
             raise Exception(f"Expected RayObject, got {type(ptr)}")
 
         type_code = ptr.get_obj_type()
+        if type_code in (r.TYPE_UNARY, r.TYPE_BINARY, r.TYPE_VARY):
+            type_class = cls._types.get(type_code)
+
+            # TODO: Add lambda parsing here when lambdas are introduced
+
+            return type_class.from_ptr(ptr)
+
         if type_code > 0 and type_code not in (r.TYPE_DICT, r.TYPE_LIST, r.TYPE_TABLE):
             from rayforce.types import Vector, String
 
