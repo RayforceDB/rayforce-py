@@ -12,3 +12,6 @@ def test_list():
     l.append(999)
     assert len(l) == 5
     assert l[4].value == 999
+
+    l[0] = "this is test"
+    assert l[0] == t.Symbol("this is test")
