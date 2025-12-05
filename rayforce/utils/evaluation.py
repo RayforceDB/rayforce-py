@@ -15,7 +15,9 @@ def eval_str(expr: str) -> t.Any:
 
     result_ptr = FFI.eval_str(FFI.init_string(expr))
     if result_ptr.get_obj_type() == r.TYPE_ERR:
-        raise RayEvaluationError(f"Evaluation error: {FFI.get_error_message(result_ptr)}")
+        raise RayEvaluationError(
+            f"Evaluation error: {FFI.get_error_message(result_ptr)}"
+        )
 
     return ray_to_python(result_ptr)
 
@@ -30,6 +32,8 @@ def eval_obj(obj: t.Any) -> t.Any:
 
     result_ptr = FFI.eval_obj(ptr)
     if result_ptr.get_obj_type() == r.TYPE_ERR:
-        raise RayEvaluationError(f"Evaluation error: {FFI.get_error_message(result_ptr)}")
+        raise RayEvaluationError(
+            f"Evaluation error: {FFI.get_error_message(result_ptr)}"
+        )
 
     return ray_to_python(result_ptr)

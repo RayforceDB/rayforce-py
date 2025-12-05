@@ -21,45 +21,12 @@ from rayforce import _rayforce_c as r
 from rayforce.types.registry import TypeRegistry
 
 
-class _Expression:
-    """
-    Essentially, a list which could be executed as a function with arguments.
-    """
-
-    ptr: r.RayObject
-
-    def __init__(self, *args) -> None:
-        self.ptr = FFI.init_list()
-
-        for arg in args:
-            FFI.push_obj(iterable=self.ptr, ptr=utils.python_to_ray(arg))
-
-    def __len__(self) -> int:
-        return FFI.get_obj_length(self.ptr)
-
-    def __getitem__(self, idx: int) -> Any:
-        if idx < 0 or idx >= len(self):
-            raise IndexError("Expression index out of range")
-
-        return utils.python_to_ray(FFI.at_idx(self.ptr, idx))
-
-    def __iter__(self) -> Any:
-        for i in range(len(self)):
-            yield self.__getitem__(i)
-
-    def __str__(self) -> str:
-        return f"Expression[{', '.join([str(i) for i in self])}]"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
 class Expression:
     def __init__(self, operation: Operation, *operands):
         self.operation = operation
         self.operands = operands
 
-    def to_low_level(self) -> _Expression:
+    def to_low_level(self) -> r.RayObject:
         from rayforce.types.scalars import QuotedSymbol
 
         converted_operands = []
@@ -81,9 +48,13 @@ class Expression:
             else:
                 converted_operands.append(operand)
 
-        return _Expression(self.operation.primitive, *converted_operands)
+        ptr = FFI.init_list()
 
-    def _build_filtered_column(self, filtered_col: FilteredColumn) -> _Expression:
+        for arg in [self.operation.primitive, *converted_operands]:
+            FFI.push_obj(iterable=ptr, ptr=utils.python_to_ray(arg))
+        return ptr
+
+    def _build_filtered_column(self, filtered_col: FilteredColumn) -> r.RayObject:
         if isinstance(filtered_col.condition, Expression):
             where_expr = filtered_col.condition.to_low_level()
         elif isinstance(filtered_col.condition, Column):
@@ -91,11 +62,21 @@ class Expression:
         else:
             where_expr = filtered_col.condition
 
-        where_wrapped = _Expression(Operation.WHERE, where_expr)
+        where_wrapped = FFI.init_list()
 
-        return _Expression(
-            Operation.MAP, Operation.AT, filtered_col.column.name, where_wrapped
-        )
+        for arg in [Operation.WHERE.primitive, where_expr]:
+            FFI.push_obj(iterable=where_wrapped, ptr=utils.python_to_ray(arg))
+
+        result = FFI.init_list()
+        for arg in [
+            Operation.MAP.primitive,
+            Operation.AT.primitive,
+            filtered_col.column.name,
+            where_wrapped,
+        ]:
+            FFI.push_obj(iterable=result, ptr=utils.python_to_ray(arg))
+
+        return result
 
     def count(self) -> Expression:
         return Expression(Operation.COUNT, self)
@@ -689,7 +670,7 @@ class SelectQuery:
             raise ValueError("Attribute select_from is required.")
 
         if where is not None:
-            if not isinstance(where, _Expression):
+            if not isinstance(where, r.RayObject):
                 raise ValueError("Attribute where should be an Expression.")
 
         if any([not isinstance(key, str) for key in self.attr_keys]):
@@ -746,7 +727,7 @@ class SelectQuery:
             )
             FFI.push_obj(
                 iterable=self._query_values,
-                ptr=self.where.ptr,
+                ptr=self.where,
             )
 
         self.ptr = FFI.init_dict(self._query_keys, self._query_values)
@@ -877,7 +858,7 @@ class SelectQueryBuilder:
             select_from=self._table, attributes=attributes, where=where_expr
         )
 
-    def _convert_expr(self, expr: Expression | Column) -> _Expression | str:
+    def _convert_expr(self, expr: Expression | Column) -> r.RayObject | str:
         if isinstance(expr, Expression):
             return expr.to_low_level()
         elif isinstance(expr, Column):
@@ -922,7 +903,7 @@ class UpdateQuery:
             raise ValueError("Attribute update_from is required.")
 
         if where is not None:
-            if not isinstance(where, _Expression):
+            if not isinstance(where, r.RayObject):
                 raise ValueError("Attribute where should be an Expression.")
 
         self.attributes = attributes
@@ -978,7 +959,7 @@ class UpdateQuery:
             )
             FFI.push_obj(
                 iterable=self._query_values,
-                ptr=self._where.ptr,
+                ptr=self._where,
             )
 
         self.ptr = FFI.init_dict(self._query_keys, self._query_values)
