@@ -8,8 +8,6 @@ from rayforce.types.registry import TypeRegistry
 
 
 class U8(Scalar):
-    """8-bit unsigned integer"""
-
     type_code = -r.TYPE_U8
     ray_name = "U8"
 
@@ -17,7 +15,7 @@ class U8(Scalar):
         try:
             return FFI.init_u8(int(value))
         except OverflowError as e:
-            raise exceptions.RayInitException from e
+            raise exceptions.RayInitException("Invalid value for 8-bit unsigned integer") from e
 
     def to_python(self) -> int:
         return FFI.read_u8(self.ptr)

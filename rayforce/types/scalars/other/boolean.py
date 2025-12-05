@@ -7,8 +7,6 @@ from rayforce.types.registry import TypeRegistry
 
 
 class B8(Scalar):
-    """Boolean value"""
-
     type_code = -r.TYPE_B8
     ray_name = "B8"
 

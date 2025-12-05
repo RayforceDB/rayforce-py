@@ -26,19 +26,15 @@ class Date(Scalar):
         elif isinstance(value, int):
             return FFI.init_date(value)
         elif isinstance(value, str):
-            # Parse ISO format
             try:
                 date_obj = dt.date.fromisoformat(value)
             except ValueError as e:
-                raise exceptions.RayInitException from e
-            days_since_epoch = (date_obj - DATE_EPOCH).days
-            return FFI.init_date(days_since_epoch)
-        else:
-            raise exceptions.RayInitException(f"Cannot create Date from {type(value)}")
+                raise exceptions.RayInitException(f"Date value is not isoformat: {value}") from e
+            return FFI.init_date((date_obj - DATE_EPOCH).days)
+        raise exceptions.RayInitException(f"Cannot create Date from {type(value)}")
 
     def to_python(self) -> dt.date:
-        days = FFI.read_date(self.ptr)
-        return DATE_EPOCH + dt.timedelta(days=days)
+        return DATE_EPOCH + dt.timedelta(days=FFI.read_date(self.ptr))
 
     def to_days(self) -> int:
         return FFI.read_date(self.ptr)

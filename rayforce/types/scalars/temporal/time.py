@@ -8,6 +8,14 @@ from rayforce.types.registry import TypeRegistry
 from rayforce.types import exceptions
 
 
+def _dt_time_to_ms(obj: dt.time) -> int:
+    return (
+        obj.hour * 3600000
+        + obj.minute * 60000
+        + obj.second * 1000
+        + obj.microsecond // 1000
+    )
+
 class Time(Scalar):
     """
     Represents time as milliseconds since midnight.
@@ -18,30 +26,16 @@ class Time(Scalar):
 
     def _create_from_value(self, value: dt.time | int | str) -> r.RayObject:
         if isinstance(value, dt.time):
-            millis = (
-                value.hour * 3600000
-                + value.minute * 60000
-                + value.second * 1000
-                + value.microsecond // 1000
-            )
-            return FFI.init_time(millis)
+            return FFI.init_time(_dt_time_to_ms(value))
         elif isinstance(value, int):
             return FFI.init_time(value)
         elif isinstance(value, str):
-            # Parse ISO format
             try:
                 time_obj = dt.time.fromisoformat(value)
             except ValueError as e:
-                raise exceptions.RayInitException from e
-            millis = (
-                time_obj.hour * 3600000
-                + time_obj.minute * 60000
-                + time_obj.second * 1000
-                + time_obj.microsecond // 1000
-            )
-            return FFI.init_time(millis)
-        else:
-            raise exceptions.RayInitException(f"Cannot create Time from {type(value)}")
+                raise exceptions.RayInitException(f"Time value is not isoformat: {value}") from e
+            return FFI.init_time(_dt_time_to_ms(time_obj))
+        raise exceptions.RayInitException(f"Cannot create Time from {type(value)}")
 
     def to_python(self) -> dt.time:
         millis = FFI.read_time(self.ptr)

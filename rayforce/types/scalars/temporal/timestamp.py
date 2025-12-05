@@ -9,6 +9,12 @@ from rayforce.types import exceptions
 
 epoch2000_py = dt.datetime(2000, 1, 1, tzinfo=dt.timezone.utc)
 
+def _datetime_to_ns(obj: dt.datetime) -> int:
+    return (
+        obj.days * 24 * 3600 * 1_000_000_000
+        + obj.seconds * 1_000_000_000
+        + obj.microseconds * 1_000
+    )
 
 class Timestamp(Scalar):
     """
@@ -20,38 +26,19 @@ class Timestamp(Scalar):
 
     def _create_from_value(self, value: dt.datetime | int | str) -> r.RayObject:
         if isinstance(value, dt.datetime):
-            # Compute nanoseconds since 2000-01-01
-            delta = value - epoch2000_py
-            ns = (
-                delta.days * 24 * 3600 * 1_000_000_000
-                + delta.seconds * 1_000_000_000
-                + delta.microseconds * 1_000
-            )
-            return FFI.init_timestamp(ns)
-
+            return FFI.init_timestamp(_datetime_to_ns(value - epoch2000_py))
         elif isinstance(value, int):
-            # assume already nanoseconds since 2000-01-01
             return FFI.init_timestamp(value)
-
         elif isinstance(value, str):
-            # Parse ISO format string
-            dt_obj = dt.datetime.fromisoformat(value)
-            delta = dt_obj - epoch2000_py
-            ns = (
-                delta.days * 24 * 3600 * 1_000_000_000
-                + delta.seconds * 1_000_000_000
-                + delta.microseconds * 1_000
-            )
-            return FFI.init_timestamp(ns)
-
-        else:
-            raise exceptions.RayInitException(
-                f"Cannot create Timestamp from {type(value)}"
-            )
+            try:
+                dt_obj = dt.datetime.fromisoformat(value)
+            except ValueError as e:
+                raise exceptions.RayInitException(f"Timestamp value is not isoformat: {value}") from e
+            return FFI.init_timestamp(_datetime_to_ns(dt_obj - epoch2000_py))
+        raise exceptions.RayInitException(f"Cannot create Timestamp from {type(value)}")
 
     def to_python(self) -> dt.datetime:
-        nano = FFI.read_timestamp(self.ptr)
-        return epoch2000_py + dt.timedelta(microseconds=nano // 1000)
+        return epoch2000_py + dt.timedelta(microseconds=FFI.read_timestamp(self.ptr) // 1000)
 
     def to_millis(self) -> int:
         return FFI.read_timestamp(self.ptr)

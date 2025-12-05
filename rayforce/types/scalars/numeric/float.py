@@ -7,8 +7,6 @@ from rayforce.types.registry import TypeRegistry
 
 
 class F64(Scalar):
-    """64-bit floating point number"""
-
     type_code = -r.TYPE_F64
     ray_name = "F64"
 

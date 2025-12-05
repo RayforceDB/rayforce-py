@@ -9,10 +9,6 @@ from rayforce.types import exceptions
 
 
 class GUID(Scalar):
-    """
-    GUID/UUID type.
-    """
-
     type_code = -r.TYPE_GUID
     ray_name = "GUID"
 
@@ -23,12 +19,10 @@ class GUID(Scalar):
             return FFI.init_guid(str(uuid.UUID(value)))
         elif isinstance(value, bytes):
             return FFI.init_guid(str(uuid.UUID(bytes=value)))
-        else:
-            raise exceptions.RayInitException(f"Cannot create GUID from {type(value)}")
+        raise exceptions.RayInitException(f"Cannot create GUID from {type(value)}")
 
     def to_python(self) -> uuid.UUID:
-        guid_bytes = FFI.read_guid(self.ptr)
-        return uuid.UUID(bytes=guid_bytes)
+        return uuid.UUID(bytes=FFI.read_guid(self.ptr))
 
     def __str__(self) -> str:
         return str(self.to_python())

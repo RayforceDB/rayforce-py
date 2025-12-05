@@ -7,8 +7,6 @@ from rayforce.types.registry import TypeRegistry
 
 
 class I16(Scalar):
-    """16-bit signed integer"""
-
     type_code = -r.TYPE_I16
     ray_name = "I16"
 
@@ -20,8 +18,6 @@ class I16(Scalar):
 
 
 class I32(Scalar):
-    """32-bit signed integer"""
-
     type_code = -r.TYPE_I32
     ray_name = "I32"
 
@@ -33,8 +29,6 @@ class I32(Scalar):
 
 
 class I64(Scalar):
-    """64-bit signed integer"""
-
     type_code = -r.TYPE_I64
     ray_name = "I64"
 
