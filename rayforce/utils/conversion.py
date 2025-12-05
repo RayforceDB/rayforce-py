@@ -53,13 +53,13 @@ def python_to_ray(value: t.Any) -> r.RayObject:
     elif isinstance(value, (list, tuple)):
         return List(value).ptr
     elif value is None:
-        # Return a special null value if available
+        # TODO: Return a special null value if available
         # For now, create an empty list as placeholder
         return List([]).ptr
-    else:
-        raise RayConversionError(
-            f"Cannot convert Python type {type(value).__name__} to RayObject"
-        )
+
+    raise RayConversionError(
+        f"Cannot convert Python type {type(value).__name__} to RayObject"
+    )
 
 
 def ray_to_python(ray_obj: r.RayObject) -> t.Any:
@@ -67,7 +67,6 @@ def ray_to_python(ray_obj: r.RayObject) -> t.Any:
         raise RayConversionError(f"Expected RayObject, got {type(ray_obj)}")
 
     try:
-        wrapper = TypeRegistry.from_ptr(ray_obj)
-        return wrapper
+        return TypeRegistry.from_ptr(ray_obj)
     except Exception as e:
         raise RayConversionError(f"Failed to convert RayObject: {e}") from e
