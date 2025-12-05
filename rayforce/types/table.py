@@ -22,7 +22,39 @@ from rayforce import _rayforce_c as r
 from rayforce.types.registry import TypeRegistry
 
 
-class Expression:
+class AggregationMixin:
+    def count(self) -> Expression:
+        return Expression(Operation.COUNT, self)
+
+    def sum(self) -> Expression:
+        return Expression(Operation.SUM, self)
+
+    def mean(self) -> Expression:
+        return Expression(Operation.AVG, self)
+
+    def avg(self) -> Expression:
+        return Expression(Operation.AVG, self)
+
+    def first(self) -> Expression:
+        return Expression(Operation.FIRST, self)
+
+    def last(self) -> Expression:
+        return Expression(Operation.LAST, self)
+
+    def max(self) -> Expression:
+        return Expression(Operation.MAX, self)
+
+    def min(self) -> Expression:
+        return Expression(Operation.MIN, self)
+
+    def median(self) -> Expression:
+        return Expression(Operation.MEDIAN, self)
+
+    def distinct(self) -> Expression:
+        return Expression(Operation.DISTINCT, self)
+
+
+class Expression(AggregationMixin):
     def __init__(self, operation: Operation, *operands: t.Any) -> None:
         self.operation = operation
         self.operands = operands
@@ -54,18 +86,6 @@ class Expression:
         for arg in [self.operation.primitive, *converted_operands]:
             FFI.push_obj(iterable=ptr, ptr=utils.python_to_ray(arg))
         return ptr
-
-    def count(self) -> Expression:
-        return Expression(Operation.COUNT, self)
-
-    def sum(self) -> Expression:
-        return Expression(Operation.SUM, self)
-
-    def mean(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def avg(self) -> Expression:
-        return Expression(Operation.AVG, self)
 
     def __and__(self, other) -> Expression:
         return Expression(Operation.AND, self, other)
@@ -110,7 +130,7 @@ class Expression:
         return f"Expression({self.operation.value}, {len(self.operands)} operands)"
 
 
-class Column:
+class Column(AggregationMixin):
     def __init__(self, name: str, table: Table | None = None):
         self.name = name
         self.table = table
@@ -166,42 +186,12 @@ class Column:
     def __or__(self, other) -> Expression:
         return Expression(Operation.OR, self, other)
 
-    def sum(self) -> Expression:
-        return Expression(Operation.SUM, self)
-
-    def mean(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def avg(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def max(self) -> Expression:
-        return Expression(Operation.MAX, self)
-
-    def min(self) -> Expression:
-        return Expression(Operation.MIN, self)
-
-    def count(self) -> Expression:
-        return Expression(Operation.COUNT, self)
-
-    def first(self) -> Expression:
-        return Expression(Operation.FIRST, self)
-
-    def last(self) -> Expression:
-        return Expression(Operation.LAST, self)
-
     def is_(self, other: bool) -> Expression:
         if other is True:
             return Expression(Operation.EVAL, self)
         elif other is False:
             return Expression(Operation.EVAL, Expression(Operation.NOT, self))
         raise ValueError("is_ argument has to be bool")
-
-    def median(self) -> Expression:
-        return Expression(Operation.MEDIAN, self)
-
-    def distinct(self) -> Expression:
-        return Expression(Operation.DISTINCT, self)
 
     def isin(self, values: list[Any]) -> Expression:
         from rayforce.types.scalars import QuotedSymbol, Symbol
@@ -222,7 +212,7 @@ class Column:
         return f"Column('{self.name}')"
 
 
-class FilteredColumn:
+class FilteredColumn(AggregationMixin):
     def __init__(self, column: Column, condition: Expression):
         self.column = column
         self.condition = condition
@@ -250,24 +240,6 @@ class FilteredColumn:
             FFI.push_obj(iterable=result, ptr=utils.python_to_ray(arg))
 
         return result
-
-    def sum(self) -> Expression:
-        return Expression(Operation.SUM, self)
-
-    def mean(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def avg(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def max(self) -> Expression:
-        return Expression(Operation.MAX, self)
-
-    def min(self) -> Expression:
-        return Expression(Operation.MIN, self)
-
-    def count(self) -> Expression:
-        return Expression(Operation.COUNT, self)
 
     def __repr__(self) -> str:
         return f"FilteredColumn({self.column.name} where ...)"
