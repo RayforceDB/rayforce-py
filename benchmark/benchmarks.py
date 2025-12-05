@@ -1,5 +1,6 @@
 from rayforce import eval_str
 from timer import time_microseconds
+import polars as pl
 
 
 class BenchmarkError(Exception): ...
@@ -25,6 +26,17 @@ class Q1:
 
         def run():
             return df.groupby("id1")["v1"].sum().reset_index()
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q1_polars(df):
+        """
+        Q1: Group by id1, sum v1
+        """
+
+        def run():
+            return df.group_by("id1").agg(pl.col("v1").sum())
 
         return time_microseconds(run)
 
@@ -79,6 +91,17 @@ class Q2:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q2_polars(df):
+        """
+        Q2: Group by id1, id2, sum v1
+        """
+
+        def run():
+            return df.group_by("id1", "id2").agg(pl.col("v1").sum())
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q2_native_rayforce(table_name):
         """
         Q2: Group by id1, id2, sum v1
@@ -127,6 +150,20 @@ class Q3:
 
         def run():
             return df.groupby("id3").agg({"v1": "sum", "v3": "mean"}).reset_index()
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q3_polars(df):
+        """
+        Q3: Group by id3, sum v1, avg v3
+        """
+
+        def run():
+            return df.group_by("id3").agg(
+                pl.col("v1").sum().alias("v1_sum"),
+                pl.col("v3").mean().alias("v3_avg")
+            )
 
         return time_microseconds(run)
 
@@ -191,6 +228,21 @@ class Q4:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q4_polars(df):
+        """
+        Q4: Group by id3, avg v1, avg v2, avg v3
+        """
+
+        def run():
+            return df.group_by("id3").agg(
+                pl.col("v1").mean().alias("v1_avg"),
+                pl.col("v2").mean().alias("v2_avg"),
+                pl.col("v3").mean().alias("v3_avg")
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q4_native_rayforce(table_name):
         """
         Q4: Group by id3, avg v1, avg v2, avg v3
@@ -244,6 +296,21 @@ class Q5:
                 df.groupby("id3")
                 .agg({"v1": "sum", "v2": "sum", "v3": "sum"})
                 .reset_index()
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q5_polars(df):
+        """
+        Q5: Group by id3, sum v1, sum v2, sum v3
+        """
+
+        def run():
+            return df.group_by("id3").agg(
+                pl.col("v1").sum().alias("v1_sum"),
+                pl.col("v2").sum().alias("v2_sum"),
+                pl.col("v3").sum().alias("v3_sum")
             )
 
         return time_microseconds(run)
@@ -303,6 +370,19 @@ class Q6:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q6_polars(df):
+        """
+        Q6: Group by id3, max(v1) - min(v2)
+        """
+
+        def run():
+            return df.group_by("id3").agg(
+                (pl.col("v1").max() - pl.col("v2").min()).alias("range_v1_v2")
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q6_native_rayforce(table_name):
         """
         Q6: Group by id3, max(v1) - min(v2)
@@ -332,36 +412,42 @@ benchmarks = [
         "Q1: Group by id1, sum v1",
         Q1.benchmark_q1_rayforce,
         Q1.benchmark_q1_pandas,
+        Q1.benchmark_q1_polars,
         Q1.benchmark_q1_native_rayforce,
     ),
     (
         "Q2: Group by id1, id2, sum v1",
         Q2.benchmark_q2_rayforce,
         Q2.benchmark_q2_pandas,
+        Q2.benchmark_q2_polars,
         Q2.benchmark_q2_native_rayforce,
     ),
     (
         "Q3: Group by id3, sum v1, avg v3",
         Q3.benchmark_q3_rayforce,
         Q3.benchmark_q3_pandas,
+        Q3.benchmark_q3_polars,
         Q3.benchmark_q3_native_rayforce,
     ),
     (
         "Q4: Group by id3, avg v1, v2, v3",
         Q4.benchmark_q4_rayforce,
         Q4.benchmark_q4_pandas,
+        Q4.benchmark_q4_polars,
         Q4.benchmark_q4_native_rayforce,
     ),
     (
         "Q5: Group by id3, sum v1, v2, v3",
         Q5.benchmark_q5_rayforce,
         Q5.benchmark_q5_pandas,
+        Q5.benchmark_q5_polars,
         Q5.benchmark_q5_native_rayforce,
     ),
     (
         "Q6: Group by id3, max(v1) - min(v2)",
         Q6.benchmark_q6_rayforce,
         Q6.benchmark_q6_pandas,
+        Q6.benchmark_q6_polars,
         Q6.benchmark_q6_native_rayforce,
     ),
 ]

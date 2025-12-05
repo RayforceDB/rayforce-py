@@ -1,5 +1,6 @@
 from rayforce import Table
 import pandas as pd
+import polars as pl
 import numpy as np
 
 
@@ -37,10 +38,13 @@ def prepare_data():
     # Prepare pandas DF
     df = pd.DataFrame(data)
 
+    # Prepare Polars DF
+    pl_df = pl.DataFrame(data)
+
     # Prepare Rayforce-Py table
     table = Table.from_dict(convert_to_lists(data))
 
     # Prepare Rayforce table (used in runtime)
     table.save("t")
 
-    return df, table
+    return df, pl_df, table

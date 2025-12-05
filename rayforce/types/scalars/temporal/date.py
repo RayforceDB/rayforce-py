@@ -29,7 +29,9 @@ class Date(Scalar):
             try:
                 date_obj = dt.date.fromisoformat(value)
             except ValueError as e:
-                raise exceptions.RayInitException(f"Date value is not isoformat: {value}") from e
+                raise exceptions.RayInitException(
+                    f"Date value is not isoformat: {value}"
+                ) from e
             return FFI.init_date((date_obj - DATE_EPOCH).days)
         raise exceptions.RayInitException(f"Cannot create Date from {type(value)}")
 

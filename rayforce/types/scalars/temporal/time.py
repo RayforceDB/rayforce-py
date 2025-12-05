@@ -16,6 +16,7 @@ def _dt_time_to_ms(obj: dt.time) -> int:
         + obj.microsecond // 1000
     )
 
+
 class Time(Scalar):
     """
     Represents time as milliseconds since midnight.
@@ -33,7 +34,9 @@ class Time(Scalar):
             try:
                 time_obj = dt.time.fromisoformat(value)
             except ValueError as e:
-                raise exceptions.RayInitException(f"Time value is not isoformat: {value}") from e
+                raise exceptions.RayInitException(
+                    f"Time value is not isoformat: {value}"
+                ) from e
             return FFI.init_time(_dt_time_to_ms(time_obj))
         raise exceptions.RayInitException(f"Cannot create Time from {type(value)}")
 
