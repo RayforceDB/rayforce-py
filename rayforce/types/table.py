@@ -1,4 +1,5 @@
 from __future__ import annotations
+import typing as t
 from collections.abc import Iterable
 import datetime
 from typing import Any, Callable
@@ -22,7 +23,7 @@ from rayforce.types.registry import TypeRegistry
 
 
 class Expression:
-    def __init__(self, operation: Operation, *operands):
+    def __init__(self, operation: Operation, *operands: t.Any) -> None:
         self.operation = operation
         self.operands = operands
 
@@ -37,7 +38,7 @@ class Expression:
             elif isinstance(operand, Column):
                 converted_operands.append(operand.name)
             elif isinstance(operand, FilteredColumn):
-                converted_operands.append(self._build_filtered_column(operand))
+                converted_operands.append(operand.compile())
             elif hasattr(operand, "ptr"):
                 converted_operands.append(operand)
             elif isinstance(operand, str):
@@ -53,30 +54,6 @@ class Expression:
         for arg in [self.operation.primitive, *converted_operands]:
             FFI.push_obj(iterable=ptr, ptr=utils.python_to_ray(arg))
         return ptr
-
-    def _build_filtered_column(self, filtered_col: FilteredColumn) -> r.RayObject:
-        if isinstance(filtered_col.condition, Expression):
-            where_expr = filtered_col.condition.to_low_level()
-        elif isinstance(filtered_col.condition, Column):
-            where_expr = filtered_col.condition.name
-        else:
-            where_expr = filtered_col.condition
-
-        where_wrapped = FFI.init_list()
-
-        for arg in [Operation.WHERE.primitive, where_expr]:
-            FFI.push_obj(iterable=where_wrapped, ptr=utils.python_to_ray(arg))
-
-        result = FFI.init_list()
-        for arg in [
-            Operation.MAP.primitive,
-            Operation.AT.primitive,
-            filtered_col.column.name,
-            where_wrapped,
-        ]:
-            FFI.push_obj(iterable=result, ptr=utils.python_to_ray(arg))
-
-        return result
 
     def count(self) -> Expression:
         return Expression(Operation.COUNT, self)
@@ -249,6 +226,30 @@ class FilteredColumn:
     def __init__(self, column: Column, condition: Expression):
         self.column = column
         self.condition = condition
+
+    def compile(self) -> r.RayObject:
+        if isinstance(self.condition, Expression):
+            where_expr = self.condition.to_low_level()
+        elif isinstance(self.condition, Column):
+            where_expr = self.condition.name
+        else:
+            where_expr = self.condition
+
+        where_wrapped = FFI.init_list()
+
+        for arg in [Operation.WHERE.primitive, where_expr]:
+            FFI.push_obj(iterable=where_wrapped, ptr=utils.python_to_ray(arg))
+
+        result = FFI.init_list()
+        for arg in [
+            Operation.MAP.primitive,
+            Operation.AT.primitive,
+            self.column.name,
+            where_wrapped,
+        ]:
+            FFI.push_obj(iterable=result, ptr=utils.python_to_ray(arg))
+
+        return result
 
     def sum(self) -> Expression:
         return Expression(Operation.SUM, self)
