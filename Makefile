@@ -81,3 +81,7 @@ ipython:
 
 benchmarkdb:
 	python3 benchmark/run.py $(ARGS)
+
+pypi:
+	cibuildwheel --platform linux --archs x86_64
+	cibuildwheel --platform macos --archs arm64
