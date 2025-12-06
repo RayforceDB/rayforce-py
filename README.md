@@ -24,13 +24,13 @@ pip install rayforce-py
 
 ```python
 >>> from datetime import time
->>> from rayforce import Table
+>>> from rayforce import Table, Vector, Symbol, Time, F64
+>>> from rayforce.types.table import Column
 
->>> quotes = Table(
-        columns=["symbol", "time", "bid", "ask"],
-        values=[
-            ["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"],
-            [
+>>> quotes = Table.from_dict({
+        "symbol": Vector(items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"], ray_type=Symbol),
+        "time": Vector(
+            items=[
                 time.fromisoformat("09:00:00.095"),
                 time.fromisoformat("09:00:00.105"),
                 time.fromisoformat("09:00:00.295"),
@@ -38,27 +38,28 @@ pip install rayforce-py
                 time.fromisoformat("09:00:00.155"),
                 time.fromisoformat("09:00:00.345"),
             ],
-            [100.0, 101.0, 102.0, 200.0, 201.0, 202.0],
-            [110.0, 111.0, 112.0, 210.0, 211.0, 212.0],
-        ],
-    )
+            ray_type=Time,
+        ),
+        "bid": Vector(items=[100.0, 101.0, 102.0, 200.0, 201.0, 202.0], ray_type=F64),
+        "ask": Vector(items=[110.0, 111.0, 112.0, 210.0, 211.0, 212.0], ray_type=F64),
+    })
 
 >>> result = (
         quotes
         .select(
-            max_bid=quotes.bid.max(),
-            min_bid=quotes.bid.min(),
-            avg_ask=quotes.ask.mean(),
-            records_count=quotes.time.count(),
-            first_bid=quotes.time.first(),
+            max_bid=Column("bid").max(),
+            min_bid=Column("bid").min(),
+            avg_ask=Column("ask").mean(),
+            records_count=Column("time").count(),
+            first_time=Column("time").first(),
         )
-        .where((quotes.bid >= 110) & (quotes.ask > 100))
+        .where((Column("bid") >= 110) & (Column("ask") > 100))
         .by("symbol")
         .execute()
     )
 >>> print(result)
 ┌────────┬─────────┬─────────┬─────────┬───────────────┬──────────────┐
-│ symbol │ max_bid │ min_bid │ avg_ask │ records_count │ first_bid    │
+│ symbol │ max_bid │ min_bid │ avg_ask │ records_count │ first_time   │
 ├────────┼─────────┼─────────┼─────────┼───────────────┼──────────────┤
 │ GOOG   │ 202.00  │ 200.00  │ 211.00  │ 3             │ 09:00:00.145 │
 ├────────┴─────────┴─────────┴─────────┴───────────────┴──────────────┤
