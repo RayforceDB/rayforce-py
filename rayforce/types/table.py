@@ -219,6 +219,26 @@ class TableInitMixin:
         else:
             return self._ptr
 
+    @classmethod
+    def from_splayed(cls, path: str) -> Table:
+        return utils.eval_obj(List([Operation.GET_SPLAYED, FFI.init_string(path)]))
+
+
+class TableIOMixin:
+    def save(self, name: str) -> None:
+        FFI.binary_set(FFI.init_symbol(name), self.ptr)
+
+    def set_splayed(self, path: str) -> None:
+        utils.eval_obj(
+            List(
+                [
+                    Operation.SET_SPLAYED,
+                    FFI.init_string(path),
+                    self.evaled_ptr,
+                ]
+            )
+        )
+
 
 class TableValueAccessorMixin:
     _ptr: r.RayObject | str
@@ -279,9 +299,6 @@ class TableQueryMixin:
 
     def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
         return UpsertQuery(self, *args, match_by_first=match_by_first, **kwargs)
-
-    def save(self, name: str) -> None:
-        FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
     def concat(self, *others: Table) -> Table:
         result = self.ptr
@@ -384,6 +401,7 @@ class Table(
     TableReprMixin,
     TableQueryMixin,
     TableOrderByMixin,
+    TableIOMixin,
 ):
     type_code = r.TYPE_TABLE
     _ptr: r.RayObject | str

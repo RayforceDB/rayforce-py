@@ -94,6 +94,8 @@ class Operation(enum.StrEnum):
     CONCAT = "concat"
     READ_CSV = "read-csv"
     SET = "set"
+    SET_SPLAYED = "set-splayed"
+    GET_SPLAYED = "get-splayed"
 
     @property
     def primitive(self) -> r.RayObject:
