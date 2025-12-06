@@ -206,6 +206,19 @@ class TableInitMixin:
             ),
         )
 
+    @property
+    def ptr(self) -> r.RayObject:
+        if isinstance(self._ptr, str):
+            return QuotedSymbol(self._ptr).ptr
+        return self._ptr
+
+    @property
+    def evaled_ptr(self) -> r.RayObject:
+        if isinstance(self._ptr, str):
+            return utils.eval_str(self._ptr).ptr
+        else:
+            return self._ptr
+
 
 class TableValueAccessorMixin:
     _ptr: r.RayObject | str
@@ -228,6 +241,20 @@ class TableReprMixin:
 
     def __repr__(self) -> str:
         return f"Table[{self.columns()}]"
+
+
+class TableOrderByMixin:
+    def xasc(self, *cols: Iterable[Column]) -> Table:
+        _cols = [c.name for c in cols]
+        return utils.eval_obj(
+            List([Operation.XASC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
+        )
+
+    def xdesc(self, *cols: Iterable[Column]) -> Table:
+        _cols = [c.name for c in cols]
+        return utils.eval_obj(
+            List([Operation.XDESC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
+        )
 
 
 class TableQueryMixin:
@@ -351,407 +378,17 @@ class TableQueryMixin:
     def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
-    @property
-    def ptr(self) -> r.RayObject:
-        if isinstance(self._ptr, str):
-            return QuotedSymbol(self._ptr).ptr
-        return self._ptr
-
-    @property
-    def evaled_ptr(self) -> r.RayObject:
-        if isinstance(self._ptr, str):
-            return utils.eval_str(self._ptr).ptr
-        else:
-            return self._ptr
-
 
 class Table(
     TableInitMixin,
     TableValueAccessorMixin,
     TableReprMixin,
     TableQueryMixin,
+    TableOrderByMixin,
 ):
     type_code = r.TYPE_TABLE
     _ptr: r.RayObject | str
     is_reference: bool
-
-
-# class _Table(TableValueAccessorMixin):
-#     """
-#     Rayforce table type.
-
-#     Type code: 98
-#     """
-
-#     ptr: r.RayObject
-
-#     type_code = r.TYPE_TABLE
-
-#     def __init__(
-#         self,
-#         columns: list[str] | None = None,
-#         values: list | None = None,
-#         *,
-#         ptr: r.RayObject | None = None,
-#     ) -> None:
-#         from rayforce.types.scalars import Symbol, I64, F64, B8
-#         from rayforce.types.containers import Vector, List
-
-#         if ptr is not None:
-#             if (_type := ptr.get_obj_type()) != self.type_code:
-#                 raise ValueError(
-#                     f"Expected RayForce object of type {self.type_code}, got {_type}"
-#                 )
-
-#             self.ptr = ptr
-#             return
-
-#         if (columns is None or values is None) or len(columns) == 0:
-#             raise ValueError("Provide columns and values for table initialisation")
-
-#         if not all([isinstance(i, str) for i in columns]):
-#             raise ValueError("Column elements must be Python strings")
-
-#         # Assert columns vector and values list are having same length
-#         if len(columns) != len(values):
-#             raise ValueError("Keys and values lists must have the same length")
-
-#         table_columns = Vector(ray_type=Symbol, length=len(columns))
-#         for idx, column in enumerate(columns):
-#             table_columns[idx] = column
-
-#         # Convert each column to a Vector instead of keeping as List
-#         table_values = List([])
-#         for column_data in values:
-#             # Auto-detect type and create appropriate Vector
-#             if not column_data:
-#                 # Empty column - use generic list
-#                 table_values.append([])
-#             elif all(isinstance(x, str) for x in column_data):
-#                 # String column -> Vector of Symbols
-#                 vec = Vector(ray_type=Symbol, items=column_data)
-#                 table_values.append(vec)
-#             elif all(
-#                 isinstance(x, (int, float)) and not isinstance(x, bool)
-#                 for x in column_data
-#             ):
-#                 # Numeric column -> detect if int or float
-#                 if all(isinstance(x, int) for x in column_data):
-#                     vec = Vector(ray_type=I64, items=column_data)
-#                 else:
-#                     vec = Vector(ray_type=F64, items=column_data)
-#                 table_values.append(vec)
-#             elif all(isinstance(x, bool) for x in column_data):
-#                 # Boolean column
-#                 vec = Vector(ray_type=B8, items=column_data)
-#                 table_values.append(vec)
-#             elif all(isinstance(x, datetime.time) for x in column_data) or all(
-#                 isinstance(x, Time) for x in column_data
-#             ):
-#                 vec = Vector(ray_type=Time, items=column_data)
-#                 table_values.append(vec)
-#             elif all(isinstance(x, Timestamp) for x in column_data):
-#                 vec = Vector(ray_type=Timestamp, items=column_data)
-#                 table_values.append(vec)
-#             else:
-#                 # Mixed types or complex types - keep as List
-#                 table_values.append(column_data)
-
-#         self.ptr = FFI.init_table(columns=table_columns.ptr, values=table_values.ptr)
-
-#     def columns(self) -> Any:
-#         return utils.ray_to_python(FFI.get_table_keys(self.ptr))
-
-#     def values(self) -> Any:
-#         return utils.ray_to_python(FFI.get_table_values(self.ptr))
-
-#     def __str__(self) -> str:
-#         return FFI.repr_table(self.ptr)
-
-#     def __repr__(self) -> str:
-#         return f"Table[{self.columns()}]"
-
-#     def __eq__(self, eq: Any) -> bool:
-#         if isinstance(eq, _Table):
-#             return eq.columns() == self.columns() and eq.values() == self.values()
-#         return False
-
-
-# class Table:
-#     def __init__(
-#         self,
-#         name_or_data: str | None = None,
-#         columns: list[str] | None = None,
-#         values: list[Any] | None = None,
-#         ptr=None,
-#     ):
-#         if isinstance(name_or_data, str):
-#             self._table = name_or_data
-#             self._is_ref = True
-#         elif ptr is not None:
-#             self._table = _Table(ptr=ptr)
-#             self._is_ref = False
-#         elif columns and values:
-#             self._table = _Table(columns=columns, values=values)
-#             self._is_ref = False
-#         else:
-#             raise ValueError("Must provide either name, columns/values, or ptr")
-
-#     def __getattr__(self, name: str) -> Column:
-#         if name.startswith("_"):
-#             return object.__getattribute__(self, name)
-#         return Column(name, table=self)
-
-#     def select(self, *cols, **computed_cols) -> SelectQueryBuilder:
-#         builder = SelectQueryBuilder(table=self._table)
-#         return builder.select(*cols, **computed_cols)
-
-#     def where(self, condition: Expression | Callable) -> SelectQueryBuilder:
-#         builder = SelectQueryBuilder(table=self._table)
-#         return builder.where(condition)
-
-#     def by(self, *cols, **computed_cols) -> SelectQueryBuilder:
-#         builder = SelectQueryBuilder(table=self._table)
-#         return builder.by(*cols, **computed_cols)
-
-#     def concat(self, *others: Table) -> Table:
-#         result = self._table
-#         for other in others:
-#             other_table = other._table if isinstance(other, Table) else other
-#             expr = Expression(Operation.CONCAT, result, other_table)
-#             result = utils.eval_obj(expr.compile())
-#         return Table(ptr=result._table.ptr)
-
-#     @staticmethod
-#     def concat_all(tables: list[Table]) -> Table:
-#         if not tables:
-#             raise ValueError("Must provide at least one table")
-#         return tables[0].concat(*tables[1:])
-
-#     def inner_join(self, other: Table, on: str | list[str]) -> Table:
-#         from rayforce.types.containers import Vector, List
-#         from rayforce.types.scalars import Symbol
-
-#         if isinstance(on, str):
-#             on = [on]
-
-#         join_keys = Vector(ray_type=Symbol, items=on)
-#         other_table = other._table if isinstance(other, Table) else other
-#         self_table = self._table
-#         result = utils.eval_obj(
-#             List([Operation.IJ, join_keys, self_table, other_table])
-#         )
-
-#         return Table(ptr=result._table.ptr)
-
-#     def left_join(self, other: Table, on: str | list[str]) -> Table:
-#         from rayforce.types.containers import Vector, List
-#         from rayforce.types.scalars import Symbol
-
-#         if isinstance(on, str):
-#             on = [on]
-
-#         join_keys = Vector(ray_type=Symbol, items=on)
-#         other_table = other._table if isinstance(other, Table) else other
-#         self_table = self._table
-#         result = utils.eval_obj(
-#             List([Operation.LJ, join_keys, self_table, other_table])
-#         )
-
-#         return Table(ptr=result._table.ptr)
-
-#     def window_join(
-#         self,
-#         on: list[str],
-#         join_with: list[Any],
-#         interval: TableColumnInterval,
-#         **aggregations,
-#     ) -> Table:
-#         return self._wj(
-#             method=Operation.WJ,
-#             on=on,
-#             join_with=join_with,
-#             interval=interval,
-#             **aggregations,
-#         )
-
-#     def window_join1(
-#         self,
-#         on: list[str],
-#         join_with: list[Any],
-#         interval: TableColumnInterval,
-#         **aggregations,
-#     ) -> Table:
-#         return self._wj(
-#             method=Operation.WJ1,
-#             on=on,
-#             join_with=join_with,
-#             interval=interval,
-#             **aggregations,
-#         )
-
-#     def _wj(
-#         self,
-#         method: Operation,
-#         on: list[str],
-#         join_with: list[Any],
-#         interval: TableColumnInterval,
-#         **aggregations,
-#     ) -> Table:
-#         from rayforce.types import Vector, Symbol
-
-#         agg_dict = {}
-#         for name, expr in aggregations.items():
-#             if isinstance(expr, Expression):
-#                 agg_dict[name] = expr.compile()
-#             elif isinstance(expr, Column):
-#                 agg_dict[name] = expr.name
-#             else:
-#                 agg_dict[name] = expr
-
-#         join_keys = Vector(ray_type=Symbol, items=on)
-
-#         result = utils.eval_obj(
-#             List(
-#                 [
-#                     method,
-#                     join_keys,
-#                     interval.compile(),
-#                     self._table,
-#                     *[t.ptr for t in join_with],
-#                     agg_dict,
-#                 ]
-#             )
-#         )
-
-#         return Table(ptr=result._table.ptr)
-
-#     @property
-#     def ptr(self) -> r.RayObject:
-#         if isinstance(self._table, str):
-#             self._table = utils.eval_str(self._table)
-
-#         return self._table.ptr
-
-#     def update(self, **kwargs) -> UpdateQuery:
-#         return UpdateQuery(self._table, **kwargs)
-
-#     def insert(self, *args, **kwargs) -> InsertQuery:
-#         return InsertQuery(self._table, *args, **kwargs)
-
-#     def upsert(
-#         self,
-#         *args,
-#         match_by_first: int,
-#         **kwargs,
-#     ) -> UpsertQuery:
-#         return UpsertQuery(self._table, *args, match_by_first=match_by_first, **kwargs)
-
-#     def save(self, name: str) -> None:
-#         FFI.binary_set(FFI.init_symbol(name), self._table.ptr)
-
-#     def _get_table(self) -> _Table:
-#         if self._is_ref:
-#             return utils.eval_str(self._table)
-#         return self._table
-
-#     @property
-#     def columns(self) -> list[str]:
-#         if isinstance(self._table, _Table):
-#             cols = self._table.columns()
-#             return [col.value for col in cols]
-#         return []
-
-#     def values(self):
-#         if self._is_ref:
-#             table = utils.eval_str(self._table)
-#             return table.values()
-#         return self._table.values()
-
-#     @property
-#     def shape(self) -> tuple[int]:
-#         if isinstance(self._table, _Table):
-#             vals = self._table.values()
-#             rows = len(vals[0]) if vals and len(vals) > 0 else 0
-#             cols = len(self.columns)
-#             return (rows, cols)
-#         return (0, 0)
-
-#     def __len__(self) -> int:
-#         return self.shape[0]
-
-#     def __getitem__(self, key):
-#         if isinstance(key, str):
-#             return self.__getattr__(key)
-#         elif isinstance(key, list):
-#             return self.select(*key).execute()
-#         else:
-#             raise NotImplementedError("Row/slice access not yet implemented")
-
-#     @classmethod
-#     def from_dict(cls, data: dict[str, list[Any]]) -> Table:
-#         columns = list(data.keys())
-#         values = list(data.values())
-#         return cls(columns=columns, values=values)
-
-#     @classmethod
-#     def from_csv(
-#         cls,
-#         column_types: list[RayObject],
-#         path: str,
-#     ) -> Table:
-#         query = List(
-#             [
-#                 Operation.READ_CSV,
-#                 Vector([c.ray_name for c in column_types], ray_type=Symbol),
-#                 String(path),
-#             ]
-#         )
-#         return utils.eval_obj(query)
-
-#     @classmethod
-#     def get(cls, name: str) -> Table:
-#         return cls(name)
-
-#     @staticmethod
-#     def _create_proxy(table: str | _Table) -> Table:
-#         proxy = object.__new__(Table)
-#         proxy._table = table
-#         proxy._is_ref = isinstance(table, str)
-#         return proxy
-
-#     def __str__(self) -> str:
-#         if isinstance(self._table, _Table):
-#             return FFI.repr_table(self._table.ptr)
-#         elif isinstance(self._table, str):
-#             table = utils.eval_str(self._table)
-#             return FFI.repr_table(table._table.ptr)
-#         return f"Table('{self._table}')"
-
-#     def __repr__(self) -> str:
-#         if self._is_ref:
-#             return f"Table('{self._table}')"
-#         return f"Table(columns={self.columns})"
-
-#     def xasc(self, *cols) -> Table:
-#         from rayforce.types import List, Vector, Symbol
-
-#         return utils.eval_obj(
-#             List([Operation.XASC, self._table, Vector(cols, ray_type=Symbol)])
-#         )
-
-#     def xdesc(self, *cols) -> Table:
-#         from rayforce.types import List, Vector, Symbol
-
-#         return utils.eval_obj(
-#             List(
-#                 [
-#                     Operation.XDESC,
-#                     self._table,
-#                     Vector(cols, ray_type=Symbol),
-#                 ]
-#             )
-#         )
 
 
 class SelectQuery:
@@ -1197,8 +834,6 @@ class TableColumnInterval:
         self.column = column
 
     def compile(self) -> List:
-        from rayforce.types import Vector, I64, QuotedSymbol
-
         return List(
             [
                 Operation.MAP_LEFT,
