@@ -235,12 +235,14 @@ class TableReprMixin:
 
     def __str__(self) -> str:
         if isinstance(self._ptr, str):
-            return Symbol(self._ptr)
+            return self._ptr
 
         return FFI.repr_table(self._ptr)
 
     def __repr__(self) -> str:
-        return f"Table[{self.columns()}]"
+        if isinstance(self._ptr, str):
+            return f"TableReference['{self._ptr}']"
+        return f"Table{self.columns()}"
 
 
 class TableOrderByMixin:
@@ -481,7 +483,7 @@ class SelectQuery:
 
         if isinstance(self.table, Table):
             if self.table.is_reference:
-                query_items["from"] = QuotedSymbol(self.table._ptr).ptr
+                query_items["from"] = Symbol(self.table._ptr).ptr
             else:
                 query_items["from"] = self.table.ptr
         else:

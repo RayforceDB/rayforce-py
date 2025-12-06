@@ -23,7 +23,7 @@ You can select new computed columns using expressions:
 ```python
 >>> result = table.select(
         "id",
-        total=table.price * table.quantity,
+        total=Column("price") * Column("quantity"),
     ).execute()
 ```
 
@@ -31,6 +31,8 @@ You can select new computed columns using expressions:
     The computed columns are named using keyword arguments, where the key is the column name and the value is the expression.
     Expression can be of any type, which can be assigned to the column. You can do math operations with the column, or perform
     more complex aggregations, which you can read about below.
+
+    You need to use `Column` class to utilise it in computations or aggregations
 
 
 ## :material-checkbox-multiple-blank-outline: Using Aggregations
@@ -53,21 +55,24 @@ Rayforce-Py provides a number of aggregations you may use when querying computed
 ### For Example:
 ```python
 >>> scores = Table.from_dict({
-        "student_id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "score": [85, 92, 78, 96, 88, 91, 83, 95, 87, 90],
-        "subject": ["Math", "Math", "Science", "Science", "Math", 
-                   "Science", "Math", "Science", "Math", "Chemistry"]
+        "student_id": Vector([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], ray_type=I64),
+        "score": Vector([85, 92, 78, 96, 88, 91, 83, 95, 87, 90], ray_type=I64),
+        "subject": Vector(
+            ["Math", "Math", "Science", "Science", "Math", 
+            "Science", "Math", "Science", "Math", "Chemistry"],
+            ray_type=Symbol,
+        ),
     })
 
 >>> stats = scores.select(
-        total_students=scores.student_id.count(),      # Count: number of records
-        sum_scores=scores.score.sum(),                 # Sum: total of all scores
-        avg_score=scores.score.mean(),                 # Mean: average score
-        median_score=scores.score.median(),            # Median: middle value
-        min_score=scores.score.min(),                  # Min: lowest score
-        max_score=scores.score.max(),                  # Max: highest score
-        first_student=scores.student_id.first(),       # First: first student ID
-        last_subject=scores.subject.last()             # Last: last subject
+        total_students=Column("student_id").count(),      # Count: number of records
+        sum_scores=Column("score").sum(),                 # Sum: total of all scores
+        avg_score=Column("score").mean(),                 # Mean: average score
+        median_score=Column("score").median(),            # Median: middle value
+        min_score=Column("score").min(),                  # Min: lowest score
+        max_score=Column("score").max(),                  # Max: highest score
+        first_student=Column("student_id").first(),       # First: first student ID
+        last_subject=Column("subject").last()             # Last: last subject
     ).execute()
 ┌────────────────┬────────────┬───────────┬──────────────┬───────────┬───────────┬───────────────┬──────────────┐
 │ total_students │ sum_scores │ avg_score │ median_score │ min_score │ max_score │ first_student │ last_subject │
@@ -78,7 +83,7 @@ Rayforce-Py provides a number of aggregations you may use when querying computed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
 >>> unique_subjects = scores.select(
-        subject=scores.subject.distinct()              # Distinct: unique values
+        subject=Column("subject").distinct()              # Distinct: unique values
     ).execute()
 ┌──────────────────────────────────────┐
 │ subject                              │
@@ -97,7 +102,7 @@ Rayforce-Py provides a number of aggregations you may use when querying computed
 Filters are quite powerful in Rayforce-Py. You can implement them using `.where()` statement addressing the previous `.select()`
 
 ```python
->>> result = table.select("id", "name", "age").where(table.age >= 35).execute()
+>>> result = table.select("id", "name", "age").where(Column("age") >= 35).execute()
 ```
 
 Library supports all standard comparison operators:
@@ -123,7 +128,7 @@ Check if a value is in a list:
 More complex example
 ```python
 >>> result = table.select("id", "name", "age").where(
-        (table.age >= 20) & table.department.isin("IT", "HR", "Marketing")
+        (Column("age") >= 20) & Column("department").isin("IT", "HR", "Marketing")
     ).execute()
 ```
 
@@ -135,9 +140,9 @@ You can apply filters to aggregations using the `where()` method on columns:
 >>> result = (
         table
         .select(
-            total=table.amount.sum(),
-            active_total=table.amount.where(table.status == "active").sum(),
-            count=table.amount.count(),
+            total=Column("amount").sum(),
+            active_total=Column("amount").where(Column("status") == "active").sum(),
+            count=Column("amount").count(),
         )
         .by("category")
         .execute()

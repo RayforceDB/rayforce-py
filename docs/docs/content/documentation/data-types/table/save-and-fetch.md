@@ -1,6 +1,5 @@
 # :material-content-save: Save and Fetch Table
 
-<b>This is a work in progress section.</b>
 
 Rayforce-Py gives you access to safely save a table behind a Rayforce environment variable and fetch it.
 
@@ -8,8 +7,19 @@ Rayforce-Py gives you access to safely save a table behind a Rayforce environmen
 >>> table: Table
 >>> table.save("mytable")
 
->>> Table.get("mytable").select("*").execute()
+>>> Table.from_name("mytable")
+TableReference['mytable']  # This is unfeched prepared state, and table has to be selected from database
 
-# TODO: figure out how to safely fetch a table without select statement
+>>> Table.from_name("mytable").columns()
+Vector([Symbol('symbol'), Symbol('time'), Symbol('bid'), Symbol('ask')])
+
+>>> Table.from_name("mytable").values()
+List([Vector ...])  # collapsed in documentation for convenience
+
+>>> Table.from_name("mytable").select("*").execute()
+Table[Symbol('symbol'), Symbol('time'), Symbol('bid'), Symbol('ask')]
+
+>>> Table.from_name("test").select("time").execute()
+Table[Symbol('time')]
 ```
 

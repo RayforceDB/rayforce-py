@@ -36,5 +36,14 @@ Vector[6]
 >>> user_data.values()
 List([Symbol('Alice'), I64(29), B8(True), F64(95.5), Dict({'enabled': True, 'ttl': 3600})])
 
-# TODO: Add support for item assignment
+>>> user_data["docs"] = {"is_this_docs": True}  # Item assignment
+>>> user_data
+Dict({
+    'name': 'Alice',
+    'age': 29,
+    'active': True,
+    'score': 95.5,
+    'cache': {'enabled': True, 'ttl': 3600},
+    'docs': {'is_this_docs': True}
+})
 ```

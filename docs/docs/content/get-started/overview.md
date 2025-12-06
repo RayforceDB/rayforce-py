@@ -4,9 +4,9 @@ Rayforce-Py is a powerful library which allows you to effectively execute statem
 
 ```python
       table.select(
-          total=table.amount.sum(),
-          active_total=table.amount.where(table.status == "active").sum(),
-          count=table.amount.count(),
+          total=Column("amount").sum(),
+          active_total=Column("amount").where(Column("status") == "active").sum(),
+          count=Column("amount").count(),
       )
       .by("category")
       .execute()

@@ -16,9 +16,11 @@ I64(1)
 >>> [i for i in items]
 [I64(1), Symbol('hello'), F64(3.14), B8(True)]
 
-# TODO: Add list item assignment by index
+>>> items[0] = 333
+>>> items
+[I64(333), Symbol('hello'), F64(3.14), B8(True)]
 
 >>> items.append(123)
 >>> items
-List([I64(1), Symbol('hello'), F64(3.14), B8(True), I64(123)])
+List([I64(333), Symbol('hello'), F64(3.14), B8(True), I64(123)])
 ```

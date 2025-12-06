@@ -11,24 +11,24 @@ To achieve this, library provides instruments to operate with the runtime, along
 Initialise a table using `rayforce.Table`:
 ```python
 >>> from datetime import time
->>> from rayforce import Table
+>>> from rayforce import Table, Vector, Symbol, Time, F64
 
->>> quotes = Table(
-    columns=["symbol", "time", "bid", "ask"],
-    values=[
-        ["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"],
-        [
-            time.fromisoformat("09:00:00.095"),
-            time.fromisoformat("09:00:00.105"),
-            time.fromisoformat("09:00:00.295"),
-            time.fromisoformat("09:00:00.145"),
-            time.fromisoformat("09:00:00.155"),
-            time.fromisoformat("09:00:00.345"),
-        ],
-        [100.0, 101.0, 102.0, 200.0, 201.0, 202.0],
-        [110.0, 111.0, 112.0, 210.0, 211.0, 212.0],
-    ],
-)
+>>> quotes = Table.from_dict({
+        "symbol": Vector(items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"], ray_type=Symbol),
+        "time": Vector(
+            items=[
+                time.fromisoformat("09:00:00.095"),
+                time.fromisoformat("09:00:00.105"),
+                time.fromisoformat("09:00:00.295"),
+                time.fromisoformat("09:00:00.145"),
+                time.fromisoformat("09:00:00.155"),
+                time.fromisoformat("09:00:00.345"),
+            ],
+            ray_type=Time,
+        ),
+        "bid": Vector(items=[100.0, 101.0, 102.0, 200.0, 201.0, 202.0], ray_type=F64),
+        "ask": Vector(items=[110.0, 111.0, 112.0, 210.0, 211.0, 212.0], ray_type=F64),
+    })
 ```
 !!! note ""
     You are able to initialize table in multiple handy ways. See [:material-table-plus: Create a Table](./data-types/table/create.md)
@@ -38,11 +38,11 @@ Then, query the table using `select` statement:
 >>> result = (
     quotes
     .select(
-        max_bid=quotes.bid.max(),
-        min_bid=quotes.bid.min(),
-        avg_ask=quotes.ask.mean(),
-        records_count=quotes.time.count(),
-        first_bid=quotes.time.first(),
+        max_bid=Column("bid").max(),
+        min_bid=Column("bid").min(),
+        avg_ask=Column("ask").mean(),
+        records_count=Column("time").count(),
+        first_bid=Column("time").first(),
     )
     .by("symbol")
     .execute()

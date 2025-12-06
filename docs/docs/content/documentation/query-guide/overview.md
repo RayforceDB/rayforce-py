@@ -11,7 +11,7 @@ All query operations are lazy by default. You must call `.execute()` to run the 
 
 ```python
 # This builds the query but doesn't execute it
->>> query = table.select("id", "name").where(table.age >= 35)
+>>> query = table.select("id", "name").where(Column("age") >= 35)
 # This actually runs the query and returns a Table
 >>> result = query.execute()
 ```
@@ -22,8 +22,8 @@ All query operations are lazy by default. You must call `.execute()` to run the 
 ```python
 >>> result = (
         table.select("id", "name", "salary")
-        .where(table.age >= 30)
-        .where(table.dept == "eng")
+        .where(Column("age") >= 30)
+        .where(Column("dept") == "eng")
         .execute()
     )
 ```
@@ -31,8 +31,8 @@ All query operations are lazy by default. You must call `.execute()` to run the 
 **Complex Conditions**: Use boolean-friendly operators for complex conditions:
 ```python
 >>> result = table.select("id", "name", "salary").where(
-        (table.age >= 30)
-        & (table.salary > 100000)
+        (Column("age") >= 30)
+        & (Column("salary") > 100000)
     ).execute()
 ```
 
@@ -42,7 +42,7 @@ All query operations are lazy by default. You must call `.execute()` to run the 
         "id",
         "price",
         "quantity",
-        total=table.price * table.quantity,
+        total=Column("price") * Column("quantity"),
     ).execute()
 ```
 
@@ -51,8 +51,8 @@ All query operations are lazy by default. You must call `.execute()` to run the 
 >>> result = (
         table
         .select(
-            total=table.salary.sum(),
-            high_earners=table.salary.where(table.salary > 100000).sum(),
+            total=Column("salary").sum(),
+            high_earners=Column("salary").where(Column("salary") > 100000).sum(),
         )
         .by("dept")
         .execute()

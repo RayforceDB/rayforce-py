@@ -18,7 +18,7 @@ Group rows by one or more columns and compute aggregations using `.by()`
         table
         .select(
             "bid",
-            bid_max=table.bid.max()
+            bid_max=Column("bid").max()
         )
         .by("symbol", "level")
         .execute()

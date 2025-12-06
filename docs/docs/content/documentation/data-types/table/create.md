@@ -23,15 +23,15 @@ Create a `Table` from a CSV file by specifying column types and the file path.
 
 ## :material-code-braces: From Python Dictionary
 
-Create a `Table` from a Python dictionary where keys are column names and values are lists of column data.
+Create a `Table` from a Python dictionary where keys are column names and values are Vectors of column data.
 
 ```python
->>> from rayforce import Table
+>>> from rayforce import Table, Vector, I64, F64, Symbol
 >>> table = Table.from_dict(
-        data={
-            "id": [1, 2, 3, 4],
-            "name": ["Alice", "Bob", "Charlie", "Diana"],
-            "score": [95.5, 87.0, 92.5, 88.5]
+        {
+            "id": Vector([1, 2, 3, 4], ray_type=I64),
+            "name": Vector(["Alice", "Bob", "Charlie", "Diana"], ray_type=Symbol),
+            "score": Vector([95.5, 87.0, 92.5, 88.5], ray_type=F64),
         },
     )
 ```
@@ -39,27 +39,3 @@ Create a `Table` from a Python dictionary where keys are column names and values
 !!! note ""
     **data** : `dict[str, list[Any]]`: 
         A dictionary mapping column names (strings) to lists of values. All lists must have the same length, as they represent rows of data. The dictionary keys become the table column names.
-
-
-## :material-crane: Using Table Constructor
-
-Create a `Table` directly by providing column names and values.
-
-```python
->>> from rayforce import Table
->>> table = Table(
-        columns=["id", "name", "active"],
-        values=[
-            [1, 2, 3, 4],
-            ["Alice", "Bob", "Charlie", "Diana"],
-            [True, False, True, False]
-        ]
-    )
-```
-
-!!! note ""
-    **columns** : `list[str]`: 
-        A list of column names (strings) for the new table.
-
-    **values** : `list[list[Any]]`; 
-        A list of column data, where each element is a list representing one column's values. Must have the same length as `columns`. <b>All inner lists has to be of the same length</b>.

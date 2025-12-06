@@ -3,17 +3,17 @@
 The `Table` type represents a structured data table. It consists of columns and rows of data.
 
 ```python
->>> from rayforce import Table
+>>> from rayforce import Table, I64, Symbol, Vector
 
 >>> columns = ["id", "name", "age", "salary"]
 >>> values = [
-        [1, 2, 3, 4, 5],                                   # id column
-        ["Alice", "Bob", "Charlie", "Diana", "Eve"],       # name column  
-        [25, 30, 35, 28, 32],                              # age column
-        [50000, 60000, 70000, 55000, 65000]                # salary column
+        Vector([1, 2, 3, 4, 5], ray_type=I64),  # id column
+        Vector(["Alice", "Bob", "Charlie", "Diana", "Eve"], ray_type=Symbol),  # name column  
+        Vector([25, 30, 35, 28, 32], ray_type=I64),  # age column
+        Vector([50000, 60000, 70000, 55000, 65000], ray_type=I64),  # salary column
     ]
 
->>> employee_table = Table(columns=columns, values=values)
+>>> employee_table = Table.from_dict(dict(zip(columns, values)))
 >>> employee_table
 Table(columns=['id', 'name', 'age', 'salary'])
 
