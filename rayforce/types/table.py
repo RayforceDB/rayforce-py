@@ -1004,8 +1004,6 @@ class UpdateQuery:
                 converted_attrs[key] = value.compile()
             elif isinstance(value, Column):
                 converted_attrs[key] = value.name
-            elif isinstance(value, DictLookup):
-                converted_attrs[key] = value.compile()
             elif isinstance(value, str):
                 converted_attrs[key] = QuotedSymbol(value).ptr
             else:
@@ -1185,17 +1183,6 @@ class UpsertQuery:
         return Table.from_ptr(new_table)
 
 
-class DictLookup(Expression):
-    def __init__(self, dict_obj, key: Column | str):
-        self.dict_obj = dict_obj
-        self.key = key.name if isinstance(key, Column) else key
-        super().__init__(Operation.AT, dict_obj, self.key)
-
-
-def lookup(dict_obj, column: Column | str) -> DictLookup:
-    return DictLookup(dict_obj, column)
-
-
 class TableColumnInterval:
     def __init__(
         self,
@@ -1240,8 +1227,6 @@ __all__ = [
     "UpdateQuery",
     "InsertQuery",
     "UpsertQuery",
-    "DictLookup",
-    "lookup",
     "TableColumnInterval",
 ]
 
