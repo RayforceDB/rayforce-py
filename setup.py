@@ -12,7 +12,7 @@ setup(
     version='0.0.6',
     packages=find_packages(),
     package_data={
-        'rayforce': ['*.so', '*.dylib', '*.pyi'],
+        'rayforce': ['*.so', '*.dylib', '*.pyi', 'bin/rayforce'],
         'rayforce.plugins': ['*.so', '*.dylib'],
     },
     include_package_data=True,
@@ -34,5 +34,6 @@ setup(
         'Programming Language :: Python :: 3.13',
         'Programming Language :: C',
     ],
+    entry_points={'console_scripts': ['rayforce=rayforce.cli:main']},
     distclass=BinaryDistribution,
 )

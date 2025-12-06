@@ -38,6 +38,7 @@ clean-ext:
 		rayforce/_rayforce.c*.so  \
 		rayforce/librayforce.* \
 		rayforce/plugins/libraykx.* \
+		rayforce/bin \
 		build/ \
 		*.egg-info \
 		dist/ && \
@@ -52,9 +53,13 @@ clean: clean-ext
 ext: 
 	@cp rayforce/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cd tmp/rayforce-c && $(MAKE) python
+	@cd tmp/rayforce-c && $(MAKE) release
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
 	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) rayforce/plugins/$(RAYKX_LIB_NAME)
+	@mkdir -p rayforce/bin
+	@cp tmp/rayforce-c/rayforce rayforce/bin/rayforce
+	@chmod +x rayforce/bin/rayforce
 
 all: pull_from_gh patch_makefile ext
 

@@ -5,3 +5,4 @@ recursive-include rayforce *.dylib
 recursive-include rayforce/plugins *.so
 recursive-include rayforce/plugins *.dylib
 recursive-include rayforce *.pyi
+include rayforce/bin/rayforce

@@ -4,6 +4,7 @@
 .mypy_cache
 
 # Binaries
+rayforce/bin/
 rayforce/rayforce/
 rayforce.so
 _rayforce_c.so
@@ -26,3 +27,4 @@ __pycache__
 script.py
 .DS_Store
 docs/site/
+.rayhist.dat

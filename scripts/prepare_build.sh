@@ -10,6 +10,7 @@ PYTHON_VERSION=$($PYTHON_BIN --version 2>&1 | awk '{print $2}')
 echo "Cleaning previous build artifacts..."
 rm -rf "${EXEC_DIR}/tmp/rayforce-c"
 rm -rf "${EXEC_DIR}/rayforce/rayforce"
+rm -rf "${EXEC_DIR}/rayforce/bin"
 rm -rf "${EXEC_DIR}/rayforce/_rayforce_c.so"
 rm -rf "${EXEC_DIR}/rayforce/plugins/libraykx".*
 rm -rf "${EXEC_DIR}/build"
@@ -49,13 +50,18 @@ cp "${EXEC_DIR}/rayforce/rayforce_c.c" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
 make python
+cp "${EXEC_DIR}/tmp/rayforce-c/_rayforce.so" "${EXEC_DIR}/rayforce/_rayforce_c.so"
 
 echo "Building Raykx..."
 cd "${EXEC_DIR}/tmp/rayforce-c/ext/raykx"
 make release
-
-echo "📦 Copying built libraries to package..."
-cp "${EXEC_DIR}/tmp/rayforce-c/_rayforce.so" "${EXEC_DIR}/rayforce/_rayforce_c.so"
 cp "${EXEC_DIR}/tmp/rayforce-c/ext/raykx/libraykx.${LIB_EXT}" "${EXEC_DIR}/rayforce/plugins/libraykx.${LIB_EXT}"
+
+echo "Building Rayforce executable..."
+cd "${EXEC_DIR}/tmp/rayforce-c"
+make release
+mkdir -p "${EXEC_DIR}/rayforce/bin"
+cp "${EXEC_DIR}/tmp/rayforce-c/rayforce" "${EXEC_DIR}/rayforce/bin/rayforce"
+chmod +x "${EXEC_DIR}/rayforce/bin/rayforce"
 
 echo "Build preparation complete!"
