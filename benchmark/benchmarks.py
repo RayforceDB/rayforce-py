@@ -1,4 +1,4 @@
-from rayforce import eval_str
+from rayforce import eval_str, Column
 from timer import time_microseconds
 import polars as pl
 
@@ -14,7 +14,7 @@ class Q1:
         """
 
         def run():
-            return table.select(v1_sum=table.v1.sum()).by("id1").execute()
+            return table.select(v1_sum=Column("v1").sum()).by("id1").execute()
 
         return time_microseconds(run)
 
@@ -75,7 +75,7 @@ class Q2:
         """
 
         def run():
-            return table.select(v1_sum=table.v1.sum()).by("id1", "id2").execute()
+            return table.select(v1_sum=Column("v1").sum()).by("id1", "id2").execute()
 
         return time_microseconds(run)
 
@@ -135,7 +135,7 @@ class Q3:
 
         def run():
             return (
-                table.select(v1_sum=table.v1.sum(), v3_avg=table.v3.mean())
+                table.select(v1_sum=Column("v1").sum(), v3_avg=Column("v3").mean())
                 .by("id3")
                 .execute()
             )
@@ -202,9 +202,9 @@ class Q4:
         def run():
             return (
                 table.select(
-                    v1_avg=table.v1.mean(),
-                    v2_avg=table.v2.mean(),
-                    v3_avg=table.v3.mean(),
+                    v1_avg=Column("v1").mean(),
+                    v2_avg=Column("v2").mean(),
+                    v3_avg=Column("v3").mean(),
                 )
                 .by("id3")
                 .execute()
@@ -277,7 +277,9 @@ class Q5:
         def run():
             return (
                 table.select(
-                    v1_sum=table.v1.sum(), v2_sum=table.v2.sum(), v3_sum=table.v3.sum()
+                    v1_sum=Column("v1").sum(),
+                    v2_sum=Column("v2").sum(),
+                    v3_sum=Column("v3").sum(),
                 )
                 .by("id3")
                 .execute()
@@ -349,7 +351,9 @@ class Q6:
 
         def run():
             return (
-                table.select(range_v1_v2=(table.v1.max() - table.v2.min()))
+                table.select(
+                    range_v1_v2=(Column("v1").max() - Column("v2").min())
+                )
                 .by("id3")
                 .execute()
             )
