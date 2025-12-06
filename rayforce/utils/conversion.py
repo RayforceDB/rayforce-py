@@ -27,7 +27,11 @@ def python_to_ray(value: t.Any, ray_type: RayObject | None = None) -> r.RayObjec
         Table,
     )
 
-    if hasattr(value, "ptr") and isinstance(value.ptr, r.RayObject) and not isinstance(value, Table):
+    if (
+        hasattr(value, "ptr")
+        and isinstance(value.ptr, r.RayObject)
+        and not isinstance(value, Table)
+    ):
         return value.ptr
 
     if ray_type is not None and not isinstance(ray_type, int):

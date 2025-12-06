@@ -1,10 +1,7 @@
 from __future__ import annotations
-from hmac import new
 import typing as t
 from collections.abc import Iterable
-import datetime
 from typing import Any, Callable
-from webbrowser import Opera
 from rayforce.core import FFI
 from rayforce import utils
 from rayforce.types import (
@@ -14,8 +11,6 @@ from rayforce.types import (
     QuotedSymbol,
     String,
     Symbol,
-    Time,
-    Timestamp,
     Vector,
 )
 from rayforce.types.base import RayObject
@@ -265,12 +260,14 @@ class TableQueryMixin:
             on = [on]
 
         return utils.eval_obj(
-            List([
-                type_,
-                Vector(items=on, ray_type=Symbol),
-                self.ptr,
-                other.ptr if isinstance(other, Table) else other
-            ])
+            List(
+                [
+                    type_,
+                    Vector(items=on, ray_type=Symbol),
+                    self.ptr,
+                    other.ptr if isinstance(other, Table) else other,
+                ]
+            )
         )
 
     def _wj(
@@ -294,14 +291,16 @@ class TableQueryMixin:
                 agg_dict[name] = expr
 
         return utils.eval_obj(
-            List([
-                type_,
-                Vector(items=on, ray_type=Symbol),
-                interval.compile(),
-                self.ptr,
-                *[t.ptr for t in join_with],
-                agg_dict,
-            ])
+            List(
+                [
+                    type_,
+                    Vector(items=on, ray_type=Symbol),
+                    interval.compile(),
+                    self.ptr,
+                    *[t.ptr for t in join_with],
+                    agg_dict,
+                ]
+            )
         )
 
     def inner_join(self, other: Table, on: str | list[str]) -> Table:
@@ -341,7 +340,7 @@ class TableQueryMixin:
         )
 
     def update(self, **kwargs) -> UpdateQuery:
-        return UpdateQuery(self.ptr, **kwargs)
+        return UpdateQuery(self, **kwargs)
 
     def insert(self, *args, **kwargs) -> InsertQuery:
         return InsertQuery(self, *args, **kwargs)
@@ -982,132 +981,50 @@ class SelectQueryBuilder:
 
 
 class UpdateQuery:
-    """
-    Query to perform update operation
-    """
-
-    ptr: r.RayObject
-
-    def __init__(self, table: str | Table, **attributes):
-        self._table = table
-        self._attributes = attributes
-        self._where_condition = None
-
-    def __validate(
-        self,
-        update_from: str | SelectQuery | Expression | Table,
-        attributes: dict[str, str | Expression],
-        where: Expression | None = None,
-    ) -> None:
-        self.attr_keys = attributes.keys()
-        self.attr_values = attributes.values()
-
-        if not update_from:
-            raise ValueError("Attribute update_from is required.")
-
-        if where is not None:
-            if not isinstance(where, r.RayObject):
-                raise ValueError("Attribute where should be an Expression.")
-
+    def __init__(self, table: Table, **attributes):
+        self.table = table
         self.attributes = attributes
-        self.update_from = update_from
-        self._where = where
+        self.where_condition = None
 
-    def __build_query(self) -> r.RayObject:
-        from rayforce.types.scalars import Symbol
-
-        length = len(self.attr_keys) + 1 if not self._where else len(self.attr_keys) + 2
-        self._query_keys = FFI.init_vector(type_code=Symbol.type_code, length=length)
-        self._query_values = FFI.init_list()
-
-        for idx, key in enumerate(self.attr_keys):
-            # Fill query keys with requested attributes
-            FFI.insert_obj(
-                iterable=self._query_keys,
-                idx=idx,
-                ptr=utils.python_to_ray(key),
-            )
-        else:
-            # Push "from" keyword to query keys
-            FFI.insert_obj(
-                iterable=self._query_keys,
-                idx=len(self.attr_keys),
-                ptr=utils.python_to_ray("from"),
-            )
-
-        for value in self.attr_values:
-            # Fill query values with requested attributes
-            FFI.push_obj(
-                iterable=self._query_values,
-                ptr=utils.python_to_ray(value),
-            )
-        else:
-            # Push "from" value to query values
-            if isinstance(self.update_from, str):
-                from rayforce.types.scalars import QuotedSymbol
-
-                key = QuotedSymbol(self.update_from)
-                FFI.push_obj(iterable=self._query_values, ptr=key.ptr)
-            else:
-                FFI.push_obj(
-                    iterable=self._query_values,
-                    ptr=utils.python_to_ray(self.update_from),
-                )
-
-        if self._where is not None:
-            FFI.insert_obj(
-                iterable=self._query_keys,
-                idx=len(self.attr_keys) + 1,
-                ptr=utils.python_to_ray("where"),
-            )
-            FFI.push_obj(
-                iterable=self._query_values,
-                ptr=self._where,
-            )
-
-        self.ptr = FFI.init_dict(self._query_keys, self._query_values)
-
-    def where(self, condition: Expression | Callable) -> UpdateQuery:
-        if callable(condition):
-            temp = Table._create_proxy(self._table)
-            condition = condition(temp)
-        self._where_condition = condition
+    def where(self, condition: Expression) -> UpdateQuery:
+        self.where_condition = condition
         return self
 
-    def execute(self) -> Table | bool | str:
+    def execute(self) -> Table:
         where_expr = None
-        if self._where_condition:
-            if isinstance(self._where_condition, Expression):
-                where_expr = self._where_condition.compile()
+        if self.where_condition:
+            if isinstance(self.where_condition, Expression):
+                where_expr = self.where_condition.compile()
             else:
-                where_expr = self._where_condition
+                where_expr = self.where_condition
 
         converted_attrs = {}
-        for key, value in self._attributes.items():
+        for key, value in self.attributes.items():
             if isinstance(value, Expression):
                 converted_attrs[key] = value.compile()
             elif isinstance(value, Column):
                 converted_attrs[key] = value.name
             elif isinstance(value, DictLookup):
                 converted_attrs[key] = value.compile()
+            elif isinstance(value, str):
+                converted_attrs[key] = QuotedSymbol(value).ptr
             else:
                 converted_attrs[key] = value
 
-        table_obj = utils.python_to_ray(self._table)
-        cloned_table = FFI.quote(table_obj)
-        cloned_table_python = utils.ray_to_python(cloned_table)
+        query_items = dict(converted_attrs)
+        if self.table.is_reference:
+            cloned_table = FFI.quote(self.table.ptr)
+            query_items["from"] = cloned_table
+        else:
+            query_items["from"] = self.table.ptr
 
-        self.__validate(
-            update_from=cloned_table_python,
-            attributes=converted_attrs,
-            where=where_expr,
-        )
-        self.__build_query()
+        if where_expr is not None:
+            query_items["where"] = where_expr
 
-        return utils.ray_to_python(FFI.update(query=self.ptr))
-
-    def __repr__(self) -> str:
-        return f"UpdateQuery(set={list(self._attributes.keys())}, where={self._where_condition is not None})"
+        new_table = FFI.update(query=Dict(query_items).ptr)
+        if self.table.is_reference:
+            return Table.from_name(Symbol(ptr=new_table).value)
+        return Table.from_ptr(new_table)
 
 
 class InsertQuery:

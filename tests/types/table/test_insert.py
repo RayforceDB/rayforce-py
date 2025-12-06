@@ -45,7 +45,9 @@ def test_insert_single_row_args(is_inplace):
         result = table.insert("003", "charlie", 41).execute()
     else:
         table.save("test_insert_table")
-        result = Table.from_name("test_insert_table").insert("003", "charlie", 41).execute()
+        result = (
+            Table.from_name("test_insert_table").insert("003", "charlie", 41).execute()
+        )
 
     assert isinstance(result, Table)
 
