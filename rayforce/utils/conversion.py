@@ -4,6 +4,7 @@ import datetime as dt
 import uuid
 
 from rayforce import _rayforce_c as r
+from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
 
@@ -11,10 +12,7 @@ from rayforce.types.registry import TypeRegistry
 class RayConversionError(Exception): ...
 
 
-def python_to_ray(value: t.Any) -> r.RayObject:
-    if hasattr(value, "ptr") and isinstance(value.ptr, r.RayObject):
-        return value.ptr
-
+def python_to_ray(value: t.Any, ray_type: RayObject | None = None) -> r.RayObject:
     from rayforce.types import (
         I64,
         F64,
@@ -26,7 +24,14 @@ def python_to_ray(value: t.Any) -> r.RayObject:
         GUID,
         List,
         Dict,
+        Table,
     )
+
+    if hasattr(value, "ptr") and isinstance(value.ptr, r.RayObject) and not isinstance(value, Table):
+        return value.ptr
+
+    if ray_type is not None and not isinstance(ray_type, int):
+        return ray_type(value).ptr
 
     if isinstance(value, r.RayObject):
         return value

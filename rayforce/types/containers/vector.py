@@ -57,7 +57,9 @@ class Vector(Container):
             length=len(value),
         )
         for idx, item in enumerate(value):
-            FFI.insert_obj(vec_ptr, idx, python_to_ray(item))
+            FFI.insert_obj(
+                vec_ptr, idx, python_to_ray(item, ray_type=self._element_ray_type)
+            )
 
         return vec_ptr
 
@@ -115,10 +117,7 @@ class String(Vector):
             self.ptr = value.ptr
 
         elif value is not None:
-            super().__init__(
-                ray_type=String,
-                items=[FFI.init_c8(i) for i in value],
-            )
+            super().__init__(ray_type=String, ptr=FFI.init_string(value))
 
         else:
             super().__init__(ptr=ptr)

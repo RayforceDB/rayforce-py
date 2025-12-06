@@ -1,12 +1,15 @@
 import pytest
-from rayforce import Table
+from rayforce import Table, Vector, Symbol, I64
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_upsert_single_row_kwargs(is_inplace):
-    table = Table(
-        columns=["id", "name", "age"],
-        values=[["001", "002"], ["alice", "bob"], [29, 34]],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        },
     )
 
     if is_inplace:
@@ -16,7 +19,7 @@ def test_upsert_single_row_kwargs(is_inplace):
     else:
         table.save("test_upsert_table")
         result = (
-            Table.get("test_upsert_table")
+            Table.from_name("test_upsert_table")
             .upsert(id="001", name="alice_updated", age=30, match_by_first=1)
             .execute()
         )
@@ -31,9 +34,12 @@ def test_upsert_single_row_kwargs(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_upsert_single_row_args(is_inplace):
-    table = Table(
-        columns=["id", "name", "age"],
-        values=[["001", "002"], ["alice", "bob"], [29, 34]],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        },
     )
 
     if is_inplace:
@@ -41,7 +47,7 @@ def test_upsert_single_row_args(is_inplace):
     else:
         table.save("test_upsert_table")
         result = (
-            Table.get("test_upsert_table")
+            Table.from_name("test_upsert_table")
             .upsert("001", "alice_updated", 30, match_by_first=1)
             .execute()
         )
@@ -56,9 +62,12 @@ def test_upsert_single_row_args(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_upsert_multiple_rows_kwargs(is_inplace):
-    table = Table(
-        columns=["id", "name", "age"],
-        values=[["001", "002"], ["alice", "bob"], [29, 34]],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        },
     )
 
     if is_inplace:
@@ -71,7 +80,7 @@ def test_upsert_multiple_rows_kwargs(is_inplace):
     else:
         table.save("test_upsert_multi")
         result = (
-            Table.get("test_upsert_multi")
+            Table.from_name("test_upsert_multi")
             .upsert(
                 id=["001", "003"],
                 name=["alice_new", "charlie"],
@@ -93,9 +102,12 @@ def test_upsert_multiple_rows_kwargs(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_upsert_multiple_rows_args(is_inplace):
-    table = Table(
-        columns=["id", "name", "age"],
-        values=[["001", "002"], ["alice", "bob"], [29, 34]],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        },
     )
 
     if is_inplace:
@@ -108,7 +120,7 @@ def test_upsert_multiple_rows_args(is_inplace):
     else:
         table.save("test_upsert_multi")
         result = (
-            Table.get("test_upsert_multi")
+            Table.from_name("test_upsert_multi")
             .upsert(
                 ["001", "003"],
                 ["alice_new", "charlie"],
