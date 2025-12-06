@@ -13,12 +13,6 @@
 
 ![RayforcePy Benchmarks](docs/docs/assets/benchmark.png)
 
-## 📦 Installation
-
-Package is available on [Pypi](https://pypi.org/project/rayforce-py/0.0.6/)
-```bash
-pip install rayforce-py
-```
 
 ## 🚀 Quick Start
 
@@ -65,6 +59,24 @@ pip install rayforce-py
 ├────────┴─────────┴─────────┴─────────┴───────────────┴──────────────┤
 │ 1 rows (1 shown) 6 columns (6 shown)                                │
 └─────────────────────────────────────────────────────────────────────┘
+```
+
+## 📦 Installation
+
+Package is available on [Pypi](https://pypi.org/project/rayforce-py/0.0.6/)
+```bash
+pip install rayforce-py
+```
+
+This will also add a handy command to call native Rayforce runtime from anywhere:
+```clj
+~ $ rayforce
+Launching Rayforce...
+  RayforceDB: 0.1 Dec  6 2025
+  Documentation: https://rayforcedb.com/
+  Github: https://github.com/RayforceDB/rayforce
+↪ (+ 1 2)
+3
 ```
 
 **Full documentation available at:** https://raypy.rayforcedb.com/
