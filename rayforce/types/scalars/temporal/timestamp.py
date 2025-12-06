@@ -10,7 +10,7 @@ from rayforce.types import exceptions
 epoch2000_py = dt.datetime(2000, 1, 1, tzinfo=dt.timezone.utc)
 
 
-def _datetime_to_ns(obj: dt.datetime) -> int:
+def _datetime_to_ns(obj: dt.timedelta) -> int:
     return (
         obj.days * 24 * 3600 * 1_000_000_000
         + obj.seconds * 1_000_000_000

@@ -70,7 +70,7 @@ class KDBConnection:
         FFI.push_obj(obj, FFI.init_string(query))
         return FFI.eval_obj(obj)
 
-    def __close_kdb_connection(self) -> r.RayObject:
+    def __close_kdb_connection(self) -> None:
         obj = FFI.init_list()
         FFI.push_obj(obj, _fn_hclose)
         FFI.push_obj(obj, self.ptr)

@@ -8,15 +8,12 @@ from rayforce.types import exceptions
 
 
 class Vector(Container):
-    type_code: int | None = None
-    ray_name: str | None = None
-
     def __init__(
         self,
-        items: t.Sequence[t.Any] = None,
+        items: t.Sequence[t.Any] | None = None,
         *,
         ptr: r.RayObject | None = None,
-        ray_type: RayObject | int | None = None,
+        ray_type: type[RayObject] | int | None = None,
         length: int | None = None,
     ):
         self._element_ray_type = ray_type
@@ -33,7 +30,8 @@ class Vector(Container):
             self.ptr = self._create_from_value(items)
 
         elif length is not None and ray_type is not None:
-            self.ptr = FFI.init_vector(ray_type.type_code, length)
+            type_code = ray_type if isinstance(ray_type, int) else ray_type.type_code
+            self.ptr = FFI.init_vector(type_code, length)
 
         else:
             raise exceptions.RayInitException(
@@ -58,7 +56,9 @@ class Vector(Container):
         )
         for idx, item in enumerate(value):
             FFI.insert_obj(
-                vec_ptr, idx, python_to_ray(item, ray_type=self._element_ray_type)
+                vec_ptr,
+                idx,
+                python_to_ray(item, ray_type=self._element_ray_type),  # type: ignore [arg-type]
             )
 
         return vec_ptr
@@ -122,5 +122,5 @@ class String(Vector):
         else:
             super().__init__(ptr=ptr)
 
-    def to_python(self) -> str:
+    def to_python(self) -> str:  # type: ignore[override]
         return "".join(i.value for i in self)

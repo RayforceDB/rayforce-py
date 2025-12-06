@@ -1,7 +1,6 @@
 from __future__ import annotations
 import typing as t
 from collections.abc import Iterable
-from typing import Any
 from rayforce.core import FFI
 from rayforce import utils
 from rayforce.types import (
@@ -17,6 +16,14 @@ from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce import _rayforce_c as r
 from rayforce.types.registry import TypeRegistry
+
+
+class _TableProtocol(t.Protocol):
+    _ptr: r.RayObject | str
+    is_reference: bool
+
+    @property
+    def ptr(self) -> r.RayObject: ...
 
 
 class AggregationMixin:
@@ -57,7 +64,8 @@ class AggregationMixin:
             return Expression(Operation.EVAL, self)
         return Expression(Operation.EVAL, Expression(Operation.NOT, self))
 
-    def isin(self, values: list[Any]) -> Expression:
+    def isin(self, values: list[t.Any]) -> Expression:
+        vec: Vector | List
         if values and isinstance(values[0], str):
             vec = Vector(ray_type=Symbol, items=[QuotedSymbol(v) for v in values])
         else:
@@ -88,10 +96,10 @@ class OperatorMixin:
     def __mod__(self, other) -> Expression:
         return Expression(Operation.MODULO, self, other)
 
-    def __eq__(self, other) -> Expression:
+    def __eq__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.EQUALS, self, other)
 
-    def __ne__(self, other) -> Expression:
+    def __ne__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.NOT_EQUALS, self, other)
 
     def __lt__(self, other) -> Expression:
@@ -141,7 +149,7 @@ class Expression(AggregationMixin, OperatorMixin):
             ).ptr
 
         # Standard expression compilation
-        converted_operands = []
+        converted_operands: list[t.Any] = []
         for operand in self.operands:
             if isinstance(operand, Expression):
                 converted_operands.append(operand.compile())
@@ -166,6 +174,9 @@ class Column(AggregationMixin, OperatorMixin):
 
 
 class TableInitMixin:
+    _ptr: r.RayObject | str
+    type_code: int
+
     def __init__(
         self,
         ptr: r.RayObject | str,
@@ -201,7 +212,7 @@ class TableInitMixin:
     def from_dict(cls, items: dict[str, Vector]) -> t.Self:
         return cls.from_ptr(
             FFI.init_table(
-                columns=Vector(items=items.keys(), ray_type=Symbol).ptr,
+                columns=Vector(items=items.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
                 values=List(items.values()).ptr,
             ),
         )
@@ -225,6 +236,16 @@ class TableInitMixin:
 
 
 class TableIOMixin:
+    _ptr: r.RayObject | str
+
+    if t.TYPE_CHECKING:
+
+        @property
+        def ptr(self) -> r.RayObject: ...
+
+        @property
+        def evaled_ptr(self) -> r.RayObject: ...
+
     def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
@@ -243,15 +264,24 @@ class TableIOMixin:
 class TableValueAccessorMixin:
     _ptr: r.RayObject | str
 
-    def columns(self) -> Any:
+    if t.TYPE_CHECKING:
+
+        @property
+        def evaled_ptr(self) -> r.RayObject: ...
+
+    def columns(self) -> Vector:
         return utils.ray_to_python(FFI.get_table_keys(self.evaled_ptr))
 
-    def values(self) -> Any:
+    def values(self) -> List:
         return utils.ray_to_python(FFI.get_table_values(self.evaled_ptr))
 
 
 class TableReprMixin:
     _ptr: r.RayObject | str
+
+    if t.TYPE_CHECKING:
+
+        def columns(self) -> Vector: ...
 
     def __str__(self) -> str:
         if isinstance(self._ptr, str):
@@ -266,13 +296,20 @@ class TableReprMixin:
 
 
 class TableOrderByMixin:
-    def xasc(self, *cols: Iterable[Column]) -> Table:
+    _ptr: r.RayObject | str
+
+    if t.TYPE_CHECKING:
+
+        @property
+        def evaled_ptr(self) -> r.RayObject: ...
+
+    def xasc(self, *cols: Column) -> Table:
         _cols = [c.name for c in cols]
         return utils.eval_obj(
             List([Operation.XASC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
         )
 
-    def xdesc(self, *cols: Iterable[Column]) -> Table:
+    def xdesc(self, *cols: Column) -> Table:
         _cols = [c.name for c in cols]
         return utils.eval_obj(
             List([Operation.XDESC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
@@ -281,6 +318,15 @@ class TableOrderByMixin:
 
 class TableQueryMixin:
     _ptr: r.RayObject | str
+
+    if t.TYPE_CHECKING:
+        is_reference: bool
+
+        @property
+        def ptr(self) -> r.RayObject: ...
+
+        @classmethod
+        def from_ptr(cls, ptr: r.RayObject) -> t.Self: ...
 
     def select(self, *cols, **computed_cols) -> SelectQuery:
         return SelectQuery(table=self).select(*cols, **computed_cols)
@@ -300,7 +346,7 @@ class TableQueryMixin:
     def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
         return UpsertQuery(self, *args, match_by_first=match_by_first, **kwargs)
 
-    def concat(self, *others: Table) -> Table:
+    def concat(self, *others: Table) -> _TableProtocol:
         result = self.ptr
         for other in others:
             expr = Expression(Operation.CONCAT, result, other.ptr)
@@ -316,7 +362,7 @@ class TableQueryMixin:
     def window_join(
         self,
         on: list[str],
-        join_with: list[Any],
+        join_with: list[t.Any],
         interval: TableColumnInterval,
         **aggregations,
     ) -> Table:
@@ -331,7 +377,7 @@ class TableQueryMixin:
     def window_join1(
         self,
         on: list[str],
-        join_with: list[Any],
+        join_with: list[t.Any],
         interval: TableColumnInterval,
         **aggregations,
     ) -> Table:
@@ -372,7 +418,7 @@ class TableQueryMixin:
         if type_ not in (Operation.WINDOW_JOIN, Operation.WINDOW_JOIN1):
             raise AssertionError("_wj performed only on WJ or WJ1")
 
-        agg_dict = {}
+        agg_dict: dict[str, t.Any] = {}
         for name, expr in aggregations.items():
             if isinstance(expr, Expression):
                 agg_dict[name] = expr.compile()
@@ -411,15 +457,17 @@ class Table(
 class SelectQuery:
     def __init__(
         self,
-        table: Table,
-        select_cols: tuple[Any] | None = None,
+        table: _TableProtocol,
+        select_cols: tuple[t.Any, t.Any] | None = None,
         where_conditions: list[Expression] | None = None,
-        by_cols: dict[str, Expression | str] | None = None,
+        by_cols: tuple[tuple[t.Any, ...], dict[str, t.Any]] | None = None,
     ):
         self.table = table
         self._select_cols = select_cols
         self._where_conditions = where_conditions or []
-        self._by_cols = by_cols or {}
+        self._by_cols: tuple[tuple[t.Any, ...], dict[str, t.Any]] = (
+            by_cols if by_cols is not None else ((), {})
+        )
         self._ptr: r.RayObject | None = None
 
     def select(self, *cols, **computed_cols) -> SelectQuery:
@@ -430,7 +478,7 @@ class SelectQuery:
             by_cols=self._by_cols,
         )
 
-    def where(self, condition: Expression) -> "SelectQuery":
+    def where(self, condition: Expression) -> SelectQuery:
         new_conditions = self._where_conditions.copy()
         new_conditions.append(condition)
         return SelectQuery(
@@ -440,7 +488,7 @@ class SelectQuery:
             by_cols=self._by_cols,
         )
 
-    def by(self, *cols, **computed_cols) -> "SelectQuery":
+    def by(self, *cols, **computed_cols) -> SelectQuery:
         return SelectQuery(
             table=self.table,
             select_cols=self._select_cols,
@@ -481,7 +529,7 @@ class SelectQuery:
                 combined = combined & cond
             where_expr = combined
 
-        if self._by_cols:
+        if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
             by_attributes = {}
             cols, computed = self._by_cols
 
@@ -517,10 +565,10 @@ class SelectQuery:
 
 
 class UpdateQuery:
-    def __init__(self, table: Table, **attributes):
+    def __init__(self, table: _TableProtocol, **attributes):
         self.table = table
         self.attributes = attributes
-        self.where_condition = None
+        self.where_condition: Expression | None = None
 
     def where(self, condition: Expression) -> UpdateQuery:
         self.where_condition = condition
@@ -534,7 +582,7 @@ class UpdateQuery:
             else:
                 where_expr = self.where_condition
 
-        converted_attrs = {}
+        converted_attrs: dict[str, t.Any] = {}
         for key, value in self.attributes.items():
             if isinstance(value, Expression):
                 converted_attrs[key] = value.compile()
@@ -562,7 +610,7 @@ class UpdateQuery:
 
 
 class InsertQuery:
-    def __init__(self, table: Table, *args, **kwargs):
+    def __init__(self, table: _TableProtocol, *args, **kwargs):
         self.table = table
         self.args = args
         self.kwargs = kwargs
@@ -628,7 +676,9 @@ class InsertQuery:
 
 
 class UpsertQuery:
-    def __init__(self, table: Table, *args, match_by_first: int, **kwargs) -> None:
+    def __init__(
+        self, table: _TableProtocol, *args, match_by_first: int, **kwargs
+    ) -> None:
         self.table = table
         self.args = args
         self.kwargs = kwargs
@@ -724,7 +774,7 @@ class TableColumnInterval:
         self,
         lower: int,
         upper: int,
-        table: str | Table,
+        table: Table,
         column: str | Column,
     ) -> None:
         self.lower = lower
@@ -763,4 +813,4 @@ __all__ = [
     "TableColumnInterval",
 ]
 
-TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)
+TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)  # type: ignore[arg-type]

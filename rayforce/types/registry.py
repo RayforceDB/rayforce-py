@@ -25,11 +25,11 @@ class TypeRegistry:
         cls._types[type_code] = type_class
 
     @classmethod
-    def get(cls, type_code: int) -> type[RayObject] | None:
+    def get(cls, type_code: int) -> type[RayObject | Operation] | None:
         return cls._types.get(type_code)
 
     @classmethod
-    def from_ptr(cls, ptr: r.RayObject) -> RayObject:
+    def from_ptr(cls, ptr: r.RayObject) -> RayObject | Operation:
         """
         IMPORTANT: Vectors have POSITIVE type codes, Scalars have NEGATIVE type codes
         If type_code > 0: it's a VECTOR (e.g., 3 = I16 vector, 6 = Symbol vector)
@@ -37,11 +37,14 @@ class TypeRegistry:
         """
 
         if not isinstance(ptr, r.RayObject):
-            raise Exception(f"Expected RayObject, got {type(ptr)}")
+            raise TypeError(f"Expected RayObject, got {type(ptr)}")
 
         type_code = ptr.get_obj_type()
         if type_code in (r.TYPE_UNARY, r.TYPE_BINARY, r.TYPE_VARY):
             type_class = cls._types.get(type_code)
+
+            if not type_class:
+                raise TypeError(f"Unregistered type: {type_code}")
 
             # TODO: Add lambda parsing here when lambdas are introduced
 
@@ -53,16 +56,16 @@ class TypeRegistry:
             if type_code == r.TYPE_C8:
                 return String(ptr=ptr)
 
-            return Vector(ptr=ptr, ray_type=cls._types.get(-type_code))
+            return Vector(ptr=ptr, ray_type=cls._types.get(-type_code))  # type: ignore[arg-type]
 
         type_class = cls._types.get(type_code)
 
         if type_class is None:
-            raise Exception(
+            raise TypeError(
                 f"Unknown type code {type_code}. Type not registered in TypeRegistry."
             )
 
-        return type_class(ptr=ptr)
+        return type_class(ptr=ptr)  # type: ignore
 
     @classmethod
     def is_registered(cls, type_code: int) -> bool:

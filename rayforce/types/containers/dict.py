@@ -27,7 +27,7 @@ class Dict(Container):
         from rayforce.types import Symbol
 
         return FFI.init_dict(
-            keys=Vector(items=value.keys(), ray_type=Symbol).ptr,
+            keys=Vector(items=list(value.keys()), ray_type=Symbol).ptr,
             values=List([v for v in value.values()]).ptr,
         )
 
@@ -37,8 +37,8 @@ class Dict(Container):
             if hasattr(v, "to_python")
             else v
             for k, v in zip(
-                TypeRegistry.from_ptr(FFI.get_dict_keys(self.ptr)),
-                TypeRegistry.from_ptr(FFI.get_dict_values(self.ptr)),
+                TypeRegistry.from_ptr(FFI.get_dict_keys(self.ptr)),  # type: ignore[arg-type]
+                TypeRegistry.from_ptr(FFI.get_dict_values(self.ptr)),  # type: ignore[arg-type]
             )
         }
 

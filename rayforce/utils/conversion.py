@@ -12,7 +12,7 @@ from rayforce.types.registry import TypeRegistry
 class RayConversionError(Exception): ...
 
 
-def python_to_ray(value: t.Any, ray_type: RayObject | None = None) -> r.RayObject:
+def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.RayObject:
     from rayforce.types import (
         I64,
         F64,
