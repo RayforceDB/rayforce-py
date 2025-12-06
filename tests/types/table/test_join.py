@@ -1,29 +1,30 @@
-from rayforce import Table, TableColumnInterval
+from rayforce import Table, TableColumnInterval, Vector, Symbol, I64, F64, Column
 from rayforce.types.scalars import Time
 
 
 def test_inner_join():
-    trades = Table(
-        columns=["Sym", "Ts", "Price"],
-        values=[
-            ["AAPL", "AAPL", "GOOGL", "GOOGL"],
-            [
-                Time("09:00:29.998"),
-                Time("09:00:20.998"),
-                Time("09:00:10.998"),
-                Time("09:00:00.998"),
-            ],
-            [100, 200, 300, 400],
-        ],
+    trades = Table.from_dict(
+        {
+            "Sym": Vector(items=["AAPL", "AAPL", "GOOGL", "GOOGL"], ray_type=Symbol),
+            "Ts": Vector(
+                items=[
+                    Time("09:00:29.998"),
+                    Time("09:00:20.998"),
+                    Time("09:00:10.998"),
+                    Time("09:00:00.998"),
+                ],
+                ray_type=Time,
+            ),
+            "Price": Vector(items=[100, 200, 300, 400], ray_type=I64),
+        },
     )
 
-    quotes = Table(
-        columns=["Sym", "Bid", "Ask"],
-        values=[
-            ["AAPL", "GOOGL"],
-            [50, 100],
-            [75, 150],
-        ],
+    quotes = Table.from_dict(
+        {
+            "Sym": Vector(items=["AAPL", "GOOGL"], ray_type=Symbol),
+            "Bid": Vector(items=[50, 100], ray_type=I64),
+            "Ask": Vector(items=[75, 150], ray_type=I64),
+        },
     )
 
     result = trades.inner_join(quotes, "Sym")
@@ -32,12 +33,13 @@ def test_inner_join():
     assert isinstance(result, Table)
 
     # Should have all columns from both tables
-    assert len(result.columns) == 5
-    assert "Sym" in result.columns
-    assert "Ts" in result.columns
-    assert "Price" in result.columns
-    assert "Bid" in result.columns
-    assert "Ask" in result.columns
+    columns = result.columns()
+    assert len(columns) == 5
+    assert "Sym" in columns
+    assert "Ts" in columns
+    assert "Price" in columns
+    assert "Bid" in columns
+    assert "Ask" in columns
 
     # Should have 4 rows (2 AAPL trades + 2 GOOGL trades)
     values = result.values()
@@ -46,9 +48,10 @@ def test_inner_join():
 
     # Verify AAPL trades are matched with AAPL quote (Bid=50, Ask=75)
     # Verify GOOGL trades are matched with GOOGL quote (Bid=100, Ask=150)
-    sym_col = values[result.columns.index("Sym")]
-    bid_col = values[result.columns.index("Bid")]
-    ask_col = values[result.columns.index("Ask")]
+    cols = list(result.columns())
+    sym_col = values[cols.index("Sym")]
+    bid_col = values[cols.index("Bid")]
+    ask_col = values[cols.index("Ask")]
 
     for i in range(len(sym_col)):
         sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
@@ -64,26 +67,27 @@ def test_inner_join():
 
 
 def test_left_join():
-    trades = Table(
-        columns=["Sym", "Ts", "Price"],
-        values=[
-            ["AAPL", "GOOGL", "MSFT"],
-            [
-                Time("09:00:10.000"),
-                Time("09:00:20.000"),
-                Time("09:00:30.000"),
-            ],
-            [100, 200, 300],
-        ],
+    trades = Table.from_dict(
+        {
+            "Sym": Vector(items=["AAPL", "GOOGL", "MSFT"], ray_type=Symbol),
+            "Ts": Vector(
+                items=[
+                    Time("09:00:10.000"),
+                    Time("09:00:20.000"),
+                    Time("09:00:30.000"),
+                ],
+                ray_type=Time,
+            ),
+            "Price": Vector(items=[100, 200, 300], ray_type=I64),
+        },
     )
 
-    quotes = Table(
-        columns=["Sym", "Bid", "Ask"],
-        values=[
-            ["AAPL", "GOOGL"],
-            [50, 100],
-            [75, 150],
-        ],
+    quotes = Table.from_dict(
+        {
+            "Sym": Vector(items=["AAPL", "GOOGL"], ray_type=Symbol),
+            "Bid": Vector(items=[50, 100], ray_type=I64),
+            "Ask": Vector(items=[75, 150], ray_type=I64),
+        },
     )
 
     result = trades.left_join(quotes, "Sym")
@@ -92,21 +96,23 @@ def test_left_join():
     assert isinstance(result, Table)
 
     # Should have all columns from both tables
-    assert len(result.columns) == 5
-    assert "Sym" in result.columns
-    assert "Ts" in result.columns
-    assert "Price" in result.columns
-    assert "Bid" in result.columns
-    assert "Ask" in result.columns
+    columns = result.columns()
+    assert len(columns) == 5
+    assert "Sym" in columns
+    assert "Ts" in columns
+    assert "Price" in columns
+    assert "Bid" in columns
+    assert "Ask" in columns
 
     values = result.values()
     # Should have 3 rows (all trades, including unmatched MSFT)
     assert len(values) == 5
     assert len(values[0]) == 3
 
-    sym_col = values[result.columns.index("Sym")]
-    bid_col = values[result.columns.index("Bid")]
-    ask_col = values[result.columns.index("Ask")]
+    cols = list(result.columns())
+    sym_col = values[cols.index("Sym")]
+    bid_col = values[cols.index("Bid")]
+    ask_col = values[cols.index("Ask")]
 
     seen_syms = set()
     for i in range(len(sym_col)):
@@ -132,46 +138,59 @@ def test_left_join():
 
 def test_window_join():
     # Create trades table
-    trades = Table(
-        columns=["sym", "time", "price"],
-        values=[
-            ["AAPL", "GOOG"],
-            [
-                Time("09:00:00.100"),  # 100ms
-                Time("09:00:00.100"),  # 100ms
-            ],
-            [150.0, 200.0],
-        ],
+    trades = Table.from_dict(
+        {
+            "sym": Vector(items=["AAPL", "GOOG"], ray_type=Symbol),
+            "time": Vector(
+                items=[
+                    Time("09:00:00.100"),  # 100ms
+                    Time("09:00:00.100"),  # 100ms
+                ],
+                ray_type=Time,
+            ),
+            "price": Vector(items=[150.0, 200.0], ray_type=F64),
+        },
     )
 
     # Create quotes within and outside the window
     # For trade at 100ms with window ±10ms (90ms to 110ms):
     # AAPL quotes: 90ms (bid=99), 95ms (bid=100), 105ms (bid=101), 110ms (bid=102)
     # GOOG quotes: 90ms (bid=199), 95ms (bid=200), 105ms (bid=201), 110ms (bid=202)
-    quotes = Table(
-        columns=["sym", "time", "bid", "ask"],
-        values=[
-            ["AAPL", "AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG", "GOOG"],
-            [
-                Time("09:00:00.090"),
-                Time("09:00:00.095"),
-                Time("09:00:00.105"),
-                Time("09:00:00.110"),
-                Time("09:00:00.090"),
-                Time("09:00:00.095"),
-                Time("09:00:00.105"),
-                Time("09:00:00.110"),
-            ],
-            [99.0, 100.0, 101.0, 102.0, 199.0, 200.0, 201.0, 202.0],
-            [109.0, 110.0, 111.0, 112.0, 209.0, 210.0, 211.0, 212.0],
-        ],
+    quotes = Table.from_dict(
+        {
+            "sym": Vector(
+                items=["AAPL", "AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG", "GOOG"],
+                ray_type=Symbol,
+            ),
+            "time": Vector(
+                items=[
+                    Time("09:00:00.090"),
+                    Time("09:00:00.095"),
+                    Time("09:00:00.105"),
+                    Time("09:00:00.110"),
+                    Time("09:00:00.090"),
+                    Time("09:00:00.095"),
+                    Time("09:00:00.105"),
+                    Time("09:00:00.110"),
+                ],
+                ray_type=Time,
+            ),
+            "bid": Vector(
+                items=[99.0, 100.0, 101.0, 102.0, 199.0, 200.0, 201.0, 202.0],
+                ray_type=F64,
+            ),
+            "ask": Vector(
+                items=[109.0, 110.0, 111.0, 112.0, 209.0, 210.0, 211.0, 212.0],
+                ray_type=F64,
+            ),
+        },
     )
 
     interval = TableColumnInterval(
         lower=-10,
         upper=10,
         table=trades,
-        column=trades.time,
+        column=Column("time"),
     )
 
     # Use window_join (wj)
@@ -179,21 +198,23 @@ def test_window_join():
         on=["sym", "time"],
         interval=interval,
         join_with=[quotes],
-        min_bid=quotes.bid.min(),
-        max_ask=quotes.ask.max(),
+        min_bid=Column("bid").min(),
+        max_ask=Column("ask").max(),
     )
 
     # Verify result structure
     assert isinstance(result, Table)
-    assert "min_bid" in result.columns
-    assert "max_ask" in result.columns
+    columns = result.columns()
+    assert "min_bid" in columns
+    assert "max_ask" in columns
 
     values = result.values()
     assert len(values[0]) == 2  # 2 trades
 
-    min_bid_idx = result.columns.index("min_bid")
-    max_ask_idx = result.columns.index("max_ask")
-    sym_idx = result.columns.index("sym")
+    cols = list(result.columns())
+    min_bid_idx = cols.index("min_bid")
+    max_ask_idx = cols.index("max_ask")
+    sym_idx = cols.index("sym")
 
     min_bid_col = values[min_bid_idx]
     max_ask_col = values[max_ask_idx]
@@ -219,68 +240,93 @@ def test_window_join():
 
 
 def test_window_join1():
-    trades = Table(
-        columns=["sym", "time", "price"],
-        values=[
-            ["AAPL", "AAPL", "GOOG", "GOOG"],
-            [
-                Time("09:00:00.100"),  # 100ms
-                Time("09:00:00.300"),  # 300ms
-                Time("09:00:00.150"),  # 150ms
-                Time("09:00:00.350"),  # 350ms
-            ],
-            [150.0, 151.0, 200.0, 202.0],
-        ],
+    trades = Table.from_dict(
+        {
+            "sym": Vector(items=["AAPL", "AAPL", "GOOG", "GOOG"], ray_type=Symbol),
+            "time": Vector(
+                items=[
+                    Time("09:00:00.100"),  # 100ms
+                    Time("09:00:00.300"),  # 300ms
+                    Time("09:00:00.150"),  # 150ms
+                    Time("09:00:00.350"),  # 350ms
+                ],
+                ray_type=Time,
+            ),
+            "price": Vector(items=[150.0, 151.0, 200.0, 202.0], ray_type=F64),
+        },
     )
 
-    quotes = Table(
-        columns=["sym", "time", "bid", "ask"],
-        values=[
-            ["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"],
-            [
-                Time("09:00:00.095"),  # 95ms - within window of AAPL trade at 100ms
-                Time("09:00:00.105"),  # 105ms - within window of AAPL trade at 100ms
-                Time("09:00:00.295"),  # 295ms - within window of AAPL trade at 300ms
-                Time("09:00:00.145"),  # 145ms - within window of GOOG trade at 150ms
-                Time("09:00:00.155"),  # 155ms - within window of GOOG trade at 150ms
-                Time("09:00:00.345"),  # 345ms - within window of GOOG trade at 350ms
-            ],
-            [100.0, 101.0, 102.0, 200.0, 201.0, 202.0],  # bid prices
-            [110.0, 111.0, 112.0, 210.0, 211.0, 212.0],  # ask prices
-        ],
+    quotes = Table.from_dict(
+        {
+            "sym": Vector(
+                items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"],
+                ray_type=Symbol,
+            ),
+            "time": Vector(
+                items=[
+                    Time("09:00:00.095"),  # 95ms - within window of AAPL trade at 100ms
+                    Time(
+                        "09:00:00.105"
+                    ),  # 105ms - within window of AAPL trade at 100ms
+                    Time(
+                        "09:00:00.295"
+                    ),  # 295ms - within window of AAPL trade at 300ms
+                    Time(
+                        "09:00:00.145"
+                    ),  # 145ms - within window of GOOG trade at 150ms
+                    Time(
+                        "09:00:00.155"
+                    ),  # 155ms - within window of GOOG trade at 150ms
+                    Time(
+                        "09:00:00.345"
+                    ),  # 345ms - within window of GOOG trade at 350ms
+                ],
+                ray_type=Time,
+            ),
+            "bid": Vector(
+                items=[100.0, 101.0, 102.0, 200.0, 201.0, 202.0],  # bid prices
+                ray_type=F64,
+            ),
+            "ask": Vector(
+                items=[110.0, 111.0, 112.0, 210.0, 211.0, 212.0],  # ask prices
+                ray_type=F64,
+            ),
+        },
     )
 
     interval = TableColumnInterval(
         lower=-10,
         upper=10,
         table=trades,
-        column=trades.time,
+        column=Column("time"),
     )
 
     result = trades.window_join1(
         on=["sym", "time"],
         interval=interval,
         join_with=[quotes],
-        min_bid=quotes.bid.min(),
-        max_ask=quotes.ask.max(),
+        min_bid=Column("bid").min(),
+        max_ask=Column("ask").max(),
     )
 
     assert isinstance(result, Table)
-    assert len(result.columns) == 5
-    assert "sym" in result.columns
-    assert "time" in result.columns
-    assert "price" in result.columns
-    assert "min_bid" in result.columns
-    assert "max_ask" in result.columns
+    columns = result.columns()
+    assert len(columns) == 5
+    assert "sym" in columns
+    assert "time" in columns
+    assert "price" in columns
+    assert "min_bid" in columns
+    assert "max_ask" in columns
 
     values = result.values()
     assert len(values[0]) == 4  # 4 trades
 
-    sym_idx = result.columns.index("sym")
-    time_idx = result.columns.index("time")
-    price_idx = result.columns.index("price")
-    min_bid_idx = result.columns.index("min_bid")
-    max_ask_idx = result.columns.index("max_ask")
+    cols = list(result.columns())
+    sym_idx = cols.index("sym")
+    time_idx = cols.index("time")
+    price_idx = cols.index("price")
+    min_bid_idx = cols.index("min_bid")
+    max_ask_idx = cols.index("max_ask")
 
     sym_col = values[sym_idx]
     time_col = values[time_idx]

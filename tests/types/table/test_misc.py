@@ -23,16 +23,15 @@ def test_table_from_csv_all_types(tmp_path):
 
     # Basic shape and columns
     assert isinstance(table, Table)
-    assert table.columns == [
-        "i64",
-        "f64",
-        "b8",
-        "date",
-        "time",
-        "timestamp",
-        "symbol",
+    assert table.columns() == [
+        Symbol("i64"),
+        Symbol("f64"),
+        Symbol("b8"),
+        Symbol("date"),
+        Symbol("time"),
+        Symbol("timestamp"),
+        Symbol("symbol"),
     ]
-    assert table.shape == (2, 7)
 
     values = table.values()
     assert len(values) == 7

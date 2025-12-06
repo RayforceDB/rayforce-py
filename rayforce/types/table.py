@@ -1,7 +1,7 @@
 from __future__ import annotations
 import typing as t
 from collections.abc import Iterable
-from typing import Any, Callable
+from typing import Any
 from rayforce.core import FFI
 from rayforce import utils
 from rayforce.types import (
@@ -260,17 +260,26 @@ class TableOrderByMixin:
 class TableQueryMixin:
     _ptr: r.RayObject | str
 
-    def select(self, *cols, **computed_cols) -> SelectQueryBuilder:
-        builder = SelectQueryBuilder(table=self.ptr)
-        return builder.select(*cols, **computed_cols)
+    def select(self, *cols, **computed_cols) -> SelectQuery:
+        return SelectQuery(table=self).select(*cols, **computed_cols)
 
-    def where(self, condition: Expression | Callable) -> SelectQueryBuilder:
-        builder = SelectQueryBuilder(table=self.ptr)
-        return builder.where(condition)
+    def where(self, condition: Expression) -> SelectQuery:
+        return SelectQuery(table=self).where(condition)
 
-    def by(self, *cols, **computed_cols) -> SelectQueryBuilder:
-        builder = SelectQueryBuilder(table=self.ptr)
-        return builder.by(*cols, **computed_cols)
+    def by(self, *cols, **computed_cols) -> SelectQuery:
+        return SelectQuery(table=self).by(*cols, **computed_cols)
+
+    def update(self, **kwargs) -> UpdateQuery:
+        return UpdateQuery(self, **kwargs)
+
+    def insert(self, *args, **kwargs) -> InsertQuery:
+        return InsertQuery(self, *args, **kwargs)
+
+    def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
+        return UpsertQuery(self, *args, match_by_first=match_by_first, **kwargs)
+
+    def save(self, name: str) -> None:
+        FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
     def concat(self, *others: Table) -> Table:
         result = self.ptr
@@ -278,6 +287,42 @@ class TableQueryMixin:
             expr = Expression(Operation.CONCAT, result, other.ptr)
             result = utils.eval_obj(expr.compile())
         return self.from_ptr(result)
+
+    def inner_join(self, other: Table, on: str | list[str]) -> Table:
+        return self._join(other=other, on=on, type_=Operation.INNER_JOIN)
+
+    def left_join(self, other: Table, on: str | list[str]) -> Table:
+        return self._join(other=other, on=on, type_=Operation.LEFT_JOIN)
+
+    def window_join(
+        self,
+        on: list[str],
+        join_with: list[Any],
+        interval: TableColumnInterval,
+        **aggregations,
+    ) -> Table:
+        return self._wj(
+            type_=Operation.WJ,
+            on=on,
+            join_with=join_with,
+            interval=interval,
+            **aggregations,
+        )
+
+    def window_join1(
+        self,
+        on: list[str],
+        join_with: list[Any],
+        interval: TableColumnInterval,
+        **aggregations,
+    ) -> Table:
+        return self._wj(
+            type_=Operation.WJ1,
+            on=on,
+            join_with=join_with,
+            interval=interval,
+            **aggregations,
+        )
 
     def _join(self, other: Table, on: str | list[str], type_: Operation) -> Table:
         if type_ not in (Operation.INNER_JOIN, Operation.LEFT_JOIN):
@@ -330,54 +375,6 @@ class TableQueryMixin:
             )
         )
 
-    def inner_join(self, other: Table, on: str | list[str]) -> Table:
-        return self._join(other=other, on=on, type_=Operation.INNER_JOIN)
-
-    def left_join(self, other: Table, on: str | list[str]) -> Table:
-        return self._join(other=other, on=on, type_=Operation.LEFT_JOIN)
-
-    def window_join(
-        self,
-        on: list[str],
-        join_with: list[Any],
-        interval: TableColumnInterval,
-        **aggregations,
-    ) -> Table:
-        return self._wj(
-            type_=Operation.WJ,
-            on=on,
-            join_with=join_with,
-            interval=interval,
-            **aggregations,
-        )
-
-    def window_join1(
-        self,
-        on: list[str],
-        join_with: list[Any],
-        interval: TableColumnInterval,
-        **aggregations,
-    ) -> Table:
-        return self._wj(
-            type_=Operation.WJ1,
-            on=on,
-            join_with=join_with,
-            interval=interval,
-            **aggregations,
-        )
-
-    def update(self, **kwargs) -> UpdateQuery:
-        return UpdateQuery(self, **kwargs)
-
-    def insert(self, *args, **kwargs) -> InsertQuery:
-        return InsertQuery(self, *args, **kwargs)
-
-    def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
-        return UpsertQuery(self, *args, match_by_first=match_by_first, **kwargs)
-
-    def save(self, name: str) -> None:
-        FFI.binary_set(FFI.init_symbol(name), self.ptr)
-
 
 class Table(
     TableInitMixin,
@@ -392,169 +389,61 @@ class Table(
 
 
 class SelectQuery:
-    """
-    Query to perform select operation.
-    """
-
-    ptr: r.RayObject
-
-    def __validate(
-        self,
-        attributes: dict[str, str | Expression | dict[str, str]],
-        select_from: str | SelectQuery | Table,
-        where: Expression | None = None,
-    ) -> None:
-        self.attr_keys = attributes.keys()
-        self.attr_values = attributes.values()
-
-        if not select_from:
-            raise ValueError("Attribute select_from is required.")
-
-        if where is not None:
-            if not isinstance(where, r.RayObject):
-                raise ValueError("Attribute where should be an Expression.")
-
-        if any([not isinstance(key, str) for key in self.attr_keys]):
-            raise ValueError("Query keys should be Python strings.")
-
-        self.attributes = attributes
-        self.select_from = select_from
-        self.where = where
-
-    def __build_query(self) -> None:
-        from rayforce.types.scalars import Symbol
-
-        length = len(self.attr_keys) + 1 if not self.where else len(self.attr_keys) + 2
-        self._query_keys = FFI.init_vector(type_code=Symbol.type_code, length=length)
-        self._query_values = FFI.init_list()
-
-        for idx, key in enumerate(self.attr_keys):
-            # Fill query keys with requested attributes
-            FFI.insert_obj(
-                iterable=self._query_keys,
-                idx=idx,
-                ptr=utils.python_to_ray(key),
-            )
-        else:
-            # Push "from" keyword to query keys
-            FFI.insert_obj(
-                iterable=self._query_keys,
-                idx=len(self.attr_keys),
-                ptr=utils.python_to_ray("from"),
-            )
-
-        for value in self.attr_values:
-            # Fill query values with requested attributes
-            FFI.push_obj(
-                iterable=self._query_values,
-                ptr=utils.python_to_ray(value),
-            )
-        else:
-            # Push "from" value to query values
-            if isinstance(self.select_from, SelectQuery):
-                expr = Expression(Operation.SELECT, self.select_from.ptr)
-                FFI.push_obj(iterable=self._query_values, ptr=expr.ptr)
-            else:
-                FFI.push_obj(
-                    iterable=self._query_values,
-                    ptr=utils.python_to_ray(self.select_from),
-                )
-
-        if self.where is not None:
-            FFI.insert_obj(
-                iterable=self._query_keys,
-                idx=len(self.attr_keys) + 1,
-                ptr=utils.python_to_ray("where"),
-            )
-            FFI.push_obj(
-                iterable=self._query_values,
-                ptr=self.where,
-            )
-
-        self.ptr = FFI.init_dict(self._query_keys, self._query_values)
-
     def __init__(
         self,
-        attributes: dict[str, str | Expression | dict[str, str]],
-        select_from: str | "SelectQuery",
-        where: Expression | None = None,
-    ) -> None:
-        self.__validate(attributes=attributes, select_from=select_from, where=where)
-        self.__build_query()
-
-    def __str__(self) -> str:
-        from rayforce.types.containers import Dict
-
-        return str(Dict(ptr=self.ptr))
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-class SelectQueryBuilder:
-    def __init__(
-        self,
-        table: str | Table,
+        table: Table,
         select_cols: tuple[Any] | None = None,
         where_conditions: list[Expression] | None = None,
         by_cols: dict[str, Expression | str] | None = None,
     ):
-        self._table = table
+        self.table = table
         self._select_cols = select_cols
         self._where_conditions = where_conditions or []
         self._by_cols = by_cols or {}
+        self._ptr: r.RayObject | None = None
 
-    def select(self, *cols, **computed_cols) -> SelectQueryBuilder:
-        return SelectQueryBuilder(
-            table=self._table,
+    def select(self, *cols, **computed_cols) -> SelectQuery:
+        return SelectQuery(
+            table=self.table,
             select_cols=(cols, computed_cols),
             where_conditions=self._where_conditions,
             by_cols=self._by_cols,
         )
 
-    def where(self, condition: Expression | Callable) -> SelectQueryBuilder:
-        if callable(condition):
-            temp_table = Table._create_proxy(self._table)
-            condition = condition(temp_table)
-
+    def where(self, condition: Expression) -> "SelectQuery":
         new_conditions = self._where_conditions.copy()
         new_conditions.append(condition)
-
-        return SelectQueryBuilder(
-            table=self._table,
+        return SelectQuery(
+            table=self.table,
             select_cols=self._select_cols,
             where_conditions=new_conditions,
             by_cols=self._by_cols,
         )
 
-    def by(self, *cols, **computed_cols) -> SelectQueryBuilder:
-        return SelectQueryBuilder(
-            table=self._table,
+    def by(self, *cols, **computed_cols) -> "SelectQuery":
+        return SelectQuery(
+            table=self.table,
             select_cols=self._select_cols,
             where_conditions=self._where_conditions,
             by_cols=(cols, computed_cols),
         )
 
     @property
-    def ipc(self) -> r.RayObject:
-        return (
-            Expression(Operation.SELECT, self._build_legacy_query().ptr).compile().ptr
-        )
+    def ptr(self) -> r.RayObject:
+        if self._ptr is None:
+            self._ptr = self._build_query_ptr()
+        return self._ptr
 
     def execute(self) -> Table:
-        query = self._build_legacy_query()
-        return utils.ray_to_python(FFI.select(query=query.ptr))
+        return utils.ray_to_python(FFI.select(query=self.ptr))
 
-    def _build_legacy_query(self) -> SelectQuery:
+    def _build_query_ptr(self) -> r.RayObject:
         attributes = {}
-
         if self._select_cols:
             cols, computed = self._select_cols
 
             for col in cols:
-                if col == "*":
-                    pass
-                else:
+                if col != "*":
                     attributes[col] = col
 
             for name, expr in computed.items():
@@ -562,10 +451,6 @@ class SelectQueryBuilder:
                     attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
                     attributes[name] = expr.name
-                elif callable(expr):
-                    temp_table = Table._create_proxy(self._table)
-                    result = expr(temp_table)
-                    attributes[name] = self._convert_expr(result)
                 else:
                     attributes[name] = expr
 
@@ -574,7 +459,7 @@ class SelectQueryBuilder:
             combined = self._where_conditions[0]
             for cond in self._where_conditions[1:]:
                 combined = combined & cond
-            where_expr = combined.compile()
+            where_expr = combined
 
         if self._by_cols:
             by_attributes = {}
@@ -590,31 +475,25 @@ class SelectQueryBuilder:
                     by_attributes[name] = expr.name
                 else:
                     by_attributes[name] = expr
-
             attributes["by"] = by_attributes
 
-        return SelectQuery(
-            select_from=self._table, attributes=attributes, where=where_expr
-        )
+        query_items = dict(attributes)
 
-    def _convert_expr(self, expr: Expression | Column) -> r.RayObject | str:
-        if isinstance(expr, Expression):
-            return expr.compile()
-        elif isinstance(expr, Column):
-            return expr.name
-        return expr
+        if isinstance(self.table, Table):
+            if self.table.is_reference:
+                query_items["from"] = QuotedSymbol(self.table._ptr).ptr
+            else:
+                query_items["from"] = self.table.ptr
+        else:
+            query_items["from"] = utils.python_to_ray(self.table)
 
-    def __iter__(self):
-        result = self.execute()
-        return iter(result.values().value)
+        if where_expr is not None:
+            if isinstance(where_expr, Expression):
+                query_items["where"] = where_expr.compile()
+            else:
+                query_items["where"] = where_expr
 
-    def __repr__(self) -> str:
-        parts = [f"SelectQueryBuilder(table={self._table}"]
-        if self._select_cols:
-            parts.append(", select=...")
-        if self._where_conditions:
-            parts.append(f", where={len(self._where_conditions)} conditions")
-        return "".join(parts) + ")"
+        return Dict(query_items).ptr
 
 
 class UpdateQuery:
@@ -842,7 +721,7 @@ class TableColumnInterval:
                 List(
                     [
                         Operation.AT,
-                        self.table,
+                        self.table.ptr,
                         QuotedSymbol(
                             self.column.name
                             if isinstance(self.column, Column)
@@ -858,7 +737,6 @@ __all__ = [
     "Table",
     "Column",
     "Expression",
-    "SelectQueryBuilder",
     "UpdateQuery",
     "InsertQuery",
     "UpsertQuery",

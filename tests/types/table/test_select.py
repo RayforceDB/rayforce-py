@@ -1,23 +1,23 @@
-from rayforce import Table
+from rayforce import Table, Vector, Symbol, I64, F64, Column
 
 
 def test_select_with_single_where():
-    table = Table(
-        columns=["id", "name", "age", "salary"],
-        values=[
-            ["001", "002", "003", "004"],
-            ["alice", "bob", "charlie", "dana"],
-            [29, 34, 41, 38],
-            [100000, 120000, 90000, 85000],
-        ],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+            "salary": Vector(items=[100000, 120000, 90000, 85000], ray_type=I64),
+        },
     )
 
-    result = table.select("id", "name", "age").where(table.age >= 35).execute()
+    result = table.select("id", "name", "age").where(Column("age") >= 35).execute()
 
-    assert len(result.columns) == 3
-    assert "id" in result.columns
-    assert "name" in result.columns
-    assert "age" in result.columns
+    columns = result.columns()
+    assert len(columns) == 3
+    assert "id" in columns
+    assert "name" in columns
+    assert "age" in columns
 
     values = result.values()
     assert len(values) == 3
@@ -31,21 +31,24 @@ def test_select_with_single_where():
 
 
 def test_select_with_multiple_where_conditions():
-    table = Table(
-        columns=["id", "name", "age", "dept", "salary"],
-        values=[
-            ["001", "002", "003", "004", "005"],
-            ["alice", "bob", "charlie", "dana", "eli"],
-            [29, 34, 41, 38, 45],
-            ["eng", "eng", "marketing", "eng", "marketing"],
-            [100000, 120000, 90000, 85000, 95000],
-        ],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(
+                items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol
+            ),
+            "age": Vector(items=[29, 34, 41, 38, 45], ray_type=I64),
+            "dept": Vector(
+                items=["eng", "eng", "marketing", "eng", "marketing"], ray_type=Symbol
+            ),
+            "salary": Vector(items=[100000, 120000, 90000, 85000, 95000], ray_type=I64),
+        },
     )
 
     result = (
         table.select("id", "name", "age", "salary")
-        .where(table.age >= 35)
-        .where(table.dept == "eng")
+        .where(Column("age") >= 35)
+        .where(Column("dept") == "eng")
         .execute()
     )
 
@@ -59,21 +62,24 @@ def test_select_with_multiple_where_conditions():
 
 
 def test_select_with_complex_and_or_conditions():
-    table = Table(
-        columns=["id", "name", "age", "dept", "salary"],
-        values=[
-            ["001", "002", "003", "004", "005"],
-            ["alice", "bob", "charlie", "dana", "eli"],
-            [29, 34, 41, 38, 45],
-            ["eng", "eng", "marketing", "eng", "marketing"],
-            [100000, 120000, 90000, 85000, 95000],
-        ],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(
+                items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol
+            ),
+            "age": Vector(items=[29, 34, 41, 38, 45], ray_type=I64),
+            "dept": Vector(
+                items=["eng", "eng", "marketing", "eng", "marketing"], ray_type=Symbol
+            ),
+            "salary": Vector(items=[100000, 120000, 90000, 85000, 95000], ray_type=I64),
+        },
     )
 
     result = (
         table.select("id", "name")
-        .where((table.age >= 35) & (table.dept == "eng"))
-        .where((table.salary > 80000) | (table.age < 40))
+        .where((Column("age") >= 35) & (Column("dept") == "eng"))
+        .where((Column("salary") > 80000) | (Column("age") < 40))
         .execute()
     )
 
@@ -83,36 +89,38 @@ def test_select_with_complex_and_or_conditions():
 
 
 def test_group_by_single_column():
-    table = Table(
-        columns=["dept", "age", "salary"],
-        values=[
-            ["eng", "eng", "marketing", "marketing", "hr"],
-            [29, 34, 41, 38, 35],
-            [100000, 120000, 90000, 85000, 80000],
-        ],
+    table = Table.from_dict(
+        {
+            "dept": Vector(
+                items=["eng", "eng", "marketing", "marketing", "hr"], ray_type=Symbol
+            ),
+            "age": Vector(items=[29, 34, 41, 38, 35], ray_type=I64),
+            "salary": Vector(items=[100000, 120000, 90000, 85000, 80000], ray_type=I64),
+        },
     )
 
     result = (
         table.select(
-            avg_age=table.age.mean(),
-            total_salary=table.salary.sum(),
-            count=table.age.count(),
+            avg_age=Column("age").mean(),
+            total_salary=Column("salary").sum(),
+            count=Column("age").count(),
         )
         .by("dept")
         .execute()
     )
 
-    assert len(result.columns) >= 4
-    assert "dept" in result.columns or "by" in result.columns
-    assert "avg_age" in result.columns
-    assert "total_salary" in result.columns
-    assert "count" in result.columns
+    columns = result.columns()
+    assert len(columns) >= 4
+    assert "dept" in columns or "by" in columns
+    assert "avg_age" in columns
+    assert "total_salary" in columns
+    assert "count" in columns
 
     values = result.values()
     assert len(values) >= 3
 
     # Find the column indices
-    cols = result.columns
+    cols = list(result.columns())
     dept_idx = cols.index("dept") if "dept" in cols else cols.index("by")
     avg_age_idx = cols.index("avg_age")
     total_salary_idx = cols.index("total_salary")
@@ -147,25 +155,32 @@ def test_group_by_single_column():
 
 
 def test_group_by_multiple_columns():
-    table = Table(
-        columns=["dept", "level", "salary"],
-        values=[
-            ["eng", "eng", "eng", "marketing", "marketing"],
-            ["senior", "junior", "senior", "senior", "junior"],
-            [150000, 100000, 140000, 120000, 90000],
-        ],
+    table = Table.from_dict(
+        {
+            "dept": Vector(
+                items=["eng", "eng", "eng", "marketing", "marketing"], ray_type=Symbol
+            ),
+            "level": Vector(
+                items=["senior", "junior", "senior", "senior", "junior"],
+                ray_type=Symbol,
+            ),
+            "salary": Vector(
+                items=[150000, 100000, 140000, 120000, 90000], ray_type=I64
+            ),
+        },
     )
 
     result = (
         table.select(
-            total_salary=table.salary.sum(),
-            avg_salary=table.salary.mean(),
+            total_salary=Column("salary").sum(),
+            avg_salary=Column("salary").mean(),
         )
         .by("dept", "level")
         .execute()
     )
 
-    assert len(result.columns) >= 4
+    columns = result.columns()
+    assert len(columns) >= 4
     values = result.values()
     assert len(values) >= 2
 
@@ -175,7 +190,7 @@ def test_group_by_multiple_columns():
     # marketing/senior: total=120000, avg=120000
     # marketing/junior: total=90000, avg=90000
 
-    cols = result.columns
+    cols = list(result.columns())
     dept_idx = cols.index("dept") if "dept" in cols else cols.index("by")
     level_idx = (
         cols.index("level")
@@ -213,28 +228,31 @@ def test_group_by_multiple_columns():
 
 
 def test_group_by_with_filtered_aggregation():
-    table = Table(
-        columns=["category", "amount", "status"],
-        values=[
-            ["A", "A", "B", "B", "A"],
-            [100, 200, 150, 250, 300],
-            ["active", "inactive", "active", "active", "inactive"],
-        ],
+    table = Table.from_dict(
+        {
+            "category": Vector(items=["A", "A", "B", "B", "A"], ray_type=Symbol),
+            "amount": Vector(items=[100, 200, 150, 250, 300], ray_type=I64),
+            "status": Vector(
+                items=["active", "inactive", "active", "active", "inactive"],
+                ray_type=Symbol,
+            ),
+        },
     )
 
     result = (
         table.select(
-            total=table.amount.sum(),
-            active_total=table.amount.where(table.status == "active").sum(),
-            count=table.amount.count(),
+            total=Column("amount").sum(),
+            active_total=Column("amount").where(Column("status") == "active").sum(),
+            count=Column("amount").count(),
         )
         .by("category")
         .execute()
     )
 
-    assert "total" in result.columns
-    assert "active_total" in result.columns
-    assert "count" in result.columns
+    columns = result.columns()
+    assert "total" in columns
+    assert "active_total" in columns
+    assert "count" in columns
 
     values = result.values()
     assert len(values) >= 3
@@ -243,7 +261,7 @@ def test_group_by_with_filtered_aggregation():
     # Category A: total=600 (100+200+300), active_total=100 (only first is active), count=3
     # Category B: total=400 (150+250), active_total=400 (both active), count=2
 
-    cols = result.columns
+    cols = list(result.columns())
     category_idx = cols.index("category") if "category" in cols else cols.index("by")
     total_idx = cols.index("total")
     active_total_idx = cols.index("active_total")
@@ -271,28 +289,28 @@ def test_group_by_with_filtered_aggregation():
 
 
 def test_complex_select_with_computed_columns():
-    table = Table(
-        columns=["id", "price", "quantity"],
-        values=[
-            ["001", "002", "003"],
-            [10.5, 20.0, 15.75],
-            [2, 3, 4],
-        ],
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "price": Vector(items=[10.5, 20.0, 15.75], ray_type=F64),
+            "quantity": Vector(items=[2, 3, 4], ray_type=I64),
+        },
     )
 
     result = (
         table.select(
             "id",
-            total=table.price * table.quantity,
-            discounted=table.price * table.quantity * 0.9,
+            total=Column("price") * Column("quantity"),
+            discounted=Column("price") * Column("quantity") * 0.9,
         )
-        .where(table.quantity >= 3)
+        .where(Column("quantity") >= 3)
         .execute()
     )
 
-    assert "id" in result.columns
-    assert "total" in result.columns
-    assert "discounted" in result.columns
+    columns = result.columns()
+    assert "id" in columns
+    assert "total" in columns
+    assert "discounted" in columns
 
     values = result.values()
     assert len(values) == 3
