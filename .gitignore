@@ -29,3 +29,4 @@ script.py
 docs/site/
 .rayhist.dat
 tables/
+.python_version

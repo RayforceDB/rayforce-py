@@ -7,8 +7,9 @@ LIBNAME = _rayforce.so
 
 ifeq ($(UNAME_S),Darwin)
   RAYKX_LIB_NAME = libraykx.dylib
-  RELEASE_LDFLAGS = $(shell python3.13-config --ldflags)
-  SHARED_COMPILE_FLAGS = -lpython3.13
+  RELEASE_LDFLAGS = $(shell python3 -c "import sysconfig; print(sysconfig.get_config_var('LDFLAGS') or '')")
+  PYTHON_VERSION = $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  SHARED_COMPILE_FLAGS = -lpython$(PYTHON_VERSION)
 else ifeq ($(UNAME_S),Linux)
   RAYKX_LIB_NAME = libraykx.so
   RELEASE_LDFLAGS = $$(RELEASE_LDFLAGS)
@@ -27,7 +28,7 @@ patch_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'PY_OBJECTS = core/rayforce_c.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) $$(shell python3.13-config --includes)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) -I$$(shell python3 -c "import sysconfig; print(sysconfig.get_config_var(\"INCLUDEPY\"))")' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
