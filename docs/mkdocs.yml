@@ -105,6 +105,12 @@ nav:
     - Overview: content/documentation/overview.md
     - Data Types:
       - Overview: content/documentation/data-types/overview.md
+      - Table:
+        - Overview: content/documentation/data-types/table/overview.md
+        - Create: content/documentation/data-types/table/create.md
+        - Access Values: content/documentation/data-types/table/access-values.md
+        - Save and Fetch: content/documentation/data-types/table/save-and-fetch.md
+        - Splayed and Parted: content/documentation/data-types/table/splayed-and-parted.md
       - Integers: content/documentation/data-types/integers.md
       - Float: content/documentation/data-types/float.md
       - Unsigned Integer: content/documentation/data-types/unsigned-integer.md
@@ -117,12 +123,6 @@ nav:
       - Vector: content/documentation/data-types/vector.md
       - List: content/documentation/data-types/list.md
       - Dict: content/documentation/data-types/dict.md
-      - Table:
-        - Overview: content/documentation/data-types/table/overview.md
-        - Create: content/documentation/data-types/table/create.md
-        - Access Values: content/documentation/data-types/table/access-values.md
-        - Save and Fetch: content/documentation/data-types/table/save-and-fetch.md
-        - Set Splayed: content/documentation/data-types/table/set-splayed.md
     - Query Guide:
       - Overview: content/documentation/query-guide/overview.md
       - Select: content/documentation/query-guide/select.md
