@@ -79,9 +79,7 @@ def test_order_by_multiple_columns(is_inplace):
     """Test ordering by multiple columns."""
     table = Table.from_dict(
         {
-            "dept": Vector(
-                items=["eng", "eng", "marketing", "marketing"], ray_type=Symbol
-            ),
+            "dept": Vector(items=["eng", "eng", "marketing", "marketing"], ray_type=Symbol),
             "salary": Vector(items=[100000, 120000, 90000, 110000], ray_type=I64),
             "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
         },
@@ -91,9 +89,7 @@ def test_order_by_multiple_columns(is_inplace):
         result = table.xasc(Column("dept"), Column("salary"))
     else:
         table.save("test_order_multi")
-        result = Table.from_name("test_order_multi").xasc(
-            Column("dept"), Column("salary")
-        )
+        result = Table.from_name("test_order_multi").xasc(Column("dept"), Column("salary"))
 
     assert isinstance(result, Table)
     values = result.values()

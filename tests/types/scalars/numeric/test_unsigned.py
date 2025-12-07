@@ -10,7 +10,7 @@ def test_u8():
 
 
 def test_u8_out_of_range():
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.U8(256)
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.U8(-1)

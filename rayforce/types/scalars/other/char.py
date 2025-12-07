@@ -15,7 +15,7 @@ class C8(Scalar):
         try:
             return FFI.init_c8(value)
         except ValueError as e:
-            raise exceptions.RayInitException(str(e))
+            raise exceptions.RayInitError(str(e)) from e
 
     def to_python(self) -> str:
         return FFI.read_c8(self.ptr)

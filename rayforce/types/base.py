@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import typing as t
 
@@ -18,8 +19,8 @@ class RayObject(ABC):
         ptr: r.RayObject | None = None,
     ) -> None:
         if value is None and ptr is None:
-            raise exceptions.RayInitException(
-                f"{self.__class__.__name__} requires either 'value' or 'ptr' argument"
+            raise exceptions.RayInitError(
+                f"{self.__class__.__name__} requires either 'value' or 'ptr' argument",
             )
 
         if ptr is not None:
@@ -30,17 +31,14 @@ class RayObject(ABC):
 
     def _validate_ptr(self, ptr: r.RayObject) -> None:
         if not isinstance(ptr, r.RayObject):
-            raise exceptions.RayInitException(f"Expected RayObject, got {type(ptr)}")
+            raise exceptions.RayInitError(f"Expected RayObject, got {type(ptr)}")
 
-        if (
-            hasattr(self.__class__, "type_code")
-            and self.__class__.type_code is not None
-        ):
+        if hasattr(self.__class__, "type_code") and self.__class__.type_code is not None:
             actual_type = ptr.get_obj_type()
             if actual_type != self.__class__.type_code:
-                raise exceptions.RayInitException(
+                raise exceptions.RayInitError(
                     f"{self.__class__.__name__} expects type code {self.__class__.type_code}, "
-                    f"got {actual_type}"
+                    f"got {actual_type}",
                 )
 
     @abstractmethod

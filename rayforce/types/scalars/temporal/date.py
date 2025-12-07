@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import datetime as dt
 
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
+from rayforce.types import exceptions
 from rayforce.types.base import Scalar
 from rayforce.types.registry import TypeRegistry
-from rayforce.types import exceptions
 
 # Date counts from this epoch
 DATE_EPOCH = dt.date(2000, 1, 1)
@@ -23,17 +24,15 @@ class Date(Scalar):
         if isinstance(value, dt.date):
             days_since_epoch = (value - DATE_EPOCH).days
             return FFI.init_date(days_since_epoch)
-        elif isinstance(value, int):
+        if isinstance(value, int):
             return FFI.init_date(value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             try:
                 date_obj = dt.date.fromisoformat(value)
             except ValueError as e:
-                raise exceptions.RayInitException(
-                    f"Date value is not isoformat: {value}"
-                ) from e
+                raise exceptions.RayInitError(f"Date value is not isoformat: {value}") from e
             return FFI.init_date((date_obj - DATE_EPOCH).days)
-        raise exceptions.RayInitException(f"Cannot create Date from {type(value)}")
+        raise exceptions.RayInitError(f"Cannot create Date from {type(value)}")
 
     def to_python(self) -> dt.date:
         return DATE_EPOCH + dt.timedelta(days=FFI.read_date(self.ptr))

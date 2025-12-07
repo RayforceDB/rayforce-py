@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import enum
 
 from rayforce import _rayforce_c as r

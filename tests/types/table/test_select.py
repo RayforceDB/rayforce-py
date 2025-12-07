@@ -34,13 +34,9 @@ def test_select_with_multiple_where_conditions():
     table = Table.from_dict(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
-            "name": Vector(
-                items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol
-            ),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol),
             "age": Vector(items=[29, 34, 41, 38, 45], ray_type=I64),
-            "dept": Vector(
-                items=["eng", "eng", "marketing", "eng", "marketing"], ray_type=Symbol
-            ),
+            "dept": Vector(items=["eng", "eng", "marketing", "eng", "marketing"], ray_type=Symbol),
             "salary": Vector(items=[100000, 120000, 90000, 85000, 95000], ray_type=I64),
         },
     )
@@ -65,13 +61,9 @@ def test_select_with_complex_and_or_conditions():
     table = Table.from_dict(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
-            "name": Vector(
-                items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol
-            ),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol),
             "age": Vector(items=[29, 34, 41, 38, 45], ray_type=I64),
-            "dept": Vector(
-                items=["eng", "eng", "marketing", "eng", "marketing"], ray_type=Symbol
-            ),
+            "dept": Vector(items=["eng", "eng", "marketing", "eng", "marketing"], ray_type=Symbol),
             "salary": Vector(items=[100000, 120000, 90000, 85000, 95000], ray_type=I64),
         },
     )
@@ -91,9 +83,7 @@ def test_select_with_complex_and_or_conditions():
 def test_group_by_single_column():
     table = Table.from_dict(
         {
-            "dept": Vector(
-                items=["eng", "eng", "marketing", "marketing", "hr"], ray_type=Symbol
-            ),
+            "dept": Vector(items=["eng", "eng", "marketing", "marketing", "hr"], ray_type=Symbol),
             "age": Vector(items=[29, 34, 41, 38, 35], ray_type=I64),
             "salary": Vector(items=[100000, 120000, 90000, 85000, 80000], ray_type=I64),
         },
@@ -137,9 +127,7 @@ def test_group_by_single_column():
 
     # Find eng group
     for i in range(len(dept_col)):
-        dept_val = (
-            dept_col[i].value if hasattr(dept_col[i], "value") else str(dept_col[i])
-        )
+        dept_val = dept_col[i].value if hasattr(dept_col[i], "value") else str(dept_col[i])
         if dept_val == "eng":
             assert abs(avg_age_col[i].value - 31.5) < 0.01
             assert total_salary_col[i].value == 220000
@@ -157,16 +145,12 @@ def test_group_by_single_column():
 def test_group_by_multiple_columns():
     table = Table.from_dict(
         {
-            "dept": Vector(
-                items=["eng", "eng", "eng", "marketing", "marketing"], ray_type=Symbol
-            ),
+            "dept": Vector(items=["eng", "eng", "eng", "marketing", "marketing"], ray_type=Symbol),
             "level": Vector(
                 items=["senior", "junior", "senior", "senior", "junior"],
                 ray_type=Symbol,
             ),
-            "salary": Vector(
-                items=[150000, 100000, 140000, 120000, 90000], ray_type=I64
-            ),
+            "salary": Vector(items=[150000, 100000, 140000, 120000, 90000], ray_type=I64),
         },
     )
 
@@ -193,9 +177,7 @@ def test_group_by_multiple_columns():
     cols = list(result.columns())
     dept_idx = cols.index("dept") if "dept" in cols else cols.index("by")
     level_idx = (
-        cols.index("level")
-        if "level" in cols
-        else (cols.index("by") + 1 if "by" in cols else 0)
+        cols.index("level") if "level" in cols else (cols.index("by") + 1 if "by" in cols else 0)
     )
     total_salary_idx = cols.index("total_salary")
     avg_salary_idx = cols.index("avg_salary")
@@ -206,12 +188,8 @@ def test_group_by_multiple_columns():
     avg_salary_col = values[avg_salary_idx]
 
     for i in range(len(dept_col)):
-        dept_val = (
-            dept_col[i].value if hasattr(dept_col[i], "value") else str(dept_col[i])
-        )
-        level_val = (
-            level_col[i].value if hasattr(level_col[i], "value") else str(level_col[i])
-        )
+        dept_val = dept_col[i].value if hasattr(dept_col[i], "value") else str(dept_col[i])
+        level_val = level_col[i].value if hasattr(level_col[i], "value") else str(level_col[i])
 
         if dept_val == "eng" and level_val == "senior":
             assert total_salary_col[i].value == 290000
@@ -274,9 +252,7 @@ def test_group_by_with_filtered_aggregation():
 
     for i in range(len(category_col)):
         cat_val = (
-            category_col[i].value
-            if hasattr(category_col[i], "value")
-            else str(category_col[i])
+            category_col[i].value if hasattr(category_col[i], "value") else str(category_col[i])
         )
         if cat_val == "A":
             assert total_col[i].value == 600

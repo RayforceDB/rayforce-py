@@ -1,7 +1,7 @@
 import os
-import sys
-import subprocess
 from pathlib import Path
+import subprocess
+import sys
 
 
 def find_rayforce_executable():
@@ -17,9 +17,7 @@ def find_rayforce_executable():
     if dev_executable.exists() and os.access(dev_executable, os.X_OK):
         return str(dev_executable)
 
-    raise FileNotFoundError(
-        "Rayforce executable not found. Try to reinstall the library"
-    )
+    raise FileNotFoundError("Rayforce executable not found. Try to reinstall the library")
 
 
 def main():
@@ -30,7 +28,7 @@ def main():
         sys.exit(1)
 
     print("Launching Rayforce REPL...")
-    subprocess.call([executable] + sys.argv[1:])
+    subprocess.call([executable, *sys.argv[1:]])
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ def test_register_duplicate_different_class():
     test_type_code = -9997
     TypeRegistry.register(test_type_code, t.I16)
 
-    with pytest.raises(exceptions.RayTypeRegistryException):
+    with pytest.raises(exceptions.RayTypeRegistryError):
         TypeRegistry.register(test_type_code, t.I32)
 
 

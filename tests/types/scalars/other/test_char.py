@@ -9,7 +9,7 @@ def test_c8():
 
 
 def test_c8_out_of_range():
-    with pytest.raises(t.RayInitException):
+    with pytest.raises(t.RayInitError):
         t.C8("123")
-    with pytest.raises(t.RayInitException):
+    with pytest.raises(t.RayInitError):
         t.C8("")

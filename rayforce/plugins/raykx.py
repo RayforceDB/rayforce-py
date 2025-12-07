@@ -1,10 +1,10 @@
+from datetime import UTC, datetime
+from pathlib import Path
 import sys
-import os
-from datetime import datetime
 
-from rayforce.core import FFI
 from rayforce import _rayforce_c as r
 from rayforce import utils
+from rayforce.core import FFI
 
 if sys.platform == "darwin":
     raykx_lib_name = "libraykx.dylib"
@@ -14,9 +14,7 @@ else:
     raykx_lib_name = "libraykx.so"
 
 # Construct the path to the lib file relative to this directory
-c_plugin_compiled_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), raykx_lib_name
-)
+c_plugin_compiled_path = str(Path(__file__).resolve().parent / raykx_lib_name)
 
 
 # (.kx.hopen "127.0.0.1:5101")
@@ -39,7 +37,7 @@ _fn_send = FFI.loadfn_from_file(
 )
 
 
-class ConnectionAlreadyClosed(Exception):
+class ConnectionAlreadyClosedError(Exception):
     """Raises when attemting to utilise closed connection"""
 
 
@@ -54,12 +52,12 @@ class KDBConnection:
     ) -> None:
         if (_type := conn.get_obj_type()) != self._type:
             raise ValueError(
-                f"Invalid KDB connection object type. Expected {self._type}, got {_type}"
+                f"Invalid KDB connection object type. Expected {self._type}, got {_type}",
             )
 
         self.engine = engine
         self.ptr = conn
-        self.established_at = datetime.now()
+        self.established_at = datetime.now(UTC)
         self.disposed_at: datetime | None = None
         self.is_closed = False
 
@@ -78,13 +76,13 @@ class KDBConnection:
 
     def execute(self, query: str) -> r.RayObject:
         if self.is_closed:
-            raise ConnectionAlreadyClosed()
+            raise ConnectionAlreadyClosedError
 
         result = self.__execute_kdb_query(query=query)
         if result.get_obj_type() == r.TYPE_ERR:
             error_message = FFI.get_error_message(result)
             if error_message and error_message.startswith("'ipc_send"):
-                raise ConnectionAlreadyClosed()
+                raise ConnectionAlreadyClosedError
 
             raise ValueError(f"Failed to execute statement: {error_message}")
 
@@ -93,7 +91,7 @@ class KDBConnection:
     def close(self) -> None:
         self.__close_kdb_connection()
         self.is_closed = True
-        self.disposed_at = datetime.now()
+        self.disposed_at = datetime.now(UTC)
 
     def __enter__(self) -> "KDBConnection":
         return self
@@ -108,10 +106,9 @@ class KDBConnection:
 
 
 class KDBEngine:
-    pool: dict[int, KDBConnection] = {}
-
     def __init__(self, host: str, port: int | None = None) -> None:
         self.url = f"{host}:{port}" if port is not None else host
+        self.pool: dict[int, KDBConnection] = {}
 
     def __open_kdb_connection(self) -> r.RayObject:
         host = FFI.init_string(self.url)
@@ -123,9 +120,7 @@ class KDBEngine:
     def acquire(self) -> KDBConnection:
         _conn = self.__open_kdb_connection()
         if _conn.get_obj_type() == r.TYPE_ERR:
-            raise ValueError(
-                f"Error when establishing connection: {FFI.get_error_message(_conn)}"
-            )
+            raise ValueError(f"Error when establishing connection: {FFI.get_error_message(_conn)}")
 
         conn = KDBConnection(engine=self, conn=_conn)
         self.pool[id(conn)] = conn

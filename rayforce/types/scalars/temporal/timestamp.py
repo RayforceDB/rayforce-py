@@ -1,13 +1,14 @@
 from __future__ import annotations
+
 import datetime as dt
 
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
+from rayforce.types import exceptions
 from rayforce.types.base import Scalar
 from rayforce.types.registry import TypeRegistry
-from rayforce.types import exceptions
 
-epoch2000_py = dt.datetime(2000, 1, 1, tzinfo=dt.timezone.utc)
+epoch2000_py = dt.datetime(2000, 1, 1, tzinfo=dt.UTC)
 
 
 def _datetime_to_ns(obj: dt.timedelta) -> int:
@@ -29,22 +30,18 @@ class Timestamp(Scalar):
     def _create_from_value(self, value: dt.datetime | int | str) -> r.RayObject:
         if isinstance(value, dt.datetime):
             return FFI.init_timestamp(_datetime_to_ns(value - epoch2000_py))
-        elif isinstance(value, int):
+        if isinstance(value, int):
             return FFI.init_timestamp(value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             try:
                 dt_obj = dt.datetime.fromisoformat(value)
             except ValueError as e:
-                raise exceptions.RayInitException(
-                    f"Timestamp value is not isoformat: {value}"
-                ) from e
+                raise exceptions.RayInitError(f"Timestamp value is not isoformat: {value}") from e
             return FFI.init_timestamp(_datetime_to_ns(dt_obj - epoch2000_py))
-        raise exceptions.RayInitException(f"Cannot create Timestamp from {type(value)}")
+        raise exceptions.RayInitError(f"Cannot create Timestamp from {type(value)}")
 
     def to_python(self) -> dt.datetime:
-        return epoch2000_py + dt.timedelta(
-            microseconds=FFI.read_timestamp(self.ptr) // 1000
-        )
+        return epoch2000_py + dt.timedelta(microseconds=FFI.read_timestamp(self.ptr) // 1000)
 
     def to_millis(self) -> int:
         return FFI.read_timestamp(self.ptr)

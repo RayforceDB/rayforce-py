@@ -10,9 +10,9 @@ def test_i16():
 
 
 def test_i16_out_of_range():
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.I16(32768)
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.I16(-32769)
 
 
@@ -24,9 +24,9 @@ def test_i32():
 
 
 def test_i32_out_of_range():
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.I32(2147483648)
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.I32(-2147483649)
 
 
@@ -41,7 +41,7 @@ def test_i64():
 
 
 def test_i64_out_of_range():
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.I64(9223372036854775808)
-    with pytest.raises((t.RayInitException, OverflowError)):
+    with pytest.raises((t.RayInitError, OverflowError)):
         t.I64(-9223372036854775809)

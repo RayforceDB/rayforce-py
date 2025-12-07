@@ -48,3 +48,90 @@ before-all = [
     "yum groupinstall -y 'Development Tools'",
     "yum install -y clang llvm",
 ]
+
+[tool.ruff]
+show-fixes = true
+target-version = "py311"
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".mypy_cache",
+    ".pytest_cache",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes (unused imports, undefined names)
+    "I",     # isort (import sorting)
+    "N",     # pep8-naming (naming conventions)
+    "UP",    # pyupgrade (modernize Python syntax)
+    "B",     # flake8-bugbear (common bugs and design problems)
+    "C4",    # flake8-comprehensions (better list/dict comprehensions)
+    "SIM",   # flake8-simplify (code simplification)
+    "PIE",   # flake8-pie (misc improvements)
+    "PT",    # flake8-pytest-style (pytest best practices)
+    "RET",   # flake8-return (return statement improvements)
+    "RUF",   # ruff-specific rules (powerful ruff-only checks)
+    "TCH",   # flake8-type-checking (TYPE_CHECKING imports)
+    "ARG",   # flake8-unused-arguments
+    "ERA",   # eradicate (detect commented-out code)
+    "PL",    # pylint (selected useful rules)
+    "TRY",   # tryceratops (better exception handling)
+    "PERF",  # perflint (performance improvements)
+    "FBT",   # flake8-boolean-trap (avoid boolean positional args)
+    "A",     # flake8-builtins (shadowing builtins)
+    "COM",   # flake8-commas (trailing commas)
+    "DTZ",   # flake8-datetimez (timezone-aware datetimes)
+    "T10",   # flake8-debugger (remove debugger statements)
+    "ISC",   # flake8-implicit-str-concat
+    "Q",     # flake8-quotes (consistent quote style)
+    "RSE",   # flake8-raise (better raise statements)
+    "SLF",   # flake8-self (self/cls usage)
+    "SLOT",  # flake8-slots (use __slots__)
+    "PGH",   # pygrep-hooks (regex-based rules)
+    "FURB",  # refurb (modernize code)
+]
+ignore = [
+    "E501",    # Line too long (handled by formatter)
+    "PLR0913", # Too many arguments
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "PLR0911", # Too many return statements
+    "PLR2004", # Magic value usage
+    "PLC0415",
+    "PLW1641",
+    "FBT001",
+    "COM812",
+    "SLF001",  # Private member accessed
+    "T201",    # Print statements (might be intentional)
+    "TRY003",  # Avoid specifying long messages outside exception class
+]
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["E501", "PLR2004"]
+"scripts/**/*.py" = ["T201"]
+"**/__init__.py" = ["TID252"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["rayforce"]
+split-on-trailing-comma = true
+force-sort-within-sections = true
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

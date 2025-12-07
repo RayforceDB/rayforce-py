@@ -2,9 +2,9 @@
 Python bindings for RayforceDB
 """
 
-import os
-import sys
 import ctypes
+from pathlib import Path
+import sys
 
 version = "0.0.6"
 
@@ -19,87 +19,85 @@ elif sys.platform == "win32":
 else:
     raise ImportError(f"Platform not supported: {sys.platform}")
 
-lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), lib_name)
-raykx_lib_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "plugins", raykx_lib_name
-)
-if os.path.exists(lib_path) and os.path.exists(raykx_lib_path):
+lib_path = Path(__file__).resolve().parent / lib_name
+raykx_lib_path = Path(__file__).resolve().parent / "plugins" / raykx_lib_name
+if lib_path.exists() and raykx_lib_path.exists():
     try:
-        ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
-        ctypes.CDLL(raykx_lib_path, mode=ctypes.RTLD_GLOBAL)
+        ctypes.CDLL(str(lib_path), mode=ctypes.RTLD_GLOBAL)
+        ctypes.CDLL(str(raykx_lib_path), mode=ctypes.RTLD_GLOBAL)
     except Exception as e:
-        raise ImportError(f"Error loading CDLL: {e}")
+        raise ImportError(f"Error loading CDLL: {e}") from e
 else:
     raise ImportError(
         f"""
         Unable to load library - binaries are not compiled: \n
-            - {lib_path} - Compiled: {os.path.exists(lib_path)}\n
-            - {raykx_lib_path} - Compiled: {os.path.exists(raykx_lib_path)}\n
+            - {lib_path} - Compiled: {lib_path.exists()}\n
+            - {raykx_lib_path} - Compiled: {raykx_lib_path.exists()}\n
         Try to reinstall the library.
-        """
+        """,
     )
 
 
+from .io.ipc import Connection, IPCError, hopen  # noqa: E402
+from .plugins.raykx import ConnectionAlreadyClosedError, KDBConnection, KDBEngine  # noqa: E402
 from .types import (  # noqa: E402
+    B8,
+    C8,
     F64,
+    GUID,
     I16,
     I32,
     I64,
     U8,
-    B8,
-    C8,
-    Symbol,
-    QuotedSymbol,
-    GUID,
+    Column,
     Date,
-    Timestamp,
-    Time,
-    Vector,
     Dict,
     List,
-    Table,
-    String,
-    RayInitException,
-    TableColumnInterval,
     Operation,
-    Column,
+    QuotedSymbol,
+    RayInitError,
+    String,
+    Symbol,
+    Table,
+    TableColumnInterval,
+    Time,
+    Timestamp,
+    Vector,
 )
-from .plugins.raykx import KDBConnection, KDBEngine, ConnectionAlreadyClosed  # noqa: E402
-from .io.ipc import IPCException, Connection, hopen  # noqa: E402
 from .utils.evaluation import eval_str  # noqa: E402
 
 core_version = String(eval_str("(sysinfo)")["hash"]).to_python()
 
 __all__ = [
+    "B8",
+    "C8",
     "F64",
+    "GUID",
     "I16",
     "I32",
     "I64",
     "U8",
-    "B8",
-    "C8",
-    "Symbol",
-    "QuotedSymbol",
-    "GUID",
+    "Column",
+    "Connection",
+    "ConnectionAlreadyClosedError",
     "Date",
-    "Timestamp",
-    "Time",
-    "Vector",
     "Dict",
-    "List",
-    "Table",
-    "String",
-    "RayInitException",
+    "IPCError",
     "KDBConnection",
     "KDBEngine",
-    "ConnectionAlreadyClosed",
-    "IPCException",
-    "Connection",
-    "hopen",
-    "TableColumnInterval",
-    "eval_str",
-    "version",
-    "core_version",
+    "List",
     "Operation",
-    "Column",
+    "QuotedSymbol",
+    "RayInitError",
+    "String",
+    "Symbol",
+    "Table",
+    "TableColumnInterval",
+    "Time",
+    "Timestamp",
+    "Vector",
+    "core_version",
+    "eval_str",
+    "hopen",
+    "version",
 ]

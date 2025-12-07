@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import typing as t
 
 from rayforce import _rayforce_c as r
@@ -20,7 +21,7 @@ class List(Container):
         return list_ptr
 
     def to_python(self) -> list:
-        return [i for i in self]
+        return list(self)
 
     def __len__(self) -> int:
         return FFI.get_obj_length(self.ptr)

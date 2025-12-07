@@ -222,12 +222,8 @@ def test_window_join():
 
     for i in range(2):
         sym = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
-        min_bid = (
-            min_bid_col[i].value if hasattr(min_bid_col[i], "value") else min_bid_col[i]
-        )
-        max_ask = (
-            max_ask_col[i].value if hasattr(max_ask_col[i], "value") else max_ask_col[i]
-        )
+        min_bid = min_bid_col[i].value if hasattr(min_bid_col[i], "value") else min_bid_col[i]
+        max_ask = max_ask_col[i].value if hasattr(max_ask_col[i], "value") else max_ask_col[i]
 
         if sym == "AAPL":
             # Verify window captures quotes and aggregates correctly
@@ -265,21 +261,11 @@ def test_window_join1():
             "time": Vector(
                 items=[
                     Time("09:00:00.095"),  # 95ms - within window of AAPL trade at 100ms
-                    Time(
-                        "09:00:00.105"
-                    ),  # 105ms - within window of AAPL trade at 100ms
-                    Time(
-                        "09:00:00.295"
-                    ),  # 295ms - within window of AAPL trade at 300ms
-                    Time(
-                        "09:00:00.145"
-                    ),  # 145ms - within window of GOOG trade at 150ms
-                    Time(
-                        "09:00:00.155"
-                    ),  # 155ms - within window of GOOG trade at 150ms
-                    Time(
-                        "09:00:00.345"
-                    ),  # 345ms - within window of GOOG trade at 350ms
+                    Time("09:00:00.105"),  # 105ms - within window of AAPL trade at 100ms
+                    Time("09:00:00.295"),  # 295ms - within window of AAPL trade at 300ms
+                    Time("09:00:00.145"),  # 145ms - within window of GOOG trade at 150ms
+                    Time("09:00:00.155"),  # 155ms - within window of GOOG trade at 150ms
+                    Time("09:00:00.345"),  # 345ms - within window of GOOG trade at 350ms
                 ],
                 ray_type=Time,
             ),
@@ -338,53 +324,33 @@ def test_window_join1():
         sym = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
         trade_time = time_col[i]
         price = price_col[i].value if hasattr(price_col[i], "value") else price_col[i]
-        min_bid = (
-            min_bid_col[i].value if hasattr(min_bid_col[i], "value") else min_bid_col[i]
-        )
-        max_ask = (
-            max_ask_col[i].value if hasattr(max_ask_col[i], "value") else max_ask_col[i]
-        )
+        min_bid = min_bid_col[i].value if hasattr(min_bid_col[i], "value") else min_bid_col[i]
+        max_ask = max_ask_col[i].value if hasattr(max_ask_col[i], "value") else max_ask_col[i]
 
         # AAPL trade at 100ms: window [90ms, 110ms] captures quotes at 95ms and 105ms
         # min_bid should be 100.0, max_ask should be 111.0
         if sym == "AAPL" and str(trade_time) == "09:00:00.100":
             assert price == 150.0
-            assert min_bid == 100.0, (
-                f"Expected min_bid=100.0 for AAPL at 100ms, got {min_bid}"
-            )
-            assert max_ask == 111.0, (
-                f"Expected max_ask=111.0 for AAPL at 100ms, got {max_ask}"
-            )
+            assert min_bid == 100.0, f"Expected min_bid=100.0 for AAPL at 100ms, got {min_bid}"
+            assert max_ask == 111.0, f"Expected max_ask=111.0 for AAPL at 100ms, got {max_ask}"
 
         # AAPL trade at 300ms: window [290ms, 310ms] captures only quote at 295ms
         # min_bid should be 102.0, max_ask should be 112.0
         elif sym == "AAPL" and str(trade_time) == "09:00:00.300":
             assert price == 151.0
-            assert min_bid == 102.0, (
-                f"Expected min_bid=102.0 for AAPL at 300ms, got {min_bid}"
-            )
-            assert max_ask == 112.0, (
-                f"Expected max_ask=112.0 for AAPL at 300ms, got {max_ask}"
-            )
+            assert min_bid == 102.0, f"Expected min_bid=102.0 for AAPL at 300ms, got {min_bid}"
+            assert max_ask == 112.0, f"Expected max_ask=112.0 for AAPL at 300ms, got {max_ask}"
 
         # GOOG trade at 150ms: window [140ms, 160ms] captures quotes at 145ms and 155ms
         # min_bid should be 200.0, max_ask should be 211.0
         elif sym == "GOOG" and str(trade_time) == "09:00:00.150":
             assert price == 200.0
-            assert min_bid == 200.0, (
-                f"Expected min_bid=200.0 for GOOG at 150ms, got {min_bid}"
-            )
-            assert max_ask == 211.0, (
-                f"Expected max_ask=211.0 for GOOG at 150ms, got {max_ask}"
-            )
+            assert min_bid == 200.0, f"Expected min_bid=200.0 for GOOG at 150ms, got {min_bid}"
+            assert max_ask == 211.0, f"Expected max_ask=211.0 for GOOG at 150ms, got {max_ask}"
 
         # GOOG trade at 350ms: window [340ms, 360ms] captures only quote at 345ms
         # min_bid should be 202.0, max_ask should be 212.0
         elif sym == "GOOG" and str(trade_time) == "09:00:00.350":
             assert price == 202.0
-            assert min_bid == 202.0, (
-                f"Expected min_bid=202.0 for GOOG at 350ms, got {min_bid}"
-            )
-            assert max_ask == 212.0, (
-                f"Expected max_ask=212.0 for GOOG at 350ms, got {max_ask}"
-            )
+            assert min_bid == 202.0, f"Expected min_bid=202.0 for GOOG at 350ms, got {min_bid}"
+            assert max_ask == 212.0, f"Expected max_ask=212.0 for GOOG at 350ms, got {max_ask}"

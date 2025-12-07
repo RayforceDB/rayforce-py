@@ -76,9 +76,7 @@ def test_set_splayed_and_from_splayed(tmp_path):
         {
             "category": Vector(items=["A", "B", "A", "B"], ray_type=Symbol),
             "amount": Vector(items=[100, 200, 150, 250], ray_type=I64),
-            "status": Vector(
-                items=["active", "inactive", "active", "active"], ray_type=Symbol
-            ),
+            "status": Vector(items=["active", "inactive", "active", "active"], ray_type=Symbol),
         }
     )
 

@@ -13,9 +13,7 @@ def test_upsert_single_row_kwargs(is_inplace):
     )
 
     if is_inplace:
-        result = table.upsert(
-            id="001", name="alice_updated", age=30, match_by_first=1
-        ).execute()
+        result = table.upsert(id="001", name="alice_updated", age=30, match_by_first=1).execute()
     else:
         table.save("test_upsert_table")
         result = (

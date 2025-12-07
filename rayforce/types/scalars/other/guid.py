@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import uuid
 
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
+from rayforce.types import exceptions
 from rayforce.types.base import Scalar
 from rayforce.types.registry import TypeRegistry
-from rayforce.types import exceptions
 
 
 class GUID(Scalar):
@@ -15,11 +16,11 @@ class GUID(Scalar):
     def _create_from_value(self, value: uuid.UUID | str | bytes) -> r.RayObject:
         if isinstance(value, uuid.UUID):
             return FFI.init_guid(str(value))
-        elif isinstance(value, str):
+        if isinstance(value, str):
             return FFI.init_guid(str(uuid.UUID(value)))
-        elif isinstance(value, bytes):
+        if isinstance(value, bytes):
             return FFI.init_guid(str(uuid.UUID(bytes=value)))
-        raise exceptions.RayInitException(f"Cannot create GUID from {type(value)}")
+        raise exceptions.RayInitError(f"Cannot create GUID from {type(value)}")
 
     def to_python(self) -> uuid.UUID:
         return uuid.UUID(bytes=FFI.read_guid(self.ptr))

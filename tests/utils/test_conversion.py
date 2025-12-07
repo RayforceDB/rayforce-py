@@ -2,7 +2,8 @@ import datetime as dt
 import uuid
 import pytest
 from rayforce import _rayforce_c as r
-from rayforce.utils.conversion import python_to_ray, ray_to_python, RayConversionError
+from rayforce.utils.conversion import python_to_ray, ray_to_python
+from rayforce.types.exceptions import RayConversionError
 from rayforce.types.operators import Operation
 from rayforce import types as t
 

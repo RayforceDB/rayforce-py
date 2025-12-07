@@ -1,8 +1,11 @@
 from __future__ import annotations
-import typing as t
+
 from collections.abc import Iterable
-from rayforce.core import FFI
+import typing as t
+
+from rayforce import _rayforce_c as r
 from rayforce import utils
+from rayforce.core import FFI
 from rayforce.types import (
     I64,
     Dict,
@@ -12,10 +15,11 @@ from rayforce.types import (
     Symbol,
     Vector,
 )
-from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
-from rayforce import _rayforce_c as r
 from rayforce.types.registry import TypeRegistry
+
+if t.TYPE_CHECKING:
+    from rayforce.types.base import RayObject
 
 
 class _TableProtocol(t.Protocol):
@@ -59,7 +63,7 @@ class AggregationMixin:
 
     def is_(self, other: bool) -> Expression:
         if not isinstance(other, bool):
-            raise ValueError("is_ argument has to be bool")
+            raise TypeError("is_ argument has to be bool")
         if other is True:
             return Expression(Operation.EVAL, self)
         return Expression(Operation.EVAL, Expression(Operation.NOT, self))
@@ -187,9 +191,7 @@ class TableInitMixin:
     @classmethod
     def from_ptr(cls, ptr: r.RayObject) -> t.Self:
         if (_type := ptr.get_obj_type()) != cls.type_code:
-            raise ValueError(
-                f"Expected RayForce object of type {cls.type_code}, got {_type}"
-            )
+            raise ValueError(f"Expected RayForce object of type {cls.type_code}, got {_type}")
         return cls(ptr=ptr)
 
     @classmethod
@@ -227,8 +229,7 @@ class TableInitMixin:
     def evaled_ptr(self) -> r.RayObject:
         if isinstance(self._ptr, str):
             return utils.eval_str(self._ptr).ptr
-        else:
-            return self._ptr
+        return self._ptr
 
     @classmethod
     def from_splayed(cls, path: str) -> Table:
@@ -509,10 +510,7 @@ class SelectQuery:
         attributes = {}
         if self._select_cols:
             cols, computed = self._select_cols
-
-            for col in cols:
-                if col != "*":
-                    attributes[col] = col
+            attributes = {col: col for col in cols if col != "*"}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
@@ -530,11 +528,8 @@ class SelectQuery:
             where_expr = combined
 
         if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
-            by_attributes = {}
             cols, computed = self._by_cols
-
-            for col in cols:
-                by_attributes[col] = col
+            by_attributes = {col: col for col in cols}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
@@ -639,9 +634,7 @@ class InsertQuery:
             values = list(kwargs.values())
             first_val = values[0]
 
-            if isinstance(first_val, Iterable) and not isinstance(
-                first_val, (str, bytes)
-            ):
+            if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
                 keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
@@ -676,9 +669,7 @@ class InsertQuery:
 
 
 class UpsertQuery:
-    def __init__(
-        self, table: _TableProtocol, *args, match_by_first: int, **kwargs
-    ) -> None:
+    def __init__(self, table: _TableProtocol, *args, match_by_first: int, **kwargs) -> None:
         self.table = table
         self.args = args
         self.kwargs = kwargs
@@ -716,9 +707,7 @@ class UpsertQuery:
             values = list(kwargs.values())
             first_val = values[0]
 
-            if isinstance(first_val, Iterable) and not isinstance(
-                first_val, (str, bytes)
-            ):
+            if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
                 keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
@@ -793,9 +782,7 @@ class TableColumnInterval:
                         Operation.AT,
                         self.table.ptr,
                         QuotedSymbol(
-                            self.column.name
-                            if isinstance(self.column, Column)
-                            else self.column
+                            self.column.name if isinstance(self.column, Column) else self.column
                         ),
                     ]
                 ),
@@ -804,13 +791,13 @@ class TableColumnInterval:
 
 
 __all__ = [
-    "Table",
     "Column",
     "Expression",
-    "UpdateQuery",
     "InsertQuery",
-    "UpsertQuery",
+    "Table",
     "TableColumnInterval",
+    "UpdateQuery",
+    "UpsertQuery",
 ]
 
 TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)  # type: ignore[arg-type]

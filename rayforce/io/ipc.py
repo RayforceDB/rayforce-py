@@ -1,11 +1,13 @@
+import contextlib
 from typing import Any
-from rayforce.types.containers.vector import String
-from rayforce.utils import ray_to_python
+
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
+from rayforce.types.containers.vector import String
+from rayforce.utils import ray_to_python
 
 
-class IPCException(Exception): ...
+class IPCError(Exception): ...
 
 
 class Connection:
@@ -22,7 +24,7 @@ class Connection:
 
     def execute(self, data: Any) -> Any:
         if self._closed:
-            raise IPCException("Cannot write to closed connection")
+            raise IPCError("Cannot write to closed connection")
 
         if isinstance(data, str):
             result = FFI.write(self.handle, FFI.init_string(data))
@@ -31,7 +33,7 @@ class Connection:
         elif hasattr(data, "ipc"):
             result = FFI.write(self.handle, data.ipc)
         else:
-            raise IPCException(f"Unsupported IPC data to send: {type(data)}")
+            raise IPCError(f"Unsupported IPC data to send: {type(data)}")
 
         return ray_to_python(result)
 
@@ -48,10 +50,8 @@ class Connection:
 
     def __del__(self) -> None:
         if not self._closed:
-            try:
+            with contextlib.suppress(Exception):
                 self.close()
-            except Exception:
-                pass
 
 
 def hopen(host: str, port: int) -> Connection:

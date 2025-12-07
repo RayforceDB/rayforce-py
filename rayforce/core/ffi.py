@@ -1,18 +1,21 @@
 from __future__ import annotations
-import typing as t
+
 from functools import wraps
+import typing as t
 
 from rayforce import _rayforce_c as r
+
+
+class CAPIError(Exception): ...
 
 
 def exception_handler(func: t.Callable) -> t.Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        if isinstance(result, r.RayObject):
-            if result.get_obj_type() == r.TYPE_ERR:
-                error_msg = FFI.get_error_message(result)
-                raise Exception(f"C API error: {error_msg}")
+        if isinstance(result, r.RayObject) and result.get_obj_type() == r.TYPE_ERR:
+            error_msg = FFI.get_error_message(result)
+            raise CAPIError(f"C API error: {error_msg}")
         return result
 
     return wrapper
@@ -201,18 +204,18 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def dict_get(dict: r.RayObject, key: r.RayObject) -> r.RayObject:
-        return r.dict_get(dict, key)
+    def dict_get(dict_: r.RayObject, key: r.RayObject) -> r.RayObject:
+        return r.dict_get(dict_, key)
 
     @staticmethod
     @exception_handler
-    def get_dict_keys(dict: r.RayObject) -> r.RayObject:
-        return r.dict_keys(dict)
+    def get_dict_keys(dict_: r.RayObject) -> r.RayObject:
+        return r.dict_keys(dict_)
 
     @staticmethod
     @exception_handler
-    def get_dict_values(dict: r.RayObject) -> r.RayObject:
-        return r.dict_values(dict)
+    def get_dict_values(dict_: r.RayObject) -> r.RayObject:
+        return r.dict_values(dict_)
 
     @staticmethod
     @exception_handler

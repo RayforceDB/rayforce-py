@@ -1,30 +1,31 @@
 from __future__ import annotations
-import typing as t
+
 import datetime as dt
+import typing as t
 import uuid
 
 from rayforce import _rayforce_c as r
-from rayforce.types.base import RayObject
+from rayforce.types import exceptions
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
 
-
-class RayConversionError(Exception): ...
+if t.TYPE_CHECKING:
+    from rayforce.types.base import RayObject
 
 
 def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.RayObject:
     from rayforce.types import (
-        I64,
-        F64,
         B8,
+        F64,
+        GUID,
+        I64,
         Date,
+        Dict,
+        List,
+        Symbol,
+        Table,
         Time,
         Timestamp,
-        Symbol,
-        GUID,
-        List,
-        Dict,
-        Table,
     )
 
     if (
@@ -39,43 +40,43 @@ def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.Ra
 
     if isinstance(value, r.RayObject):
         return value
-    elif isinstance(value, Operation):
+    if isinstance(value, Operation):
         return value.primitive
-    elif isinstance(value, bool):
+    if isinstance(value, bool):
         return B8(value).ptr
-    elif isinstance(value, int):
+    if isinstance(value, int):
         return I64(value).ptr
-    elif isinstance(value, float):
+    if isinstance(value, float):
         return F64(value).ptr
-    elif isinstance(value, dt.datetime):
+    if isinstance(value, dt.datetime):
         return Timestamp(value).ptr
-    elif isinstance(value, dt.date):
+    if isinstance(value, dt.date):
         return Date(value).ptr
-    elif isinstance(value, dt.time):
+    if isinstance(value, dt.time):
         return Time(value).ptr
-    elif isinstance(value, uuid.UUID):
+    if isinstance(value, uuid.UUID):
         return GUID(value).ptr
-    elif isinstance(value, str):
+    if isinstance(value, str):
         return Symbol(value).ptr
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         return Dict(value).ptr
-    elif isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple)):
         return List(value).ptr
-    elif value is None:
+    if value is None:
         # TODO: Return a special null value if available
         # For now, create an empty list as placeholder
         return List([]).ptr
 
-    raise RayConversionError(
+    raise exceptions.RayConversionError(
         f"Cannot convert Python type {type(value).__name__} to RayObject"
     )
 
 
 def ray_to_python(ray_obj: r.RayObject) -> t.Any:
     if not isinstance(ray_obj, r.RayObject):
-        raise RayConversionError(f"Expected RayObject, got {type(ray_obj)}")
+        raise exceptions.RayConversionError(f"Expected RayObject, got {type(ray_obj)}")
 
     try:
         return TypeRegistry.from_ptr(ray_obj)
     except Exception as e:
-        raise RayConversionError(f"Failed to convert RayObject: {e}") from e
+        raise exceptions.RayConversionError(f"Failed to convert RayObject: {e}") from e

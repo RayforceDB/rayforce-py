@@ -17,9 +17,7 @@ def test_insert_single_row_kwargs(is_inplace):
     else:
         table.save("test_insert_table")
         result = (
-            Table.from_name("test_insert_table")
-            .insert(id="003", name="charlie", age=41)
-            .execute()
+            Table.from_name("test_insert_table").insert(id="003", name="charlie", age=41).execute()
         )
 
     assert isinstance(result, Table)
@@ -45,9 +43,7 @@ def test_insert_single_row_args(is_inplace):
         result = table.insert("003", "charlie", 41).execute()
     else:
         table.save("test_insert_table")
-        result = (
-            Table.from_name("test_insert_table").insert("003", "charlie", 41).execute()
-        )
+        result = Table.from_name("test_insert_table").insert("003", "charlie", 41).execute()
 
     assert isinstance(result, Table)
 
@@ -69,9 +65,7 @@ def test_insert_multiple_rows_kwargs(is_inplace):
     )
 
     if is_inplace:
-        result = table.insert(
-            id=["003", "004"], name=["charlie", "megan"], age=[41, 30]
-        ).execute()
+        result = table.insert(id=["003", "004"], name=["charlie", "megan"], age=[41, 30]).execute()
     else:
         table.save("test_insert_table")
         result = (

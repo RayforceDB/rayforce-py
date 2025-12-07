@@ -150,10 +150,7 @@ def test_update_with_comparison_condition():
     table.save("test_update_comparison")
 
     result = (
-        Table.from_name("test_update_comparison")
-        .update(age=99)
-        .where(Column("age") > 30)
-        .execute()
+        Table.from_name("test_update_comparison").update(age=99).where(Column("age") > 30).execute()
     )
 
     assert isinstance(result, Table)

@@ -1,5 +1,5 @@
-from .vector import Vector, String
 from .dict import Dict
 from .list import List
+from .vector import String, Vector
 
-__all__ = ["Vector", "Dict", "List", "Table", "String"]
+__all__ = ["Dict", "List", "String", "Table", "Vector"]

@@ -1,7 +1,7 @@
-from rayforce.io.ipc import hopen, Connection, IPCException
+from rayforce.io.ipc import Connection, IPCError, hopen
 
 __all__ = [
-    "hopen",
     "Connection",
-    "IPCException",
+    "IPCError",
+    "hopen",
 ]
