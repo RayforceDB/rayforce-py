@@ -14,6 +14,7 @@ from rayforce.types import (
     String,
     Symbol,
     Vector,
+    exceptions,
 )
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
@@ -232,8 +233,21 @@ class TableInitMixin:
         return self._ptr
 
     @classmethod
-    def from_splayed(cls, path: str) -> Table:
-        return utils.eval_obj(List([Operation.GET_SPLAYED, FFI.init_string(path)]))
+    def from_splayed(cls, path: str, symlink: str | None = None) -> Table:
+        _args = [FFI.init_string(path)]
+        if symlink is not None:
+            _args.append(FFI.init_string(symlink))
+        _tbl = utils.eval_obj(List([Operation.GET_SPLAYED, *_args]))
+        _tbl.is_parted = True
+        return _tbl
+
+    @classmethod
+    def from_parted(cls, path: str, symlink: str) -> Table:
+        _tbl = utils.eval_obj(
+            List([Operation.GET_PARTED, FFI.init_string(path), QuotedSymbol(symlink)])
+        )
+        _tbl.is_parted = True
+        return _tbl
 
 
 class TableIOMixin:
@@ -250,20 +264,16 @@ class TableIOMixin:
     def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
-    def set_splayed(self, path: str) -> None:
-        utils.eval_obj(
-            List(
-                [
-                    Operation.SET_SPLAYED,
-                    FFI.init_string(path),
-                    self.evaled_ptr,
-                ]
-            )
-        )
+    def set_splayed(self, path: str, symlink: str | None = None) -> None:
+        _args = [FFI.init_string(path), self.evaled_ptr]
+        if symlink is not None:
+            _args.append(FFI.init_string(symlink))
+        utils.eval_obj(List([Operation.SET_SPLAYED, *_args]))
 
 
 class TableValueAccessorMixin:
     _ptr: r.RayObject | str
+    is_parted: bool
 
     if t.TYPE_CHECKING:
 
@@ -274,6 +284,10 @@ class TableValueAccessorMixin:
         return utils.ray_to_python(FFI.get_table_keys(self.evaled_ptr))
 
     def values(self) -> List:
+        if self.is_parted:
+            raise exceptions.PartedTableError(
+                "use .select() first. Unable to fetch values from parted table."
+            )
         return utils.ray_to_python(FFI.get_table_values(self.evaled_ptr))
 
 
@@ -453,6 +467,7 @@ class Table(
     type_code = r.TYPE_TABLE
     _ptr: r.RayObject | str
     is_reference: bool
+    is_parted: bool = False
 
 
 class SelectQuery:

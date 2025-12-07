@@ -100,10 +100,89 @@ def test_set_splayed_and_from_splayed(tmp_path):
     assert Symbol("amount") in columns
     assert Symbol("status") in columns
 
-    values = loaded_table.values()
+    values = loaded_table.select("*").execute().values()
     assert len(values) == 3
 
     category_col, amount_col, status_col = values
     assert [s.value for s in category_col] == ["A", "B", "A", "B"]
     assert [v.value for v in amount_col] == [100, 200, 150, 250]
     assert [s.value for s in status_col] == ["active", "inactive", "active", "active"]
+
+
+def test_set_splayed_and_from_parted(tmp_path):
+    table = Table.from_dict(
+        {
+            "category": Vector(items=["A", "B", "C", "D"], ray_type=Symbol),
+            "amount": Vector(items=[100, 200, 150, 250], ray_type=I64),
+            "status": Vector(items=["active", "inactive", "active", "active"], ray_type=Symbol),
+        }
+    )
+
+    splayed_dir = tmp_path / "test_splayed"
+    splayed_dir.mkdir()
+    assert splayed_dir.exists()
+
+    for i in ["2024.01.01", "2024.01.02", "2024.01.03"]:
+        table.set_splayed(f"{splayed_dir}/{i}/test/", f"{splayed_dir}/sym")
+
+        assert (splayed_dir / f"{i}" / "test" / ".d").exists()
+        assert (splayed_dir / f"{i}" / "test" / "category").exists()
+        assert (splayed_dir / f"{i}" / "test" / "amount").exists()
+        assert (splayed_dir / f"{i}" / "test" / "status").exists()
+
+    loaded_table = Table.from_parted(f"{splayed_dir}/", "test")
+
+    assert isinstance(loaded_table, Table)
+    columns = loaded_table.columns()
+    assert len(columns) == 4
+    assert Symbol("Date") in columns  # this is default partitioning criteria
+    assert Symbol("category") in columns
+    assert Symbol("amount") in columns
+    assert Symbol("status") in columns
+
+    values = loaded_table.select("*").execute().values()
+    assert len(values) == 4
+
+    date_col, category_col, amount_col, status_col = values
+    assert [s.value for s in category_col] == [
+        "A",
+        "B",
+        "C",
+        "D",
+        "A",
+        "B",
+        "C",
+        "D",
+        "A",
+        "B",
+        "C",
+        "D",
+    ]
+    assert [v.value for v in amount_col] == [
+        100,
+        200,
+        150,
+        250,
+        100,
+        200,
+        150,
+        250,
+        100,
+        200,
+        150,
+        250,
+    ]
+    assert [s.value for s in status_col] == [
+        "active",
+        "inactive",
+        "active",
+        "active",
+        "active",
+        "inactive",
+        "active",
+        "active",
+        "active",
+        "inactive",
+        "active",
+        "active",
+    ]

@@ -97,6 +97,7 @@ class Operation(enum.StrEnum):
     SET = "set"
     SET_SPLAYED = "set-splayed"
     GET_SPLAYED = "get-splayed"
+    GET_PARTED = "get-parted"
 
     @property
     def primitive(self) -> r.RayObject:
