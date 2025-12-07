@@ -9,7 +9,7 @@ class BinaryDistribution(Distribution):
 
 setup(
     name='rayforce_py',
-    version='0.0.8',
+    version='0.0.9',
     packages=find_packages(),
     package_data={
         'rayforce': ['*.so', '*.dylib', '*.pyi', 'bin/rayforce'],
@@ -32,6 +32,7 @@ setup(
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
         'Programming Language :: C',
     ],
     entry_points={'console_scripts': ['rayforce=rayforce.cli:main']},

@@ -1,5 +1,6 @@
 import datetime as dt
 
+import platform
 import pytest
 
 from rayforce.plugins.polars import from_polars
@@ -11,9 +12,12 @@ def polars():
     try:
         import polars as pl
 
+        if platform.system() == "Linux" and platform.machine() == "x86_64":
+            pytest.skip("Polars is known to raise segmentation fault on x86_64 Linux machines")
+
         return pl
     except ImportError:
-        pytest.skip("polars is not installed")
+        pytest.skip("Polars is not installed")
 
 
 def test_from_polars_basic_types(polars):

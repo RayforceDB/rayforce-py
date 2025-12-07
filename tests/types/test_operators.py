@@ -14,9 +14,9 @@ def test_all_operations_have_primitives():
             r.TYPE_UNARY,
             r.TYPE_BINARY,
             r.TYPE_VARY,
-        ), f"Operation {op.name} ({op.value}) primitive has invalid type: {
-            primitive.get_obj_type()
-        }"
+        ), (
+            f"Operation {op.name} ({op.value}) primitive has invalid type: {primitive.get_obj_type()}"
+        )
 
 
 def test_operation_properties():

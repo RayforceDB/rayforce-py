@@ -1,7 +1,7 @@
 import contextlib
-from typing import Any
+import typing as t
 
-from rayforce import _rayforce_c as r
+from rayforce import _rayforce_c as r  # noqa: TC001
 from rayforce.core.ffi import FFI
 from rayforce.types.containers.vector import String
 from rayforce.utils import ray_to_python
@@ -22,7 +22,7 @@ class Connection:
         self.handle = handle
         self._closed = False
 
-    def execute(self, data: Any) -> Any:
+    def execute(self, data: t.Any) -> t.Any:
         if self._closed:
             raise IPCError("Cannot write to closed connection")
 

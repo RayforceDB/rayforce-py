@@ -44,7 +44,7 @@ class KDBConnection:
 
     def __init__(
         self,
-        engine: "KDBEngine",
+        engine: KDBEngine,
         conn: r.RayObject,
     ) -> None:
         if (_type := conn.get_obj_type()) != self._type:
@@ -90,7 +90,7 @@ class KDBConnection:
         self.is_closed = True
         self.disposed_at = datetime.now(UTC)
 
-    def __enter__(self) -> "KDBConnection":
+    def __enter__(self) -> KDBConnection:
         return self
 
     def __exit__(self, *args, **kwargs) -> None:

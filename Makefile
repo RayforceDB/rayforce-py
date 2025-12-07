@@ -7,8 +7,9 @@ LIBNAME = _rayforce.so
 
 ifeq ($(UNAME_S),Darwin)
   RAYKX_LIB_NAME = libraykx.dylib
-  RELEASE_LDFLAGS = $(shell python3.13-config --ldflags)
-  SHARED_COMPILE_FLAGS = -lpython3.13
+  RELEASE_LDFLAGS = $(shell python3 -c "import sysconfig; print(sysconfig.get_config_var('LDFLAGS') or '')")
+  PYTHON_VERSION = $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  SHARED_COMPILE_FLAGS = -lpython$(PYTHON_VERSION)
 else ifeq ($(UNAME_S),Linux)
   RAYKX_LIB_NAME = libraykx.so
   RELEASE_LDFLAGS = $$(RELEASE_LDFLAGS)
@@ -17,22 +18,23 @@ else
   $(error Unsupported platform: $(UNAME_S))
 endif
 
-pull_from_gh:
+pull_rayforce_from_github:
 	@rm -rf $(EXEC_DIR)/tmp/rayforce-c && \
 	echo "⬇️  Cloning rayforce repo from GitHub..."; \
 	git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c && \
 	cp -r $(EXEC_DIR)/tmp/rayforce-c/core $(EXEC_DIR)/rayforce/rayforce
 
-patch_makefile:
+patch_rayforce_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'PY_OBJECTS = core/rayforce_c.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) $$(shell python3.13-config --includes)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) -I$$(shell python3 -c "import sysconfig; print(sysconfig.get_config_var(\"INCLUDEPY\"))")' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 
-clean-ext:
+clean: 
+	@echo "🧹 Cleaning cache and generated files..."
 	@cd $(EXEC_DIR) && rm -rf \
 		rayforce/_rayforce_c.so  \
 		rayforce/_rayforce.c*.so  \
@@ -43,14 +45,11 @@ clean-ext:
 		*.egg-info \
 		dist/ && \
 		find . -type d -name "__pycache__" -exec rm -rf {} +
-
-clean: clean-ext
-	@echo "🧹 Cleaning cache and generated files..."
 	@cd $(EXEC_DIR) && rm -rf \
 		rayforce/rayforce/ \
 		tmp/ \
 
-ext: 
+rayforce_binaries: 
 	@cp rayforce/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c && $(MAKE) release
@@ -61,25 +60,15 @@ ext:
 	@cp tmp/rayforce-c/rayforce rayforce/bin/rayforce
 	@chmod +x rayforce/bin/rayforce
 
-all: pull_from_gh patch_makefile ext
+app: pull_rayforce_from_github patch_rayforce_makefile rayforce_binaries
 
 test:
-	pytest -x -vv tests/
+	python3 -m pytest -x -vv tests/
 
 lint:
-	ruff format tests/ rayforce/
-	ruff check rayforce/ --fix
-	mypy rayforce/
-
-wheel:
-	@echo "📦 Building wheel package..." 
-	@rm -rf build/ dist/ *.egg-info/ 
-	@python3 setup.py bdist_wheel 
-
-install-wheel: wheel
-	@echo "🔧 Installing wheel locally..."
-	@pip3 install --force-reinstall dist/*.whl
-
+	python3 -m ruff format tests/ rayforce/
+	python3 -m ruff check rayforce/ --fix
+	python3 -m mypy rayforce/
 
 ipython:
 	ipython -i -c "from rayforce import *"
@@ -87,6 +76,24 @@ ipython:
 benchmarkdb:
 	python3 benchmark/run.py $(ARGS)
 
-pypi:
+# CI {{
+wheels:
 	cibuildwheel --platform linux --archs x86_64
 	cibuildwheel --platform macos --archs arm64
+
+citest:
+	python3 -m ruff format tests/ rayforce/ --check
+	python3 -m ruff check rayforce/
+	python3 -m mypy rayforce/
+	python3 -m pytest -x -vv tests/
+
+test-linux-versions:
+	@chmod +x scripts/test_linux_versions.sh
+	@./scripts/test_linux_versions.sh
+
+test-macos-versions:
+	@chmod +x scripts/test_macos_versions.sh
+	@./scripts/test_macos_versions.sh
+
+test-versions: test-linux-versions test-macos-versions
+# }}

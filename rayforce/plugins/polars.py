@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import platform
 import typing as t
 
 from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp, Vector
@@ -8,6 +9,12 @@ if t.TYPE_CHECKING:
     import polars as pl  # type: ignore[import-not-found]
 
     from rayforce.types.base import RayObject
+
+if platform.system() == "Linux" and platform.machine() == "x86_64":
+    print(
+        "Warning: Use Polars plugin with caution.\n"
+        "It is known to raise segmentation errors on x86_64 Linux machines"
+    )
 
 
 def _infer_ray_type_from_polars_dtype(dtype: t.Any) -> type[RayObject]:

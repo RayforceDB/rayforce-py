@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayforce_py"
-version = "0.0.8"
+version = "0.0.9"
 description = "Python bindings for RayforceDB"
 readme = "README.md"
 authors = [{name = "Karim"}]
@@ -31,7 +31,7 @@ polars = ["polars>=0.19.0"]
 all = ["pandas>=2.0.0", "polars>=0.19.0"]
 
 [tool.cibuildwheel]
-build = "cp311-* cp312-* cp313-*"
+build = "cp311-* cp312-* cp313-* cp314-*"
 skip = "*-win32 *-manylinux_i686 *-musllinux_*"
 archs = ["auto64"]
 before-build = "bash {project}/scripts/prepare_build.sh"
@@ -56,7 +56,7 @@ before-all = [
 
 [tool.ruff]
 show-fixes = true
-target-version = "py311"
+target-version = "py314"
 line-length = 100
 exclude = [
     ".git",

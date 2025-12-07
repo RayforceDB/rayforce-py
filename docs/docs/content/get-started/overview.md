@@ -64,13 +64,13 @@ You can manually clone latest github repo and build it yourself
 ~ $ git clone https://github.com/RayforceDB/rayforce-py.git
 ~ $ cd rayforce-py
 
-~/rayforce-py $ make all
+~/rayforce-py $ make app
 # 1. Pulls the latest Rayforce from GitHub
 # 2. Builds the Rayforce and it's plugins
 # 3. Moves binaries around so they become available to the library
 
 ~/rayforce-py $ python -c "import rayforce; print(rayforce.version)"
-0.0.8
+0.0.9
 ```
 
 ## Discover
