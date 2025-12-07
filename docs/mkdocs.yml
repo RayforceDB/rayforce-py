@@ -134,6 +134,8 @@ nav:
       - Group By: content/documentation/query-guide/group-by.md
     - Plugins:
       - Overview: content/documentation/plugins/overview.md
+      - Polars: content/documentation/plugins/polars.md
+      - Pandas: content/documentation/plugins/pandas.md
       - KDB: content/documentation/plugins/kdb.md
     - Development:
       - Overview: content/documentation/development/overview.md
