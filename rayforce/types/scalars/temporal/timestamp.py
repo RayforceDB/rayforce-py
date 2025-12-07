@@ -29,6 +29,9 @@ class Timestamp(Scalar):
 
     def _create_from_value(self, value: dt.datetime | int | str) -> r.RayObject:
         if isinstance(value, dt.datetime):
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=dt.UTC)
+
             return FFI.init_timestamp(_datetime_to_ns(value - epoch2000_py))
         if isinstance(value, int):
             return FFI.init_timestamp(value)

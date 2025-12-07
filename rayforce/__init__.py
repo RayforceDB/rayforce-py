@@ -39,7 +39,6 @@ else:
 
 
 from .io.ipc import Connection, IPCError, hopen  # noqa: E402
-from .plugins.raykx import ConnectionAlreadyClosedError, KDBConnection, KDBEngine  # noqa: E402
 from .types import (  # noqa: E402
     B8,
     C8,
@@ -79,12 +78,9 @@ __all__ = [
     "U8",
     "Column",
     "Connection",
-    "ConnectionAlreadyClosedError",
     "Date",
     "Dict",
     "IPCError",
-    "KDBConnection",
-    "KDBEngine",
     "List",
     "Operation",
     "QuotedSymbol",

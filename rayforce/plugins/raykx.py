@@ -5,6 +5,7 @@ import sys
 from rayforce import _rayforce_c as r
 from rayforce import utils
 from rayforce.core import FFI
+from rayforce.plugins import exceptions
 
 if sys.platform == "darwin":
     raykx_lib_name = "libraykx.dylib"
@@ -35,10 +36,6 @@ _fn_send = FFI.loadfn_from_file(
     fn_name="raykx_send",
     args_count=2,
 )
-
-
-class ConnectionAlreadyClosedError(Exception):
-    """Raises when attemting to utilise closed connection"""
 
 
 class KDBConnection:
@@ -76,13 +73,13 @@ class KDBConnection:
 
     def execute(self, query: str) -> r.RayObject:
         if self.is_closed:
-            raise ConnectionAlreadyClosedError
+            raise exceptions.KDBConnectionAlreadyClosedError
 
         result = self.__execute_kdb_query(query=query)
         if result.get_obj_type() == r.TYPE_ERR:
             error_message = FFI.get_error_message(result)
             if error_message and error_message.startswith("'ipc_send"):
-                raise ConnectionAlreadyClosedError
+                raise exceptions.KDBConnectionAlreadyClosedError
 
             raise ValueError(f"Failed to execute statement: {error_message}")
 

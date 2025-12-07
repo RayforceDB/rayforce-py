@@ -35,6 +35,11 @@ def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.Ra
     ):
         return value.ptr
 
+    if value is None:
+        # TODO: Return a special null value if available
+        # For now, create an empty list as placeholder
+        return List([]).ptr
+
     if ray_type is not None and not isinstance(ray_type, int):
         return ray_type(value).ptr
 
@@ -62,10 +67,6 @@ def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.Ra
         return Dict(value).ptr
     if isinstance(value, (list, tuple)):
         return List(value).ptr
-    if value is None:
-        # TODO: Return a special null value if available
-        # For now, create an empty list as placeholder
-        return List([]).ptr
 
     raise exceptions.RayConversionError(
         f"Cannot convert Python type {type(value).__name__} to RayObject"

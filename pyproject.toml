@@ -25,6 +25,11 @@ classifiers = [
 [project.scripts]
 rayforce = "rayforce.cli:main"
 
+[project.optional-dependencies]
+pandas = ["pandas>=2.0.0"]
+polars = ["polars>=0.19.0"]
+all = ["pandas>=2.0.0", "polars>=0.19.0"]
+
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-*"
 skip = "*-win32 *-manylinux_i686 *-musllinux_*"
