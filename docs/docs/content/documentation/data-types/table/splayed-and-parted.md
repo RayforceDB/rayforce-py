@@ -30,6 +30,7 @@ In Rayforce-Py, you can set a table splayed to the disk and load it back.
 ```
 !!! warning ""
     Splayed tables require using `.select()` before accessing values. Direct access to `.values()` will raise a `PartedTableError`.
+    Any destructive operation (`update()` `insert()` `upsert()` is forbidden until the table is loaded into memory by using `select()`)
 
 !!! note ""
     - `path` (str): Path to the directory containing the splayed table.

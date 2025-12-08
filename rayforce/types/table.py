@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from functools import wraps
 import typing as t
 
 from rayforce import _rayforce_c as r
@@ -271,24 +272,52 @@ class TableIOMixin:
         utils.eval_obj(List([Operation.SET_SPLAYED, *_args]))
 
 
+class DestructiveOperationHandler:
+    def __call__(self, func: t.Callable) -> t.Callable:
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.is_parted:
+                raise exceptions.PartedTableError(
+                    "use .select() first. Unable to use destructive operation on a parted table."
+                )
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+
 class TableValueAccessorMixin:
     _ptr: r.RayObject | str
     is_parted: bool
 
     if t.TYPE_CHECKING:
+        is_reference: bool
 
         @property
         def evaled_ptr(self) -> r.RayObject: ...
 
+        @property
+        def ptr(self) -> r.RayObject: ...
+
     def columns(self) -> Vector:
         return utils.ray_to_python(FFI.get_table_keys(self.evaled_ptr))
 
+    @DestructiveOperationHandler()
     def values(self) -> List:
-        if self.is_parted:
-            raise exceptions.PartedTableError(
-                "use .select() first. Unable to fetch values from parted table."
-            )
         return utils.ray_to_python(FFI.get_table_values(self.evaled_ptr))
+
+    @DestructiveOperationHandler()
+    def update(self, **kwargs) -> UpdateQuery:
+        return UpdateQuery(t.cast("_TableProtocol", self), **kwargs)
+
+    @DestructiveOperationHandler()
+    def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
+        return UpsertQuery(
+            t.cast("_TableProtocol", self), *args, match_by_first=match_by_first, **kwargs
+        )
+
+    @DestructiveOperationHandler()
+    def insert(self, *args, **kwargs) -> InsertQuery:
+        return InsertQuery(t.cast("_TableProtocol", self), *args, **kwargs)
 
 
 class TableReprMixin:

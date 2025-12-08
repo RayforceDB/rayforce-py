@@ -136,3 +136,29 @@ def test_upsert_multiple_rows_args(is_inplace):
     assert values[2][0].value == 30
     assert values[1][2].value == "charlie"
     assert values[2][2].value == 41
+
+
+def test_upsert_to_empty_table():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=[], ray_type=Symbol),
+            "name": Vector(items=[], ray_type=Symbol),
+            "age": Vector(items=[], ray_type=I64),
+        },
+    )
+
+    result = table.upsert(
+        ["001", "003"],
+        ["alice", "charlie"],
+        [30, 41],
+        match_by_first=1,
+    ).execute()
+
+    assert isinstance(result, Table)
+
+    values = result.values()
+    assert len(values[0]) >= 2
+    assert values[1][0].value == "alice"
+    assert values[2][0].value == 30
+    assert values[1][1].value == "charlie"
+    assert values[2][1].value == 41
