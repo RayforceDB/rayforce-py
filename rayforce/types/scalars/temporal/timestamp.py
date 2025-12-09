@@ -38,6 +38,9 @@ class Timestamp(Scalar):
         if isinstance(value, str):
             try:
                 dt_obj = dt.datetime.fromisoformat(value)
+                if dt_obj.tzinfo is None:
+                    dt_obj = dt_obj.replace(tzinfo=dt.UTC)
+
             except ValueError as e:
                 raise exceptions.RayInitError(f"Timestamp value is not isoformat: {value}") from e
             return FFI.init_timestamp(_datetime_to_ns(dt_obj - epoch2000_py))

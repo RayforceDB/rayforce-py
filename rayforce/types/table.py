@@ -697,18 +697,13 @@ class InsertQuery:
             raise ValueError("No data to insert")
 
     def execute(self) -> Table:
-        if self.table.is_reference:
-            cloned_table = FFI.quote(self.table.ptr)
-            new_table = FFI.insert(
-                table=cloned_table,
-                data=self.insertable_ptr,
-            )
-            return Table.from_name(Symbol(ptr=new_table).value)
-        cloned_table = self.table.ptr
+        cloned_table = FFI.quote(self.table.ptr)
         new_table = FFI.insert(
             table=cloned_table,
             data=self.insertable_ptr,
         )
+        if self.table.is_reference:
+            return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)
 
 
@@ -785,20 +780,14 @@ class UpsertQuery:
         self._match_by_first = I64(match_by_first)
 
     def execute(self) -> Table:
-        if self.table.is_reference:
-            cloned_table = FFI.quote(self.table.ptr)
-            new_table = FFI.upsert(
-                table=cloned_table,
-                keys=self._match_by_first.ptr,
-                data=self.upsertable_ptr,
-            )
-            return Table.from_name(Symbol(ptr=new_table).value)
-        cloned_table = self.table.ptr
+        cloned_table = FFI.quote(self.table.ptr)
         new_table = FFI.upsert(
             table=cloned_table,
             keys=self._match_by_first.ptr,
             data=self.upsertable_ptr,
         )
+        if self.table.is_reference:
+            return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)
 
 
