@@ -305,20 +305,6 @@ class TableValueAccessorMixin:
     def values(self) -> List:
         return utils.ray_to_python(FFI.get_table_values(self.evaled_ptr))
 
-    @DestructiveOperationHandler()
-    def update(self, **kwargs) -> UpdateQuery:
-        return UpdateQuery(t.cast("_TableProtocol", self), **kwargs)
-
-    @DestructiveOperationHandler()
-    def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
-        return UpsertQuery(
-            t.cast("_TableProtocol", self), *args, match_by_first=match_by_first, **kwargs
-        )
-
-    @DestructiveOperationHandler()
-    def insert(self, *args, **kwargs) -> InsertQuery:
-        return InsertQuery(t.cast("_TableProtocol", self), *args, **kwargs)
-
 
 class TableReprMixin:
     _ptr: r.RayObject | str
