@@ -322,11 +322,9 @@
   box-shadow: none;
 }
 
-/* Remove any borders from tab container on home page */
+/* Hide tabs on home page */
 body:has(.hero-section) .md-tabs {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  display: none !important;
 }
 
 .md-tabs__link {

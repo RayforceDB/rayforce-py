@@ -6,7 +6,7 @@ theme:
   name: material
   icon:
     repo: fontawesome/brands/github 
-  favicon: assets/logo.png
+  favicon: assets/py_logo_dark.svg
   features:
     - content.action.edit
     - content.action.view
@@ -22,25 +22,24 @@ theme:
     - search.suggest
 
   palette:
+    - scheme: slate
+      primary: amber
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: amber
       accent: amber
       toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: amber
-      accent: amber
-      toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Switch to dark mode
   font:
     text: Outfit
     code: JetBrains Mono
-  logo: assets/logo.png
+  logo: assets/py_logo_dark.svg
 
 
 extra:
@@ -133,7 +132,6 @@ nav:
       - Order By: content/documentation/query-guide/order-by.md
       - Group By: content/documentation/query-guide/group-by.md
     - Plugins:
-      - Overview: content/documentation/plugins/overview.md
       - Polars: content/documentation/plugins/polars.md
       - Pandas: content/documentation/plugins/pandas.md
       - KDB: content/documentation/plugins/kdb.md

@@ -2,6 +2,194 @@
 
 Rayforce-Py delivers exceptional performance, closely matching native Rayforce while significantly outperforming Pandas. Our benchmarks are based on the [H2OAI Group By Benchmark](https://h2oai.github.io/db-benchmark/) standard.
 
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+<script>
+// Store chart instances
+var chartInstances = {};
+
+// Helper function to convert RGB to hex
+function rgbToHex(rgb) {
+  if (!rgb) return '';
+  if (rgb.startsWith('#')) return rgb;
+  
+  var match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (match) {
+    var r = parseInt(match[1]).toString(16).padStart(2, '0');
+    var g = parseInt(match[2]).toString(16).padStart(2, '0');
+    var b = parseInt(match[3]).toString(16).padStart(2, '0');
+    return '#' + r + g + b;
+  }
+  return rgb;
+}
+
+// Simple and reliable theme detection
+function getChartTheme() {
+  // Use light grey for all chart text
+  var textColor = '#888888';
+  
+  // Determine if dark mode for other styling
+  var scheme = document.documentElement.getAttribute('data-md-color-scheme');
+  var isDark = scheme === 'slate';
+  
+  return {
+    textColor: textColor,
+    gridLineColor: isDark ? '#4A5568' : '#D0D0D0',
+    isDark: isDark
+  };
+}
+
+// Initialize all charts when DOM is ready
+function initAllCharts() {
+  // Get fresh theme detection for each initialization
+  var theme = getChartTheme();
+  
+  // Q1 Chart
+  var q1Chart = echarts.init(document.getElementById('q1-chart'));
+  q1Chart.setOption({
+    title: { text: 'Q1: Group by id1, sum v1', left: 'center', textStyle: { fontSize: 16, fontWeight: 'bold', color: theme.textColor } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(params) { return params[0].name + '<br/>' + params[0].seriesName + ': ' + params[0].value + ' μs'; }, textStyle: { color: theme.textColor }, backgroundColor: theme.isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.gridLineColor },
+    legend: { top: 30, data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], textStyle: { color: theme.textColor } },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 80, containLabel: true },
+    xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { textStyle: { color: theme.textColor } } },
+    yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { textStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
+    series: [{ name: 'Time (μs)', type: 'bar', data: [
+      { value: 781, itemStyle: { color: '#E9A320' } },
+      { value: 779, itemStyle: { color: '#1B365D' } },
+      { value: 1096, itemStyle: { color: '#718096' } },
+      { value: 3696, itemStyle: { color: '#718096' } }
+    ], label: { show: true, position: 'top', textStyle: { color: theme.textColor, fontWeight: 'bold' } } }]
+  });
+  chartInstances['q1-chart'] = q1Chart;
+  
+  // Q2 Chart
+  var q2Chart = echarts.init(document.getElementById('q2-chart'));
+  q2Chart.setOption({
+    title: { text: 'Q2: Group by id1, id2, sum v1', left: 'center', textStyle: { fontSize: 16, fontWeight: 'bold', color: theme.textColor } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(params) { return params[0].name + '<br/>' + params[0].seriesName + ': ' + params[0].value + ' μs'; }, textStyle: { color: theme.textColor }, backgroundColor: theme.isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.gridLineColor },
+    legend: { top: 30, data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], textStyle: { color: theme.textColor } },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 80, containLabel: true },
+    xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
+    yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
+    series: [{ name: 'Time (μs)', type: 'bar', data: [
+      { value: 2398, itemStyle: { color: '#E9A320' } },
+      { value: 2410, itemStyle: { color: '#1B365D' } },
+      { value: 6797, itemStyle: { color: '#718096' } },
+      { value: 14155, itemStyle: { color: '#718096' } }
+    ], label: { show: true, position: 'top', color: theme.textColor } }]
+  });
+  chartInstances['q2-chart'] = q2Chart;
+  
+  // Q3 Chart
+  var q3Chart = echarts.init(document.getElementById('q3-chart'));
+  q3Chart.setOption({
+    title: { text: 'Q3: Group by id3, sum v1, avg v3', left: 'center', textStyle: { fontSize: 16, fontWeight: 'bold', color: theme.textColor } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(params) { return params[0].name + '<br/>' + params[0].seriesName + ': ' + params[0].value + ' μs'; }, textStyle: { color: theme.textColor }, backgroundColor: theme.isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.gridLineColor },
+    legend: { top: 30, data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], textStyle: { color: theme.textColor } },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 80, containLabel: true },
+    xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
+    yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
+    series: [{ name: 'Time (μs)', type: 'bar', data: [
+      { value: 995, itemStyle: { color: '#E9A320' } },
+      { value: 983, itemStyle: { color: '#1B365D' } },
+      { value: 1261, itemStyle: { color: '#718096' } },
+      { value: 5141, itemStyle: { color: '#718096' } }
+    ], label: { show: true, position: 'top', color: theme.textColor } }]
+  });
+  chartInstances['q3-chart'] = q3Chart;
+  
+  // Q4 Chart
+  var q4Chart = echarts.init(document.getElementById('q4-chart'));
+  q4Chart.setOption({
+    title: { text: 'Q4: Group by id3, avg v1, v2, v3', left: 'center', textStyle: { fontSize: 16, fontWeight: 'bold', color: theme.textColor } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(params) { return params[0].name + '<br/>' + params[0].seriesName + ': ' + params[0].value + ' μs'; }, textStyle: { color: theme.textColor }, backgroundColor: theme.isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.gridLineColor },
+    legend: { top: 30, data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], textStyle: { color: theme.textColor } },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 80, containLabel: true },
+    xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
+    yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
+    series: [{ name: 'Time (μs)', type: 'bar', data: [
+      { value: 1228, itemStyle: { color: '#E9A320' } },
+      { value: 1205, itemStyle: { color: '#1B365D' } },
+      { value: 1441, itemStyle: { color: '#718096' } },
+      { value: 6158, itemStyle: { color: '#718096' } }
+    ], label: { show: true, position: 'top', color: theme.textColor } }]
+  });
+  chartInstances['q4-chart'] = q4Chart;
+  
+  // Q5 Chart
+  var q5Chart = echarts.init(document.getElementById('q5-chart'));
+  q5Chart.setOption({
+    title: { text: 'Q5: Group by id3, sum v1, v2, v3', left: 'center', textStyle: { fontSize: 16, fontWeight: 'bold', color: theme.textColor } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(params) { return params[0].name + '<br/>' + params[0].seriesName + ': ' + params[0].value + ' μs'; }, textStyle: { color: theme.textColor }, backgroundColor: theme.isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.gridLineColor },
+    legend: { top: 30, data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], textStyle: { color: theme.textColor } },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 80, containLabel: true },
+    xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
+    yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
+    series: [{ name: 'Time (μs)', type: 'bar', data: [
+      { value: 1202, itemStyle: { color: '#E9A320' } },
+      { value: 1176, itemStyle: { color: '#1B365D' } },
+      { value: 1431, itemStyle: { color: '#718096' } },
+      { value: 7086, itemStyle: { color: '#718096' } }
+    ], label: { show: true, position: 'top', color: theme.textColor } }]
+  });
+  chartInstances['q5-chart'] = q5Chart;
+  
+  // Q6 Chart
+  var q6Chart = echarts.init(document.getElementById('q6-chart'));
+  q6Chart.setOption({
+    title: { text: 'Q6: Group by id3, max(v1) - min(v2)', left: 'center', textStyle: { fontSize: 16, fontWeight: 'bold', color: theme.textColor } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(params) { return params[0].name + '<br/>' + params[0].seriesName + ': ' + params[0].value + ' μs'; }, textStyle: { color: theme.textColor }, backgroundColor: theme.isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.gridLineColor },
+    legend: { top: 30, data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], textStyle: { color: theme.textColor } },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 80, containLabel: true },
+    xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
+    yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
+    series: [{ name: 'Time (μs)', type: 'bar', data: [
+      { value: 1019, itemStyle: { color: '#E9A320' } },
+      { value: 990, itemStyle: { color: '#1B365D' } },
+      { value: 3403, itemStyle: { color: '#718096' } },
+      { value: 4922, itemStyle: { color: '#718096' } }
+    ], label: { show: true, position: 'top', color: theme.textColor } }]
+  });
+  chartInstances['q6-chart'] = q6Chart;
+  
+  // Resize handler
+  window.addEventListener('resize', function() {
+    Object.values(chartInstances).forEach(function(chart) {
+      chart.resize();
+    });
+  });
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Wait for theme to be applied - use requestAnimationFrame to ensure DOM is ready
+  requestAnimationFrame(function() {
+    setTimeout(initAllCharts, 200);
+  });
+});
+
+// Watch for theme changes
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.type === 'attributes' && mutation.attributeName === 'data-md-color-scheme') {
+      // Reinitialize all charts with new theme
+      Object.keys(chartInstances).forEach(function(chartId) {
+        chartInstances[chartId].dispose();
+      });
+      chartInstances = {};
+      setTimeout(initAllCharts, 50);
+    }
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-md-color-scheme']
+  });
+});
+</script>
+
 
 <div style="margin: 1.5rem 0;">
   <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
@@ -85,23 +273,27 @@ Rayforce-Py delivers exceptional performance, closely matching native Rayforce w
 
 #### Q1: Group by `id1`, sum `v1`
 
-| Implementation | Time (μs) | Std Dev | vs Native | vs Pandas | vs Polars |
-|----------------|-----------|---------|------------|-----------|-----------|
-| **Rayforce-Py** | **781** | - | 1.00x | **4.74x** | **1.40x** |
-| Native Rayforce | 779 | - | 1.00x | 4.75x | 1.41x |
-| Polars | 1,096 | - | 1.41x | 3.37x | 1.00x |
-| Pandas | 3,696 | - | 4.75x | 1.00x | 0.30x |
+<div id="q1-chart" style="width: 100%; height: 400px; margin-bottom: 1.5rem;"></div>
+
+| Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
+|----------------|-----------|------------|-----------|-----------|
+| **Rayforce-Py** | **781** | 1.00x | **4.74x** | **1.40x** |
+| Native Rayforce | 779 | 1.00x | 4.75x | 1.41x |
+| Polars | 1,096 | 1.41x | 3.37x | 1.00x |
+| Pandas | 3,696 | 4.75x | 1.00x | 0.30x |
 
 ---
 
 #### Q2: Group by `id1`, `id2`, sum `v1`
 
-| Implementation | Time (μs) | Std Dev | vs Native | vs Pandas | vs Polars |
-|----------------|-----------|---------|------------|-----------|-----------|
-| **Rayforce-Py** | **2,398** | - | 1.00x | **5.90x** | **2.83x** |
-| Native Rayforce | 2,410 | - | 1.00x | 5.87x | 2.82x |
-| Polars | 6,797 | - | 2.82x | 2.08x | 1.00x |
-| Pandas | 14,155 | - | 5.87x | 1.00x | 0.48x |
+<div id="q2-chart" style="width: 100%; height: 400px; margin-bottom: 1.5rem;"></div>
+
+| Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
+|----------------|-----------|------------|-----------|-----------|
+| **Rayforce-Py** | **2,398** | 1.00x | **5.90x** | **2.83x** |
+| Native Rayforce | 2,410 | 1.00x | 5.87x | 2.82x |
+| Polars | 6,797 | 2.82x | 2.08x | 1.00x |
+| Pandas | 14,155 | 5.87x | 1.00x | 0.48x |
 
 !!! tip "Performance Insight"
     Multi-column group by operations show the largest performance advantage, with Rayforce-Py being **5.90x faster** than Pandas and **2.83x faster** than Polars.
@@ -110,34 +302,40 @@ Rayforce-Py delivers exceptional performance, closely matching native Rayforce w
 
 #### Q3: Group by `id3`, sum `v1`, avg `v3`
 
-| Implementation | Time (μs) | Std Dev | vs Native | vs Pandas | vs Polars |
-|----------------|-----------|---------|------------|-----------|-----------|
-| **Rayforce-Py** | **995** | - | 0.99x | **5.17x** | **1.27x** |
-| Native Rayforce | 983 | - | 1.00x | 5.23x | 1.28x |
-| Polars | 1,261 | - | 1.28x | 4.08x | 1.00x |
-| Pandas | 5,141 | - | 5.23x | 1.00x | 0.25x |
+<div id="q3-chart" style="width: 100%; height: 400px; margin-bottom: 1.5rem;"></div>
+
+| Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
+|----------------|-----------|------------|-----------|-----------|
+| **Rayforce-Py** | **995** | 0.99x | **5.17x** | **1.27x** |
+| Native Rayforce | 983 | 1.00x | 5.23x | 1.28x |
+| Polars | 1,261 | 1.28x | 4.08x | 1.00x |
+| Pandas | 5,141 | 5.23x | 1.00x | 0.25x |
 
 ---
 
 #### Q4: Group by `id3`, avg `v1`, `v2`, `v3`
 
-| Implementation | Time (μs) | Std Dev | vs Native | vs Pandas | vs Polars |
-|----------------|-----------|---------|------------|-----------|-----------|
-| **Rayforce-Py** | **1,228** | - | 0.98x | **5.01x** | **1.17x** |
-| Native Rayforce | 1,205 | - | 1.00x | 5.11x | 1.19x |
-| Polars | 1,441 | - | 1.19x | 4.27x | 1.00x |
-| Pandas | 6,158 | - | 5.11x | 1.00x | 0.23x |
+<div id="q4-chart" style="width: 100%; height: 400px; margin-bottom: 1.5rem;"></div>
+
+| Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
+|----------------|-----------|------------|-----------|-----------|
+| **Rayforce-Py** | **1,228** | 0.98x | **5.01x** | **1.17x** |
+| Native Rayforce | 1,205 | 1.00x | 5.11x | 1.19x |
+| Polars | 1,441 | 1.19x | 4.27x | 1.00x |
+| Pandas | 6,158 | 5.11x | 1.00x | 0.23x |
 
 ---
 
 #### Q5: Group by `id3`, sum `v1`, `v2`, `v3`
 
-| Implementation | Time (μs) | Std Dev | vs Native | vs Pandas | vs Polars |
-|----------------|-----------|---------|------------|-----------|-----------|
-| **Rayforce-Py** | **1,202** | - | 0.98x | **5.90x** | **1.19x** |
-| Native Rayforce | 1,176 | - | 1.00x | 6.03x | 1.22x |
-| Polars | 1,431 | - | 1.22x | 4.95x | 1.00x |
-| Pandas | 7,086 | - | 6.03x | 1.00x | 0.20x |
+<div id="q5-chart" style="width: 100%; height: 400px; margin-bottom: 1.5rem;"></div>
+
+| Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
+|----------------|-----------|------------|-----------|-----------|
+| **Rayforce-Py** | **1,202** | 0.98x | **5.90x** | **1.19x** |
+| Native Rayforce | 1,176 | 1.00x | 6.03x | 1.22x |
+| Polars | 1,431 | 1.22x | 4.95x | 1.00x |
+| Pandas | 7,086 | 6.03x | 1.00x | 0.20x |
 
 !!! success "Best Performance"
     Q5 shows Rayforce-Py performing **5.90x faster** than Pandas and **1.19x faster** than Polars, demonstrating excellent performance on multiple aggregations.
@@ -146,12 +344,14 @@ Rayforce-Py delivers exceptional performance, closely matching native Rayforce w
 
 #### Q6: Group by `id3`, max(`v1`) - min(`v2`)
 
-| Implementation | Time (μs) | Std Dev | vs Native | vs Pandas | vs Polars |
-|----------------|-----------|---------|------------|-----------|-----------|
-| **Rayforce-Py** | **1,019** | - | 0.97x | **4.83x** | **3.34x** |
-| Native Rayforce | 990 | - | 1.00x | 4.97x | 3.44x |
-| Polars | 3,403 | - | 3.44x | 1.45x | 1.00x |
-| Pandas | 4,922 | - | 4.97x | 1.00x | 0.69x |
+<div id="q6-chart" style="width: 100%; height: 400px; margin-bottom: 1.5rem;"></div>
+
+| Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
+|----------------|-----------|------------|-----------|-----------|
+| **Rayforce-Py** | **1,019** | 0.97x | **4.83x** | **3.34x** |
+| Native Rayforce | 990 | 1.00x | 4.97x | 3.44x |
+| Polars | 3,403 | 3.44x | 1.45x | 1.00x |
+| Pandas | 4,922 | 4.97x | 1.00x | 0.69x |
 
 ---
 
@@ -191,3 +391,38 @@ make benchmarkdb ARGS="--runs 20 --warmup 5"
 
 - [Getting Started Guide](overview.md) - Learn how to use Rayforce-Py
 - [Query Guide](../documentation/query-guide/overview.md) - Explore query capabilities
+
+<script>
+// Store chart references and update on theme change
+var chartInstances = {};
+
+// Function to initialize and store chart
+function initChart(chartId, optionFunc) {
+  document.addEventListener('DOMContentLoaded', function() {
+    var theme = getChartTheme();
+    var chart = echarts.init(document.getElementById(chartId));
+    var option = optionFunc(theme);
+    chart.setOption(option);
+    chartInstances[chartId] = chart;
+    window.addEventListener('resize', function() { chart.resize(); });
+  });
+}
+
+// Watch for theme changes
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.type === 'attributes' && mutation.attributeName === 'data-md-color-scheme') {
+      Object.keys(chartInstances).forEach(function(chartId) {
+        updateChartTheme(chartInstances[chartId], chartId);
+      });
+    }
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-md-color-scheme']
+  });
+});
+</script>

@@ -2,6 +2,8 @@
 
 This section has all the necessary information for the developers who want to contribute to the library
 
+### Chat with us in [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
+
 ### :material-pen: Lint
 
 Rayforce-Py is using mypy and ruff to perform linting and typing across the library. Accessible with

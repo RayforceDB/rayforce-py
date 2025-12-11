@@ -40,10 +40,10 @@ Rayforce-Py is a powerful library which allows you to effectively execute statem
 
 Platform support info:
 
-| Platform/Version                     | 3.11             | 3.12             | 3.13             |
-| ------------------------------------ | ---------------- | ---------------- | ---------------- |
-| :simple-linux: Linux x86_64          | :material-check: | :material-check: | :material-check: |
-| :simple-apple: MacOS arm64           | :material-check: | :material-check: | :material-check: |
+| Platform/Version                     | 3.11             | 3.12             | 3.13             | 3.14             |
+| ------------------------------------ | ---------------- | ---------------- | ---------------- | ---------------- |
+| :simple-linux: Linux x86_64          | :material-check: | :material-check: | :material-check: | :material-check: |
+| :simple-apple: MacOS arm64           | :material-check: | :material-check: | :material-check: | :material-check: |
 | :material-microsoft-windows: Windows | :material-close: `coming soon` |
 
 

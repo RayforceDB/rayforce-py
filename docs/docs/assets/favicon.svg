@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="217.25697mm"
+   height="201.08336mm"
+   viewBox="0 0 217.25697 201.08336"
+   version="1.1"
+   id="svg94280"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="favicon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview94282"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="true"
+     showguides="false"
+     inkscape:zoom="0.74742565"
+     inkscape:cx="524.46689"
+     inkscape:cy="309.72981"
+     inkscape:window-width="1920"
+     inkscape:window-height="1048"
+     inkscape:window-x="1280"
+     inkscape:window-y="-5"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid95332"
+       originx="0.178836"
+       originy="-1.509993" />
+  </sodipodi:namedview>
+  <defs
+     id="defs94277" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(12.178413,-34.371026)">
+    <path
+       fill="#04233b"
+       d="m 154.67461,34.371055 c 60.85417,7.9375 78.2505,116.264745 -14.13436,125.790645 l 64.4052,75.29268 h -52.91667 l -93.728676,-111.27692 88.551736,0.0508 c 28.98947,0.0167 28.19349,-51.674471 -0.35756,-51.69114 C 107.07482,72.51413 19.73711,71.412724 19.73711,71.412724 L -12.178413,34.386906 c 57.017152,-0.005 115.806453,-0.01111 166.853023,-0.01588 z"
+       id="path145"
+       sodipodi:nodetypes="cccccsscccc"
+       style="clip-rule:evenodd;fill:#e9a033;fill-opacity:1;fill-rule:evenodd;stroke-width:0.264583;image-rendering:optimizeQuality;shape-rendering:geometricPrecision;text-rendering:geometricPrecision" />
+  </g>
+</svg>

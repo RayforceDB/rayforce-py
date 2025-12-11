@@ -1,23 +1,35 @@
 <div class="hero-section">
   <div class="hero-background">
-    <video autoplay loop muted playsinline preload="auto">
-      <source src="assets/hero.mp4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
+    <div class="hero-cells"></div>
   </div>
-  <div class="hero-content">
-    <h1>Welcome to Rayforce-Py</h1>
-    <p class="hero-subtitle">High-Performance Python Interface for RayforceDB</p>
-    <p class="hero-description">
-      <a href="https://github.com/RayforceDB/rayforce">RayforceDB</a> - 
-      a blazing fast columnar vector database written in <b>pure C</b>.
-    </p>
-    <div class="hero-buttons">
-      <a href="content/get-started/overview.html" class="md-button md-button--primary">Get Started</a>
-      <!-- <div class="hero-buttons-secondary"> -->
-        <a href="https://pypi.org/project/rayforce-py/" class="md-button">View on PyPi</a>
-        <a href="https://github.com/RayforceDB/rayforce-py" class="md-button">View on GitHub</a>
-      <!-- </div> -->
+  <div class="hero-container">
+    <div class="hero-content">
+      <h1>Welcome to Rayforce-Py</h1>
+      <p class="hero-subtitle">High-Performance Python Interface for <a href="https://rayforcedb.com" class="hero-subtitle-logo-link"><img src="assets/logo_light_full.svg" alt="RayforceDB" class="hero-subtitle-logo"></a></p>
+      <div class="hero-links">
+        <a href="content/get-started/overview.html" class="hero-link hero-link--primary">Getting Started</a>
+        <div class="hero-links-secondary">
+          <a href="https://pypi.org/project/rayforce-py/" class="hero-link">
+            <img src="assets/pypi-logo.png" alt="PyPI" class="hero-link-icon">
+            <span>View on PyPI</span>
+          </a>
+          <a href="https://github.com/RayforceDB/rayforce-py" class="hero-link">
+            <img src="assets/github-logo.svg" alt="GitHub" class="hero-link-icon">
+            <span>View on GitHub</span>
+          </a>
+          <a href="https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss" class="hero-link">
+            <img src="assets/zulip-logo.svg" alt="Zulip" class="hero-link-icon">
+            <span>Join on Zulip</span>
+          </a>
+          <a href="content/license.html" class="hero-link">
+            <span class="hero-link-emoji">📄</span>
+            <span>License</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="hero-logo">
+      <img src="assets/py_logo_dark.svg" alt="Rayforce-Py">
     </div>
   </div>
 </div>
