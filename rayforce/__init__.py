@@ -10,21 +10,21 @@ version = "0.0.12"
 
 if sys.platform == "linux":
     lib_name = "_rayforce_c.so"
-    raykx_lib_name = "libraykx.so"
+    # raykx_lib_name = "libraykx.so"
 elif sys.platform == "darwin":
     lib_name = "_rayforce_c.so"
-    raykx_lib_name = "libraykx.dylib"
+    # raykx_lib_name = "libraykx.dylib"
 elif sys.platform == "win32":
     lib_name = "rayforce.dll"
 else:
     raise ImportError(f"Platform not supported: {sys.platform}")
 
 lib_path = Path(__file__).resolve().parent / lib_name
-raykx_lib_path = Path(__file__).resolve().parent / "plugins" / raykx_lib_name
-if lib_path.exists() and raykx_lib_path.exists():
+# raykx_lib_path = Path(__file__).resolve().parent / "plugins" / raykx_lib_name
+if lib_path.exists():
     try:
         ctypes.CDLL(str(lib_path), mode=ctypes.RTLD_GLOBAL)
-        ctypes.CDLL(str(raykx_lib_path), mode=ctypes.RTLD_GLOBAL)
+        # ctypes.CDLL(str(raykx_lib_path), mode=ctypes.RTLD_GLOBAL)
     except Exception as e:
         raise ImportError(f"Error loading CDLL: {e}") from e
 else:
@@ -32,7 +32,6 @@ else:
         f"""
         Unable to load library - binaries are not compiled: \n
             - {lib_path} - Compiled: {lib_path.exists()}\n
-            - {raykx_lib_path} - Compiled: {raykx_lib_path.exists()}\n
         Try to reinstall the library.
         """,
     )

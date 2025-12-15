@@ -50,6 +50,7 @@ cp "${EXEC_DIR}/rayforce/rayforce_c.c" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
 make python
+make debug
 cp "${EXEC_DIR}/tmp/rayforce-c/_rayforce.so" "${EXEC_DIR}/rayforce/_rayforce_c.so"
 
 echo "Building Raykx..."

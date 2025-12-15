@@ -52,7 +52,7 @@ clean:
 rayforce_binaries: 
 	@cp rayforce/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cd tmp/rayforce-c && $(MAKE) python
-	@cd tmp/rayforce-c && $(MAKE) release
+	@cd tmp/rayforce-c && $(MAKE) debug
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
 	@cp tmp/rayforce-c/ext/raykx/$(RAYKX_LIB_NAME) rayforce/plugins/$(RAYKX_LIB_NAME)
