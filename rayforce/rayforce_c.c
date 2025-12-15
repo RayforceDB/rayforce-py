@@ -919,8 +919,16 @@ static PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
     Py_RETURN_NONE;
 
   RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result != NULL)
-    result->obj = func_obj;
+  if (result != NULL) {
+    // Clone the internal function to avoid use-after-free when Python GC
+    // deallocates the RayObject. Internal functions are owned by the runtime.
+    result->obj = clone_obj(func_obj);
+    if (result->obj == NULL) {
+      Py_DECREF(result);
+      PyErr_SetString(PyExc_MemoryError, "Failed to clone internal function");
+      return NULL;
+    }
+  }
 
   return (PyObject *)result;
 }
