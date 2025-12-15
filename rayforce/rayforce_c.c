@@ -585,8 +585,15 @@ static PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
   }
 
   RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result != NULL)
-    result->obj = clone_obj(keys_list);
+  if (result == NULL)
+    return NULL;
+
+  result->obj = clone_obj(keys_list);
+  if (result->obj == NULL) {
+    Py_DECREF(result);
+    PyErr_SetString(PyExc_MemoryError, "Failed to clone keys list");
+    return NULL;
+  }
 
   return (PyObject *)result;
 }
@@ -604,8 +611,15 @@ static PyObject *raypy_table_values(PyObject *self, PyObject *args) {
   }
 
   RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result != NULL)
-    result->obj = clone_obj(values_list);
+  if (result == NULL)
+    return NULL;
+
+  result->obj = clone_obj(values_list);
+  if (result->obj == NULL) {
+    Py_DECREF(result);
+    PyErr_SetString(PyExc_MemoryError, "Failed to clone values list");
+    return NULL;
+  }
 
   return (PyObject *)result;
 }
@@ -782,8 +796,7 @@ static PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
     ray_obj->obj = result_obj;
   }
 
-  Py_INCREF((PyObject *)ray_obj);
-  return (PyObject *)ray_obj;
+  Py_RETURN_NONE;
 }
 // END VECTOR OPERATIONS
 // ---------------------------------------------------------------------------
