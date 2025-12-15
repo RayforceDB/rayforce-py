@@ -782,18 +782,16 @@ static PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p clone = clone_obj(val_obj->obj);
-  obj_p old_obj = ray_obj->obj;
+  // Note: set_obj takes ownership of clone and handles all memory management:
+  // - It drops clone on error
+  // - It modifies ray_obj->obj through the pointer
+  // - If reallocation happens (e.g., diverse_obj), it drops the old object
+  // internally
   obj_p result_obj = set_obj(&ray_obj->obj, idx_obj->obj, clone);
 
-  if (result_obj == NULL || result_obj->type == TYPE_ERR) {
-    drop_obj(clone);
+  if (result_obj->type == TYPE_ERR) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to set object");
     return NULL;
-  }
-
-  if (result_obj != old_obj) {
-    drop_obj(old_obj);
-    ray_obj->obj = result_obj;
   }
 
   Py_RETURN_NONE;
