@@ -291,3 +291,83 @@ def test_complex_select_with_computed_columns():
     values = result.values()
     assert len(values) == 3
     assert len(values[0]) == 2
+
+
+def test_select_with_isin_operator():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol),
+            "dept": Vector(items=["eng", "eng", "marketing", "hr", "marketing"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38, 45], ray_type=I64),
+        },
+    )
+
+    result = (
+        table.select("id", "name", "dept", "age")
+        .where(Column("dept").isin(["eng", "marketing"]))
+        .execute()
+    )
+
+    columns = result.columns()
+    assert len(columns) == 4
+    assert "id" in columns
+    assert "name" in columns
+    assert "dept" in columns
+    assert "age" in columns
+
+    values = result.values()
+    assert len(values) == 4
+    assert len(values[0]) == 4
+
+    cols = list(result.columns())
+    name_idx = cols.index("name")
+    dept_idx = cols.index("dept")
+
+    name_col = values[name_idx]
+    dept_col = values[dept_idx]
+
+    returned_depts = [dept_col[i].value for i in range(len(dept_col))]
+    assert all(dept in ["eng", "marketing"] for dept in returned_depts)
+    assert len(returned_depts) == 4
+
+    returned_names = [name_col[i].value for i in range(len(name_col))]
+    assert "alice" in returned_names
+    assert "bob" in returned_names
+    assert "charlie" in returned_names
+    assert "eli" in returned_names
+    assert "dana" not in returned_names
+
+    result_int = (
+        table.select("id", "name", "age")
+        .where(Column("age").isin([29, 41, 45]))
+        .execute()
+    )
+
+    columns_int = result_int.columns()
+    assert len(columns_int) == 3
+    assert "id" in columns_int
+    assert "name" in columns_int
+    assert "age" in columns_int
+
+    values_int = result_int.values()
+    assert len(values_int) == 3
+    assert len(values_int[0]) == 3
+
+    cols_int = list(result_int.columns())
+    name_idx_int = cols_int.index("name")
+    age_idx_int = cols_int.index("age")
+
+    name_col_int = values_int[name_idx_int]
+    age_col_int = values_int[age_idx_int]
+
+    returned_ages = [age_col_int[i].value for i in range(len(age_col_int))]
+    assert all(age in [29, 41, 45] for age in returned_ages)
+    assert len(returned_ages) == 3
+
+    returned_names_int = [name_col_int[i].value for i in range(len(name_col_int))]
+    assert "alice" in returned_names_int  # age 29
+    assert "charlie" in returned_names_int  # age 41
+    assert "eli" in returned_names_int  # age 45
+    assert "bob" not in returned_names_int  # age 34
+    assert "dana" not in returned_names_int  # age 38

@@ -17,11 +17,9 @@ from rayforce.types import (
     Vector,
     exceptions,
 )
+from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
-
-if t.TYPE_CHECKING:
-    from rayforce.types.base import RayObject
 
 
 class _TableProtocol(t.Protocol):
@@ -70,14 +68,21 @@ class AggregationMixin:
             return Expression(Operation.EVAL, self)
         return Expression(Operation.EVAL, Expression(Operation.NOT, self))
 
-    def isin(self, values: list[t.Any]) -> Expression:
-        vec: Vector | List
-        if values and isinstance(values[0], str):
-            vec = Vector(ray_type=Symbol, items=[QuotedSymbol(v) for v in values])
-        else:
-            vec = List(values)
+    def isin(self, values: list[t.Any] | RayObject) -> Expression:
+        if isinstance(values, RayObject):
+            return Expression(Operation.IN, self, values)
 
-        return Expression(Operation.IN, self, vec)
+        if all(isinstance(x, type(values[0])) for x in values):
+            return Expression(
+                Operation.IN,
+                self,
+                Vector(
+                    items=values,
+                    ray_type=utils.python_to_ray(values[0]).get_obj_type(),
+                ),
+            )
+
+        return Expression(Operation.IN, self, Expression(Operation.LIST, *values))
 
 
 class OperatorMixin:

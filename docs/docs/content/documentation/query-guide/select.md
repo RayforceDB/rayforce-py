@@ -119,7 +119,7 @@ Library supports all standard comparison operators:
 Check if a value is in a list:
 
 ```python
->>> result = table.where(table.dept.isin(["eng", "marketing"])).execute()
+>>> result = table.where(Column("dept").isin(["eng", "marketing"])).execute()
 ```
 
 !!! note ""
