@@ -63,7 +63,7 @@
 
 ## 📦 Installation
 
-Package is available on [Pypi](https://pypi.org/project/rayforce-py/0.0.12/)
+Package is available on [Pypi](https://pypi.org/project/rayforce-py/0.0.13/)
 ```bash
 pip install rayforce-py
 ```
