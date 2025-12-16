@@ -360,9 +360,6 @@ class TableQueryMixin:
         @property
         def ptr(self) -> r.RayObject: ...
 
-        @classmethod
-        def from_ptr(cls, ptr: r.RayObject) -> t.Self: ...
-
     def select(self, *cols, **computed_cols) -> SelectQuery:
         return SelectQuery(table=self).select(*cols, **computed_cols)
 
@@ -381,12 +378,12 @@ class TableQueryMixin:
     def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
         return UpsertQuery(self, *args, match_by_first=match_by_first, **kwargs)
 
-    def concat(self, *others: Table) -> _TableProtocol:
-        result = self.ptr
+    def concat(self, *others: Table) -> Table:
+        result: Table = self  # type: ignore[assignment]
         for other in others:
-            expr = Expression(Operation.CONCAT, result, other.ptr)
-            result = utils.eval_obj(expr.compile())
-        return self.from_ptr(result)
+            expr = Expression(Operation.CONCAT, result.ptr, other.ptr)
+            result = t.cast("Table", utils.eval_obj(expr.compile()))
+        return result
 
     def inner_join(self, other: Table, on: str | list[str]) -> Table:
         return self._join(other=other, on=on, type_=Operation.INNER_JOIN)

@@ -22,6 +22,8 @@ repos:
         additional_dependencies: []
         args: [rayforce/]
         exclude: ^tests/
+        pass_filenames: false
+        always_run: true
 
   - repo: local
     hooks:

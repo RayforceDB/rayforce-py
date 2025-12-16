@@ -249,3 +249,90 @@ def test_parted_table_destructive_operations_raise_error(tmp_path):
 
     with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
         loaded_table.upsert(id="001", name="alice_updated", age=30, match_by_first=1)
+
+
+def test_concat_two_tables():
+    table1 = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        }
+    )
+
+    table2 = Table.from_dict(
+        {
+            "id": Vector(items=["003", "004"], ray_type=Symbol),
+            "name": Vector(items=["charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[41, 38], ray_type=I64),
+        }
+    )
+
+    result = table1.concat(table2)
+
+    assert isinstance(result, Table)
+    columns = result.columns()
+    assert len(columns) == 3
+    assert Symbol("id") in columns
+    assert Symbol("name") in columns
+    assert Symbol("age") in columns
+
+    values = result.values()
+    assert len(values) == 3
+    assert len(values[0]) == 4  # Should have 4 rows total
+
+    id_col, name_col, age_col = values
+    assert [s.value for s in id_col] == ["001", "002", "003", "004"]
+    assert [s.value for s in name_col] == ["alice", "bob", "charlie", "dana"]
+    assert [v.value for v in age_col] == [29, 34, 41, 38]
+
+
+def test_concat_multiple_tables():
+    table1 = Table.from_dict(
+        {
+            "id": Vector(items=["001"], ray_type=Symbol),
+            "value": Vector(items=[10], ray_type=I64),
+        }
+    )
+
+    table2 = Table.from_dict(
+        {
+            "id": Vector(items=["002"], ray_type=Symbol),
+            "value": Vector(items=[20], ray_type=I64),
+        }
+    )
+
+    table3 = Table.from_dict(
+        {
+            "id": Vector(items=["003"], ray_type=Symbol),
+            "value": Vector(items=[30], ray_type=I64),
+        }
+    )
+
+    result = table1.concat(table2, table3)
+
+    assert isinstance(result, Table)
+    values = result.values()
+    assert len(values) == 2
+    assert len(values[0]) == 3  # Should have 3 rows total
+
+    id_col, value_col = values
+    assert [s.value for s in id_col] == ["001", "002", "003"]
+    assert [v.value for v in value_col] == [10, 20, 30]
+
+
+def test_concat_empty_others():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+
+    result = table.concat()
+
+    assert isinstance(result, Table)
+    assert result is table  # Should return the same table when no others provided
+    values = result.values()
+    assert len(values) == 2
+    assert len(values[0]) == 2
