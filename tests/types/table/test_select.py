@@ -1,4 +1,4 @@
-from rayforce import Table, Vector, Symbol, I64, F64, Column
+from rayforce import F64, I64, Column, Symbol, Table, Vector
 
 
 def test_select_with_single_where():
@@ -338,11 +338,7 @@ def test_select_with_isin_operator():
     assert "eli" in returned_names
     assert "dana" not in returned_names
 
-    result_int = (
-        table.select("id", "name", "age")
-        .where(Column("age").isin([29, 41, 45]))
-        .execute()
-    )
+    result_int = table.select("id", "name", "age").where(Column("age").isin([29, 41, 45])).execute()
 
     columns_int = result_int.columns()
     assert len(columns_int) == 3
