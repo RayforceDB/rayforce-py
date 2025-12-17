@@ -55,7 +55,9 @@ class Operation(enum.StrEnum):
 
     # Query
     SELECT = "select"
+    UPDATE = "update"
     INSERT = "insert"
+    UPSERT = "upsert"
     WHERE = "where"
 
     # Join

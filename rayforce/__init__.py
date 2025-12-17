@@ -38,7 +38,6 @@ else:
     )
 
 
-from .io.ipc import Connection, IPCError, hopen  # noqa: E402
 from .types import (  # noqa: E402
     B8,
     C8,
@@ -63,7 +62,15 @@ from .types import (  # noqa: E402
     Timestamp,
     Vector,
 )
-from .utils.evaluation import eval_str  # noqa: E402
+from .utils import (  # noqa: E402
+    IPCConnection,
+    IPCEngine,
+    IPCError,
+    eval_obj,
+    eval_str,
+    python_to_ray,
+    ray_to_python,
+)
 
 core_version = String(eval_str("(sysinfo)")["hash"]).to_python()
 
@@ -77,9 +84,10 @@ __all__ = [
     "I64",
     "U8",
     "Column",
-    "Connection",
     "Date",
     "Dict",
+    "IPCConnection",
+    "IPCEngine",
     "IPCError",
     "List",
     "Operation",
@@ -93,7 +101,9 @@ __all__ = [
     "Timestamp",
     "Vector",
     "core_version",
+    "eval_obj",
     "eval_str",
-    "hopen",
+    "python_to_ray",
+    "ray_to_python",
     "version",
 ]

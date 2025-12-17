@@ -393,11 +393,11 @@ class TableQueryMixin:
             result = t.cast("Table", utils.eval_obj(expr.compile()))
         return result
 
-    def inner_join(self, other: Table, on: str | list[str]) -> Table:
-        return self._join(other=other, on=on, type_=Operation.INNER_JOIN)
+    def inner_join(self, other: Table, on: str | list[str]) -> InnerJoin:
+        return InnerJoin(self, other, on)
 
-    def left_join(self, other: Table, on: str | list[str]) -> Table:
-        return self._join(other=other, on=on, type_=Operation.LEFT_JOIN)
+    def left_join(self, other: Table, on: str | list[str]) -> LeftJoin:
+        return LeftJoin(self, other, on)
 
     def window_join(
         self,
@@ -405,14 +405,8 @@ class TableQueryMixin:
         join_with: list[t.Any],
         interval: TableColumnInterval,
         **aggregations,
-    ) -> Table:
-        return self._wj(
-            type_=Operation.WJ,
-            on=on,
-            join_with=join_with,
-            interval=interval,
-            **aggregations,
-        )
+    ) -> WindowJoin:
+        return WindowJoin(self, on, join_with, interval, **aggregations)
 
     def window_join1(
         self,
@@ -420,65 +414,8 @@ class TableQueryMixin:
         join_with: list[t.Any],
         interval: TableColumnInterval,
         **aggregations,
-    ) -> Table:
-        return self._wj(
-            type_=Operation.WJ1,
-            on=on,
-            join_with=join_with,
-            interval=interval,
-            **aggregations,
-        )
-
-    def _join(self, other: Table, on: str | list[str], type_: Operation) -> Table:
-        if type_ not in (Operation.INNER_JOIN, Operation.LEFT_JOIN):
-            raise AssertionError("_join performed only on IJ or LJ")
-
-        if isinstance(on, str):
-            on = [on]
-
-        return utils.eval_obj(
-            List(
-                [
-                    type_,
-                    Vector(items=on, ray_type=Symbol),
-                    self.ptr,
-                    other.ptr if isinstance(other, Table) else other,
-                ]
-            )
-        )
-
-    def _wj(
-        self,
-        type_: Operation,
-        on: list[str],
-        join_with: list[Table],
-        interval: TableColumnInterval,
-        **aggregations,
-    ) -> Table:
-        if type_ not in (Operation.WINDOW_JOIN, Operation.WINDOW_JOIN1):
-            raise AssertionError("_wj performed only on WJ or WJ1")
-
-        agg_dict: dict[str, t.Any] = {}
-        for name, expr in aggregations.items():
-            if isinstance(expr, Expression):
-                agg_dict[name] = expr.compile()
-            elif isinstance(expr, Column):
-                agg_dict[name] = expr.name
-            else:
-                agg_dict[name] = expr
-
-        return utils.eval_obj(
-            List(
-                [
-                    type_,
-                    Vector(items=on, ray_type=Symbol),
-                    interval.compile(),
-                    self.ptr,
-                    *[t.ptr for t in join_with],
-                    agg_dict,
-                ]
-            )
-        )
+    ) -> WindowJoin1:
+        return WindowJoin1(self, on, join_with, interval, **aggregations)
 
 
 class Table(
@@ -495,6 +432,80 @@ class Table(
     is_parted: bool = False
 
 
+class _Join:
+    def __init__(self, table: _TableProtocol, other: Table, on: str | list[str]) -> None:
+        self.table = table
+        self.other = other
+        self.on = on
+
+    def compile(self) -> tuple[r.RayObject, ...]:
+        if isinstance(self.on, str):
+            on = [self.on]
+        return (Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr)
+
+    def execute(self, type_: t.Literal[Operation.LEFT_JOIN | Operation.INNER_JOIN]) -> Table:
+        return utils.eval_obj(List([type_, *self.compile()]))
+
+
+class _WindowJoin(_Join):
+    def __init__(
+        self,
+        table: _TableProtocol,
+        on: list[str],
+        join_with: list[t.Any],
+        interval: TableColumnInterval,
+        **aggregations,
+    ) -> None:
+        self.table = table
+        self.on = on
+        self.join_with = join_with
+        self.interval = interval
+        self.aggregations = aggregations
+
+    def compile(self) -> tuple[r.RayObject, ...]:  # type: ignore[override]
+        agg_dict: dict[str, t.Any] = {}
+        for name, expr in self.aggregations.items():
+            if isinstance(expr, Expression):
+                agg_dict[name] = expr.compile()
+            elif isinstance(expr, Column):
+                agg_dict[name] = expr.name
+            else:
+                agg_dict[name] = expr
+
+        return (
+            Vector(items=self.on, ray_type=Symbol).ptr,
+            self.interval.compile(),
+            self.table.ptr,
+            *[t.ptr for t in self.join_with],
+            Dict(agg_dict).ptr,
+        )
+
+    def execute(  # type: ignore[override]
+        self, type_: t.Literal[Operation.WINDOW_JOIN | Operation.WINDOW_JOIN1]
+    ) -> Table:
+        return utils.eval_obj(List([type_, *self.compile()]).ptr)
+
+
+class InnerJoin(_Join):
+    def execute(self) -> Table:  # type: ignore[override]
+        return super().execute(type_=Operation.INNER_JOIN)
+
+
+class LeftJoin(_Join):
+    def execute(self) -> Table:  # type: ignore[override]
+        return super().execute(type_=Operation.LEFT_JOIN)
+
+
+class WindowJoin(_WindowJoin):
+    def execute(self) -> Table:  # type: ignore[override]
+        return super().execute(type_=Operation.WINDOW_JOIN)
+
+
+class WindowJoin1(_WindowJoin):
+    def execute(self) -> Table:  # type: ignore[override]
+        return super().execute(type_=Operation.WINDOW_JOIN1)
+
+
 class SelectQuery:
     def __init__(
         self,
@@ -502,7 +513,7 @@ class SelectQuery:
         select_cols: tuple[t.Any, t.Any] | None = None,
         where_conditions: list[Expression] | None = None,
         by_cols: tuple[tuple[t.Any, ...], dict[str, t.Any]] | None = None,
-    ):
+    ) -> None:
         self.table = table
         self._select_cols = select_cols
         self._where_conditions = where_conditions or []
@@ -540,13 +551,10 @@ class SelectQuery:
     @property
     def ptr(self) -> r.RayObject:
         if self._ptr is None:
-            self._ptr = self._build_query_ptr()
+            self._ptr = self.compile()
         return self._ptr
 
-    def execute(self) -> Table:
-        return utils.ray_to_python(FFI.select(query=self.ptr))
-
-    def _build_query_ptr(self) -> r.RayObject:
+    def compile(self) -> r.RayObject:
         attributes = {}
         if self._select_cols:
             cols, computed = self._select_cols
@@ -598,6 +606,9 @@ class SelectQuery:
 
         return Dict(query_items).ptr
 
+    def execute(self) -> Table:
+        return utils.ray_to_python(FFI.select(query=self.ptr))
+
 
 class UpdateQuery:
     def __init__(self, table: _TableProtocol, **attributes):
@@ -609,7 +620,7 @@ class UpdateQuery:
         self.where_condition = condition
         return self
 
-    def execute(self) -> Table:
+    def compile(self) -> r.RayObject:
         where_expr = None
         if self.where_condition:
             if isinstance(self.where_condition, Expression):
@@ -638,7 +649,10 @@ class UpdateQuery:
         if where_expr is not None:
             query_items["where"] = where_expr
 
-        new_table = FFI.update(query=Dict(query_items).ptr)
+        return Dict(query_items).ptr
+
+    def execute(self) -> Table:
+        new_table = FFI.update(query=self.compile())
         if self.table.is_reference:
             return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)
@@ -653,29 +667,30 @@ class InsertQuery:
         if args and kwargs:
             raise ValueError("Insert query accepts args OR kwargs, not both")
 
-        if args:
-            first = args[0]
+    def compile(self) -> r.RayObject:
+        if self.args:
+            first = self.args[0]
 
             if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
                 _args = List([])
-                for sub in args:
+                for sub in self.args:
                     _args.append(
                         Vector(
                             items=sub,
                             ray_type=utils.python_to_ray(sub[0]).get_obj_type(),
                         )
                     )
-                self.insertable_ptr = _args.ptr
+                insertable = _args.ptr
 
             else:
-                self.insertable_ptr = List(args).ptr
+                insertable = List(self.args).ptr
 
-        elif kwargs:
-            values = list(kwargs.values())
+        elif self.kwargs:
+            values = list(self.kwargs.values())
             first_val = values[0]
 
             if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
-                keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
+                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
                 for val in values:
@@ -685,19 +700,18 @@ class InsertQuery:
                             ray_type=utils.python_to_ray(val[0]).get_obj_type(),
                         )
                     )
-                self.insertable_ptr = Dict.from_items(keys=keys, values=_values).ptr
+                insertable = Dict.from_items(keys=keys, values=_values).ptr
 
             else:
-                self.insertable_ptr = Dict(kwargs).ptr
+                insertable = Dict(self.kwargs).ptr
         else:
             raise ValueError("No data to insert")
 
+        return insertable
+
     def execute(self) -> Table:
         cloned_table = FFI.quote(self.table.ptr)
-        new_table = FFI.insert(
-            table=cloned_table,
-            data=self.insertable_ptr,
-        )
+        new_table = FFI.insert(table=cloned_table, data=self.compile())
         if self.table.is_reference:
             return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)
@@ -708,42 +722,44 @@ class UpsertQuery:
         self.table = table
         self.args = args
         self.kwargs = kwargs
+        self.match_by_first = match_by_first
 
         if args and kwargs:
             raise ValueError("Upsert query accepts args OR kwargs, not both")
 
-        if args:
-            first = args[0]
+    def compile(self) -> tuple[r.RayObject, r.RayObject]:
+        if self.args:
+            first = self.args[0]
 
             if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
                 _args = List([])
-                for sub in args:
+                for sub in self.args:
                     _args.append(
                         Vector(
                             items=sub,
                             ray_type=utils.python_to_ray(sub[0]).get_obj_type(),
                         )
                     )
-                self.upsertable_ptr = _args.ptr
+                upsertable = _args.ptr
 
             else:
                 _args = List([])
-                for sub in args:
+                for sub in self.args:
                     _args.append(
                         Vector(
                             items=[sub],
                             ray_type=utils.python_to_ray(sub).get_obj_type(),
                         )
                     )
-                self.upsertable_ptr = _args.ptr
+                upsertable = _args.ptr
 
         # TODO: for consistency with insert, allow to use single values isntead of vectors
-        elif kwargs:
-            values = list(kwargs.values())
+        elif self.kwargs:
+            values = list(self.kwargs.values())
             first_val = values[0]
 
             if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
-                keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
+                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
                 for val in values:
@@ -753,10 +769,10 @@ class UpsertQuery:
                             ray_type=utils.python_to_ray(val[0]).get_obj_type(),
                         )
                     )
-                self.upsertable_ptr = Dict.from_items(keys=keys, values=_values).ptr
+                upsertable = Dict.from_items(keys=keys, values=_values).ptr
 
             else:
-                keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
+                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
                 _values = List([])
 
                 for val in values:
@@ -766,22 +782,19 @@ class UpsertQuery:
                             ray_type=utils.python_to_ray(val).get_obj_type(),
                         )
                     )
-                self.upsertable_ptr = Dict.from_items(keys=keys, values=_values).ptr
+                upsertable = Dict.from_items(keys=keys, values=_values).ptr
         else:
             raise ValueError("No data to insert")
 
-        if match_by_first <= 0:
+        if self.match_by_first <= 0:
             raise ValueError("Match by first has to be greater than 0")
 
-        self._match_by_first = I64(match_by_first)
+        return I64(self.match_by_first).ptr, upsertable
 
     def execute(self) -> Table:
+        compiled = self.compile()
         cloned_table = FFI.quote(self.table.ptr)
-        new_table = FFI.upsert(
-            table=cloned_table,
-            keys=self._match_by_first.ptr,
-            data=self.upsertable_ptr,
-        )
+        new_table = FFI.upsert(table=cloned_table, keys=compiled[0], data=compiled[1])
         if self.table.is_reference:
             return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)
@@ -800,7 +813,7 @@ class TableColumnInterval:
         self.table = table
         self.column = column
 
-    def compile(self) -> List:
+    def compile(self) -> r.RayObject:
         return List(
             [
                 Operation.MAP_LEFT,
@@ -816,17 +829,21 @@ class TableColumnInterval:
                     ]
                 ),
             ]
-        )
+        ).ptr
 
 
 __all__ = [
     "Column",
     "Expression",
+    "InnerJoin",
     "InsertQuery",
+    "LeftJoin",
     "Table",
     "TableColumnInterval",
     "UpdateQuery",
     "UpsertQuery",
+    "WindowJoin",
+    "WindowJoin1",
 ]
 
 TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)  # type: ignore[arg-type]

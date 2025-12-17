@@ -27,7 +27,7 @@ def test_inner_join():
         },
     )
 
-    result = trades.inner_join(quotes, "Sym")
+    result = trades.inner_join(quotes, "Sym").execute()
 
     # Verify result is a table
     assert isinstance(result, Table)
@@ -90,7 +90,7 @@ def test_left_join():
         },
     )
 
-    result = trades.left_join(quotes, "Sym")
+    result = trades.left_join(quotes, "Sym").execute()
 
     # Verify result is a table
     assert isinstance(result, Table)
@@ -200,7 +200,7 @@ def test_window_join():
         join_with=[quotes],
         min_bid=Column("bid").min(),
         max_ask=Column("ask").max(),
-    )
+    ).execute()
 
     # Verify result structure
     assert isinstance(result, Table)
@@ -293,7 +293,7 @@ def test_window_join1():
         join_with=[quotes],
         min_bid=Column("bid").min(),
         max_ask=Column("ask").max(),
-    )
+    ).execute()
 
     assert isinstance(result, Table)
     columns = result.columns()
