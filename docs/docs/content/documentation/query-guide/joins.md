@@ -3,7 +3,7 @@
 Rayforce-Py provides a useful interface to the Rayforce table joins.
 
 !!! warning ""
-    Join operations work without lazy-loading, and performed without `.execute()` statement.
+    Join operations work are lazy-loaded, and performed only after `.execute()` statement.
 
 ## :material-border-inside: Inner Join
 
@@ -32,7 +32,7 @@ Inner join combines two tables based on matching values in specified columns. On
         "ask": Vector(items=[75, 150], ray_type=I64),
     })
 
->>> result = trades.inner_join(quotes, on="sym")
+>>> result = trades.inner_join(quotes, on="sym").execute()
 ┌──────┬──────────────┬───────┬─────┬─────┐
 │ sym  │ time         │ price │ bid │ ask │
 ├──────┼──────────────┼───────┼─────┼─────┤
@@ -47,6 +47,9 @@ Inner join combines two tables based on matching values in specified columns. On
 
 !!! note ""
     If you wish to join on multiple columns, provide a list of strings
+    ```python
+    result = trades.inner_join(quotes, on=["col1", "col2"]).execute()
+    ```
 
 
 ## :material-arrow-left: Left Join
@@ -75,13 +78,13 @@ Left join returns all rows from the left table and matching rows from the right 
         "ask": Vector(items=[75, 150], ray_type=I64),
     })
 
->>> result = trades.left_join(quotes, on="sym")
+>>> result = trades.left_join(quotes, on="sym").execute()
 ```
 
 !!! note ""
     If you wish to join on multiple columns, provide a list of strings:
     ```python
-    result = trades.left_join(quotes, on=["col1", "col2"])
+    result = trades.left_join(quotes, on=["col1", "col2"]).execute()
     ```
 
 ## :material-window-maximize: Window Join
@@ -130,7 +133,7 @@ Window join matches records on specified columns and aggregates values from anot
         join_with=[quotes],
         min_bid=Column("bid").min(),
         max_ask=Column("ask").max(),
-    )
+    ).execute()
 ┌──────┬──────────────┬────────┬─────────┬─────────┐
 │ sym  │ time         │ price  │ min_bid │ max_ask │
 ├──────┼──────────────┼────────┼─────────┼─────────┤
@@ -148,8 +151,8 @@ Window join matches records on specified columns and aggregates values from anot
 
 ```python
 # Open intervals - may exclude boundary values
-result = trades.window_join(on=["sym", "time"], interval=interval, join_with=[quotes], ...)
+result = trades.window_join(on=["sym", "time"], interval=interval, join_with=[quotes], ...).execute()
 
-# Closed intervals - includes boundary values  
-result = trades.window_join1(on=["sym", "time"], interval=interval, join_with=[quotes], ...)
+# Closed intervals - includes boundary values
+result = trades.window_join1(on=["sym", "time"], interval=interval, join_with=[quotes], ...).execute()
 ```
