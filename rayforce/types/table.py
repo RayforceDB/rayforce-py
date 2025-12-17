@@ -240,19 +240,20 @@ class TableInitMixin:
         return self._ptr
 
     @classmethod
-    def from_splayed(cls, path: str, symlink: str | None = None) -> Table:
+    def from_splayed(cls, path: str, symfile: str | None = None) -> Table:
         _args = [FFI.init_string(path)]
-        if symlink is not None:
-            _args.append(FFI.init_string(symlink))
+        if symfile is not None:
+            _args.append(FFI.init_string(symfile))
         _tbl = utils.eval_obj(List([Operation.GET_SPLAYED, *_args]))
         _tbl.is_parted = True
         return _tbl
 
     @classmethod
-    def from_parted(cls, path: str, symlink: str) -> Table:
-        _tbl = utils.eval_obj(
-            List([Operation.GET_PARTED, FFI.init_string(path), QuotedSymbol(symlink)])
-        )
+    def from_parted(cls, path: str, symfile: str) -> Table:
+        _args = [FFI.init_string(path)]
+        if symfile is not None:
+            _args.append(QuotedSymbol(symfile).ptr)
+        _tbl = utils.eval_obj(List([Operation.GET_PARTED, *_args]))
         _tbl.is_parted = True
         return _tbl
 
