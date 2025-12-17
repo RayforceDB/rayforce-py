@@ -38,6 +38,6 @@ Using kwargs:
     ).execute()
 ```
 
-!!! warning ""
-    It's important to know - `insert()` operation doesn't modify the original table.
-    To access new table with inserted row, assign the result of `.execute()` operation to the new variable.
+!!! info "Inplace vs By Reference Operations"
+    The `insert()` operation can work with both in-memory tables (inplace) and saved tables (by reference).
+    Learn more about the difference between [:material-help-circle: Inplace and by reference operations](../FAQ.html#what-is-the-difference-between-inplace-and-by-reference-operations).

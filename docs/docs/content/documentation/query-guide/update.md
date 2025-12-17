@@ -14,6 +14,6 @@ result = table.update(salary=150000).execute()
 result = table.update(salary=150000).where(table.dept == "IT").execute()
 ```
 
-!!! warning ""
-    It's important to know that `update()` operation doesn't modify the original table.
-    To access the new table with upserted rows, assign the result of `.execute()` to a new variable.
+!!! info "Inplace vs By Reference Operations"
+    The `update()` operation can work with both in-memory tables (inplace) and saved tables (by reference).
+    Learn more about the difference between [:material-help-circle: Inplace and by reference operations](../FAQ.html#what-is-the-difference-between-inplace-and-by-reference-operations).

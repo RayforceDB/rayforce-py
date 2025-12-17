@@ -5,7 +5,7 @@ repo_name: GitHub
 theme:
   name: material
   icon:
-    repo: fontawesome/brands/github 
+    repo: fontawesome/brands/github
   favicon: assets/py_logo_dark.svg
   features:
     - content.action.edit
@@ -44,7 +44,7 @@ theme:
 
 extra:
     social:
-      - icon: fontawesome/brands/github 
+      - icon: fontawesome/brands/github
         link: https://github.com/RayforceDB/rayforce-py
 
 copyright: Copyright &copy; 2025 RayforceDB
@@ -102,6 +102,7 @@ nav:
     - Technical Details: content/get-started/technical-details.md
   - Documentation:
     - Overview: content/documentation/overview.md
+    - FAQ: content/documentation/FAQ.md
     - Data Types:
       - Overview: content/documentation/data-types/overview.md
       - Table:
@@ -132,6 +133,7 @@ nav:
       - Order By: content/documentation/query-guide/order-by.md
       - Group By: content/documentation/query-guide/group-by.md
     - Plugins:
+      - IPC: content/documentation/plugins/ipc.md
       - Polars: content/documentation/plugins/polars.md
       - Pandas: content/documentation/plugins/pandas.md
       - KDB: content/documentation/plugins/kdb.md
