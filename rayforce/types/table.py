@@ -8,6 +8,7 @@ from rayforce import _rayforce_c as r
 from rayforce import utils
 from rayforce.core import FFI
 from rayforce.types import (
+    C8,
     I64,
     Dict,
     List,
@@ -275,6 +276,12 @@ class TableIOMixin:
         if symlink is not None:
             _args.append(FFI.init_string(symlink))
         utils.eval_obj(List([Operation.SET_SPLAYED, *_args]))
+
+    def set_csv(self, path: str, separator: str | None = None) -> None:
+        _args = [FFI.init_string(path), self.evaled_ptr]
+        if separator is not None:
+            _args.append(C8(separator).ptr)
+        utils.eval_obj(List([Operation.WRITE_CSV, *_args]))
 
 
 class DestructiveOperationHandler:

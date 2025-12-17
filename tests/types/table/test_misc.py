@@ -73,6 +73,63 @@ def test_table_from_csv_all_types(tmp_path):
     assert [s.value for s in sym_col] == ["foo", "bar"]
 
 
+def test_set_csv(tmp_path):
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    csv_path = tmp_path / "test_table.csv"
+    table.set_csv(str(csv_path))
+    assert csv_path.exists()
+
+    loaded_table = Table.from_csv([Symbol, Symbol, I64], str(csv_path))
+
+    assert isinstance(loaded_table, Table)
+    columns = loaded_table.columns()
+    assert len(columns) == 3
+    assert Symbol("id") in columns
+    assert Symbol("name") in columns
+    assert Symbol("age") in columns
+
+    values = loaded_table.values()
+    assert len(values) == 3
+
+    column_dict = {col.value: idx for idx, col in enumerate(columns)}
+    id_col = values[column_dict["id"]]
+    name_col = values[column_dict["name"]]
+    age_col = values[column_dict["age"]]
+
+    assert [s.value for s in id_col] == ["001", "002", "003"]
+    assert [s.value for s in name_col] == ["alice", "bob", "charlie"]
+    assert [v.value for v in age_col] == [29, 34, 41]
+
+
+def test_set_csv_with_custom_separator(tmp_path):
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        }
+    )
+
+    csv_path = tmp_path / "test_table_sep.csv"
+    table.set_csv(str(csv_path), separator=";")
+
+    # Verify file was created
+    assert csv_path.exists()
+
+    # Verify the file uses semicolon separator by reading it
+    csv_content = csv_path.read_text()
+    lines = csv_content.strip().split("\n")
+    assert len(lines) >= 2  # Header + at least one data row
+    assert ";" in lines[0]  # Header should contain semicolon
+
+
 def test_set_splayed_and_from_splayed(tmp_path):
     table = Table.from_dict(
         {

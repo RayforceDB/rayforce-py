@@ -94,6 +94,7 @@ class Operation(enum.StrEnum):
     QUOTE = "quote"
     CONCAT = "concat"
     READ_CSV = "read-csv"
+    WRITE_CSV = "write-csv"
     SET = "set"
     SET_SPLAYED = "set-splayed"
     GET_SPLAYED = "get-splayed"

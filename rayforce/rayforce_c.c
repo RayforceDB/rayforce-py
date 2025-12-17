@@ -254,6 +254,7 @@ static PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
 
     if (guid_from_str(guid_str, str_len, *AS_GUID(result->obj)) != 0) {
       drop_obj(result->obj);
+      result->obj = NULL;
       Py_DECREF(result);
       PyErr_SetString(PyExc_ValueError, "Invalid GUID format");
       return NULL;
