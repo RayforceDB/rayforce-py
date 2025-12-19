@@ -8,7 +8,7 @@ from rayforce.types.registry import TypeRegistry
 
 class F64(Scalar):
     type_code = -r.TYPE_F64
-    ray_name = "F64"
+    ray_name = "f64"
 
     def _create_from_value(self, value: float) -> r.RayObject:
         return FFI.init_f64(float(value))

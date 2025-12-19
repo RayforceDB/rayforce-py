@@ -9,7 +9,7 @@ from rayforce.types.registry import TypeRegistry
 
 class C8(Scalar):
     type_code = -r.TYPE_C8
-    ray_name = "C8"
+    ray_name = "c8"
 
     def _create_from_value(self, value: str) -> r.RayObject:
         try:

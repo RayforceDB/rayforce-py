@@ -8,7 +8,7 @@ from rayforce.types.registry import TypeRegistry
 
 class Symbol(Scalar):
     type_code = -r.TYPE_SYMBOL
-    ray_name = "Symbol"
+    ray_name = "symbol"
 
     def _create_from_value(self, value: str) -> r.RayObject:
         return FFI.init_symbol(str(value))

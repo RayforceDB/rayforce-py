@@ -8,7 +8,7 @@ from rayforce.types.registry import TypeRegistry
 
 class B8(Scalar):
     type_code = -r.TYPE_B8
-    ray_name = "B8"
+    ray_name = "b8"
 
     def _create_from_value(self, value: bool) -> r.RayObject:
         return FFI.init_b8(bool(value))

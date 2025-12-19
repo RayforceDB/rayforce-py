@@ -11,7 +11,7 @@ from rayforce.utils.conversion import python_to_ray
 
 class List(Container):
     type_code = r.TYPE_LIST
-    ray_name = "List"
+    ray_name = "LIST"
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
         list_ptr = FFI.init_list()

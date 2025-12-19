@@ -11,7 +11,7 @@ from rayforce.types.registry import TypeRegistry
 
 class GUID(Scalar):
     type_code = -r.TYPE_GUID
-    ray_name = "GUID"
+    ray_name = "guid"
 
     def _create_from_value(self, value: uuid.UUID | str | bytes) -> r.RayObject:
         if isinstance(value, uuid.UUID):

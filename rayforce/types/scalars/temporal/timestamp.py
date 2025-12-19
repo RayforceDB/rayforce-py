@@ -25,7 +25,7 @@ class Timestamp(Scalar):
     """
 
     type_code = -r.TYPE_TIMESTAMP
-    ray_name = "Timestamp"
+    ray_name = "timestamp"
 
     def _create_from_value(self, value: dt.datetime | int | str) -> r.RayObject:
         if isinstance(value, dt.datetime):

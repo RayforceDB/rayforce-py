@@ -18,7 +18,7 @@ class Date(Scalar):
     """
 
     type_code = -r.TYPE_DATE
-    ray_name = "Date"
+    ray_name = "date"
 
     def _create_from_value(self, value: dt.date | int | str) -> r.RayObject:
         if isinstance(value, dt.date):

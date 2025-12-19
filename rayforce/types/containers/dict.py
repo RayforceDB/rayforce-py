@@ -11,7 +11,7 @@ from rayforce.utils.conversion import python_to_ray, ray_to_python
 
 class Dict(Container):
     type_code = r.TYPE_DICT
-    ray_name = "Dict"
+    ray_name = "DICT"
 
     @classmethod
     def from_items(
