@@ -1,5 +1,6 @@
 from .containers import Dict, List, String, Vector
 from .exceptions import RayInitError
+from .fn import Fn
 from .null import Null
 from .operators import Operation
 from .scalars import (
@@ -31,6 +32,7 @@ __all__ = [
     "Column",
     "Date",
     "Dict",
+    "Fn",
     "List",
     "Null",
     "Operation",

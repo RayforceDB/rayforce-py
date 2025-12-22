@@ -8,7 +8,7 @@ from rayforce.types import exceptions
 from rayforce.utils.conversion import ray_to_python
 
 
-def eval_str(expr: str) -> t.Any:
+def eval_str(expr: str, *, raw: bool = False) -> t.Any:
     if not isinstance(expr, str):
         raise exceptions.RayEvaluationError(f"Expression must be a string, got {type(expr)}")
 
@@ -18,7 +18,7 @@ def eval_str(expr: str) -> t.Any:
             f"Evaluation error: {FFI.get_error_message(result_ptr)}"
         )
 
-    return ray_to_python(result_ptr)
+    return result_ptr if raw else ray_to_python(result_ptr)
 
 
 def eval_obj(obj: t.Any) -> t.Any:

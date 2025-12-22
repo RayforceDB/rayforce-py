@@ -22,6 +22,9 @@ from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
 
+if t.TYPE_CHECKING:
+    from rayforce.types.fn import Fn
+
 
 class _TableProtocol(t.Protocol):
     _ptr: r.RayObject | str
@@ -140,7 +143,7 @@ class OperatorMixin:
 
 
 class Expression(AggregationMixin, OperatorMixin):
-    def __init__(self, operation: Operation, *operands: t.Any) -> None:
+    def __init__(self, operation: Operation | Fn, *operands: t.Any) -> None:
         self.operation = operation
         self.operands = operands
 
@@ -174,6 +177,9 @@ class Expression(AggregationMixin, OperatorMixin):
             else:
                 converted_operands.append(operand)
         return List([self.operation, *converted_operands]).ptr
+
+    def execute(self) -> t.Any:
+        return utils.eval_obj(self.compile())
 
 
 class Column(AggregationMixin, OperatorMixin):

@@ -2,6 +2,7 @@ import datetime as dt
 import uuid
 import pytest
 from rayforce import _rayforce_c as r
+from rayforce.types.null import Null
 from rayforce.utils.conversion import python_to_ray, ray_to_python
 from rayforce.types.exceptions import RayConversionError
 from rayforce.types.operators import Operation
@@ -85,7 +86,7 @@ def test_python_to_ray_tuple():
 def test_python_to_ray_none():
     result = python_to_ray(None)
     assert isinstance(result, r.RayObject)
-    assert isinstance(t.List(ptr=result), t.List)
+    assert result is Null.ptr
 
 
 def test_python_to_ray_rayobject_wrapper():

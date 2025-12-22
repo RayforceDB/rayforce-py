@@ -14,6 +14,7 @@ class Operation(enum.StrEnum):
     MULTIPLY = "*"
     DIVIDE = "/"
     MODULO = "%"
+    DIV_INT = "div"
     NEGATE = "neg"
 
     # Comparison
@@ -23,6 +24,7 @@ class Operation(enum.StrEnum):
     GREATER_EQUAL = ">="
     LESS_THAN = "<"
     LESS_EQUAL = "<="
+    LIKE = "like"
 
     # Logical
     AND = "and"
@@ -40,6 +42,7 @@ class Operation(enum.StrEnum):
     LAST = "last"
     MEDIAN = "med"
     DEVIATION = "dev"
+    ROW = "row"
 
     # Statistical
     XBAR = "xbar"
@@ -48,10 +51,24 @@ class Operation(enum.StrEnum):
     CEIL = "ceil"
     FLOOR = "floor"
     ROUND = "round"
+    RAND = "rand"
 
     # Collection
     IN = "in"
     DISTINCT = "distinct"
+    REVERSE = "reverse"
+    GROUP = "group"
+    TAKE = "take"
+    REMOVE = "remove"
+    FILTER = "filter"
+    FIND = "find"
+    WITHIN = "within"
+    SECT = "sect"
+    EXCEPT = "except"
+    UNION = "union"
+    RAZE = "raze"
+    DIVERSE = "diverse"
+    UNIFY = "unify"
 
     # Query
     SELECT = "select"
@@ -65,6 +82,7 @@ class Operation(enum.StrEnum):
     IJ = "inner-join"
     LEFT_JOIN = "left-join"
     LJ = "left-join"
+    ASOF_JOIN = "asof-join"
     WINDOW_JOIN = "window-join"
     WJ = "window-join"
     WINDOW_JOIN1 = "window-join1"
@@ -77,30 +95,115 @@ class Operation(enum.StrEnum):
     XDESC = "xdesc"
     IASC = "iasc"
     IDESC = "idesc"
+    RANK = "rank"
+    XRANK = "xrank"
 
     # Accessor
     AT = "at"
+    KEY = "key"
+    VALUE = "value"
+    GET = "get"
 
     # Functional
     MAP = "map"
     MAP_LEFT = "map-left"
+    MAP_RIGHT = "map-right"
+    PMAP = "pmap"
+    FOLD = "fold"
+    FOLD_LEFT = "fold-left"
+    FOLD_RIGHT = "fold-right"
+    SCAN = "scan"
+    SCAN_LEFT = "scan-left"
+    SCAN_RIGHT = "scan-right"
+    APPLY = "apply"
+    ARGS = "args"
+    ALTER = "alter"
+    MODIFY = "modify"
 
     # Composition
     TIL = "til"
+    ENLIST = "enlist"
 
     # Type
     LIST = "list"
+    TYPE = "type"
+    AS = "as"
+    ENUM = "enum"
+    GUID = "guid"
+    NIL_Q = "nil?"
 
-    # Other
-    EVAL = "eval"
-    QUOTE = "quote"
-    CONCAT = "concat"
+    # Temporal
+    DATE = "date"
+    TIME = "time"
+    TIMESTAMP = "timestamp"
+
+    # I/O
+    READ = "read"
+    WRITE = "write"
     READ_CSV = "read-csv"
     WRITE_CSV = "write-csv"
+    HOPEN = "hopen"
+    HCLOSE = "hclose"
+    SHOW = "show"
+    FORMAT = "format"
+    PRINT = "print"
+    PRINTLN = "println"
+
+    # Serialization
+    SER = "ser"
+    DE = "de"
+    PARSE = "parse"
+
+    # Evaluation
+    EVAL = "eval"
+    QUOTE = "quote"
+    LOAD = "load"
+    RESOLVE = "resolve"
+
+    # Control Flow
+    DO = "do"
+    IF = "if"
+    TRY = "try"
+    RETURN = "return"
+    RAISE = "raise"
+
+    # Variables
     SET = "set"
+    LET = "let"
+    ENV = "env"
+
+    # Data Structures
+    DICT = "dict"
+    TABLE = "table"
+    CONCAT = "concat"
+
+    # System
+    SYSTEM = "system"
+    OS_GET_VAR = "os-get-var"
+    OS_SET_VAR = "os-set-var"
+    EXIT = "exit"
+    GC = "gc"
+    MEMSTAT = "memstat"
+    TIMEIT = "timeit"
+    TIMER = "timer"
+    INTERNALS = "internals"
+    SYSINFO = "sysinfo"
+    LOADFN = "loadfn"
+
+    # Storage
     SET_SPLAYED = "set-splayed"
     GET_SPLAYED = "get-splayed"
+    SET_PARTED = "set-parted"
     GET_PARTED = "get-parted"
+
+    # Metadata
+    META = "meta"
+    RC = "rc"
+
+    # Binary operations
+    BIN = "bin"
+    BINR = "binr"
+    SPLIT = "split"
 
     @property
     def primitive(self) -> r.RayObject:

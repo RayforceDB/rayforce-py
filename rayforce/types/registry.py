@@ -7,16 +7,17 @@ from rayforce.types import exceptions
 
 if t.TYPE_CHECKING:
     from rayforce.types.base import RayObject
+    from rayforce.types.fn import Fn
     from rayforce.types.null import Null
     from rayforce.types.operators import Operation
 
 
 class TypeRegistry:
-    _types: t.ClassVar[dict[int, type[RayObject | Operation | Null]]] = {}
+    _types: t.ClassVar[dict[int, type[RayObject | Operation | Null | Fn]]] = {}
     _initialized: t.ClassVar[bool] = False
 
     @classmethod
-    def register(cls, type_code: int, type_class: type[RayObject | Operation | Null]) -> None:
+    def register(cls, type_code: int, type_class: type[RayObject | Operation | Null | Fn]) -> None:
         if type_code in cls._types:
             existing = cls._types[type_code]
             if existing != type_class:
@@ -27,11 +28,11 @@ class TypeRegistry:
         cls._types[type_code] = type_class
 
     @classmethod
-    def get(cls, type_code: int) -> type[RayObject | Operation | Null] | None:
+    def get(cls, type_code: int) -> type[RayObject | Operation | Null | Fn] | None:
         return cls._types.get(type_code)
 
     @classmethod
-    def from_ptr(cls, ptr: r.RayObject) -> RayObject | Operation | type[Null]:
+    def from_ptr(cls, ptr: r.RayObject) -> RayObject | Operation | type[Null] | Fn:
         """
         IMPORTANT: Vectors have POSITIVE type codes, Scalars have NEGATIVE type codes
         If type_code > 0: it's a VECTOR (e.g., 3 = I16 vector, 6 = Symbol vector)
@@ -48,11 +49,14 @@ class TypeRegistry:
             if not type_class or not hasattr(type_class, "from_ptr"):
                 raise TypeError(f"Unregistered type: {type_code}")
 
-            # TODO: Add lambda parsing here when lambdas are introduced
-
             return type_class.from_ptr(ptr)
 
-        if type_code > 0 and type_code not in (r.TYPE_DICT, r.TYPE_LIST, r.TYPE_TABLE):
+        if type_code > 0 and type_code not in (
+            r.TYPE_DICT,
+            r.TYPE_LIST,
+            r.TYPE_TABLE,
+            r.TYPE_LAMBDA,
+        ):
             from rayforce.types import Null, String, Vector
 
             if type_code == r.TYPE_C8:

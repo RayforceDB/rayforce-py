@@ -6,6 +6,7 @@ import uuid
 
 from rayforce import _rayforce_c as r
 from rayforce.types import exceptions
+from rayforce.types.null import Null
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
 
@@ -36,9 +37,7 @@ def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.Ra
         return value.ptr
 
     if value is None:
-        # TODO: Return a special null value if available
-        # For now, create an empty list as placeholder
-        return List([]).ptr
+        return Null.ptr
 
     if ray_type is not None and not isinstance(ray_type, int):
         return ray_type(value).ptr

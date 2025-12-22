@@ -5,6 +5,7 @@ import pytest
 
 from rayforce.plugins.polars import from_polars
 from rayforce.types import B8, F64, I16, I32, I64, Symbol, Table, Date, Timestamp
+from rayforce.types.null import Null
 
 
 @pytest.fixture
@@ -205,12 +206,12 @@ def test_from_polars_with_nulls(polars):
     # Check that nulls are handled (polars already converts to None)
     int_vector = values[0]
     assert int_vector[0].value == 1
-    assert int_vector[1] == []  # TODO: Subject to change one Null is introduced to rf
+    assert int_vector[1] == Null
     assert int_vector[2].value == 3
 
     float_vector = values[1]
     assert float_vector[0].value == 1.5
-    assert float_vector[1] == []  # TODO: Subject to change one Null is introduced to rf
+    assert float_vector[1] == Null
     assert float_vector[2].value == 3.5
 
 
@@ -413,5 +414,5 @@ def test_from_polars_all_null_column(polars):
     assert len(values[0]) == 3
 
     assert values[2][0].value == 1
-    assert values[2][1] == []
+    assert values[2][1] == Null
     assert values[2][2].value == 3
