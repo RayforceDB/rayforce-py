@@ -1,5 +1,5 @@
 import pytest
-from rayforce.types import Table, Vector, Column
+from rayforce.types import Table, Vector, Column, Dict
 from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
 from rayforce.types.exceptions import PartedTableError
 
@@ -393,3 +393,74 @@ def test_concat_empty_others():
     values = result.values()
     assert len(values) == 2
     assert len(values[0]) == 2
+
+
+def test_at_column():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+            "salary": Vector(items=[100000, 120000, 90000, 85000], ray_type=I64),
+        }
+    )
+
+    name_col = table.at_column("name")
+    age_col = table.at_column("age")
+    salary_col = table.at_column("salary")
+    id_col = table.at_column("id")
+
+    assert isinstance(name_col, Vector)
+    assert len(name_col) == 4
+    assert [item.value for item in name_col] == ["alice", "bob", "charlie", "dana"]
+
+    assert isinstance(age_col, Vector)
+    assert len(age_col) == 4
+    assert [item.value for item in age_col] == [29, 34, 41, 38]
+
+    assert isinstance(salary_col, Vector)
+    assert len(salary_col) == 4
+    assert [item.value for item in salary_col] == [100000, 120000, 90000, 85000]
+
+    assert isinstance(id_col, Vector)
+    assert len(id_col) == 4
+    assert [item.value for item in id_col] == ["001", "002", "003", "004"]
+
+
+def test_at_row():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+            "salary": Vector(items=[100000, 120000, 90000, 85000], ray_type=I64),
+        }
+    )
+
+    row_0 = table.at_row(0)
+    row_2 = table.at_row(2)
+    row_3 = table.at_row(3)
+
+    assert isinstance(row_0, Dict)
+    assert row_0.to_python() == {
+        "id": "001",
+        "name": "alice",
+        "age": 29,
+        "salary": 100000,
+    }
+
+    assert isinstance(row_2, Dict)
+    assert row_2.to_python() == {
+        "id": "003",
+        "name": "charlie",
+        "age": 41,
+        "salary": 90000,
+    }
+
+    assert isinstance(row_3, Dict)
+    assert row_3.to_python() == {
+        "id": "004",
+        "name": "dana",
+        "age": 38,
+        "salary": 85000,
+    }

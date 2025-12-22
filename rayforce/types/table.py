@@ -311,6 +311,18 @@ class TableValueAccessorMixin:
         @property
         def ptr(self) -> r.RayObject: ...
 
+    @DestructiveOperationHandler()
+    def at_column(self, column_name: str) -> Vector | List:
+        if not isinstance(column_name, str):
+            raise exceptions.RayConversionError("Column name has to be a string")
+        return utils.eval_obj(List([Operation.AT, self.evaled_ptr, QuotedSymbol(column_name)]))
+
+    @DestructiveOperationHandler()
+    def at_row(self, row_n: int) -> Dict:
+        if not isinstance(row_n, int):
+            raise exceptions.RayConversionError("Row number has to an integer")
+        return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
+
     def columns(self) -> Vector:
         return utils.ray_to_python(FFI.get_table_keys(self.evaled_ptr))
 
