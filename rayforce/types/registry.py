@@ -10,14 +10,17 @@ if t.TYPE_CHECKING:
     from rayforce.types.fn import Fn
     from rayforce.types.null import Null
     from rayforce.types.operators import Operation
+    from rayforce.types.table import Table
 
 
 class TypeRegistry:
-    _types: t.ClassVar[dict[int, type[RayObject | Operation | Null | Fn]]] = {}
+    _types: t.ClassVar[dict[int, type[RayObject | Operation | Null | Fn | Table]]] = {}
     _initialized: t.ClassVar[bool] = False
 
     @classmethod
-    def register(cls, type_code: int, type_class: type[RayObject | Operation | Null | Fn]) -> None:
+    def register(
+        cls, type_code: int, type_class: type[RayObject | Operation | Null | Fn | Table]
+    ) -> None:
         if type_code in cls._types:
             existing = cls._types[type_code]
             if existing != type_class:
@@ -28,11 +31,11 @@ class TypeRegistry:
         cls._types[type_code] = type_class
 
     @classmethod
-    def get(cls, type_code: int) -> type[RayObject | Operation | Null | Fn] | None:
+    def get(cls, type_code: int) -> type[RayObject | Operation | Null | Fn | Table] | None:
         return cls._types.get(type_code)
 
     @classmethod
-    def from_ptr(cls, ptr: r.RayObject) -> RayObject | Operation | type[Null] | Fn:
+    def from_ptr(cls, ptr: r.RayObject) -> RayObject | Operation | type[Null] | Fn | Table:
         """
         IMPORTANT: Vectors have POSITIVE type codes, Scalars have NEGATIVE type codes
         If type_code > 0: it's a VECTOR (e.g., 3 = I16 vector, 6 = Symbol vector)

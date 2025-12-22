@@ -864,4 +864,4 @@ __all__ = [
     "WindowJoin1",
 ]
 
-TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)  # type: ignore[arg-type]
+TypeRegistry.register(type_code=r.TYPE_TABLE, type_class=Table)
