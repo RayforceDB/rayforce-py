@@ -50,7 +50,7 @@ typedef struct {
 } RayObject;
 
 static void RayObject_dealloc(RayObject *self) {
-  if (self->obj != NULL)
+  if (self->obj != NULL && self->obj != NULL_OBJ)
     drop_obj(self->obj);
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1369,6 +1369,8 @@ static struct PyModuleDef rayforce_module = {
     .m_methods = module_methods,
 };
 
+static RayObject *g_null_obj = NULL;
+
 PyMODINIT_FUNC PyInit__rayforce_c(void) {
   PyObject *m;
 
@@ -1417,6 +1419,21 @@ PyMODINIT_FUNC PyInit__rayforce_c(void) {
   PyModule_AddIntConstant(m, "TYPE_TOKEN", TYPE_TOKEN);
   PyModule_AddIntConstant(m, "TYPE_NULL", TYPE_NULL);
   PyModule_AddIntConstant(m, "TYPE_ERR", TYPE_ERR);
+
+  g_null_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+  if (g_null_obj == NULL) {
+    Py_DECREF(m);
+    return NULL;
+  }
+
+  g_null_obj->obj = NULL_OBJ;
+  Py_INCREF(g_null_obj);
+
+  if (PyModule_AddObject(m, "NULL_OBJ", (PyObject *)g_null_obj) < 0) {
+    Py_DECREF(g_null_obj);
+    Py_DECREF(m);
+    return NULL;
+  }
 
   char *argv[] = {"raypy", "-r", "0", NULL};
   g_runtime = runtime_create(3, argv);

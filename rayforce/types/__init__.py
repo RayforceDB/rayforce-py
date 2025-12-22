@@ -1,5 +1,6 @@
 from .containers import Dict, List, String, Vector
 from .exceptions import RayInitError
+from .null import Null
 from .operators import Operation
 from .scalars import (
     B8,
@@ -31,6 +32,7 @@ __all__ = [
     "Date",
     "Dict",
     "List",
+    "Null",
     "Operation",
     "QuotedSymbol",
     "RayInitError",
