@@ -29,7 +29,7 @@ Rayforce-Py is a powerful library which allows you to effectively execute statem
 
 <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-primary); margin: 2rem 0;">
   <div style="text-align: center; margin-bottom: 1.5rem;">
-    <div style="font-size: 3rem; font-weight: 800; color: var(--gold-500); margin-bottom: 0.5rem;">+0.88%</div>
+    <div style="font-size: 3rem; font-weight: 800; color: var(--gold-500); margin-bottom: 0.5rem;">0</div>
     <div style="color: var(--text-secondary); font-size: 1.1rem;">Average Overhead</div>
     <div style="color: var(--text-tertiary); font-size: 0.9rem; margin-top: 0.5rem;">Nearly identical to native performance</div>
   </div>
