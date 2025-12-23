@@ -199,3 +199,18 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION}"
+
+      - name: Announce release on Zulip
+        if: success()
+        env:
+          ZULIP_BOT_TOKEN: ${{ secrets.ZULIP_RELEASES_BOT_TOKEN }}
+        run: |
+          chmod +x scripts/announce-release.sh
+          ./scripts/announce-release.sh "${{ steps.version.outputs.version }}" "${{ secrets.ZULIP_RELEASES_BOT_TOKEN }}"
