@@ -179,6 +179,11 @@ class FFI:
 
     @staticmethod
     @exception_handler
+    def fill_vector(vector: r.RayObject, fill: list[t.Any]) -> None:
+        return r.fill_vector(vector, fill)
+
+    @staticmethod
+    @exception_handler
     def at_idx(iterable: r.RayObject, idx: int) -> r.RayObject:
         return r.at_idx(iterable, idx)
 
