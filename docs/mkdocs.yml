@@ -123,6 +123,7 @@ nav:
       - Vector: content/documentation/data-types/vector.md
       - List: content/documentation/data-types/list.md
       - Dict: content/documentation/data-types/dict.md
+      - Function: content/documentation/data-types/function.md
     - Query Guide:
       - Overview: content/documentation/query-guide/overview.md
       - Select: content/documentation/query-guide/select.md

@@ -33,6 +33,7 @@ Rayforce-Py type system is built around two main categories:
 | [Dict](dict.md) | Key-value mapping | 99 |
 | [Table](table/overview.md) | Columnar data | 98 |
 | [GUID](guid.md) | Globally unique identifier | -11 |
+| [Fn](function.md) | User defined function | 126 |
 
 ## Type Conversion and Compatibility
 
@@ -45,7 +46,7 @@ from rayforce import I32, F64, B8, Symbol, List, Dict
 
 # Automatic conversion from Python types
 number = I32(42)        # int -> I32
-decimal = F64(3.14)     # float -> F64  
+decimal = F64(3.14)     # float -> F64
 flag = B8(True)         # bool -> B8
 name = Symbol("test")   # str -> Symbol
 
@@ -53,4 +54,3 @@ name = Symbol("test")   # str -> Symbol
 data = List([1, "hello", 3.14, True])
 config = Dict({"debug": True, "port": 8080})
 ```
-

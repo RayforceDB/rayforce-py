@@ -40,4 +40,4 @@ Using kwargs:
 
 !!! info "Inplace vs By Reference Operations"
     The `insert()` operation can work with both in-memory tables (inplace) and saved tables (by reference).
-    Learn more about the difference between [:material-help-circle: Inplace and by reference operations](../FAQ.html#what-is-the-difference-between-inplace-and-by-reference-operations).
+    Learn more about the difference between [:material-help-circle: Inplace and by reference operations](../FAQ.md).
