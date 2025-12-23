@@ -81,7 +81,7 @@ ipython:
 	ipython -i -c "from rayforce import *"
 
 benchmarkdb:
-	python3 benchmark/run.py $(ARGS)
+	python3 benchmark/run.py --runs ${RUNS} --warmup ${WARMUP} --mode $(or ${MODE},light)
 
 # CI {{
 wheels:

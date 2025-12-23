@@ -30,3 +30,4 @@ docs/site/
 .rayhist.dat
 tables/
 .python-version
+results.txt

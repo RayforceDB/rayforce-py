@@ -1,6 +1,8 @@
-from rayforce import eval_str, Column
-from timer import time_microseconds
+import pandas as pd
 import polars as pl
+from timer import time_microseconds
+
+from rayforce import Column, List, Operation, eval_obj, eval_str
 
 
 class BenchmarkError(Exception): ...
@@ -41,6 +43,17 @@ class Q1:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q1_polars_streaming(df):
+        """
+        Q1: Group by id1, sum v1 (streaming)
+        """
+
+        def run():
+            return df.lazy().group_by("id1").agg(pl.col("v1").sum()).collect(engine="streaming")
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q1_native_rayforce(table_name):
         """
         Q1: Group by id1, sum v1
@@ -51,20 +64,17 @@ class Q1:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             # Handle Rayforce scalar types (F64, I64, etc.)
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             # Handle Rayforce scalar types with value property
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q2:
@@ -102,6 +112,19 @@ class Q2:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q2_polars_streaming(df):
+        """
+        Q2: Group by id1, id2, sum v1 (streaming)
+        """
+
+        def run():
+            return (
+                df.lazy().group_by("id1", "id2").agg(pl.col("v1").sum()).collect(engine="streaming")
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q2_native_rayforce(table_name):
         """
         Q2: Group by id1, id2, sum v1
@@ -112,18 +135,15 @@ class Q2:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q3:
@@ -161,8 +181,23 @@ class Q3:
 
         def run():
             return df.group_by("id3").agg(
-                pl.col("v1").sum().alias("v1_sum"),
-                pl.col("v3").mean().alias("v3_avg")
+                pl.col("v1").sum().alias("v1_sum"), pl.col("v3").mean().alias("v3_avg")
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q3_polars_streaming(df):
+        """
+        Q3: Group by id3, sum v1, avg v3 (streaming)
+        """
+
+        def run():
+            return (
+                df.lazy()
+                .group_by("id3")
+                .agg(pl.col("v1").sum().alias("v1_sum"), pl.col("v3").mean().alias("v3_avg"))
+                .collect(engine="streaming")
             )
 
         return time_microseconds(run)
@@ -178,18 +213,15 @@ class Q3:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q4:
@@ -219,11 +251,7 @@ class Q4:
         """
 
         def run():
-            return (
-                df.groupby("id3")
-                .agg({"v1": "mean", "v2": "mean", "v3": "mean"})
-                .reset_index()
-            )
+            return df.groupby("id3").agg({"v1": "mean", "v2": "mean", "v3": "mean"}).reset_index()
 
         return time_microseconds(run)
 
@@ -237,7 +265,27 @@ class Q4:
             return df.group_by("id3").agg(
                 pl.col("v1").mean().alias("v1_avg"),
                 pl.col("v2").mean().alias("v2_avg"),
-                pl.col("v3").mean().alias("v3_avg")
+                pl.col("v3").mean().alias("v3_avg"),
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q4_polars_streaming(df):
+        """
+        Q4: Group by id3, avg v1, avg v2, avg v3 (streaming)
+        """
+
+        def run():
+            return (
+                df.lazy()
+                .group_by("id3")
+                .agg(
+                    pl.col("v1").mean().alias("v1_avg"),
+                    pl.col("v2").mean().alias("v2_avg"),
+                    pl.col("v3").mean().alias("v3_avg"),
+                )
+                .collect(engine="streaming")
             )
 
         return time_microseconds(run)
@@ -253,18 +301,15 @@ class Q4:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q5:
@@ -294,11 +339,7 @@ class Q5:
         """
 
         def run():
-            return (
-                df.groupby("id3")
-                .agg({"v1": "sum", "v2": "sum", "v3": "sum"})
-                .reset_index()
-            )
+            return df.groupby("id3").agg({"v1": "sum", "v2": "sum", "v3": "sum"}).reset_index()
 
         return time_microseconds(run)
 
@@ -312,7 +353,27 @@ class Q5:
             return df.group_by("id3").agg(
                 pl.col("v1").sum().alias("v1_sum"),
                 pl.col("v2").sum().alias("v2_sum"),
-                pl.col("v3").sum().alias("v3_sum")
+                pl.col("v3").sum().alias("v3_sum"),
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q5_polars_streaming(df):
+        """
+        Q5: Group by id3, sum v1, sum v2, sum v3 (streaming)
+        """
+
+        def run():
+            return (
+                df.lazy()
+                .group_by("id3")
+                .agg(
+                    pl.col("v1").sum().alias("v1_sum"),
+                    pl.col("v2").sum().alias("v2_sum"),
+                    pl.col("v3").sum().alias("v3_sum"),
+                )
+                .collect(engine="streaming")
             )
 
         return time_microseconds(run)
@@ -328,18 +389,15 @@ class Q5:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q6:
@@ -351,9 +409,7 @@ class Q6:
 
         def run():
             return (
-                table.select(
-                    range_v1_v2=(Column("v1").max() - Column("v2").min())
-                )
+                table.select(range_v1_v2=(Column("v1").max() - Column("v2").min()))
                 .by("id3")
                 .execute()
             )
@@ -387,28 +443,137 @@ class Q6:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q6_polars_streaming(df):
+        """
+        Q6: Group by id3, max(v1) - min(v2) (streaming)
+        """
+
+        def run():
+            return (
+                df.lazy()
+                .group_by("id3")
+                .agg((pl.col("v1").max() - pl.col("v2").min()).alias("range_v1_v2"))
+                .collect(engine="streaming")
+            )
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q6_native_rayforce(table_name):
         """
         Q6: Group by id3, max(v1) - min(v2)
         """
 
-        query = f"(timeit (select {{range_v1_v2: (- (max v1) (min v2)) by: id3 from: {table_name}}}))"
+        query = (
+            f"(timeit (select {{range_v1_v2: (- (max v1) (min v2)) by: id3 from: {table_name}}}))"
+        )
         result = eval_str(query)
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
+
+
+class Q7:
+    @staticmethod
+    def benchmark_q7_rayforce(table):
+        """
+        Q7: Sum of 10 billion random numbers between 0-1000
+        """
+
+        def run():
+            result = eval_obj(List([Operation.SUM, List([Operation.RAND, 10_000_000_000, 1000])]))
+            print(f"Rayforce-py: {result}")
+            return result
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q7_pandas(df):
+        """
+        Q7: Sum of 10 billion random numbers between 0-1000
+        """
+
+        def run():
+            TOTAL = 10_000_000_000
+            seed = 42
+
+            df_full = pd.DataFrame({"i": range(TOTAL)})
+            df_full["rand"] = (df_full["i"] * seed) % 1001
+            total_sum = df_full["rand"].sum()
+
+            print(f"Pandas: {total_sum}")
+            return int(total_sum)
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q7_polars(df):
+        """
+        Q7: Sum of 10 billion random numbers between 0-1000
+        """
+
+        def run():
+            TOTAL = 10_000_000_000
+            seed = 42
+
+            lf = pl.LazyFrame().select(pl.int_range(0, TOTAL, dtype=pl.Int64).alias("i"))
+
+            out = lf.select(((pl.col("i") * seed) % 1001).sum().alias("sum")).collect()
+
+            print(f"Polars: {out['sum'][0]}")
+            return out["sum"][0]
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q7_polars_streaming(df):
+        """
+        Q7: Sum of 10 billion random numbers between 0-1000 (streaming)
+        """
+
+        def run():
+            TOTAL = 10_000_000_000
+            seed = 42
+
+            lf = pl.LazyFrame().select(pl.int_range(0, TOTAL, dtype=pl.Int64).alias("i"))
+
+            out = lf.select(((pl.col("i") * seed) % 1001).sum().alias("sum")).collect(
+                engine="streaming"
             )
+
+            print(f"Polars Streaming: {out['sum'][0]}")
+            return out["sum"][0]
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q7_native_rayforce(table_name):
+        """
+        Q7: Sum of 10 billion random numbers between 0-1000
+        """
+        query = "(timeit (sum (rand 10000000000 1000)))"
+        result = eval_str(query)
+
+        if isinstance(result, dict) and "time" in result:
+            return result["time"] * 1000, result
+        if isinstance(result, (int, float)):
+            return result * 1000, result
+        if hasattr(result, "to_python"):
+            value = result.to_python()
+            return value * 1000, result
+        if hasattr(result, "value"):
+            value = result.value
+            return value * 1000, result
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 benchmarks = [
@@ -417,6 +582,7 @@ benchmarks = [
         Q1.benchmark_q1_rayforce,
         Q1.benchmark_q1_pandas,
         Q1.benchmark_q1_polars,
+        Q1.benchmark_q1_polars_streaming,
         Q1.benchmark_q1_native_rayforce,
     ),
     (
@@ -424,6 +590,7 @@ benchmarks = [
         Q2.benchmark_q2_rayforce,
         Q2.benchmark_q2_pandas,
         Q2.benchmark_q2_polars,
+        Q2.benchmark_q2_polars_streaming,
         Q2.benchmark_q2_native_rayforce,
     ),
     (
@@ -431,6 +598,7 @@ benchmarks = [
         Q3.benchmark_q3_rayforce,
         Q3.benchmark_q3_pandas,
         Q3.benchmark_q3_polars,
+        Q3.benchmark_q3_polars_streaming,
         Q3.benchmark_q3_native_rayforce,
     ),
     (
@@ -438,6 +606,7 @@ benchmarks = [
         Q4.benchmark_q4_rayforce,
         Q4.benchmark_q4_pandas,
         Q4.benchmark_q4_polars,
+        Q4.benchmark_q4_polars_streaming,
         Q4.benchmark_q4_native_rayforce,
     ),
     (
@@ -445,6 +614,7 @@ benchmarks = [
         Q5.benchmark_q5_rayforce,
         Q5.benchmark_q5_pandas,
         Q5.benchmark_q5_polars,
+        Q5.benchmark_q5_polars_streaming,
         Q5.benchmark_q5_native_rayforce,
     ),
     (
@@ -452,6 +622,15 @@ benchmarks = [
         Q6.benchmark_q6_rayforce,
         Q6.benchmark_q6_pandas,
         Q6.benchmark_q6_polars,
+        Q6.benchmark_q6_polars_streaming,
         Q6.benchmark_q6_native_rayforce,
+    ),
+    (
+        "Q7: Sum of 10 billion random numbers (0-1000)",
+        Q7.benchmark_q7_rayforce,
+        Q7.benchmark_q7_pandas,
+        Q7.benchmark_q7_polars,
+        Q7.benchmark_q7_polars_streaming,
+        Q7.benchmark_q7_native_rayforce,
     ),
 ]
