@@ -4,7 +4,7 @@ import sys
 
 from rayforce import _rayforce_c as r
 from rayforce import utils
-from rayforce.core import FFI
+from rayforce.ffi import FFI
 from rayforce.plugins import exceptions
 
 if sys.platform == "darwin":

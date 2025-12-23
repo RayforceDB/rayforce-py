@@ -1,5 +1,5 @@
 import pytest
-from rayforce.core.ffi import FFI
+from rayforce.ffi import FFI
 from rayforce import _rayforce_c as r
 
 
