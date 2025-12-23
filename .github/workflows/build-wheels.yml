@@ -1,0 +1,137 @@
+name: Build and publish wheels
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build_wheels:
+    name: Build wheel on ${{ matrix.os }} Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    env:
+      RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: '3.11'
+            platform: linux
+            arch: x86_64
+          - os: ubuntu-latest
+            python-version: '3.12'
+            platform: linux
+            arch: x86_64
+          - os: ubuntu-latest
+            python-version: '3.13'
+            platform: linux
+            arch: x86_64
+          - os: ubuntu-latest
+            python-version: '3.14'
+            platform: linux
+            arch: x86_64
+          - os: macos-14
+            python-version: '3.11'
+            platform: macos
+            arch: arm64
+          - os: macos-14
+            python-version: '3.12'
+            platform: macos
+            arch: arm64
+          - os: macos-14
+            python-version: '3.13'
+            platform: macos
+            arch: arm64
+          - os: macos-14
+            python-version: '3.14'
+            platform: macos
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git build-essential clang llvm
+
+      - name: Install Python build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel build
+
+      - name: Prepare build
+        run: bash scripts/prepare_build.sh
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest
+          pip install dist/*.whl
+          pip install pandas>=2.0.0 polars>=0.19.0
+
+      - name: Run tests
+        run: python -m pytest -x -vv tests/
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-${{ matrix.arch }}-py${{ matrix.python-version }}
+          path: dist/*.whl
+
+  publish:
+    name: Publish to PyPI
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/rayforce-py
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel build
+
+      - name: Prepare build
+        env:
+          RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
+        run: bash scripts/prepare_build.sh
+
+      - name: Build source distribution
+        run: python -m build --sdist
+
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: wheels
+
+      - name: Combine all artifacts
+        run: |
+          mkdir -p dist
+          find wheels -name "*.whl" -exec cp {} dist/ \;
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/
