@@ -70,7 +70,7 @@ You can manually clone latest github repo and build it yourself
 # 3. Moves binaries around so they become available to the library
 
 ~/rayforce-py $ python -c "import rayforce; print(rayforce.version)"
-0.1.0
+0.1.1
 ```
 
 ## Discover
