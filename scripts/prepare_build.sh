@@ -38,15 +38,22 @@ fi
 echo "Patching Makefile for Python support..."
 cat >> "${EXEC_DIR}/tmp/rayforce-c/Makefile" << EOF
 
-PY_OBJECTS = core/rayforce_c.o
-python: CFLAGS = \$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I${PYTHON_INCLUDE}
+PY_OBJECTS = core/rayforce_c.o core/raypy_conversion.o core/raypy_constructors.o core/raypy_readers.o core/raypy_operations.o core/raypy_queries.o core/raypy_io.o
+python: CFLAGS = \$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I${PYTHON_INCLUDE} -Wno-macro-redefined
 python: LDFLAGS = \$(RELEASE_LDFLAGS) ${PYTHON_LDFLAGS}
 python: \$(CORE_OBJECTS) \$(PY_OBJECTS)
 	\$(CC) -shared -o _rayforce.so \$(CFLAGS) \$(CORE_OBJECTS) \$(PY_OBJECTS) \$(LIBS) \$(LDFLAGS) ${SHARED_FLAGS}
 EOF
 
 echo "Building Rayforce..."
-cp "${EXEC_DIR}/rayforce/rayforce_c.c" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce_c.c"
+cp "${EXEC_DIR}/rayforce/capi/rayforce_c.c" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce_c.c"
+cp "${EXEC_DIR}/rayforce/capi/rayforce_c.h" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce_c.h"
+cp "${EXEC_DIR}/rayforce/capi/raypy_conversion.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_conversion.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_constructors.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_constructors.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_readers.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_readers.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_operations.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_operations.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_queries.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_queries.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_io.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_io.c"
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
 make python

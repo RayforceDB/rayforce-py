@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import typing as t
 
 from rayforce import _rayforce_c as r
-from rayforce.core.ffi import FFI
+from rayforce.ffi import FFI
 from rayforce.types.containers.vector import String
 from rayforce.types.operators import Operation
 from rayforce.utils import ray_to_python

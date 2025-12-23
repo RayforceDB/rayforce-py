@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 
 from rayforce import _rayforce_c as r
-from rayforce.core.ffi import FFI
+from rayforce.ffi import FFI
 from rayforce.types.base import Scalar
 from rayforce.types.registry import TypeRegistry
 

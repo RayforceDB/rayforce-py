@@ -6,7 +6,7 @@ import typing as t
 
 from rayforce import _rayforce_c as r
 from rayforce import utils
-from rayforce.core import FFI
+from rayforce.ffi import FFI
 from rayforce.types import (
     C8,
     I64,
