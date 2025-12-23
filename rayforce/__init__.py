@@ -6,7 +6,7 @@ import ctypes
 from pathlib import Path
 import sys
 
-version = "0.1.1"
+version = "0.1.2"
 
 if sys.platform == "linux":
     lib_name = "_rayforce_c.so"
