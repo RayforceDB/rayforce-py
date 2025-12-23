@@ -797,6 +797,79 @@ static PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
 
   Py_RETURN_NONE;
 }
+static PyObject *raypy_fill_vector(PyObject *self, PyObject *args) {
+  (void)self;
+  RayObject *vec_obj;
+  PyObject *py_list;
+
+  if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &vec_obj, &py_list))
+    return NULL;
+
+  if (!PyList_Check(py_list)) {
+    PyErr_SetString(PyExc_TypeError, "Expected a list");
+    return NULL;
+  }
+
+  int type_code = vec_obj->obj->type;
+
+  Py_ssize_t len = PyList_Size(py_list);
+  if (len < 0)
+    return NULL;
+
+  for (Py_ssize_t i = 0; i < len; i++) {
+    PyObject *item = PyList_GetItem(py_list, i);
+    if (item == NULL)
+      return NULL;
+
+    obj_p ray_item = NULL;
+
+    if (type_code == -TYPE_I16) {
+      long val = PyLong_AsLong(item);
+      if (val == -1 && PyErr_Occurred())
+        return NULL;
+      ray_item = i16((i16_t)val);
+    } else if (type_code == -TYPE_I32) {
+      long val = PyLong_AsLong(item);
+      if (val == -1 && PyErr_Occurred())
+        return NULL;
+      ray_item = i32((i32_t)val);
+    } else if (type_code == -TYPE_I64) {
+      long long val = PyLong_AsLongLong(item);
+      if (val == -1 && PyErr_Occurred())
+        return NULL;
+      ray_item = i64(val);
+    } else if (type_code == -TYPE_F64) {
+      double val = PyFloat_AsDouble(item);
+      if (val == -1.0 && PyErr_Occurred())
+        return NULL;
+      ray_item = f64(val);
+    } else if (type_code == -TYPE_B8) {
+      int val = PyObject_IsTrue(item);
+      if (val == -1)
+        return NULL;
+      ray_item = b8(val ? 1 : 0);
+    } else if (type_code == -TYPE_SYMBOL) {
+      const char *str_val;
+      Py_ssize_t str_len;
+      if (!PyArg_Parse(item, "s#", &str_val, &str_len))
+        return NULL;
+      ray_item = symbol(str_val, str_len);
+    } else {
+      // This is a fallback - ideally all types should be handled explicitly
+      PyErr_SetString(PyExc_TypeError, "Unsupported type code for bulk fill");
+      return NULL;
+    }
+
+    if (ray_item == NULL) {
+      PyErr_SetString(PyExc_MemoryError, "Failed to create RayObject");
+      return NULL;
+    }
+
+    ins_obj(&vec_obj->obj, (i64_t)i, ray_item);
+  }
+
+  Py_RETURN_NONE;
+}
 // END VECTOR OPERATIONS
 // ---------------------------------------------------------------------------
 
@@ -1325,6 +1398,8 @@ static PyMethodDef module_methods[] = {
     {"push_obj", raypy_push_obj, METH_VARARGS,
      "Push object to the end of iterable"},
     {"set_obj", raypy_set_obj, METH_VARARGS, "Set object at index"},
+    {"fill_vector", raypy_fill_vector, METH_VARARGS,
+     "Fill vector from Python list (bulk operation)"},
 
     // Misc operations
     {"get_obj_length", raypy_get_obj_length, METH_VARARGS, "Get object length"},

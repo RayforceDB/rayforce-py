@@ -38,25 +38,20 @@ class Vector(Container):
             )
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
-        from rayforce.utils.conversion import python_to_ray
-
         if self._element_ray_type is None:
             raise exceptions.RayInitError("Element ray_type must be specified for Vector")
 
-        vec_ptr = FFI.init_vector(
-            type_code=(
-                self._element_ray_type
-                if isinstance(self._element_ray_type, int)
-                else self._element_ray_type.type_code
-            ),
-            length=len(value),
+        type_code = (
+            self._element_ray_type
+            if isinstance(self._element_ray_type, int)
+            else self._element_ray_type.type_code
         )
-        for idx, item in enumerate(value):
-            FFI.insert_obj(
-                vec_ptr,
-                idx,
-                python_to_ray(item, ray_type=self._element_ray_type),  # type: ignore [arg-type]
-            )
+
+        vec_ptr = FFI.init_vector(type_code=type_code, length=len(value))
+        FFI.fill_vector(
+            vector=vec_ptr,
+            fill=list(value) if not isinstance(value, list) else value,
+        )
 
         return vec_ptr
 
