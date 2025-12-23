@@ -2,8 +2,20 @@
 
 # Usage: ./announce-release.sh VERSION [BOT_API_KEY]
 
-VERSION=${1:-"0.1.2"}
-BOT_API_KEY=${2:-"YOUR_BOT_API_KEY"}
+VERSION=${1}
+BOT_API_KEY=${2}
+
+if [ -z "$VERSION" ]; then
+  echo "Error: VERSION is required"
+  echo "Usage: $0 VERSION [BOT_API_KEY]"
+  exit 1
+fi
+
+if [ -z "$BOT_API_KEY" ]; then
+  echo "Error: BOT_API_KEY is required"
+  echo "Usage: $0 VERSION BOT_API_KEY"
+  exit 1
+fi
 
 CONTENT="**Rayforce-Py v${VERSION} Released!**
 
