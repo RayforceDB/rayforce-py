@@ -11,8 +11,8 @@
     </td>
     <td style="border:0;padding:0;">
       <h1>High-Performance Lightweight Python ORM designed for <a href="https://core.rayforcedb.com"><picture>
-            <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/RayforceDB/rayforce-py/refs/heads/master/docs/docs/assets/logo_dark_full.svg">
-            <img src="https://raw.githubusercontent.com/RayforceDB/rayforce-py/refs/heads/master/docs/docs/assets/logo_light_full.svg" alt="RayforceDB" height="40" style="vertical-align: bottom;">
+            <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/RayforceDB/rayforce-py/refs/heads/master/docs/docs/assets/logo_light_full.svg">
+            <img src="https://raw.githubusercontent.com/RayforceDB/rayforce-py/refs/heads/master/docs/docs/assets/logo_dark_full.svg" alt="RayforceDB" height="40" style="vertical-align: bottom;">
         </picture></a></h1>
     </td>
   </tr>
