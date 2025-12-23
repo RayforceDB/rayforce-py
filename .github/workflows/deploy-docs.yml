@@ -1,9 +1,9 @@
 name: Documentation
 
-on:
-  push:
-    branches: [ master, main ]
-  workflow_dispatch:
+# on:
+#   push:
+#     # branches: [ master, main ]
+#   workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,10 +16,10 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
