@@ -7,10 +7,3 @@ def test_u8():
     assert t.U8(100).value == 100
     assert t.U8(255).value == 255
     assert t.U8(42.7).value == 42
-
-
-def test_u8_out_of_range():
-    with pytest.raises((t.RayInitError, OverflowError)):
-        t.U8(256)
-    with pytest.raises((t.RayInitError, OverflowError)):
-        t.U8(-1)

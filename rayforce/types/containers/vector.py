@@ -47,13 +47,10 @@ class Vector(Container):
             else self._element_ray_type.type_code
         )
 
-        vec_ptr = FFI.init_vector(type_code=type_code, length=len(value))
-        FFI.fill_vector(
-            vector=vec_ptr,
-            fill=list(value) if not isinstance(value, list) else value,
-        )
-
-        return vec_ptr
+        ptr = FFI.init_vector(type_code=type_code, length=len(value))
+        fill = list(value) if not isinstance(value, list) else value
+        FFI.fill_vector(obj=ptr, fill=fill)
+        return ptr
 
     def to_python(self) -> list:
         return list(self)

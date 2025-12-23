@@ -70,13 +70,24 @@ def from_pandas(df: pd.DataFrame) -> Table:
         if dtype == "object" or str(dtype).lower() == "object":
             first_val = col_series.dropna().iloc[0] if not col_series.dropna().empty else None
             if first_val is not None:
-                if isinstance(first_val, dt.date):
+                if isinstance(first_val, bool):
+                    ray_type = B8
+                elif isinstance(first_val, dt.date):
                     ray_type = Date
                 elif isinstance(first_val, dt.datetime):
                     ray_type = Timestamp
 
+        # Convert pandas Timestamp objects to datetime.datetime before passing to C API
+        def convert_value(val):
+            if pd.isna(val):
+                return None
+            # Convert pandas Timestamp to datetime.datetime
+            if hasattr(val, "to_pydatetime"):
+                return val.to_pydatetime()
+            return val
+
         vectors[col_name] = Vector(
-            items=[None if pd.isna(val) else val for val in col_series.tolist()],
+            items=[convert_value(val) for val in col_series.tolist()],
             ray_type=ray_type,
         )
 

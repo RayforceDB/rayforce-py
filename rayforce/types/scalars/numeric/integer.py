@@ -11,7 +11,7 @@ class I16(Scalar):
     ray_name = "i16"
 
     def _create_from_value(self, value: int) -> r.RayObject:
-        return FFI.init_i16(int(value))
+        return FFI.init_i16(value)
 
     def to_python(self) -> int:
         return FFI.read_i16(self.ptr)
@@ -22,7 +22,7 @@ class I32(Scalar):
     ray_name = "i32"
 
     def _create_from_value(self, value: int) -> r.RayObject:
-        return FFI.init_i32(int(value))
+        return FFI.init_i32(value)
 
     def to_python(self) -> int:
         return FFI.read_i32(self.ptr)
@@ -33,7 +33,7 @@ class I64(Scalar):
     ray_name = "i64"
 
     def _create_from_value(self, value: int) -> r.RayObject:
-        return FFI.init_i64(int(value))
+        return FFI.init_i64(value)
 
     def to_python(self) -> int:
         return FFI.read_i64(self.ptr)

@@ -179,8 +179,13 @@ class FFI:
 
     @staticmethod
     @exception_handler
-    def fill_vector(vector: r.RayObject, fill: list[t.Any]) -> None:
-        return r.fill_vector(vector, fill)
+    def fill_vector(obj: r.RayObject, fill: list[t.Any]) -> None:
+        return r.fill_vector(obj, fill)
+
+    @staticmethod
+    @exception_handler
+    def fill_list(obj: r.RayObject, fill: list[t.Any]) -> None:
+        return r.fill_list(obj, fill)
 
     @staticmethod
     @exception_handler
