@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
-from rayforce.types import exceptions
 from rayforce.types.base import Scalar
 from rayforce.types.registry import TypeRegistry
 
@@ -12,10 +11,7 @@ class C8(Scalar):
     ray_name = "c8"
 
     def _create_from_value(self, value: str) -> r.RayObject:
-        try:
-            return FFI.init_c8(value)
-        except ValueError as e:
-            raise exceptions.RayInitError(str(e)) from e
+        return FFI.init_c8(value)
 
     def to_python(self) -> str:
         return FFI.read_c8(self.ptr)

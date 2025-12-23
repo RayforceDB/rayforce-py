@@ -4,7 +4,6 @@ import datetime as dt
 
 from rayforce import _rayforce_c as r
 from rayforce.core.ffi import FFI
-from rayforce.types import exceptions
 from rayforce.types.base import Scalar
 from rayforce.types.registry import TypeRegistry
 
@@ -21,18 +20,7 @@ class Date(Scalar):
     ray_name = "date"
 
     def _create_from_value(self, value: dt.date | int | str) -> r.RayObject:
-        if isinstance(value, dt.date):
-            days_since_epoch = (value - DATE_EPOCH).days
-            return FFI.init_date(days_since_epoch)
-        if isinstance(value, int):
-            return FFI.init_date(value)
-        if isinstance(value, str):
-            try:
-                date_obj = dt.date.fromisoformat(value)
-            except ValueError as e:
-                raise exceptions.RayInitError(f"Date value is not isoformat: {value}") from e
-            return FFI.init_date((date_obj - DATE_EPOCH).days)
-        raise exceptions.RayInitError(f"Cannot create Date from {type(value)}")
+        return FFI.init_date(value)
 
     def to_python(self) -> dt.date:
         return DATE_EPOCH + dt.timedelta(days=FFI.read_date(self.ptr))

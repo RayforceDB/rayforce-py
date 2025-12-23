@@ -15,9 +15,8 @@ class List(Container):
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
         list_ptr = FFI.init_list()
-        for item in value:
-            FFI.push_obj(iterable=list_ptr, ptr=python_to_ray(item))
-
+        fill = list(value) if not isinstance(value, list) else value
+        FFI.fill_list(obj=list_ptr, fill=fill)
         return list_ptr
 
     def to_python(self) -> list:

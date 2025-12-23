@@ -11,7 +11,7 @@ class F64(Scalar):
     ray_name = "f64"
 
     def _create_from_value(self, value: float) -> r.RayObject:
-        return FFI.init_f64(float(value))
+        return FFI.init_f64(value)
 
     def to_python(self) -> float:
         return FFI.read_f64(self.ptr)

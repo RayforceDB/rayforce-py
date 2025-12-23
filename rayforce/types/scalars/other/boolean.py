@@ -11,7 +11,7 @@ class B8(Scalar):
     ray_name = "b8"
 
     def _create_from_value(self, value: bool) -> r.RayObject:
-        return FFI.init_b8(bool(value))
+        return FFI.init_b8(value)
 
     def to_python(self) -> bool:
         return FFI.read_b8(self.ptr)
