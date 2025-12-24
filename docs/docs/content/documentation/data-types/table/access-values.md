@@ -45,6 +45,64 @@ Dict({'id': '001', 'name': 'alice', 'age': 29})
 {'id': '003', 'name': 'charlie', 'age': 41}
 ```
 
+## Slice a Table
+
+The `slice()` method returns a new table containing a subset of rows from the original table.
+
+When called with a single argument, it takes the first `n` rows:
+
+```python
+>>> table = Table.from_dict({
+    "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+    "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+    "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+})
+
+>>> first_two = table.slice(2)
+>>> print(first_two)
+┌────────┬────────┬────────────────────┐
+│   id   │  name  │        age         │
+│ SYMBOL │ SYMBOL │        I64         │
+├────────┼────────┼────────────────────┤
+│ 001    │ alice  │ 29                 │
+│ 002    │ bob    │ 34                 │
+├────────┴────────┴────────────────────┤
+│ 2 rows (2 shown) 3 columns (3 shown) │
+└──────────────────────────────────────┘
+```
+
+When called with two arguments, it takes `tail` rows starting from `start_idx`:
+
+```python
+>>> middle_rows = table.slice(1, 2)
+>>> print(middle_rows)
+┌────────┬─────────┬───────────────────┐
+│   id   │  name   │        age        │
+│ SYMBOL │ SYMBOL  │        I64        │
+├────────┼─────────┼───────────────────┤
+│ 002    │ bob     │ 34                │
+│ 003    │ charlie │ 41                │
+├────────┴─────────┴───────────────────┤
+│ 2 rows (2 shown) 3 columns (3 shown) │
+└──────────────────────────────────────┘
+```
+
+When called negative number of rows, it takes `tail` rows:
+
+```python
+>>> last_rows = table.slice(-2)
+>>> print(last_rows)
+┌────────┬─────────┬───────────────────┐
+│   id   │  name   │        age        │
+│ SYMBOL │ SYMBOL  │        I64        │
+├────────┼─────────┼───────────────────┤
+│ 003    │ charlie │ 41                │
+│ 004    │ dana    │ 38                │
+├────────┴─────────┴───────────────────┤
+│ 2 rows (2 shown) 3 columns (3 shown) │
+└──────────────────────────────────────┘
+```
+
 ## Get Column Names and Values
 
 ```python

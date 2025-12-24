@@ -1,7 +1,7 @@
 import pytest
 from rayforce.types import Table, Vector, Column, Dict
 from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
-from rayforce.types.exceptions import PartedTableError
+from rayforce.types.exceptions import PartedTableError, RayConversionError
 
 
 def test_table_from_csv_all_types(tmp_path):
@@ -464,3 +464,67 @@ def test_at_row():
         "age": 38,
         "salary": 85000,
     }
+
+
+def test_slice_with_single_argument():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38, 25], ray_type=I64),
+        }
+    )
+
+    # Take first 2 rows
+    sliced = table.slice(2)
+    assert isinstance(sliced, Table)
+    values = sliced.values()
+    assert len(values) == 3
+    assert len(values[0]) == 2
+
+    id_col, name_col, age_col = values
+    assert [s.value for s in id_col] == ["001", "002"]
+    assert [s.value for s in name_col] == ["alice", "bob"]
+    assert [v.value for v in age_col] == [29, 34]
+
+    # Take first 3 rows
+    sliced = table.slice(3)
+    values = sliced.values()
+    assert len(values[0]) == 3
+
+    id_col, name_col, age_col = values
+    assert [s.value for s in id_col] == ["001", "002", "003"]
+    assert [s.value for s in name_col] == ["alice", "bob", "charlie"]
+    assert [v.value for v in age_col] == [29, 34, 41]
+
+
+def test_slice_with_two_arguments():
+    table = Table.from_dict(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38, 25], ray_type=I64),
+        }
+    )
+
+    # Take 2 rows starting from index 1
+    sliced = table.slice(1, 2)
+    assert isinstance(sliced, Table)
+    values = sliced.values()
+    assert len(values) == 3
+    assert len(values[0]) == 2
+
+    id_col, name_col, age_col = values
+    assert [s.value for s in id_col] == ["002", "003"]
+    assert [s.value for s in name_col] == ["bob", "charlie"]
+    assert [v.value for v in age_col] == [34, 41]
+
+    # Take 3 rows starting from index 0
+    sliced = table.slice(0, 3)
+    values = sliced.values()
+    assert len(values[0]) == 3
+
+    id_col, name_col, age_col = values
+    assert [s.value for s in id_col] == ["001", "002", "003"]
+    assert [s.value for s in name_col] == ["alice", "bob", "charlie"]
+    assert [v.value for v in age_col] == [29, 34, 41]

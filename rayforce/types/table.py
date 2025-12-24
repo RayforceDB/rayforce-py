@@ -329,6 +329,17 @@ class TableValueAccessorMixin:
             raise exceptions.RayConversionError("Row number has to an integer")
         return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
 
+    @DestructiveOperationHandler()
+    def slice(self, start_idx: int, tail: int | None = None) -> Table:
+        if not isinstance(start_idx, int) or (tail is not None and not isinstance(tail, int)):
+            raise exceptions.RayConversionError("Number of rows has to an integer")
+
+        args: int | Vector = start_idx
+        if tail is not None:
+            args = Vector(items=[start_idx, tail], ray_type=I64)
+
+        return utils.eval_obj(List([Operation.TAKE, self.evaled_ptr, args]))
+
     def columns(self) -> Vector:
         return utils.ray_to_python(FFI.get_table_keys(self.evaled_ptr))
 
