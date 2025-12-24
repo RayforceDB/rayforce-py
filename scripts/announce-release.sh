@@ -68,7 +68,7 @@ else
   fi
 fi
 
-CONTENT="**Rayforce-Py ${VERSION} Released!**"
+CONTENT="**New Rayforce-Py Version is Released!**"
 
 if [ -n "${CHANGELOG_CONTENT}" ]; then
   CONTENT="${CONTENT}
