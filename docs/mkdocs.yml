@@ -140,4 +140,5 @@ nav:
       - KDB: content/documentation/plugins/kdb.md
     - Development:
       - Overview: content/documentation/development/overview.md
+  - Changelog: content/CHANGELOG.md
   - License: content/license.md

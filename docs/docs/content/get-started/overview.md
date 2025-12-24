@@ -69,8 +69,8 @@ You can manually clone latest github repo and build it yourself
 # 2. Builds the Rayforce and it's plugins
 # 3. Moves binaries around so they become available to the library
 
-~/rayforce-py $ python -c "import rayforce; print(rayforce.version)"
-0.1.4
+~/rayforce-py $ python -c "import rayforce; rayforce.I64(123)"
+I64(123)
 ```
 
 ## Discover
