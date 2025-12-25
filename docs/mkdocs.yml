@@ -6,7 +6,7 @@ theme:
   name: material
   icon:
     repo: fontawesome/brands/github
-  favicon: assets/py_logo_dark.svg
+  favicon: assets/favicon.svg
   features:
     - content.action.edit
     - content.action.view
