@@ -128,7 +128,7 @@ PyObject *raypy_fill_list(PyObject *self, PyObject *args);
 // Misc operations
 PyObject *raypy_get_obj_length(PyObject *self, PyObject *args);
 PyObject *raypy_eval_str(PyObject *self, PyObject *args);
-PyObject *raypy_get_error_message(PyObject *self, PyObject *args);
+PyObject *raypy_get_error_obj(PyObject *self, PyObject *args);
 PyObject *raypy_binary_set(PyObject *self, PyObject *args);
 PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
                                                   PyObject *args);

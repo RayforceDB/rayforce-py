@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from rayforce import _rayforce_c as r
-from rayforce.types import exceptions
+from rayforce import errors
 
 if t.TYPE_CHECKING:
     from rayforce.types.base import RayObject
@@ -24,7 +24,7 @@ class TypeRegistry:
         if type_code in cls._types:
             existing = cls._types[type_code]
             if existing != type_class:
-                raise exceptions.RayTypeRegistryError(
+                raise errors.RayforceTypeRegistryError(
                     f"Type code {type_code} already registered to {existing.__name__}, "
                     f"cannot register {type_class.__name__}",
                 )
@@ -43,14 +43,14 @@ class TypeRegistry:
         """
 
         if not isinstance(ptr, r.RayObject):
-            raise TypeError(f"Expected RayObject, got {type(ptr)}")
+            raise errors.RayforceTypeRegistryError(f"Expected RayObject, got {type(ptr)}")
 
         type_code = ptr.get_obj_type()
         if type_code in (r.TYPE_UNARY, r.TYPE_BINARY, r.TYPE_VARY):
             type_class = cls._types.get(type_code)
 
             if not type_class or not hasattr(type_class, "from_ptr"):
-                raise TypeError(f"Unregistered type: {type_code}")
+                raise errors.RayforceTypeRegistryError(f"Unregistered type: {type_code}")
 
             return type_class.from_ptr(ptr)
 
@@ -73,7 +73,9 @@ class TypeRegistry:
         type_class = cls._types.get(type_code)
 
         if type_class is None:
-            raise TypeError(f"Unknown type code {type_code}. Type not registered in TypeRegistry.")
+            raise errors.RayforceTypeRegistryError(
+                f"Unknown type code {type_code}. Type not registered in TypeRegistry."
+            )
 
         return type_class(ptr=ptr)  # type: ignore[call-arg,return-value]
 

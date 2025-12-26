@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import typing as t
 
 from rayforce import _rayforce_c as r
-from rayforce.types import exceptions
+from rayforce import errors
 
 
 class RayObject(ABC):
@@ -19,7 +19,7 @@ class RayObject(ABC):
         ptr: r.RayObject | None = None,
     ) -> None:
         if value is None and ptr is None:
-            raise exceptions.RayInitError(
+            raise errors.RayforceInitError(
                 f"{self.__class__.__name__} requires either 'value' or 'ptr' argument",
             )
 
@@ -31,12 +31,12 @@ class RayObject(ABC):
 
     def _validate_ptr(self, ptr: r.RayObject) -> None:
         if not isinstance(ptr, r.RayObject):
-            raise exceptions.RayInitError(f"Expected RayObject, got {type(ptr)}")
+            raise errors.RayforceInitError(f"Expected RayObject, got {type(ptr)}")
 
         if hasattr(self.__class__, "type_code") and self.__class__.type_code is not None:
             actual_type = ptr.get_obj_type()
             if actual_type != self.__class__.type_code:
-                raise exceptions.RayInitError(
+                raise errors.RayforceInitError(
                     f"{self.__class__.__name__} expects type code {self.__class__.type_code}, "
                     f"got {actual_type}",
                 )

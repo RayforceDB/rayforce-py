@@ -102,8 +102,7 @@ static PyMethodDef module_methods[] = {
     // Misc operations
     {"get_obj_length", raypy_get_obj_length, METH_VARARGS, "Get object length"},
     {"eval_str", raypy_eval_str, METH_VARARGS, "Evaluate string expression"},
-    {"get_error_message", raypy_get_error_message, METH_VARARGS,
-     "Get error message"},
+    {"get_error_obj", raypy_get_error_obj, METH_VARARGS, "Get error object"},
     {"binary_set", raypy_binary_set, METH_VARARGS,
      "Set value to symbol or file"},
     {"env_get_internal_function_by_name",

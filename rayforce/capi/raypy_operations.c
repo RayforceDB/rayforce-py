@@ -564,38 +564,34 @@ PyObject *raypy_eval_str(PyObject *self, PyObject *args) {
 
   return (PyObject *)result;
 }
-PyObject *raypy_get_error_message(PyObject *self, PyObject *args) {
+PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
   (void)self;
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
-  ray_error_p err = AS_ERROR(ray_obj->obj);
-
-  if (err != NULL && err->msg != NULL && err->msg->type == TYPE_C8) {
-    const char *error_text = AS_C8(err->msg);
-    u64_t length = err->msg->len;
-
-    PyObject *error_message =
-        PyUnicode_DecodeLatin1(error_text, length, "replace");
-
-    if (err->locs != NULL && err->locs->type == TYPE_LIST &&
-        err->locs->len > 0) {
-      PyObject *with_code = PyUnicode_FromFormat(
-          "%s (error code: %lld)", PyUnicode_AsUTF8(error_message),
-          (long long)err->code);
-      Py_DECREF(error_message);
-      return with_code;
-    }
-
-    return error_message;
+  obj_p err = ray_obj->obj;
+  if (err == NULL || err->type != TYPE_ERR) {
+    return PyUnicode_FromString("Unknown error");
   }
 
-  if (err != NULL)
-    return PyUnicode_FromFormat("Error code: %lld", (long long)err->code);
-  else
-    return PyUnicode_FromString("Unknown error");
+  obj_p result_dict = err_info(err);
+  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+  if (result == NULL) {
+    drop_obj(result_dict);
+    return NULL;
+  }
+
+  result->obj = clone_obj(result_dict);
+  drop_obj(result_dict);
+  if (result->obj == NULL || result->obj == NULL_OBJ) {
+    Py_DECREF(result);
+    PyErr_SetString(PyExc_MemoryError, "Failed to clone error info dict");
+    return NULL;
+  }
+
+  return (PyObject *)result;
 }
 PyObject *raypy_binary_set(PyObject *self, PyObject *args) {
   (void)self;

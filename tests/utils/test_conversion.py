@@ -4,7 +4,7 @@ import pytest
 from rayforce import _rayforce_c as r
 from rayforce.types.null import Null
 from rayforce.utils.conversion import python_to_ray, ray_to_python
-from rayforce.types.exceptions import RayConversionError
+from rayforce import errors
 from rayforce.types.operators import Operation
 from rayforce import types as t
 
@@ -107,7 +107,7 @@ def test_python_to_ray_rayobject_direct():
 
 
 def test_python_to_ray_unsupported():
-    with pytest.raises(RayConversionError):
+    with pytest.raises(errors.RayforceConversionError):
         python_to_ray(object())
 
 
@@ -125,5 +125,5 @@ def test_ray_to_python_container():
 
 
 def test_ray_to_python_invalid():
-    with pytest.raises(RayConversionError, match="Expected RayObject"):
+    with pytest.raises(errors.RayforceConversionError, match="Expected RayObject"):
         ray_to_python("not a RayObject")

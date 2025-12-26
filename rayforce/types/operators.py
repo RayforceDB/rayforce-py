@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 
 from rayforce import _rayforce_c as r
+from rayforce import errors
 from rayforce.ffi import FFI
 from rayforce.types.registry import TypeRegistry
 
@@ -232,7 +233,7 @@ class Operation(enum.StrEnum):
             r.TYPE_BINARY,
             r.TYPE_VARY,
         ):
-            raise ValueError(f"Object is not an operation (type: {obj_type})")
+            raise errors.RayforceInitError(f"Object is not an operation (type: {obj_type})")
 
         return Operation(FFI.env_get_internal_name_by_function(obj))
 

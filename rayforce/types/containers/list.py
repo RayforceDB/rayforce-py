@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from rayforce import _rayforce_c as r
+from rayforce import errors
 from rayforce.ffi import FFI
 from rayforce.types.base import Container
 from rayforce.types.registry import TypeRegistry
@@ -36,7 +37,7 @@ class List(Container):
         if idx < 0:
             idx = len(self) + idx
         if idx < 0 or idx >= len(self):
-            raise IndexError(f"List index out of range: {idx}")
+            raise errors.RayforceIndexError(f"List index out of range: {idx}")
 
         return TypeRegistry.from_ptr(FFI.at_idx(self.ptr, idx))
 

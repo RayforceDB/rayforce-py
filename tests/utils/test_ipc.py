@@ -3,11 +3,11 @@ import pytest
 
 from rayforce import String, _rayforce_c as r
 from rayforce.types import Table
+from rayforce import errors
 from rayforce.types.table import Expression
 from rayforce.utils.ipc import (
     IPCConnection,
     IPCEngine,
-    IPCError,
     _python_to_ipc,
 )
 
@@ -24,7 +24,7 @@ class TestPythonToIPC:
         assert isinstance(result, r.RayObject)
 
     def test_python_to_ipc_unsupported_type(self):
-        with pytest.raises(IPCError, match="Unsupported IPC data"):
+        with pytest.raises(errors.RayforceIPCError, match="Unsupported IPC data"):
             _python_to_ipc(123)
 
 
@@ -58,7 +58,7 @@ class TestIPCConnection:
 
     def test_execute_closed(self, connection):
         connection._closed = True
-        with pytest.raises(IPCError, match="Cannot write to closed connection"):
+        with pytest.raises(errors.RayforceIPCError, match="Cannot write to closed connection"):
             connection.execute("test_query")
 
     @patch("rayforce.utils.ipc.FFI.hclose")
@@ -103,14 +103,14 @@ class TestIPCEngine:
         assert id(conn) in engine.pool
 
     @patch("rayforce.utils.ipc.FFI.hopen")
-    @patch("rayforce.utils.ipc.FFI.get_error_message")
+    @patch("rayforce.utils.ipc.FFI.get_error_obj")
     def test_acquire_failure(self, mock_get_error, mock_hopen, engine):
         mock_error = MagicMock(spec=r.RayObject)
         mock_error.get_obj_type.return_value = r.TYPE_ERR
         mock_hopen.return_value = mock_error
         mock_get_error.return_value = "Connection failed"
 
-        with pytest.raises(IPCError, match="Error when establishing connection"):
+        with pytest.raises(errors.RayforceIPCError, match="Error when establishing connection"):
             engine.acquire()
 
     @patch("rayforce.utils.ipc.FFI.hopen")

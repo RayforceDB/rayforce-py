@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 
 from rayforce import _rayforce_c as r
+from rayforce import errors
 from rayforce.ffi import FFI
-from rayforce.types import exceptions
 from rayforce.types.base import Container, RayObject
 
 
@@ -25,7 +25,7 @@ class Vector(Container):
 
         elif items is not None:
             if ray_type is None:
-                raise exceptions.RayInitError("ray_type required when creating Vector from value")
+                raise errors.RayforceInitError("ray_type required when creating Vector from value")
             self.ptr = self._create_from_value(items)
 
         elif length is not None and ray_type is not None:
@@ -33,13 +33,13 @@ class Vector(Container):
             self.ptr = FFI.init_vector(type_code, length)
 
         else:
-            raise exceptions.RayInitError(
+            raise errors.RayforceInitError(
                 "Vector requires either value, ptr, or (ray_type + length)",
             )
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
         if self._element_ray_type is None:
-            raise exceptions.RayInitError("Element ray_type must be specified for Vector")
+            raise errors.RayforceInitError("Element ray_type must be specified for Vector")
 
         type_code = (
             self._element_ray_type
@@ -64,7 +64,7 @@ class Vector(Container):
         if idx < 0:
             idx = len(self) + idx
         if idx < 0 or idx >= len(self):
-            raise IndexError(f"Vector index out of range: {idx}")
+            raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
         return ray_to_python(FFI.at_idx(self.ptr, idx))
 
@@ -74,7 +74,7 @@ class Vector(Container):
         if idx < 0:
             idx = len(self) + idx
         if not 0 <= idx < len(self):
-            raise IndexError("Vector index out of range")
+            raise errors.RayforceIndexError("Vector index out of range")
 
         FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=python_to_ray(value))
 
@@ -94,11 +94,15 @@ class String(Vector):
         ptr: r.RayObject | None = None,
     ) -> None:
         if ptr and (_type := ptr.get_obj_type()) != self.type_code:
-            raise ValueError(f"Expected String RayObject (type {self.type_code}), got {_type}")
+            raise errors.RayforceInitError(
+                f"Expected String RayObject (type {self.type_code}), got {_type}"
+            )
 
         if isinstance(value, Vector):
             if (_type := value.ptr.get_obj_type()) != r.TYPE_C8:
-                raise ValueError(f"Expected Vector (type {self.type_code}), got {_type}")
+                raise errors.RayforceInitError(
+                    f"Expected Vector (type {self.type_code}), got {_type}"
+                )
             self.ptr = value.ptr
 
         elif value is not None:

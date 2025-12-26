@@ -5,13 +5,11 @@ from datetime import UTC, datetime
 import typing as t
 
 from rayforce import _rayforce_c as r
+from rayforce import errors
 from rayforce.ffi import FFI
 from rayforce.types.containers.vector import String
 from rayforce.types.operators import Operation
 from rayforce.utils import ray_to_python
-
-
-class IPCError(Exception): ...
 
 
 def _python_to_ipc(data: t.Any) -> r.RayObject:
@@ -45,7 +43,7 @@ def _python_to_ipc(data: t.Any) -> r.RayObject:
         return Expression(Operation.LIST, Operation.WINDOW_JOIN, *data.compile()).compile()
     if isinstance(data, WindowJoin1):
         return Expression(Operation.LIST, Operation.WINDOW_JOIN1, *data.compile()).compile()
-    raise IPCError(f"Unsupported IPC data to send: {type(data)}")
+    raise errors.RayforceIPCError(f"Unsupported IPC data to send: {type(data)}")
 
 
 class IPCConnection:
@@ -58,7 +56,7 @@ class IPCConnection:
 
     def execute(self, data: t.Any) -> t.Any:
         if self._closed:
-            raise IPCError("Cannot write to closed connection")
+            raise errors.RayforceIPCError("Cannot write to closed connection")
         return ray_to_python(FFI.write(self.handle, _python_to_ipc(data)))
 
     def close(self) -> None:
@@ -101,8 +99,8 @@ class IPCEngine:
     def acquire(self) -> IPCConnection:
         handle = self.__open_connection()
         if handle.get_obj_type() == r.TYPE_ERR:
-            error_message = FFI.get_error_message(handle)
-            raise IPCError(f"Error when establishing connection: {error_message}")
+            error_message = FFI.get_error_obj(handle)
+            raise errors.RayforceIPCError(f"Error when establishing connection: {error_message}")
 
         conn = IPCConnection(engine=self, handle=handle)
         self.pool[id(conn)] = conn

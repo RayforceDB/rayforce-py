@@ -7,7 +7,7 @@ import sys
 from rayforce import _rayforce_c as r
 from rayforce import utils
 from rayforce.ffi import FFI
-from rayforce.plugins import exceptions
+from rayforce.plugins import errors
 
 if sys.platform == "darwin":
     raykx_lib_name = "libraykx.dylib"
@@ -50,7 +50,7 @@ class KDBConnection:
         conn: r.RayObject,
     ) -> None:
         if (_type := conn.get_obj_type()) != self._type:
-            raise ValueError(
+            raise errors.KDBConnectionError(
                 f"Invalid KDB connection object type. Expected {self._type}, got {_type}",
             )
 
@@ -75,15 +75,16 @@ class KDBConnection:
 
     def execute(self, query: str) -> r.RayObject:
         if self.is_closed:
-            raise exceptions.KDBConnectionAlreadyClosedError
+            raise errors.KDBConnectionAlreadyClosedError
 
         result = self.__execute_kdb_query(query=query)
         if result.get_obj_type() == r.TYPE_ERR:
-            error_message = FFI.get_error_message(result)
-            if error_message and error_message.startswith("'ipc_send"):
-                raise exceptions.KDBConnectionAlreadyClosedError
+            error_message = FFI.get_error_obj(result)
+            # if error_message and error_message.startswith("'ipc_send"):
+            if error_message:
+                raise errors.KDBConnectionAlreadyClosedError("Connection already closed.")
 
-            raise ValueError(f"Failed to execute statement: {error_message}")
+            raise errors.KDBConnectionError(f"Failed to execute statement: {error_message}")
 
         return utils.ray_to_python(result)
 
@@ -119,7 +120,7 @@ class KDBEngine:
     def acquire(self) -> KDBConnection:
         _conn = self.__open_kdb_connection()
         if _conn.get_obj_type() == r.TYPE_ERR:
-            raise ValueError(f"Error when establishing connection: {FFI.get_error_message(_conn)}")
+            raise ValueError(f"Error when establishing connection: {FFI.get_error_obj(_conn)}")
 
         conn = KDBConnection(engine=self, conn=_conn)
         self.pool[id(conn)] = conn

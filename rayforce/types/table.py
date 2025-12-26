@@ -5,7 +5,7 @@ from functools import wraps
 import typing as t
 
 from rayforce import _rayforce_c as r
-from rayforce import utils
+from rayforce import errors, utils
 from rayforce.ffi import FFI
 from rayforce.types import (
     C8,
@@ -16,7 +16,6 @@ from rayforce.types import (
     String,
     Symbol,
     Vector,
-    exceptions,
 )
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
@@ -66,8 +65,6 @@ class AggregationMixin:
         return Expression(Operation.DISTINCT, self)
 
     def is_(self, other: bool) -> Expression:
-        if not isinstance(other, bool):
-            raise TypeError("is_ argument has to be bool")
         if other is True:
             return Expression(Operation.EVAL, self)
         return Expression(Operation.EVAL, Expression(Operation.NOT, self))
@@ -205,7 +202,9 @@ class TableInitMixin:
     @classmethod
     def from_ptr(cls, ptr: r.RayObject) -> t.Self:
         if (_type := ptr.get_obj_type()) != cls.type_code:
-            raise ValueError(f"Expected RayForce object of type {cls.type_code}, got {_type}")
+            raise errors.RayforceInitError(
+                f"Expected RayForce object of type {cls.type_code}, got {_type}"
+            )
         return cls(ptr=ptr)
 
     @classmethod
@@ -296,7 +295,7 @@ class DestructiveOperationHandler:
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             if self.is_parted:
-                raise exceptions.PartedTableError(
+                raise errors.RayforcePartedTableError(
                     "use .select() first. Unable to use destructive operation on a parted table."
                 )
             return func(self, *args, **kwargs)
@@ -320,19 +319,19 @@ class TableValueAccessorMixin:
     @DestructiveOperationHandler()
     def at_column(self, column_name: str) -> Vector | List:
         if not isinstance(column_name, str):
-            raise exceptions.RayConversionError("Column name has to be a string")
+            raise errors.RayforceConversionError("Column name has to be a string")
         return utils.eval_obj(List([Operation.AT, self.evaled_ptr, QuotedSymbol(column_name)]))
 
     @DestructiveOperationHandler()
     def at_row(self, row_n: int) -> Dict:
         if not isinstance(row_n, int):
-            raise exceptions.RayConversionError("Row number has to an integer")
+            raise errors.RayforceConversionError("Row number has to an integer")
         return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
 
     @DestructiveOperationHandler()
     def slice(self, start_idx: int, tail: int | None = None) -> Table:
         if not isinstance(start_idx, int) or (tail is not None and not isinstance(tail, int)):
-            raise exceptions.RayConversionError("Number of rows has to an integer")
+            raise errors.RayforceConversionError("Number of rows has to an integer")
 
         args: int | Vector = start_idx
         if tail is not None:
@@ -694,7 +693,7 @@ class InsertQuery:
         self.kwargs = kwargs
 
         if args and kwargs:
-            raise ValueError("Insert query accepts args OR kwargs, not both")
+            raise errors.RayforceInitError("Insert query accepts args OR kwargs, not both")
 
     def compile(self) -> r.RayObject:
         if self.args:
@@ -734,7 +733,7 @@ class InsertQuery:
             else:
                 insertable = Dict(self.kwargs).ptr
         else:
-            raise ValueError("No data to insert")
+            raise errors.RayforceQueryCompilationError("No data to insert")
 
         return insertable
 
@@ -751,10 +750,13 @@ class UpsertQuery:
         self.table = table
         self.args = args
         self.kwargs = kwargs
-        self.match_by_first = match_by_first
 
         if args and kwargs:
-            raise ValueError("Upsert query accepts args OR kwargs, not both")
+            raise errors.RayforceInitError("Upsert query accepts args OR kwargs, not both")
+
+        if match_by_first <= 0:
+            raise errors.RayforceInitError("Match by first has to be greater than 0")
+        self.match_by_first = match_by_first
 
     def compile(self) -> tuple[r.RayObject, r.RayObject]:
         if self.args:
@@ -813,10 +815,10 @@ class UpsertQuery:
                     )
                 upsertable = Dict.from_items(keys=keys, values=_values).ptr
         else:
-            raise ValueError("No data to insert")
+            raise errors.RayforceQueryCompilationError("No data to insert")
 
         if self.match_by_first <= 0:
-            raise ValueError("Match by first has to be greater than 0")
+            raise errors.RayforceQueryCompilationError("Match by first has to be greater than 0")
 
         return I64(self.match_by_first).ptr, upsertable
 

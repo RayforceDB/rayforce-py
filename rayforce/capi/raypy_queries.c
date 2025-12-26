@@ -11,7 +11,7 @@ PyObject *raypy_select(PyObject *self, PyObject *args) {
   if (result == NULL)
     return NULL;
 
-  result->obj = EVAL_WITH_CTX(ray_select(query_dict->obj), NULL_OBJ);
+  result->obj = eval_obj(ray_select(query_dict->obj));
   if (result->obj == NULL) {
     Py_DECREF(result);
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute select query");
@@ -31,7 +31,7 @@ PyObject *raypy_update(PyObject *self, PyObject *args) {
   if (result == NULL)
     return NULL;
 
-  result->obj = EVAL_WITH_CTX(ray_update(update_dict->obj), NULL_OBJ);
+  result->obj = eval_obj(ray_update(update_dict->obj));
   if (result->obj == NULL) {
     Py_DECREF(result);
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute update query");
@@ -55,7 +55,7 @@ PyObject *raypy_insert(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_args[2] = {table_obj->obj, data_obj->obj};
-  result->obj = EVAL_WITH_CTX(ray_insert(ray_args, 2), NULL_OBJ);
+  result->obj = eval_obj(ray_insert(ray_args, 2));
   if (result->obj == NULL) {
     Py_DECREF(result);
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute insert");
@@ -80,7 +80,7 @@ PyObject *raypy_upsert(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_args[3] = {table_obj->obj, keys_obj->obj, data_obj->obj};
-  result->obj = EVAL_WITH_CTX(ray_upsert(ray_args, 3), NULL_OBJ);
+  result->obj = eval_obj(ray_upsert(ray_args, 3));
   if (result->obj == NULL) {
     Py_DECREF(result);
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute upsert");

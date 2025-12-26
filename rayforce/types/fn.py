@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from rayforce import _rayforce_c as r
-from rayforce import utils
+from rayforce import errors, utils
 from rayforce.types import Dict, List
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
@@ -22,9 +22,9 @@ class Fn(RayObject):
     @classmethod
     def _create_from_value(cls, value: str) -> r.RayObject:
         if not isinstance(value, str):
-            raise TypeError(f"Expected string, got {type(value)}")
+            raise errors.RayforceInitError(f"Expected string, got {type(value)}")
         if not value.startswith("(fn"):
-            raise ValueError("Provided string is not a fn expression")
+            raise errors.RayforceInitError("Provided string is not a fn expression")
 
         return evaluation.eval_str(value, raw=True)
 

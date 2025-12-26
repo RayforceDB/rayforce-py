@@ -1,0 +1,13 @@
+from rayforce import errors
+
+
+class KDBConnectionError(errors.RayforceError): ...
+
+
+class KDBConnectionAlreadyClosedError(errors.RayforceError): ...
+
+
+class PDDataFrameConversionError(errors.RayforceError): ...
+
+
+class PLDataFrameConversionError(errors.RayforceError): ...

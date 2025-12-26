@@ -1,7 +1,7 @@
 import pytest
 from rayforce.types import Table, Vector, Column, Dict
 from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
-from rayforce.types.exceptions import PartedTableError, RayConversionError
+from rayforce import errors
 
 
 def test_table_from_csv_all_types(tmp_path):
@@ -264,16 +264,16 @@ def test_splayed_table_destructive_operations_raise_error(tmp_path):
     loaded_table = Table.from_splayed(f"{splayed_dir}/")
     assert loaded_table.is_parted is True
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.values()
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.update(age=100)
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.insert(id="003", name="charlie", age=41)
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.upsert(id="001", name="alice_updated", age=30, match_by_first=1)
 
 
@@ -295,16 +295,16 @@ def test_parted_table_destructive_operations_raise_error(tmp_path):
     loaded_table = Table.from_parted(f"{splayed_dir}/", "test")
     assert loaded_table.is_parted is True
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.values()
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.update(age=100)
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.insert(id="003", name="charlie", age=41)
 
-    with pytest.raises(PartedTableError, match="use .select\\(\\) first"):
+    with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
         loaded_table.upsert(id="001", name="alice_updated", age=30, match_by_first=1)
 
 

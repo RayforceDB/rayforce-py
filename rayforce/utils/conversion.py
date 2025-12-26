@@ -5,7 +5,7 @@ import typing as t
 import uuid
 
 from rayforce import _rayforce_c as r
-from rayforce.types import exceptions
+from rayforce import errors
 from rayforce.types.null import Null
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
@@ -67,16 +67,16 @@ def python_to_ray(value: t.Any, ray_type: type[RayObject] | None = None) -> r.Ra
     if isinstance(value, (list, tuple)):
         return List(value).ptr
 
-    raise exceptions.RayConversionError(
+    raise errors.RayforceConversionError(
         f"Cannot convert Python type {type(value).__name__} to RayObject"
     )
 
 
 def ray_to_python(ray_obj: r.RayObject) -> t.Any:
     if not isinstance(ray_obj, r.RayObject):
-        raise exceptions.RayConversionError(f"Expected RayObject, got {type(ray_obj)}")
+        raise errors.RayforceConversionError(f"Expected RayObject, got {type(ray_obj)}")
 
     try:
         return TypeRegistry.from_ptr(ray_obj)
     except Exception as e:
-        raise exceptions.RayConversionError(f"Failed to convert RayObject: {e}") from e
+        raise errors.RayforceConversionError(f"Failed to convert RayObject: {e}") from e

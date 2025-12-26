@@ -1,5 +1,4 @@
 from .containers import Dict, List, String, Vector
-from .exceptions import RayInitError
 from .fn import Fn
 from .null import Null
 from .operators import Operation
@@ -37,7 +36,6 @@ __all__ = [
     "Null",
     "Operation",
     "QuotedSymbol",
-    "RayInitError",
     "String",
     "Symbol",
     "Table",
