@@ -38,12 +38,12 @@ class TestIPCConnection:
     @pytest.fixture
     def mock_handle(self):
         handle = MagicMock(spec=r.RayObject)
-        handle.get_obj_type.return_value = r.TYPE_I64
         return handle
 
     @pytest.fixture
     def connection(self, mock_engine, mock_handle):
-        return IPCConnection(engine=mock_engine, handle=mock_handle)
+        with patch("rayforce.utils.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
+            return IPCConnection(engine=mock_engine, handle=mock_handle)
 
     @patch("rayforce.utils.ipc.FFI.write")
     @patch("rayforce.utils.ipc.ray_to_python")
@@ -90,10 +90,17 @@ class TestIPCEngine:
     def engine(self):
         return IPCEngine(host="localhost", port=5000)
 
+    @patch("rayforce.utils.ipc.FFI.get_obj_type")
     @patch("rayforce.utils.ipc.FFI.hopen")
-    def test_acquire_success(self, mock_hopen, engine):
+    def test_acquire_success(self, mock_hopen, mock_get_obj_type, engine):
         mock_handle = MagicMock(spec=r.RayObject)
-        mock_handle.get_obj_type.return_value = r.TYPE_I64
+
+        def get_obj_type_side_effect(obj):
+            if obj is mock_handle:
+                return r.TYPE_I64
+            return r.TYPE_C8
+
+        mock_get_obj_type.side_effect = get_obj_type_side_effect
         mock_hopen.return_value = mock_handle
 
         conn = engine.acquire()
@@ -102,23 +109,38 @@ class TestIPCEngine:
         assert conn.handle == mock_handle
         assert id(conn) in engine.pool
 
+    @patch("rayforce.utils.ipc.FFI.get_obj_type")
     @patch("rayforce.utils.ipc.FFI.hopen")
     @patch("rayforce.utils.ipc.FFI.get_error_obj")
-    def test_acquire_failure(self, mock_get_error, mock_hopen, engine):
+    def test_acquire_failure(self, mock_get_error, mock_hopen, mock_get_obj_type, engine):
         mock_error = MagicMock(spec=r.RayObject)
-        mock_error.get_obj_type.return_value = r.TYPE_ERR
+
+        def get_obj_type_side_effect(obj):
+            if obj is mock_error:
+                return r.TYPE_ERR
+            return r.TYPE_C8
+
+        mock_get_obj_type.side_effect = get_obj_type_side_effect
         mock_hopen.return_value = mock_error
         mock_get_error.return_value = "Connection failed"
 
         with pytest.raises(errors.RayforceIPCError, match="Error when establishing connection"):
             engine.acquire()
 
+    @patch("rayforce.utils.ipc.FFI.get_obj_type")
     @patch("rayforce.utils.ipc.FFI.hopen")
-    def test_dispose_connections(self, mock_hopen, engine):
+    def test_dispose_connections(self, mock_hopen, mock_get_obj_type, engine):
         mock_handle1 = MagicMock(spec=r.RayObject)
-        mock_handle1.get_obj_type.return_value = r.TYPE_I64
         mock_handle2 = MagicMock(spec=r.RayObject)
-        mock_handle2.get_obj_type.return_value = r.TYPE_I64
+
+        def get_obj_type_side_effect(obj):
+            # Return TYPE_C8 for String validation, TYPE_I64 for handles
+            if obj is mock_handle1 or obj is mock_handle2:
+                return r.TYPE_I64
+            # For String objects created during the test, return TYPE_C8
+            return r.TYPE_C8
+
+        mock_get_obj_type.side_effect = get_obj_type_side_effect
         mock_hopen.side_effect = [mock_handle1, mock_handle2]
 
         conn1 = engine.acquire()

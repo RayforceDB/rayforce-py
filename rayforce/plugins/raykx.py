@@ -49,7 +49,7 @@ class KDBConnection:
         engine: KDBEngine,
         conn: r.RayObject,
     ) -> None:
-        if (_type := conn.get_obj_type()) != self._type:
+        if (_type := FFI.get_obj_type(conn)) != self._type:
             raise errors.KDBConnectionError(
                 f"Invalid KDB connection object type. Expected {self._type}, got {_type}",
             )
@@ -78,7 +78,7 @@ class KDBConnection:
             raise errors.KDBConnectionAlreadyClosedError
 
         result = self.__execute_kdb_query(query=query)
-        if result.get_obj_type() == r.TYPE_ERR:
+        if FFI.get_obj_type(result) == r.TYPE_ERR:
             error_message = FFI.get_error_obj(result)
             # if error_message and error_message.startswith("'ipc_send"):
             if error_message:
@@ -119,7 +119,7 @@ class KDBEngine:
 
     def acquire(self) -> KDBConnection:
         _conn = self.__open_kdb_connection()
-        if _conn.get_obj_type() == r.TYPE_ERR:
+        if FFI.get_obj_type(_conn) == r.TYPE_ERR:
             raise ValueError(f"Error when establishing connection: {FFI.get_error_obj(_conn)}")
 
         conn = KDBConnection(engine=self, conn=_conn)

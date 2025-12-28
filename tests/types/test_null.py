@@ -1,5 +1,5 @@
 import pytest
-from rayforce import _rayforce_c as r
+from rayforce import FFI, _rayforce_c as r
 from rayforce.types import Null, Vector, Table
 from rayforce.types.registry import TypeRegistry
 from rayforce.types.scalars import Symbol, I64
@@ -13,7 +13,7 @@ def test_null_in_vector():
     vec = Vector(ray_type=Null, items=[Null, Null])
 
     assert len(vec) == 2
-    assert vec.ptr.get_obj_type() == 0  # Vector became a list
+    assert FFI.get_obj_type(vec.ptr) == 0  # Vector became a list
 
     assert vec[0] == Null
     assert vec[1] == Null

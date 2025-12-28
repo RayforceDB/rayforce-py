@@ -79,7 +79,7 @@ class AggregationMixin:
                 self,
                 Vector(
                     items=values,
-                    ray_type=utils.python_to_ray(values[0]).get_obj_type(),
+                    ray_type=FFI.get_obj_type(utils.python_to_ray(values[0])),
                 ),
             )
 
@@ -201,7 +201,7 @@ class TableInitMixin:
 
     @classmethod
     def from_ptr(cls, ptr: r.RayObject) -> t.Self:
-        if (_type := ptr.get_obj_type()) != cls.type_code:
+        if (_type := FFI.get_obj_type(ptr)) != cls.type_code:
             raise errors.RayforceInitError(
                 f"Expected RayForce object of type {cls.type_code}, got {_type}"
             )
@@ -705,7 +705,7 @@ class InsertQuery:
                     _args.append(
                         Vector(
                             items=sub,
-                            ray_type=utils.python_to_ray(sub[0]).get_obj_type(),
+                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0])),
                         )
                     )
                 insertable = _args.ptr
@@ -725,7 +725,7 @@ class InsertQuery:
                     _values.append(
                         Vector(
                             items=val,
-                            ray_type=utils.python_to_ray(val[0]).get_obj_type(),
+                            ray_type=FFI.get_obj_type(utils.python_to_ray(val[0])),
                         )
                     )
                 insertable = Dict.from_items(keys=keys, values=_values).ptr
@@ -768,7 +768,7 @@ class UpsertQuery:
                     _args.append(
                         Vector(
                             items=sub,
-                            ray_type=utils.python_to_ray(sub[0]).get_obj_type(),
+                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0])),
                         )
                     )
                 upsertable = _args.ptr
@@ -779,7 +779,7 @@ class UpsertQuery:
                     _args.append(
                         Vector(
                             items=[sub],
-                            ray_type=utils.python_to_ray(sub).get_obj_type(),
+                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub)),
                         )
                     )
                 upsertable = _args.ptr
@@ -797,7 +797,7 @@ class UpsertQuery:
                     _values.append(
                         Vector(
                             items=val,
-                            ray_type=utils.python_to_ray(val[0]).get_obj_type(),
+                            ray_type=FFI.get_obj_type(utils.python_to_ray(val[0])),
                         )
                     )
                 upsertable = Dict.from_items(keys=keys, values=_values).ptr
@@ -810,7 +810,7 @@ class UpsertQuery:
                     _values.append(
                         Vector(
                             items=[val],
-                            ray_type=utils.python_to_ray(val).get_obj_type(),
+                            ray_type=FFI.get_obj_type(utils.python_to_ray(val)),
                         )
                     )
                 upsertable = Dict.from_items(keys=keys, values=_values).ptr

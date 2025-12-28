@@ -3,8 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import typing as t
 
+from rayforce import FFI, errors
 from rayforce import _rayforce_c as r
-from rayforce import errors
 
 
 class RayObject(ABC):
@@ -34,7 +34,7 @@ class RayObject(ABC):
             raise errors.RayforceInitError(f"Expected RayObject, got {type(ptr)}")
 
         if hasattr(self.__class__, "type_code") and self.__class__.type_code is not None:
-            actual_type = ptr.get_obj_type()
+            actual_type = FFI.get_obj_type(ptr)
             if actual_type != self.__class__.type_code:
                 raise errors.RayforceInitError(
                     f"{self.__class__.__name__} expects type code {self.__class__.type_code}, "
@@ -58,7 +58,7 @@ class RayObject(ABC):
         return cls(ptr=ptr)
 
     def get_type_code(self) -> int:
-        return self.ptr.get_obj_type()
+        return FFI.get_obj_type(self.ptr)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.to_python()!r})"

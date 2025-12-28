@@ -1,4 +1,4 @@
-from rayforce import _rayforce_c as r
+from rayforce import FFI, _rayforce_c as r
 from rayforce.types.operators import Operation
 
 
@@ -10,12 +10,12 @@ def test_all_operations_have_primitives():
             f"Operation {op.name} ({op.value}) has no primitive"
         )
 
-        assert primitive.get_obj_type() in (
+        assert FFI.get_obj_type(primitive) in (
             r.TYPE_UNARY,
             r.TYPE_BINARY,
             r.TYPE_VARY,
         ), (
-            f"Operation {op.name} ({op.value}) primitive has invalid type: {primitive.get_obj_type()}"
+            f"Operation {op.name} ({op.value}) primitive has invalid type: {FFI.get_obj_type(primitive)}"
         )
 
 

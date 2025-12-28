@@ -1,8 +1,11 @@
 #include "rayforce_c.h"
 
 PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
-  (void)args;
-  RayObject *ray_obj = (RayObject *)self;
+  (void)self;
+  RayObject *ray_obj;
+
+  if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    return NULL;
 
   if (ray_obj->obj == NULL) {
     PyErr_SetString(PyExc_ValueError, "Object is NULL");

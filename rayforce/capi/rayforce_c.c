@@ -39,10 +39,6 @@ static void RayObject_dealloc(RayObject *self) {
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static PyMethodDef RayObject_methods[] = {
-    {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
-    {NULL, NULL, 0, NULL}};
-
 PyMODINIT_FUNC PyInit__rayforce_c(void);
 
 static struct PyModuleDef rayforce_module = {
@@ -138,6 +134,7 @@ static PyMethodDef module_methods[] = {
     {"rc_obj", raypy_rc, METH_VARARGS, "Get reference count of object"},
     {"set_obj_attrs", raypy_set_obj_attrs, METH_VARARGS,
      "Set object attributes"},
+    {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
 
     // Database operations
     {"select", raypy_select, METH_VARARGS, "Perform SELECT query"},
@@ -162,7 +159,6 @@ PyMODINIT_FUNC PyInit__rayforce_c(void) {
 
   // Initialize RayObjectType
   RayObjectType.tp_dealloc = (destructor)RayObject_dealloc;
-  RayObjectType.tp_methods = RayObject_methods;
 
   if (PyType_Ready(&RayObjectType) < 0)
     return NULL;

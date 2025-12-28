@@ -16,20 +16,22 @@ class TestKDBConnection:
     @pytest.fixture
     def mock_conn(self):
         conn = MagicMock(spec=r.RayObject)
-        conn.get_obj_type.return_value = -r.TYPE_I64
         return conn
 
     @pytest.fixture
     def connection(self, mock_engine, mock_conn):
-        return KDBConnection(engine=mock_engine, conn=mock_conn)
+        with patch("rayforce.plugins.raykx.FFI.get_obj_type", return_value=-r.TYPE_I64):
+            return KDBConnection(engine=mock_engine, conn=mock_conn)
 
-    def test_init_invalid_type(self, mock_engine):
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
+    def test_init_invalid_type(self, mock_get_obj_type, mock_engine):
         invalid_conn = MagicMock(spec=r.RayObject)
-        invalid_conn.get_obj_type.return_value = r.TYPE_ERR
+        mock_get_obj_type.return_value = r.TYPE_ERR
 
         with pytest.raises(errors.KDBConnectionError, match="Invalid KDB connection object type"):
             KDBConnection(engine=mock_engine, conn=invalid_conn)
 
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.init_string")
     @patch("rayforce.plugins.raykx.FFI.push_obj")
@@ -42,10 +44,11 @@ class TestKDBConnection:
         mock_push_obj,
         mock_init_string,
         mock_eval_obj,
+        mock_get_obj_type,
         connection,
     ):
         mock_result = MagicMock(spec=r.RayObject)
-        mock_result.get_obj_type.return_value = r.TYPE_I64
+        mock_get_obj_type.return_value = r.TYPE_I64
         mock_eval_obj.return_value = mock_result
         mock_ray_to_python.return_value = "result"
 
@@ -59,6 +62,7 @@ class TestKDBConnection:
         with pytest.raises(errors.KDBConnectionAlreadyClosedError):
             connection.execute("test_query")
 
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.get_error_obj")
     @patch("rayforce.plugins.raykx.FFI.init_string")
@@ -71,10 +75,11 @@ class TestKDBConnection:
         mock_init_string,
         mock_get_error,
         mock_eval_obj,
+        mock_get_obj_type,
         connection,
     ):
         mock_error = MagicMock(spec=r.RayObject)
-        mock_error.get_obj_type.return_value = r.TYPE_ERR
+        mock_get_obj_type.return_value = r.TYPE_ERR
         mock_eval_obj.return_value = mock_error
         mock_get_error.return_value = "'ipc_send error"
 
@@ -82,6 +87,7 @@ class TestKDBConnection:
             connection.execute("test_query")
 
     @pytest.mark.xfail  # temp: resolve issue with IPC errors in rayforce
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.get_error_obj")
     @patch("rayforce.plugins.raykx.FFI.init_string")
@@ -94,10 +100,11 @@ class TestKDBConnection:
         mock_init_string,
         mock_get_error,
         mock_eval_obj,
+        mock_get_obj_type,
         connection,
     ):
         mock_error = MagicMock(spec=r.RayObject)
-        mock_error.get_obj_type.return_value = r.TYPE_ERR
+        mock_get_obj_type.return_value = r.TYPE_ERR
         mock_eval_obj.return_value = mock_error
         mock_get_error.return_value = "Other error"
 
@@ -137,15 +144,22 @@ class TestKDBEngine:
         assert engine_no_port.url == "localhost:5000"
         assert engine_no_port.pool == {}
 
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.push_obj")
     @patch("rayforce.plugins.raykx.FFI.init_string")
     @patch("rayforce.plugins.raykx.FFI.init_list")
     def test_acquire_success(
-        self, mock_init_list, mock_init_string, mock_push_obj, mock_eval_obj, engine
+        self,
+        mock_init_list,
+        mock_init_string,
+        mock_push_obj,
+        mock_eval_obj,
+        mock_get_obj_type,
+        engine,
     ):
         mock_conn = MagicMock(spec=r.RayObject)
-        mock_conn.get_obj_type.return_value = -r.TYPE_I64
+        mock_get_obj_type.return_value = -r.TYPE_I64
         mock_eval_obj.return_value = mock_conn
 
         conn = engine.acquire()
@@ -154,33 +168,47 @@ class TestKDBEngine:
         assert conn.ptr == mock_conn
         assert id(conn) in engine.pool
 
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.get_error_obj")
     @patch("rayforce.plugins.raykx.FFI.push_obj")
     @patch("rayforce.plugins.raykx.FFI.init_string")
     @patch("rayforce.plugins.raykx.FFI.init_list")
     def test_acquire_failure(
-        self, mock_init_list, mock_init_string, mock_push_obj, mock_get_error, mock_eval_obj, engine
+        self,
+        mock_init_list,
+        mock_init_string,
+        mock_push_obj,
+        mock_get_error,
+        mock_eval_obj,
+        mock_get_obj_type,
+        engine,
     ):
         mock_error = MagicMock(spec=r.RayObject)
-        mock_error.get_obj_type.return_value = r.TYPE_ERR
+        mock_get_obj_type.return_value = r.TYPE_ERR
         mock_eval_obj.return_value = mock_error
         mock_get_error.return_value = "Connection failed"
 
         with pytest.raises(ValueError, match="Error when establishing connection"):
             engine.acquire()
 
+    @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.push_obj")
     @patch("rayforce.plugins.raykx.FFI.init_string")
     @patch("rayforce.plugins.raykx.FFI.init_list")
     def test_dispose_connections(
-        self, mock_init_list, mock_init_string, mock_push_obj, mock_eval_obj, engine
+        self,
+        mock_init_list,
+        mock_init_string,
+        mock_push_obj,
+        mock_eval_obj,
+        mock_get_obj_type,
+        engine,
     ):
         mock_conn1 = MagicMock(spec=r.RayObject)
-        mock_conn1.get_obj_type.return_value = -r.TYPE_I64
         mock_conn2 = MagicMock(spec=r.RayObject)
-        mock_conn2.get_obj_type.return_value = -r.TYPE_I64
+        mock_get_obj_type.return_value = -r.TYPE_I64
         mock_eval_obj.side_effect = [mock_conn1, mock_conn2]
 
         conn1 = engine.acquire()

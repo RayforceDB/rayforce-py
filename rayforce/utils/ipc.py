@@ -98,7 +98,7 @@ class IPCEngine:
 
     def acquire(self) -> IPCConnection:
         handle = self.__open_connection()
-        if handle.get_obj_type() == r.TYPE_ERR:
+        if FFI.get_obj_type(handle) == r.TYPE_ERR:
             error_message = FFI.get_error_obj(handle)
             raise errors.RayforceIPCError(f"Error when establishing connection: {error_message}")
 

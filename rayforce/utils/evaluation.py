@@ -13,7 +13,7 @@ def eval_str(expr: str, *, raw: bool = False) -> t.Any:
         raise errors.RayforceEvaluationError(f"Expression must be a string, got {type(expr)}")
 
     result_ptr = FFI.eval_str(FFI.init_string(expr))
-    if result_ptr.get_obj_type() == r.TYPE_ERR:
+    if FFI.get_obj_type(result_ptr) == r.TYPE_ERR:
         raise errors.RayforceEvaluationError(f"Evaluation error: {FFI.get_error_obj(result_ptr)}")
 
     return result_ptr if raw else ray_to_python(result_ptr)
@@ -28,7 +28,7 @@ def eval_obj(obj: t.Any) -> t.Any:
         raise errors.RayforceEvaluationError(f"Cannot evaluate {type(obj)}")
 
     result_ptr = FFI.eval_obj(ptr)
-    if result_ptr.get_obj_type() == r.TYPE_ERR:
+    if FFI.get_obj_type(result_ptr) == r.TYPE_ERR:
         raise errors.RayforceEvaluationError(f"Evaluation error: {FFI.get_error_obj(result_ptr)}")
 
     return ray_to_python(result_ptr)

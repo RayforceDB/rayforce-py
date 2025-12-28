@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
+from rayforce import FFI, errors
 from rayforce import _rayforce_c as r
-from rayforce import errors
 
 if t.TYPE_CHECKING:
     from rayforce.types.base import RayObject
@@ -45,7 +45,7 @@ class TypeRegistry:
         if not isinstance(ptr, r.RayObject):
             raise errors.RayforceTypeRegistryError(f"Expected RayObject, got {type(ptr)}")
 
-        type_code = ptr.get_obj_type()
+        type_code = FFI.get_obj_type(ptr)
         if type_code in (r.TYPE_UNARY, r.TYPE_BINARY, r.TYPE_VARY):
             type_class = cls._types.get(type_code)
 

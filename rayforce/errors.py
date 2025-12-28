@@ -136,10 +136,11 @@ CORE_EXC_CODE_MAPPING: dict[str, type[RayforceError]] = {
 def error_handler(func: t.Callable) -> t.Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
+        from rayforce.ffi import FFI
+
         result = func(*args, **kwargs)
-        if isinstance(result, r.RayObject) and result.get_obj_type() == r.TYPE_ERR:
+        if isinstance(result, r.RayObject) and FFI.get_obj_type(result) == r.TYPE_ERR:
             from rayforce import Dict
-            from rayforce.ffi import FFI
 
             error = Dict(ptr=FFI.get_error_obj(result))
             raise CORE_EXC_CODE_MAPPING.get(error["code"].value, RayforceUserError).serialize(error)

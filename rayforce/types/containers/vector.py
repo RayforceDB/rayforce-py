@@ -93,13 +93,13 @@ class String(Vector):
         *,
         ptr: r.RayObject | None = None,
     ) -> None:
-        if ptr and (_type := ptr.get_obj_type()) != self.type_code:
+        if ptr and (_type := FFI.get_obj_type(ptr)) != self.type_code:
             raise errors.RayforceInitError(
                 f"Expected String RayObject (type {self.type_code}), got {_type}"
             )
 
         if isinstance(value, Vector):
-            if (_type := value.ptr.get_obj_type()) != r.TYPE_C8:
+            if (_type := FFI.get_obj_type(value.ptr)) != r.TYPE_C8:
                 raise errors.RayforceInitError(
                     f"Expected Vector (type {self.type_code}), got {_type}"
                 )

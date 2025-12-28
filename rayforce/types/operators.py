@@ -216,19 +216,19 @@ class Operation(enum.StrEnum):
 
     @property
     def is_binary(self) -> bool:
-        return self.primitive.get_obj_type() == r.TYPE_BINARY
+        return FFI.get_obj_type(self.primitive) == r.TYPE_BINARY
 
     @property
     def is_unary(self) -> bool:
-        return self.primitive.get_obj_type() == r.TYPE_UNARY
+        return FFI.get_obj_type(self.primitive) == r.TYPE_UNARY
 
     @property
     def is_variadic(self) -> bool:
-        return self.primitive.get_obj_type() == r.TYPE_VARY
+        return FFI.get_obj_type(self.primitive) == r.TYPE_VARY
 
     @staticmethod
     def from_ptr(obj: r.RayObject) -> Operation:
-        if (obj_type := obj.get_obj_type()) not in (
+        if (obj_type := FFI.get_obj_type(obj)) not in (
             r.TYPE_UNARY,
             r.TYPE_BINARY,
             r.TYPE_VARY,

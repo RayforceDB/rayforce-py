@@ -305,3 +305,8 @@ class FFI:
     @errors.error_handler
     def init_runtime() -> None:
         return r.init_runtime()
+
+    @staticmethod
+    @errors.error_handler
+    def get_obj_type(obj: r.RayObject) -> int:
+        return r.get_obj_type(obj)
