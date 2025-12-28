@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import typing as t
 
-from rayforce import FFI, errors
 from rayforce import _rayforce_c as r
+from rayforce import errors
+from rayforce.ffi import FFI
 
 if t.TYPE_CHECKING:
     from rayforce.types.base import RayObject

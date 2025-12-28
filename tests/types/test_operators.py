@@ -1,4 +1,5 @@
-from rayforce import FFI, _rayforce_c as r
+from rayforce import _rayforce_c as r
+from rayforce.ffi import FFI
 from rayforce.types.operators import Operation
 
 

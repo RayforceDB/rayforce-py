@@ -42,17 +42,26 @@ class TestIPCConnection:
 
     @pytest.fixture
     def connection(self, mock_engine, mock_handle):
-        with patch("rayforce.utils.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
-            return IPCConnection(engine=mock_engine, handle=mock_handle)
+        return IPCConnection(engine=mock_engine, handle=mock_handle)
 
+    @patch("rayforce.utils.ipc.FFI.get_obj_type")
+    @patch("rayforce.utils.ipc.FFI.init_string")
     @patch("rayforce.utils.ipc.FFI.write")
     @patch("rayforce.utils.ipc.ray_to_python")
-    def test_execute(self, mock_ray_to_python, mock_write, connection):
+    def test_execute(
+        self, mock_ray_to_python, mock_write, mock_init_string, mock_get_obj_type, connection
+    ):
+        # Mock init_string to return a proper RayObject with TYPE_C8
+        mock_string_obj = MagicMock(spec=r.RayObject)
+        mock_init_string.return_value = mock_string_obj
+        # Mock get_obj_type to return TYPE_C8 for String validation
+        mock_get_obj_type.return_value = r.TYPE_C8
         mock_write.return_value = MagicMock()
         mock_ray_to_python.return_value = "result"
 
         result = connection.execute("test_query")
         assert result == "result"
+        mock_init_string.assert_called_once_with("test_query")
         mock_write.assert_called_once()
         mock_ray_to_python.assert_called_once()
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import typing as t
 
-from rayforce import FFI, errors
 from rayforce import _rayforce_c as r
+from rayforce import errors
+from rayforce.ffi import FFI
 
 
 class RayObject(ABC):
@@ -33,13 +34,15 @@ class RayObject(ABC):
         if not isinstance(ptr, r.RayObject):
             raise errors.RayforceInitError(f"Expected RayObject, got {type(ptr)}")
 
-        if hasattr(self.__class__, "type_code") and self.__class__.type_code is not None:
-            actual_type = FFI.get_obj_type(ptr)
-            if actual_type != self.__class__.type_code:
-                raise errors.RayforceInitError(
-                    f"{self.__class__.__name__} expects type code {self.__class__.type_code}, "
-                    f"got {actual_type}",
-                )
+        if (
+            hasattr(self.__class__, "type_code")
+            and self.__class__.type_code is not None
+            and (type_ := FFI.get_obj_type(ptr)) != self.__class__.type_code
+        ):
+            raise errors.RayforceInitError(
+                f"{self.__class__.__name__} expects type code {self.__class__.type_code}, "
+                f"got {type_}",
+            )
 
     @abstractmethod
     def _create_from_value(self, value: t.Any) -> r.RayObject:

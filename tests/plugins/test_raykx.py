@@ -18,6 +18,11 @@ class TestKDBConnection:
         conn = MagicMock(spec=r.RayObject)
         return conn
 
+    @pytest.fixture(autouse=True)
+    def mock_get_obj_type_default(self):
+        with patch("rayforce.plugins.raykx.FFI.get_obj_type", return_value=-r.TYPE_I64):
+            yield
+
     @pytest.fixture
     def connection(self, mock_engine, mock_conn):
         with patch("rayforce.plugins.raykx.FFI.get_obj_type", return_value=-r.TYPE_I64):

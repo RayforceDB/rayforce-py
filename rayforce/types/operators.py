@@ -228,11 +228,7 @@ class Operation(enum.StrEnum):
 
     @staticmethod
     def from_ptr(obj: r.RayObject) -> Operation:
-        if (obj_type := FFI.get_obj_type(obj)) not in (
-            r.TYPE_UNARY,
-            r.TYPE_BINARY,
-            r.TYPE_VARY,
-        ):
+        if (obj_type := FFI.get_obj_type(obj)) not in (r.TYPE_UNARY, r.TYPE_BINARY, r.TYPE_VARY):
             raise errors.RayforceInitError(f"Object is not an operation (type: {obj_type})")
 
         return Operation(FFI.env_get_internal_name_by_function(obj))

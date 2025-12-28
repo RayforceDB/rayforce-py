@@ -46,6 +46,8 @@ clean:
 		*.egg-info \
 		dist/ && \
 		find . -type d -name "__pycache__" -exec rm -rf {} +
+
+clean-all: clean
 	@cd $(EXEC_DIR) && rm -rf \
 		rayforce/rayforce/ \
 		tmp/ \
@@ -71,7 +73,7 @@ rayforce_binaries:
 app: pull_rayforce_from_github patch_rayforce_makefile rayforce_binaries
 
 test:
-	python3 -m pytest -x -vv tests/
+	PYTHONFAULTHANDLER=1 python3 -m pytest -x -vv tests/
 
 lint:
 	python3 -m ruff format tests/ rayforce/

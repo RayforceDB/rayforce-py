@@ -6,10 +6,6 @@ import ctypes
 from pathlib import Path
 import sys
 
-from rayforce.ffi import FFI
-
-FFI.init_runtime()
-
 version = "0.2.0"
 
 if sys.platform == "linux":
@@ -63,6 +59,7 @@ from .errors import (  # noqa: E402
     RayforceUserError,
     RayforceValueError,
 )
+from .ffi import FFI  # noqa: E402
 from .types import (  # noqa: E402
     B8,
     C8,
@@ -96,6 +93,9 @@ from .utils import (  # noqa: E402
     python_to_ray,
     ray_to_python,
 )
+from .ffi import FFI
+
+FFI.init_runtime()  # Start the runtime thread
 
 core_version = String(eval_str("(sysinfo)")["hash"]).to_python()
 

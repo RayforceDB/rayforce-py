@@ -12,6 +12,8 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
   }
 
+  // Убеждаемся, что GIL захвачен перед инициализацией runtime
+  // Это важно, так как runtime может использовать Python API
   char *argv[] = {"raypy", "-r", "0", NULL};
   g_runtime = runtime_create(3, argv);
   if (g_runtime == NULL) {
@@ -21,6 +23,46 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
 
   Py_RETURN_NONE;
 }
+
+// Internal function to drop object in runtime thread
+PyObject *raypy_drop_obj_internal(PyObject *self, PyObject *args) {
+  (void)self;
+  RayObject *ray_obj;
+
+  if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    return NULL;
+
+  if (ray_obj->obj != NULL && ray_obj->obj != NULL_OBJ && g_runtime != NULL) {
+    // Проверяем _shutting_down перед вызовом drop_obj
+    int should_drop = 1;
+    if (Py_IsInitialized()) {
+      PyObject *ffi_module = PyImport_ImportModule("rayforce.ffi");
+      if (ffi_module != NULL) {
+        PyObject *shutting_down = PyObject_GetAttrString(ffi_module, "_shutting_down");
+        if (shutting_down != NULL && PyObject_IsTrue(shutting_down)) {
+          should_drop = 0; // Не удаляем при завершении программы
+        }
+        if (shutting_down != NULL) {
+          Py_DECREF(shutting_down);
+        }
+        Py_DECREF(ffi_module);
+      }
+    }
+    
+    if (should_drop) {
+      obj_p obj_to_drop = ray_obj->obj;
+      ray_obj->obj = NULL_OBJ;
+      drop_obj(obj_to_drop);
+    } else {
+      // Просто помечаем как удаленный, но не вызываем drop_obj
+      ray_obj->obj = NULL_OBJ;
+    }
+  }
+  
+  Py_DECREF((PyObject *)ray_obj);
+  Py_RETURN_NONE;
+}
+
 
 PyTypeObject RayObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce_c.RayObject",
@@ -33,9 +75,111 @@ PyTypeObject RayObjectType = {
     .tp_new = PyType_GenericNew,
 };
 
+// Флаг для отслеживания, инициализирован ли модуль
+static int module_initialized = 0;
+
 static void RayObject_dealloc(RayObject *self) {
-  if (self->obj != NULL && self->obj != NULL_OBJ)
-    drop_obj(self->obj);
+  if (self->obj != NULL && self->obj != NULL_OBJ) {
+    obj_p obj_to_drop = self->obj;
+    self->obj = NULL_OBJ;
+    
+    // Если Python не инициализирован или модуль еще не инициализирован,
+    // удаляем объект напрямую только если runtime существует
+    // Но не удаляем при завершении программы
+    if (!Py_IsInitialized() || !module_initialized) {
+      // При раннем завершении не вызываем drop_obj - runtime может быть уже уничтожен
+      Py_TYPE(self)->tp_free((PyObject *)self);
+      return;
+    }
+    
+    // Пытаемся отправить объект в очередь на удаление в runtime потоке
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    int scheduled = 0;
+    
+    PyObject *ffi_module = PyImport_ImportModule("rayforce.ffi");
+    if (ffi_module != NULL) {
+      // Проверяем флаг _shutting_down
+      PyObject *shutting_down = PyObject_GetAttrString(ffi_module, "_shutting_down");
+      if (shutting_down != NULL && PyObject_IsTrue(shutting_down)) {
+        // При завершении программы не удаляем объект - runtime может быть уже уничтожен
+        Py_DECREF(shutting_down);
+        Py_DECREF(ffi_module);
+        PyErr_Clear();
+        PyGILState_Release(gstate);
+        Py_TYPE(self)->tp_free((PyObject *)self);
+        return;
+      }
+      if (shutting_down != NULL) {
+        Py_DECREF(shutting_down);
+      }
+      
+      // Пытаемся вызвать schedule_drop
+      PyObject *ffi_class = PyObject_GetAttrString(ffi_module, "FFI");
+      if (ffi_class != NULL) {
+        PyObject *schedule_drop_func = PyObject_GetAttrString(ffi_class, "schedule_drop");
+        if (schedule_drop_func != NULL && PyCallable_Check(schedule_drop_func)) {
+          RayObject *obj_copy = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+          if (obj_copy != NULL) {
+            obj_copy->obj = obj_to_drop;
+            Py_INCREF((PyObject *)obj_copy);
+            PyObject *args = PyTuple_New(1);
+            if (args != NULL) {
+              PyTuple_SET_ITEM(args, 0, (PyObject *)obj_copy);
+              PyObject *result = PyObject_CallObject(schedule_drop_func, args);
+              if (result != NULL) {
+                Py_DECREF(result);
+                scheduled = 1;
+                Py_DECREF(args);
+              } else {
+                // Если schedule_drop вернул NULL, удаляем объект напрямую
+                PyObject *obj_from_tuple = PyTuple_GET_ITEM(args, 0);
+                Py_INCREF(obj_from_tuple);
+                Py_DECREF(args);
+                RayObject *obj_to_drop_direct = (RayObject *)obj_from_tuple;
+                if (obj_to_drop_direct->obj != NULL && obj_to_drop_direct->obj != NULL_OBJ) {
+                  // Проверяем _shutting_down перед прямым вызовом drop_obj
+                  int should_drop = 1;
+                  PyObject *ffi_module_check = PyImport_ImportModule("rayforce.ffi");
+                  if (ffi_module_check != NULL) {
+                    PyObject *shutting_down_check = PyObject_GetAttrString(ffi_module_check, "_shutting_down");
+                    if (shutting_down_check != NULL && PyObject_IsTrue(shutting_down_check)) {
+                      should_drop = 0; // Не удаляем при завершении программы
+                    }
+                    if (shutting_down_check != NULL) {
+                      Py_DECREF(shutting_down_check);
+                    }
+                    Py_DECREF(ffi_module_check);
+                  }
+                  
+                  if (should_drop && g_runtime != NULL) {
+                    obj_p obj_to_drop_now = obj_to_drop_direct->obj;
+                    obj_to_drop_direct->obj = NULL_OBJ;
+                    drop_obj(obj_to_drop_now);
+                  } else {
+                    // Просто помечаем как удаленный
+                    obj_to_drop_direct->obj = NULL_OBJ;
+                  }
+                }
+                Py_DECREF(obj_from_tuple);
+              }
+            } else {
+              Py_DECREF(obj_copy);
+            }
+          }
+          Py_DECREF(schedule_drop_func);
+        }
+        Py_DECREF(ffi_class);
+      }
+      Py_DECREF(ffi_module);
+    }
+    
+    PyErr_Clear();
+    PyGILState_Release(gstate);
+    
+    // Если не удалось запланировать удаление, не вызываем drop_obj напрямую
+    // так как это может произойти при завершении программы, когда runtime уже уничтожен
+    // Объекты будут удалены при уничтожении runtime
+  }
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -149,6 +293,8 @@ static PyMethodDef module_methods[] = {
 
     {"init_runtime", raypy_init_runtime, METH_VARARGS,
      "Initialize Rayforce runtime"},
+    {"get_obj_type", raypy_get_obj_type, METH_VARARGS,
+     "Get object type code"},
 
     {NULL, NULL, 0, NULL}};
 
@@ -221,6 +367,10 @@ PyMODINIT_FUNC PyInit__rayforce_c(void) {
     Py_DECREF(m);
     return NULL;
   }
+
+  // Устанавливаем флаг инициализации модуля в конце, после успешной инициализации
+  // Это позволяет RayObject_dealloc безопасно использовать Python API
+  module_initialized = 1;
 
   return m;
 }
