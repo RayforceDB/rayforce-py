@@ -1,6 +1,26 @@
 #include "rayforce_c.h"
 
-void *g_runtime = NULL; // where runtime is stored
+void *g_runtime = NULL;
+
+// Initialize runtime (FFI function)
+PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
+  (void)self; // Suppress unused parameter warning
+  (void)args; // Suppress unused parameter warning
+
+  if (g_runtime != NULL) {
+    // Runtime already initialized
+    Py_RETURN_NONE;
+  }
+
+  char *argv[] = {"raypy", "-r", "0", NULL};
+  g_runtime = runtime_create(3, argv);
+  if (g_runtime == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
+    return NULL;
+  }
+
+  Py_RETURN_NONE;
+}
 
 PyTypeObject RayObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce_c.RayObject",
@@ -130,6 +150,9 @@ static PyMethodDef module_methods[] = {
     {"hclose", raypy_hclose, METH_VARARGS, "Close file or socket handle"},
     {"write", raypy_write, METH_VARARGS, "Write data to file or socket"},
 
+    {"init_runtime", raypy_init_runtime, METH_VARARGS,
+     "Initialize Rayforce runtime"},
+
     {NULL, NULL, 0, NULL}};
 
 static RayObject *g_null_obj = NULL;
@@ -200,13 +223,6 @@ PyMODINIT_FUNC PyInit__rayforce_c(void) {
   if (PyModule_AddObject(m, "NULL_OBJ", (PyObject *)g_null_obj) < 0) {
     Py_DECREF(g_null_obj);
     Py_DECREF(m);
-    return NULL;
-  }
-
-  char *argv[] = {"raypy", "-r", "0", NULL};
-  g_runtime = runtime_create(3, argv);
-  if (g_runtime == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
     return NULL;
   }
 

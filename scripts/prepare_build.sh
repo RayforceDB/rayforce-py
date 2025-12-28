@@ -39,10 +39,11 @@ echo "Patching Makefile for Python support..."
 cat >> "${EXEC_DIR}/tmp/rayforce-c/Makefile" << EOF
 
 PY_OBJECTS = core/rayforce_c.o core/raypy_conversion.o core/raypy_constructors.o core/raypy_readers.o core/raypy_operations.o core/raypy_queries.o core/raypy_io.o
+PY_APP_OBJECTS = app/term.o
 python: CFLAGS = \$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I${PYTHON_INCLUDE} -Wno-macro-redefined
 python: LDFLAGS = \$(RELEASE_LDFLAGS) ${PYTHON_LDFLAGS}
-python: \$(CORE_OBJECTS) \$(PY_OBJECTS)
-	\$(CC) -shared -o _rayforce.so \$(CFLAGS) \$(CORE_OBJECTS) \$(PY_OBJECTS) \$(LIBS) \$(LDFLAGS) ${SHARED_FLAGS}
+python: \$(CORE_OBJECTS) \$(PY_OBJECTS) \$(PY_APP_OBJECTS)
+	\$(CC) -shared -o _rayforce.so \$(CFLAGS) \$(CORE_OBJECTS) \$(PY_OBJECTS) \$(PY_APP_OBJECTS) \$(LIBS) \$(LDFLAGS) ${SHARED_FLAGS}
 EOF
 
 echo "Building Rayforce..."

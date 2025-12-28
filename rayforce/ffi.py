@@ -300,3 +300,8 @@ class FFI:
     @errors.error_handler
     def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> None:
         return r.set_obj(obj, idx, value)
+
+    @staticmethod
+    @errors.error_handler
+    def init_runtime() -> None:
+        return r.init_runtime()

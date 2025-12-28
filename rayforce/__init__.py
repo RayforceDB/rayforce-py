@@ -6,7 +6,11 @@ import ctypes
 from pathlib import Path
 import sys
 
-version = "0.1.5"
+from rayforce.ffi import FFI
+
+FFI.init_runtime()
+
+version = "0.2.0"
 
 if sys.platform == "linux":
     lib_name = "_rayforce_c.so"

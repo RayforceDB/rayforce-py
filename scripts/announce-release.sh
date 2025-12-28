@@ -4,6 +4,7 @@
 
 VERSION=${1}
 BOT_API_KEY=${2}
+DEBUG=${3}
 
 if [ -z "$VERSION" ]; then
   echo "Error: VERSION is required"
@@ -63,8 +64,8 @@ else
   ' "${CHANGELOG}")
 
   if [ $? -ne 0 ] || [ -z "${CHANGELOG_CONTENT}" ]; then
-    echo "Warning: No changelog entry found for version ${VERSION}"
-    CHANGELOG_CONTENT=""
+    echo "Exit: No changelog entry found for version ${VERSION}"
+    exit 1
   fi
 fi
 
@@ -74,6 +75,11 @@ if [ -n "${CHANGELOG_CONTENT}" ]; then
   CONTENT="${CONTENT}
 
 ${CHANGELOG_CONTENT}"
+fi
+
+if [ "$DEBUG" == 1 ]; then
+  echo ${CONTENT}
+  exit 1
 fi
 
 curl -X POST https://rayforcedb.zulipchat.com/api/v1/messages \
