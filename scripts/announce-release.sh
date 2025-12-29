@@ -26,10 +26,14 @@ if [ ! -f "${CHANGELOG}" ]; then
   echo "Warning: CHANGELOG not found at ${CHANGELOG}"
   CHANGELOG_CONTENT=""
 else
-  ESCAPED_VERSION=$(echo "${VERSION}" | sed 's/\./\\./g')
-
-  CHANGELOG_CONTENT=$(awk -v version="${ESCAPED_VERSION}" '
-    BEGIN { collecting=0; found_version=0 }
+  CHANGELOG_CONTENT=$(awk -v version="${VERSION}" '
+    BEGIN {
+      collecting=0
+      found_version=0
+      # Escape dots in version for regex matching
+      escaped_version = version
+      gsub(/\./, "\\.", escaped_version)
+    }
     {
       # Stop collecting at next version entry (check this first to avoid including it)
       if (collecting && $0 ~ /^## \*\*`/) {
@@ -37,7 +41,7 @@ else
       }
       # Start collecting when we find the version line
       # Pattern: ## **`VERSION`**
-      if ($0 ~ "^## \\*\\*`" version "`\\*\\*") {
+      if ($0 ~ "^## \\*\\*`" escaped_version "`\\*\\*") {
         collecting=1
         found_version=1
         print
