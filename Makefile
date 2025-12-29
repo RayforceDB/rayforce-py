@@ -73,6 +73,10 @@ app: pull_rayforce_from_github patch_rayforce_makefile rayforce_binaries
 test:
 	python3 -m pytest -x -vv tests/
 
+test-cov:
+	python3 -m pytest -x -vv --cov=rayforce --cov-report=term-missing --cov-report=html tests/
+	python3 -m pytest -x -vv --cov=rayforce --cov-report=term-missing tests/
+
 lint:
 	python3 -m ruff format tests/ rayforce/
 	python3 -m ruff check rayforce/ --fix

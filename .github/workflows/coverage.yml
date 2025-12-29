@@ -1,0 +1,66 @@
+name: Coverage
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    env:
+      RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq git gcc clang g++ make
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel setuptools-scm
+
+      - name: Build rayforce binaries
+        run: make app
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest pytest-cov coverage pandas>=2.0.0 polars>=0.19.0
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest -x -vv --cov=rayforce --cov-report=term-missing --cov-report=xml --cov-report=html tests/
+
+      - name: Coverage Report
+        run: |
+          python -m coverage report
+          echo "Coverage HTML report generated in htmlcov/index.html"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+          retention-days: 30

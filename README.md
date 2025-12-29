@@ -18,7 +18,7 @@
   </tr>
 </table>
 
-![Documentation](https://img.shields.io/website?url=https%3A%2F%2Fpy.rayforcedb.com%2F) [![Tests](https://img.shields.io/badge/Tests-passing-success?logo=github&style=flat)](soon) [![Coverage](https://img.shields.io/badge/Coverage-passing-brightgreen?style=flat&logo=github)](soon) [![Release](https://img.shields.io/github/v/release/RayforceDB/rayforce-py)](https://github.com/RayforceDB/rayforce-py/releases)
+![Documentation](https://img.shields.io/website?url=https%3A%2F%2Fpy.rayforcedb.com%2F) [![Coverage](https://github.com/RayforceDB/rayforce-py/actions/workflows/coverage.yml/badge.svg)](https://github.com/RayforceDB/rayforce-py/actions/workflows/coverage.yml) [![Release](https://img.shields.io/github/v/release/RayforceDB/rayforce-py)](https://github.com/RayforceDB/rayforce-py/releases)
 ![Python Version](https://img.shields.io/pypi/pyversions/rayforce-py.svg)
 
 Python ORM for RayforceDB, a high-performance columnar database designed for analytics and data operations. Core is written in pure C with minimal overhead - combines columnar storage with SIMD vectorization for lightning-fast analytics on time-series and big data workloads.

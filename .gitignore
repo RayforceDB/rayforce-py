@@ -3,6 +3,17 @@
 .pytest_cache
 .mypy_cache
 
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+.coverage.*
+*.cover
+.hypothesis/
+.pytest_cache/
+coverage.xml
+*.coveragerc
+
 # Binaries
 rayforce/bin/
 rayforce/rayforce/

@@ -30,6 +30,15 @@ rayforce = "rayforce.cli:main"
 pandas = ["pandas>=2.0.0"]
 polars = ["polars>=0.19.0"]
 all = ["pandas>=2.0.0", "polars>=0.19.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "coverage>=7.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pandas>=2.0.0",
+    "polars>=0.19.0",
+]
 
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-* cp314-*"
@@ -141,3 +150,36 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.coverage.run]
+source = ["rayforce"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/setup.py",
+    "*/benchmark/*",
+    "*/scripts/*",
+    "rayforce/rayforce/*",  # C extension code
+    "rayforce/capi/*",  # C API code
+    "rayforce/_rayforce_c.pyi",  # Type stubs
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
