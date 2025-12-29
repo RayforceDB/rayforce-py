@@ -36,6 +36,9 @@ class RayforcePartedTableError(RayforceError): ...
 class RayforceIPCError(RayforceError): ...
 
 
+class RayforceThreadError(RayforceError): ...
+
+
 class RayforceOkError(RayforceError):
     """Core - EC_OK"""
 

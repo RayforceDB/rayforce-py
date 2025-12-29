@@ -1,6 +1,8 @@
 import pytest
+import threading
 from rayforce.ffi import FFI
 from rayforce import _rayforce_c as r
+from rayforce.errors import RayforceThreadError
 
 
 @pytest.mark.parametrize(
@@ -320,3 +322,32 @@ def test_write():
     FFI.write(handle, data)
     FFI.hclose(handle)
     # No exception means success
+
+
+def test_thread_safety():
+    exception_raised = threading.Event()
+    exception_type = None
+    exception_message = None
+
+    def worker_thread():
+        nonlocal exception_type, exception_message
+        try:
+            FFI.init_i32(42)
+        except RayforceThreadError as e:
+            exception_type = type(e)
+            exception_message = str(e)
+            exception_raised.set()
+        except Exception as e:
+            exception_type = type(e)
+            exception_message = str(e)
+            exception_raised.set()
+
+    thread = threading.Thread(target=worker_thread)
+    thread.start()
+    thread.join(timeout=5.0)
+
+    assert exception_raised.is_set(), "Exception should have been raised"
+    assert exception_type == RayforceThreadError, (
+        f"Expected RayforceThreadError, got {exception_type}"
+    )
+    assert "main thread" in exception_message.lower() or "thread" in exception_message.lower()
