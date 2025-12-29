@@ -54,6 +54,14 @@ typedef struct {
 // Runtime
 extern void *g_runtime;
 
+int check_main_thread(void);
+
+#define CHECK_MAIN_THREAD()                                                    \
+  do {                                                                         \
+    if (!check_main_thread())                                                  \
+      return NULL;                                                             \
+  } while (0)
+
 // Conversion functions (Python -> Rayforce)
 obj_p raypy_init_i16_from_py(PyObject *item);
 obj_p raypy_init_i32_from_py(PyObject *item);

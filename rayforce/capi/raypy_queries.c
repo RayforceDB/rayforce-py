@@ -2,6 +2,7 @@
 
 PyObject *raypy_select(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *query_dict;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &query_dict))
@@ -22,6 +23,7 @@ PyObject *raypy_select(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_update(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *update_dict;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &update_dict))
@@ -43,6 +45,7 @@ PyObject *raypy_update(PyObject *self, PyObject *args) {
 
 PyObject *raypy_insert(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *table_obj;
   RayObject *data_obj;
 
@@ -67,6 +70,7 @@ PyObject *raypy_insert(PyObject *self, PyObject *args) {
 
 PyObject *raypy_upsert(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *table_obj;
   RayObject *keys_obj;
   RayObject *data_obj;

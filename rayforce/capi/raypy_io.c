@@ -2,6 +2,7 @@
 
 PyObject *raypy_hopen(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *path_obj;
   RayObject *timeout_obj = NULL;
 
@@ -34,6 +35,7 @@ PyObject *raypy_hopen(PyObject *self, PyObject *args) {
 
 PyObject *raypy_hclose(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *handle_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &handle_obj))
@@ -55,6 +57,7 @@ PyObject *raypy_hclose(PyObject *self, PyObject *args) {
 
 PyObject *raypy_write(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *handle_obj;
   RayObject *data_obj;
 

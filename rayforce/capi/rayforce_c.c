@@ -2,9 +2,30 @@
 
 void *g_runtime = NULL;
 
+static unsigned long g_main_thread_id = 0; // main thread ID
+
+int check_main_thread(void) {
+  if (g_main_thread_id == 0) {
+    PyErr_SetString(PyExc_RuntimeError, "Runtime not initialized.");
+    return 0;
+  }
+
+  unsigned long current_thread_id;
+  current_thread_id = (unsigned long)PyThread_get_thread_ident();
+
+  if (current_thread_id != g_main_thread_id) {
+    PyErr_Format(PyExc_RuntimeError,
+                 "Rayforce runtime can not be called from other threads than "
+                 "the one where it was initialized from");
+    return 0;
+  }
+
+  return 1;
+}
+
 // Initialize runtime (FFI function)
 PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
-  (void)self; // Suppress unused parameter warning
+  (void)self;
   (void)args; // Suppress unused parameter warning
 
   if (g_runtime != NULL) {
@@ -18,6 +39,9 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
     return NULL;
   }
+
+  if (g_main_thread_id == 0)
+    g_main_thread_id = (unsigned long)PyThread_get_thread_ident();
 
   Py_RETURN_NONE;
 }

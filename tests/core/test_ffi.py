@@ -347,7 +347,8 @@ def test_thread_safety():
     thread.join(timeout=5.0)
 
     assert exception_raised.is_set(), "Exception should have been raised"
-    assert exception_type == RayforceThreadError, (
-        f"Expected RayforceThreadError, got {exception_type}"
+    assert exception_type == RuntimeError, f"Expected RayforceThreadError, got {exception_type}"
+    assert (
+        exception_message
+        == "Rayforce runtime can not be called from other threads than the one where it was initialized from"
     )
-    assert "main thread" in exception_message.lower() or "thread" in exception_message.lower()

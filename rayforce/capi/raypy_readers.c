@@ -2,6 +2,7 @@
 
 PyObject *raypy_read_i16(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -16,6 +17,7 @@ PyObject *raypy_read_i16(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_i32(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -30,6 +32,7 @@ PyObject *raypy_read_i32(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_i64(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -44,6 +47,7 @@ PyObject *raypy_read_i64(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_f64(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -58,6 +62,7 @@ PyObject *raypy_read_f64(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_c8(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -72,6 +77,7 @@ PyObject *raypy_read_c8(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_string(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
@@ -85,6 +91,7 @@ PyObject *raypy_read_string(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_symbol(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -103,6 +110,7 @@ PyObject *raypy_read_symbol(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_b8(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -117,6 +125,7 @@ PyObject *raypy_read_b8(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_u8(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -131,6 +140,7 @@ PyObject *raypy_read_u8(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_date(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -145,6 +155,7 @@ PyObject *raypy_read_date(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_time(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -159,6 +170,7 @@ PyObject *raypy_read_time(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_timestamp(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -173,6 +185,7 @@ PyObject *raypy_read_timestamp(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_read_guid(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))

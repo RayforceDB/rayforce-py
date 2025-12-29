@@ -2,6 +2,8 @@
 
 PyObject *raypy_init_i16(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -20,6 +22,8 @@ PyObject *raypy_init_i16(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_i32(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -38,6 +42,8 @@ PyObject *raypy_init_i32(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_i64(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -56,6 +62,8 @@ PyObject *raypy_init_i64(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_f64(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -74,6 +82,8 @@ PyObject *raypy_init_f64(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_c8(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -91,6 +101,8 @@ PyObject *raypy_init_c8(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_string(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   const char *value;
   Py_ssize_t len;
 
@@ -111,6 +123,8 @@ PyObject *raypy_init_string(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_symbol(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -127,6 +141,8 @@ PyObject *raypy_init_symbol(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_b8(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -145,6 +161,8 @@ PyObject *raypy_init_b8(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_u8(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -163,6 +181,8 @@ PyObject *raypy_init_u8(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_date(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -180,6 +200,8 @@ PyObject *raypy_init_date(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_time(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -197,6 +219,8 @@ PyObject *raypy_init_time(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_timestamp(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -214,6 +238,8 @@ PyObject *raypy_init_timestamp(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item;
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
@@ -231,6 +257,8 @@ PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_list(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item = NULL;
   Py_ssize_t initial_size = 0;
 
@@ -268,6 +296,8 @@ PyObject *raypy_init_list(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_table(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   RayObject *keys_obj;
   RayObject *vals_obj;
 
@@ -289,6 +319,8 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
+
   PyObject *item = NULL;
   RayObject *keys_obj;
   RayObject *vals_obj;
@@ -329,6 +361,7 @@ PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   int type_code;
   Py_ssize_t length;
 

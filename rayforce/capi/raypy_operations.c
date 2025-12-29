@@ -2,6 +2,7 @@
 
 PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -16,6 +17,7 @@ PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   long value;
 
@@ -32,6 +34,7 @@ PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -58,6 +61,7 @@ PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_table_values(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -84,6 +88,7 @@ PyObject *raypy_table_values(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -108,6 +113,7 @@ PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -132,6 +138,7 @@ PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   RayObject *key_obj;
 
@@ -160,6 +167,7 @@ PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   Py_ssize_t index;
 
@@ -185,6 +193,7 @@ PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   Py_ssize_t index;
   RayObject *item;
@@ -204,6 +213,7 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   RayObject *item;
 
@@ -222,6 +232,7 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   RayObject *idx_obj;
   RayObject *val_obj;
@@ -247,6 +258,7 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_fill_vector(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *vec_obj;
   PyObject *fill;
 
@@ -405,6 +417,7 @@ PyObject *raypy_fill_vector(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_fill_list(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *list_obj;
   PyObject *fill;
 
@@ -522,6 +535,7 @@ PyObject *raypy_fill_list(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_get_obj_length(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -531,6 +545,7 @@ PyObject *raypy_get_obj_length(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
   int full = 1;
 
@@ -549,6 +564,7 @@ PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_eval_str(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -569,6 +585,7 @@ PyObject *raypy_eval_str(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -598,6 +615,7 @@ PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_binary_set(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *symbol_or_path;
   RayObject *value;
 
@@ -633,6 +651,7 @@ PyObject *raypy_binary_set(PyObject *self, PyObject *args) {
 PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
                                                   PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   const char *name;
   Py_ssize_t name_len;
 
@@ -661,6 +680,7 @@ PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
 PyObject *raypy_env_get_internal_name_by_function(PyObject *self,
                                                   PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -674,6 +694,7 @@ PyObject *raypy_env_get_internal_name_by_function(PyObject *self,
 }
 PyObject *raypy_eval_obj(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -694,6 +715,7 @@ PyObject *raypy_eval_obj(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_quote(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -714,6 +736,7 @@ PyObject *raypy_quote(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_rc(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   RayObject *ray_obj;
 
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
@@ -723,6 +746,7 @@ PyObject *raypy_rc(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
   (void)self;
+  CHECK_MAIN_THREAD();
   const char *path;
   const char *func_name;
   int nargs;
