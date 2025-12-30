@@ -6,28 +6,24 @@ obj_p raypy_init_i16_from_py(PyObject *item) {
     return NULL;
   return i16((i16_t)val);
 }
-
 obj_p raypy_init_i32_from_py(PyObject *item) {
   long val = PyLong_AsLong(item);
   if (val == -1 && PyErr_Occurred())
     return NULL;
   return i32((i32_t)val);
 }
-
 obj_p raypy_init_i64_from_py(PyObject *item) {
   long long val = PyLong_AsLongLong(item);
   if (val == -1 && PyErr_Occurred())
     return NULL;
   return i64(val);
 }
-
 obj_p raypy_init_f64_from_py(PyObject *item) {
   double val = PyFloat_AsDouble(item);
   if (val == -1.0 && PyErr_Occurred())
     return NULL;
   return f64(val);
 }
-
 obj_p raypy_init_c8_from_py(PyObject *item) {
   const char *str_val;
   Py_ssize_t str_len;
@@ -50,14 +46,12 @@ obj_p raypy_init_c8_from_py(PyObject *item) {
   }
   return c8(str_val[0]);
 }
-
 obj_p raypy_init_b8_from_py(PyObject *item) {
   int val = PyObject_IsTrue(item);
   if (val == -1)
     return NULL;
   return b8(val ? 1 : 0);
 }
-
 obj_p raypy_init_symbol_from_py(PyObject *item) {
   const char *str_val;
   Py_ssize_t str_len;

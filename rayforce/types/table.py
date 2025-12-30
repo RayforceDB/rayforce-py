@@ -173,7 +173,11 @@ class Expression(AggregationMixin, OperatorMixin):
                 converted_operands.append(QuotedSymbol(operand))
             else:
                 converted_operands.append(operand)
-        return List([self.operation, *converted_operands]).ptr
+        # Convert operation to its primitive if it's an Operation enum
+        operation_obj = (
+            self.operation.primitive if isinstance(self.operation, Operation) else self.operation
+        )
+        return List([operation_obj, *converted_operands]).ptr
 
     def execute(self) -> t.Any:
         return utils.eval_obj(self.compile())
@@ -635,7 +639,7 @@ class SelectQuery:
         return Dict(query_items).ptr
 
     def execute(self) -> Table:
-        return utils.ray_to_python(FFI.select(query=self.ptr))
+        return utils.eval_obj(List([Operation.SELECT, self.compile()]))
 
 
 class UpdateQuery:
@@ -738,8 +742,7 @@ class InsertQuery:
         return insertable
 
     def execute(self) -> Table:
-        cloned_table = FFI.quote(self.table.ptr)
-        new_table = FFI.insert(table=cloned_table, data=self.compile())
+        new_table = FFI.insert(table=FFI.quote(self.table.ptr), data=self.compile())
         if self.table.is_reference:
             return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)
@@ -824,8 +827,7 @@ class UpsertQuery:
 
     def execute(self) -> Table:
         compiled = self.compile()
-        cloned_table = FFI.quote(self.table.ptr)
-        new_table = FFI.upsert(table=cloned_table, keys=compiled[0], data=compiled[1])
+        new_table = FFI.upsert(table=FFI.quote(self.table.ptr), keys=compiled[0], data=compiled[1])
         if self.table.is_reference:
             return Table.from_name(Symbol(ptr=new_table).value)
         return Table.from_ptr(new_table)

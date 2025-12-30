@@ -214,11 +214,6 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def select(query: r.RayObject) -> r.RayObject:
-        return r.select(query)
-
-    @staticmethod
-    @errors.error_handler
     def update(query: r.RayObject) -> r.RayObject:
         return r.update(query)
 

@@ -19,18 +19,12 @@ PyObject *raypy_hopen(PyObject *self, PyObject *args) {
     arg_count = 2;
   }
 
-  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result == NULL)
-    return NULL;
-
-  result->obj = ray_hopen(ray_args, arg_count);
-  if (result->obj == NULL) {
-    Py_DECREF(result);
+  obj_p ray_obj = ray_hopen(ray_args, arg_count);
+  if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to open handle");
     return NULL;
   }
-
-  return (PyObject *)result;
+  return raypy_wrap_ray_object(ray_obj);
 }
 
 PyObject *raypy_hclose(PyObject *self, PyObject *args) {
@@ -41,20 +35,13 @@ PyObject *raypy_hclose(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &handle_obj))
     return NULL;
 
-  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result == NULL)
-    return NULL;
-
-  result->obj = ray_hclose(handle_obj->obj);
-  if (result->obj == NULL) {
-    Py_DECREF(result);
+  obj_p ray_obj = ray_hclose(handle_obj->obj);
+  if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to close handle");
     return NULL;
   }
-
-  return (PyObject *)result;
+  return raypy_wrap_ray_object(ray_obj);
 }
-
 PyObject *raypy_write(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -65,16 +52,10 @@ PyObject *raypy_write(PyObject *self, PyObject *args) {
                         &RayObjectType, &data_obj))
     return NULL;
 
-  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result == NULL)
-    return NULL;
-
-  result->obj = ray_write(handle_obj->obj, data_obj->obj);
-  if (result->obj == NULL) {
-    Py_DECREF(result);
+  obj_p ray_obj = ray_write(handle_obj->obj, data_obj->obj);
+  if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to write data");
     return NULL;
   }
-
-  return (PyObject *)result;
+  return raypy_wrap_ray_object(ray_obj);
 }

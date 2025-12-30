@@ -51,7 +51,6 @@ typedef struct {
   PyObject_HEAD obj_p obj;
 } RayObject;
 
-// Runtime
 extern void *g_runtime;
 
 int check_main_thread(void);
@@ -62,7 +61,6 @@ int check_main_thread(void);
       return NULL;                                                             \
   } while (0)
 
-// Conversion functions (Python -> Rayforce)
 obj_p raypy_init_i16_from_py(PyObject *item);
 obj_p raypy_init_i32_from_py(PyObject *item);
 obj_p raypy_init_i64_from_py(PyObject *item);
@@ -78,7 +76,8 @@ obj_p raypy_init_timestamp_from_py(PyObject *item);
 obj_p raypy_init_dict_from_py(PyObject *item);
 obj_p raypy_init_list_from_py(PyObject *item);
 
-// Constructors
+PyObject *raypy_wrap_ray_object(obj_p ray_obj);
+
 PyObject *raypy_init_i16(PyObject *self, PyObject *args);
 PyObject *raypy_init_i32(PyObject *self, PyObject *args);
 PyObject *raypy_init_i64(PyObject *self, PyObject *args);
@@ -96,8 +95,6 @@ PyObject *raypy_init_list(PyObject *self, PyObject *args);
 PyObject *raypy_init_table(PyObject *self, PyObject *args);
 PyObject *raypy_init_dict(PyObject *self, PyObject *args);
 PyObject *raypy_init_vector(PyObject *self, PyObject *args);
-
-// Readers
 PyObject *raypy_read_i16(PyObject *self, PyObject *args);
 PyObject *raypy_read_i32(PyObject *self, PyObject *args);
 PyObject *raypy_read_i64(PyObject *self, PyObject *args);
@@ -111,29 +108,19 @@ PyObject *raypy_read_date(PyObject *self, PyObject *args);
 PyObject *raypy_read_time(PyObject *self, PyObject *args);
 PyObject *raypy_read_timestamp(PyObject *self, PyObject *args);
 PyObject *raypy_read_guid(PyObject *self, PyObject *args);
-
-// Type introspection
 PyObject *raypy_get_obj_type(PyObject *self, PyObject *args);
-
-// Table operations
 PyObject *raypy_table_keys(PyObject *self, PyObject *args);
 PyObject *raypy_table_values(PyObject *self, PyObject *args);
 PyObject *raypy_repr_table(PyObject *self, PyObject *args);
-
-// Dictionary operations
 PyObject *raypy_dict_keys(PyObject *self, PyObject *args);
 PyObject *raypy_dict_values(PyObject *self, PyObject *args);
 PyObject *raypy_dict_get(PyObject *self, PyObject *args);
-
-// Vector operations
 PyObject *raypy_at_idx(PyObject *self, PyObject *args);
 PyObject *raypy_insert_obj(PyObject *self, PyObject *args);
 PyObject *raypy_push_obj(PyObject *self, PyObject *args);
 PyObject *raypy_set_obj(PyObject *self, PyObject *args);
 PyObject *raypy_fill_vector(PyObject *self, PyObject *args);
 PyObject *raypy_fill_list(PyObject *self, PyObject *args);
-
-// Misc operations
 PyObject *raypy_get_obj_length(PyObject *self, PyObject *args);
 PyObject *raypy_eval_str(PyObject *self, PyObject *args);
 PyObject *raypy_get_error_obj(PyObject *self, PyObject *args);
@@ -147,16 +134,11 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args);
 PyObject *raypy_quote(PyObject *self, PyObject *args);
 PyObject *raypy_rc(PyObject *self, PyObject *args);
 PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args);
-
-// Database operations
-PyObject *raypy_select(PyObject *self, PyObject *args);
 PyObject *raypy_update(PyObject *self, PyObject *args);
 PyObject *raypy_insert(PyObject *self, PyObject *args);
 PyObject *raypy_upsert(PyObject *self, PyObject *args);
-
-// IO operations
 PyObject *raypy_hopen(PyObject *self, PyObject *args);
 PyObject *raypy_hclose(PyObject *self, PyObject *args);
 PyObject *raypy_write(PyObject *self, PyObject *args);
 
-#endif // RAYFORCE_C_H
+#endif
