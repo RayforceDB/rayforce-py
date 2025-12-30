@@ -30,6 +30,9 @@ class Vector(Container):
 
         elif length is not None and ray_type is not None:
             type_code = ray_type if isinstance(ray_type, int) else ray_type.type_code
+            # Convert scalar type_code (negative) to vector type_code (positive)
+            if type_code < 0:
+                type_code = abs(type_code)
             self.ptr = FFI.init_vector(type_code, length)
 
         else:
@@ -46,11 +49,11 @@ class Vector(Container):
             if isinstance(self._element_ray_type, int)
             else self._element_ray_type.type_code
         )
-
-        ptr = FFI.init_vector(type_code=type_code, length=len(value))
-        fill = list(value) if not isinstance(value, list) else value
-        FFI.fill_vector(obj=ptr, fill=fill)
-        return ptr
+        # Convert scalar type_code (negative) to vector type_code (positive)
+        # Vectors use positive type codes, scalars use negative
+        if type_code < 0:
+            type_code = abs(type_code)
+        return FFI.init_vector(type_code, list(value))
 
     def to_python(self) -> list:
         return list(self)

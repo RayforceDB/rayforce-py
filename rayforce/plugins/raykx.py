@@ -61,14 +61,11 @@ class KDBConnection:
         self.is_closed = False
 
     def __execute_kdb_query(self, query: str) -> r.RayObject:
-        obj = FFI.init_list()
-        FFI.push_obj(obj, _fn_send)
-        FFI.push_obj(obj, self.ptr)
-        FFI.push_obj(obj, FFI.init_string(query))
+        obj = FFI.init_list([_fn_send, self.ptr, FFI.init_string(query)])
         return FFI.eval_obj(obj)
 
     def __close_kdb_connection(self) -> None:
-        obj = FFI.init_list()
+        obj = FFI.init_list([])
         FFI.push_obj(obj, _fn_hclose)
         FFI.push_obj(obj, self.ptr)
         FFI.eval_obj(obj)
@@ -111,10 +108,7 @@ class KDBEngine:
         self.pool: dict[int, KDBConnection] = {}
 
     def __open_kdb_connection(self) -> r.RayObject:
-        host = FFI.init_string(self.url)
-        obj = FFI.init_list()
-        FFI.push_obj(obj, _fn_hopen)
-        FFI.push_obj(obj, host)
+        obj = FFI.init_list([_fn_hopen, FFI.init_string(self.url)])
         return FFI.eval_obj(obj)
 
     def acquire(self) -> KDBConnection:

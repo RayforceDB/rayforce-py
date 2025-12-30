@@ -14,11 +14,11 @@ from rayforce.errors import RayforceThreadError
         (FFI.init_f64, 3.14, "invalid"),
         (FFI.init_u8, 255, "invalid"),
         # init_b8 accepts any python object
-        (FFI.init_c8, "a", "invalid"),
+        (FFI.init_c8, "a", b"invalid"),
         (FFI.init_symbol, "test", None),
-        (FFI.init_date, 0, "invalid"),
-        (FFI.init_time, 0, "invalid"),
-        (FFI.init_timestamp, 0, "invalid"),
+        (FFI.init_date, "2025-10-10", "invalid"),
+        (FFI.init_time, "08:00:01", "invalid"),
+        (FFI.init_timestamp, "2025-10-10 08:00:01.000111", "invalid"),
         (FFI.init_guid, "00000000-0000-0000-0000-000000000000", "invalid"),
         (FFI.init_string, "hello", None),
     ],
@@ -61,9 +61,9 @@ def test_read_functions(init_func, read_func, value):
 @pytest.mark.parametrize(
     "init_func,read_func,value",
     [
-        (FFI.init_date, FFI.read_date, 0),
-        (FFI.init_time, FFI.read_time, 0),
-        (FFI.init_timestamp, FFI.read_timestamp, 0),
+        (FFI.init_date, FFI.read_date, "2025-10-10"),
+        (FFI.init_time, FFI.read_time, "08:00:01"),
+        (FFI.init_timestamp, FFI.read_timestamp, "2025-10-10 08:00:01.000111"),
         (FFI.init_guid, FFI.read_guid, "00000000-0000-0000-0000-000000000000"),
     ],
 )
@@ -88,16 +88,16 @@ def test_init_vector():
 
 def test_init_list():
     # Success case
-    lst = FFI.init_list()
+    lst = FFI.init_list([])
     assert isinstance(lst, r.RayObject)
     assert FFI.get_obj_length(lst) == 0
 
 
 def test_init_dict():
+    from rayforce import List
+
     keys = FFI.init_vector(r.TYPE_SYMBOL, 2)
-    values = FFI.init_list()
-    FFI.push_obj(values, FFI.init_i32(1))
-    FFI.push_obj(values, FFI.init_i32(2))
+    values = FFI.init_list([FFI.init_i32(1), FFI.init_i32(2)])
 
     # Success case
     dct = FFI.init_dict(keys, values)
@@ -111,11 +111,9 @@ def test_init_dict():
 
 def test_init_table():
     columns = FFI.init_vector(r.TYPE_SYMBOL, 2)
-    values = FFI.init_list()
     col1_vals = FFI.init_vector(r.TYPE_I64, 2)
     col2_vals = FFI.init_vector(r.TYPE_I64, 2)
-    FFI.push_obj(values, col1_vals)
-    FFI.push_obj(values, col2_vals)
+    values = FFI.init_list([col1_vals, col2_vals])
 
     # Success case
     table = FFI.init_table(columns, values)
@@ -129,10 +127,9 @@ def test_init_table():
 
 def test_push_obj():
     # Success case
-    lst = FFI.init_list()
-    val = FFI.init_i32(42)
-    FFI.push_obj(lst, val)
-    assert FFI.get_obj_length(lst) == 1
+    lst = FFI.init_list([FFI.init_i32(42)])
+    FFI.push_obj(lst, FFI.init_i64(33))
+    assert FFI.get_obj_length(lst) == 2
 
 
 def test_insert_obj():
@@ -158,11 +155,9 @@ def test_get_obj_length():
 
 def test_get_table_keys():
     columns = FFI.init_vector(r.TYPE_SYMBOL, 2)
-    values = FFI.init_list()
     col1_vals = FFI.init_vector(r.TYPE_I64, 2)
     col2_vals = FFI.init_vector(r.TYPE_I64, 2)
-    FFI.push_obj(values, col1_vals)
-    FFI.push_obj(values, col2_vals)
+    values = FFI.init_list([col1_vals, col2_vals])
 
     # Success case
     table = FFI.init_table(columns, values)
@@ -172,11 +167,9 @@ def test_get_table_keys():
 
 def test_get_table_values():
     columns = FFI.init_vector(r.TYPE_SYMBOL, 2)
-    values = FFI.init_list()
     col1_vals = FFI.init_vector(r.TYPE_I64, 2)
     col2_vals = FFI.init_vector(r.TYPE_I64, 2)
-    FFI.push_obj(values, col1_vals)
-    FFI.push_obj(values, col2_vals)
+    values = FFI.init_list([col1_vals, col2_vals])
 
     # Success case
     table = FFI.init_table(columns, values)
@@ -186,8 +179,7 @@ def test_get_table_values():
 
 def test_dict_get():
     keys = FFI.init_vector(r.TYPE_SYMBOL, 1)
-    values = FFI.init_list()
-    FFI.push_obj(values, FFI.init_i32(42))
+    values = FFI.init_list([FFI.init_i32(42)])
     dct = FFI.init_dict(keys, values)
     key = FFI.init_symbol("test")
 
@@ -198,8 +190,7 @@ def test_dict_get():
 
 def test_get_dict_keys():
     keys = FFI.init_vector(r.TYPE_SYMBOL, 1)
-    values = FFI.init_list()
-    FFI.push_obj(values, FFI.init_i32(42))
+    values = FFI.init_list([FFI.init_i32(42)])
     dct = FFI.init_dict(keys, values)
 
     # Success case
@@ -209,8 +200,7 @@ def test_get_dict_keys():
 
 def test_get_dict_values():
     keys = FFI.init_vector(r.TYPE_SYMBOL, 1)
-    values = FFI.init_list()
-    FFI.push_obj(values, FFI.init_i32(42))
+    values = FFI.init_list([FFI.init_i32(42)])
     dct = FFI.init_dict(keys, values)
 
     # Success case
@@ -271,24 +261,23 @@ def test_binary_set():
         FFI.binary_set(FFI.init_i32(42), value)
 
 
-def test_env_get_internal_function_by_name():
+def test_env_get_internal_fn_by_name():
     # Success case
-    result = FFI.env_get_internal_function_by_name("+")
+    result = FFI.env_get_internal_fn_by_name("+")
     assert result is None or isinstance(result, r.RayObject)
 
     # Failure case - invalid function name
-    assert FFI.env_get_internal_function_by_name("ssssss") is None
+    with pytest.raises(RuntimeError):
+        FFI.env_get_internal_fn_by_name("ssssss")
 
 
-def test_env_get_internal_name_by_function():
+def test_env_get_internal_name_by_fn():
     # Success case - get function first
-    func = FFI.env_get_internal_function_by_name("+")
-    if func is not None:
-        name = FFI.env_get_internal_name_by_function(func)
-        assert isinstance(name, str)
+    func = FFI.env_get_internal_fn_by_name("+")
+    assert FFI.env_get_internal_name_by_fn(func) == "+"
 
     # Failure case - invalid function
-    assert FFI.env_get_internal_name_by_function(FFI.init_i32(222222)) == "@fn"
+    assert FFI.env_get_internal_name_by_fn(FFI.init_i32(222222)) == "@fn"
 
 
 def test_set_obj_attrs():

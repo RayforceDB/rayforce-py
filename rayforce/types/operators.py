@@ -208,7 +208,7 @@ class Operation(enum.StrEnum):
 
     @property
     def primitive(self) -> r.RayObject:
-        return FFI.env_get_internal_function_by_name(self.value)
+        return FFI.env_get_internal_fn_by_name(self.value)
 
     @property
     def ptr(self) -> r.RayObject:
@@ -235,7 +235,7 @@ class Operation(enum.StrEnum):
         ):
             raise errors.RayforceInitError(f"Object is not an operation (type: {obj_type})")
 
-        return Operation(FFI.env_get_internal_name_by_function(obj))
+        return Operation(FFI.env_get_internal_name_by_fn(obj))
 
 
 TypeRegistry.register(r.TYPE_UNARY, Operation)

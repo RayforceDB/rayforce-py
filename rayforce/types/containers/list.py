@@ -15,10 +15,7 @@ class List(Container):
     ray_name = "LIST"
 
     def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
-        list_ptr = FFI.init_list()
-        fill = list(value) if not isinstance(value, list) else value
-        FFI.fill_list(obj=list_ptr, fill=fill)
-        return list_ptr
+        return FFI.init_list(list(value))
 
     def to_python(self) -> list:
         return list(self)

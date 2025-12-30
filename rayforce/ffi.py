@@ -134,13 +134,13 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def init_vector(type_code: int, length: int) -> r.RayObject:
-        return r.init_vector(type_code, length)
+    def init_vector(type_code: int, length_or_items: int | t.Sequence[t.Any]) -> r.RayObject:
+        return r.init_vector(type_code, length_or_items)
 
     @staticmethod
     @errors.error_handler
-    def init_list() -> r.RayObject:
-        return r.init_list()
+    def init_list(item: list[t.Any]) -> r.RayObject:
+        return r.init_list(item)
 
     @staticmethod
     @errors.error_handler
@@ -161,16 +161,6 @@ class FFI:
     @errors.error_handler
     def insert_obj(iterable: r.RayObject, idx: int, ptr: r.RayObject) -> None:
         return r.insert_obj(iterable, idx, ptr)
-
-    @staticmethod
-    @errors.error_handler
-    def fill_vector(obj: r.RayObject, fill: list[t.Any]) -> None:
-        return r.fill_vector(obj, fill)
-
-    @staticmethod
-    @errors.error_handler
-    def fill_list(obj: r.RayObject, fill: list[t.Any]) -> None:
-        return r.fill_list(obj, fill)
 
     @staticmethod
     @errors.error_handler
@@ -214,11 +204,6 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def select(query: r.RayObject) -> r.RayObject:
-        return r.select(query)
-
-    @staticmethod
-    @errors.error_handler
     def update(query: r.RayObject) -> r.RayObject:
         return r.update(query)
 
@@ -259,13 +244,13 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def env_get_internal_function_by_name(name: str) -> r.RayObject:
-        return r.env_get_internal_function_by_name(name)
+    def env_get_internal_fn_by_name(name: str) -> r.RayObject:
+        return r.env_get_internal_fn_by_name(name)
 
     @staticmethod
     @errors.error_handler
-    def env_get_internal_name_by_function(obj: r.RayObject) -> str:
-        return r.env_get_internal_name_by_function(obj)
+    def env_get_internal_name_by_fn(obj: r.RayObject) -> str:
+        return r.env_get_internal_name_by_fn(obj)
 
     @staticmethod
     @errors.error_handler
