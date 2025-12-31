@@ -38,7 +38,7 @@ fi
 echo "Patching Makefile for Python support..."
 cat >> "${EXEC_DIR}/tmp/rayforce-c/Makefile" << EOF
 
-PY_OBJECTS = core/rayforce_c.o core/raypy_conversion.o core/raypy_constructors.o core/raypy_readers.o core/raypy_operations.o core/raypy_queries.o core/raypy_io.o
+PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o
 PY_APP_OBJECTS = app/term.o
 python: CFLAGS = \$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I${PYTHON_INCLUDE} -Wno-macro-redefined
 python: LDFLAGS = \$(RELEASE_LDFLAGS) ${PYTHON_LDFLAGS}
@@ -49,12 +49,14 @@ EOF
 echo "Building Rayforce..."
 cp "${EXEC_DIR}/rayforce/capi/rayforce_c.c" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce_c.c"
 cp "${EXEC_DIR}/rayforce/capi/rayforce_c.h" "${EXEC_DIR}/tmp/rayforce-c/core/rayforce_c.h"
-cp "${EXEC_DIR}/rayforce/capi/raypy_conversion.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_conversion.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_constructors.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_constructors.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_readers.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_readers.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_operations.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_operations.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_init_from_py.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_init_from_py.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_read_from_rf.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_read_from_rf.c"
 cp "${EXEC_DIR}/rayforce/capi/raypy_queries.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_queries.c"
 cp "${EXEC_DIR}/rayforce/capi/raypy_io.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_io.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_binary.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_binary.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_dynlib.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_dynlib.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_eval.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_eval.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_iter.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_iter.c"
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
 make python

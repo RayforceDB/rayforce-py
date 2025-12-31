@@ -1,5 +1,222 @@
 #include "rayforce_c.h"
 
+PyObject *raypy_init_i16(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_i16_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_i32(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_i32_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_i64(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_i64_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_f64(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_f64_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_c8(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_c8_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_string(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  const char *value;
+  Py_ssize_t len;
+  if (!PyArg_ParseTuple(args, "s#", &value, &len))
+    return NULL;
+
+  obj_p ray_obj = string_from_str(value, len);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_MemoryError, "Failed to create string");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_symbol(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_symbol_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_b8(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_b8_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_u8(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_u8_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_date(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_date_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_time(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_time_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_timestamp(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_timestamp_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  PyObject *item;
+  if (!PyArg_ParseTuple(args, "O", &item))
+    return NULL;
+
+  obj_p ray_obj = raypy_init_guid_from_py(item);
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_list(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  Py_ssize_t initial_size = 0;
+  if (!PyArg_ParseTuple(args, "|n", &initial_size))
+    return NULL;
+
+  obj_p ray_obj = vector(TYPE_LIST, (u64_t)initial_size);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_MemoryError, "Failed to create list");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_table(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *keys_obj;
+  RayObject *vals_obj;
+
+  if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType,
+                        &vals_obj))
+    return NULL;
+
+  obj_p ray_obj = ray_table(keys_obj->obj, vals_obj->obj);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_MemoryError, "Failed to create table");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *keys_obj;
+  RayObject *vals_obj;
+
+  if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &keys_obj, &RayObjectType,
+                        &vals_obj))
+    return NULL;
+
+  obj_p ray_obj = ray_dict(keys_obj->obj, vals_obj->obj);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "Failed to create dictionary");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+  int type_code;
+  Py_ssize_t length;
+
+  if (!PyArg_ParseTuple(args, "in", &type_code, &length))
+    return NULL;
+
+  obj_p ray_obj = vector(type_code, (u64_t)length);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_MemoryError, "Failed to create vector");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+
+// CONVERSION UTILS
 obj_p raypy_init_i16_from_py(PyObject *item) {
   long val = PyLong_AsLong(item);
   if (val == -1 && PyErr_Occurred())
@@ -687,4 +904,281 @@ obj_p raypy_init_list_from_py(PyObject *item) {
   }
 
   return list_vec;
+}
+PyObject *raypy_fill_vector(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+  RayObject *vec_obj;
+  PyObject *fill;
+
+  if (!PyArg_ParseTuple(args, "O!O", &RayObjectType, &vec_obj, &fill))
+    return NULL;
+
+  int type_code = vec_obj->obj->type;
+  Py_ssize_t len = PySequence_Size(fill);
+  if (len < 0)
+    return NULL;
+
+  for (Py_ssize_t i = 0; i < len; i++) {
+    PyObject *item = PySequence_GetItem(fill, i);
+    if (item == NULL)
+      return NULL;
+
+    obj_p ray_item = NULL;
+
+    if (item == Py_None) {
+      ray_item = NULL_OBJ;
+      ins_obj(&vec_obj->obj, (i64_t)i, ray_item);
+      Py_DECREF(item);
+      continue;
+    }
+
+    if (PyObject_TypeCheck(item, &RayObjectType)) { // item is a RayObject
+      RayObject *ray_obj = (RayObject *)item;
+      if (ray_obj->obj != NULL) {
+        ray_item = clone_obj(ray_obj->obj);
+        if (ray_item == NULL) {
+          Py_DECREF(item);
+          PyErr_SetString(PyExc_MemoryError, "Failed to clone RayObject");
+          return NULL;
+        }
+        ins_obj(&vec_obj->obj, (i64_t)i, ray_item);
+        Py_DECREF(item);
+        continue;
+      }
+    }
+
+    if (PyObject_HasAttrString(item, "ptr")) { // item has ptr attribute
+      PyObject *ptr_attr = PyObject_GetAttrString(item, "ptr");
+      if (ptr_attr != NULL && PyObject_TypeCheck(ptr_attr, &RayObjectType)) {
+        RayObject *ray_obj = (RayObject *)ptr_attr;
+        if (ray_obj->obj != NULL) {
+          ray_item = clone_obj(ray_obj->obj);
+          Py_DECREF(ptr_attr);
+          if (ray_item == NULL) {
+            Py_DECREF(item);
+            PyErr_SetString(PyExc_MemoryError,
+                            "Failed to clone RayObject from ptr");
+            return NULL;
+          }
+          ins_obj(&vec_obj->obj, (i64_t)i, ray_item);
+          Py_DECREF(item);
+          continue;
+        }
+      }
+      Py_XDECREF(ptr_attr);
+    }
+
+    // I16
+    if (type_code == TYPE_I16) {
+      ray_item = raypy_init_i16_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // I32
+    } else if (type_code == TYPE_I32) {
+      ray_item = raypy_init_i32_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // I64
+    } else if (type_code == TYPE_I64) {
+      ray_item = raypy_init_i64_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // F64
+    } else if (type_code == TYPE_F64) {
+      ray_item = raypy_init_f64_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // B8
+    } else if (type_code == TYPE_B8) {
+      ray_item = raypy_init_b8_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // SYMBOL
+    } else if (type_code == TYPE_SYMBOL) {
+      ray_item = raypy_init_symbol_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // U8
+    } else if (type_code == TYPE_U8) {
+      ray_item = raypy_init_u8_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // C8
+    } else if (type_code == TYPE_C8) {
+      ray_item = raypy_init_c8_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+    } else if (type_code == TYPE_GUID) {
+      ray_item = raypy_init_guid_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // DATE
+    } else if (type_code == TYPE_DATE) {
+      ray_item = raypy_init_date_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // TIME
+    } else if (type_code == TYPE_TIME) {
+      ray_item = raypy_init_time_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      // TIMESTAMP
+    } else if (type_code == TYPE_TIMESTAMP) {
+      ray_item = raypy_init_timestamp_from_py(item);
+      if (ray_item == NULL) {
+        Py_DECREF(item);
+        return NULL;
+      }
+    } else {
+      Py_DECREF(item);
+      PyErr_SetString(PyExc_TypeError, "Unsupported type code for bulk fill");
+      return NULL;
+    }
+
+    ins_obj(&vec_obj->obj, (i64_t)i, ray_item);
+    Py_DECREF(item);
+  }
+
+  Py_RETURN_NONE;
+}
+PyObject *raypy_fill_list(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+  RayObject *list_obj;
+  PyObject *fill;
+
+  if (!PyArg_ParseTuple(args, "O!O", &RayObjectType, &list_obj, &fill))
+    return NULL;
+
+  if (list_obj->obj == NULL || list_obj->obj->type != TYPE_LIST) {
+    PyErr_SetString(PyExc_TypeError, "Object is not a LIST type");
+    return NULL;
+  }
+
+  Py_ssize_t len = PySequence_Size(fill);
+  if (len < 0)
+    return NULL;
+
+  for (Py_ssize_t i = 0; i < len; i++) {
+    PyObject *item = PySequence_GetItem(fill, i);
+    if (item == NULL)
+      return NULL;
+
+    obj_p ray_item = NULL;
+
+    // Check if item is None - insert NULL_OBJ
+    if (item == Py_None) {
+      ray_item = NULL_OBJ;
+      push_obj(&list_obj->obj, ray_item);
+      Py_DECREF(item);
+      continue;
+    }
+
+    if (PyObject_TypeCheck(item, &RayObjectType)) { // item is a RayObject
+      RayObject *ray_obj = (RayObject *)item;
+      if (ray_obj->obj != NULL) {
+        ray_item = clone_obj(ray_obj->obj);
+        if (ray_item == NULL) {
+          Py_DECREF(item);
+          PyErr_SetString(PyExc_MemoryError, "Failed to clone RayObject");
+          return NULL;
+        }
+        push_obj(&list_obj->obj, ray_item);
+        Py_DECREF(item);
+        continue;
+      }
+    }
+
+    if (PyObject_HasAttrString(item, "ptr")) { // item has ptr attribute
+      PyObject *ptr_attr = PyObject_GetAttrString(item, "ptr");
+      if (ptr_attr != NULL && PyObject_TypeCheck(ptr_attr, &RayObjectType)) {
+        RayObject *ray_obj = (RayObject *)ptr_attr;
+        if (ray_obj->obj != NULL) {
+          ray_item = clone_obj(ray_obj->obj);
+          Py_DECREF(ptr_attr);
+          if (ray_item == NULL) {
+            Py_DECREF(item);
+            PyErr_SetString(PyExc_MemoryError,
+                            "Failed to clone RayObject from ptr");
+            return NULL;
+          }
+          push_obj(&list_obj->obj, ray_item);
+          Py_DECREF(item);
+          continue;
+        }
+      }
+      Py_XDECREF(ptr_attr);
+    }
+
+    if (PyBool_Check(item)) { // B8
+      ray_item = raypy_init_b8_from_py(item);
+    }
+    // Try integer
+    else if (PyLong_Check(item)) { // I64
+      long val = PyLong_AsLong(item);
+      if (val == -1 && PyErr_Occurred()) {
+        Py_DECREF(item);
+        return NULL;
+      }
+      ray_item = raypy_init_i64_from_py(item);
+    } else if (PyFloat_Check(item)) { // F64
+      ray_item = raypy_init_f64_from_py(item);
+    } else if (PyUnicode_Check(item) || PyBytes_Check(item)) { // SYMBOL
+      ray_item = raypy_init_symbol_from_py(item);
+    } else if (PyDict_Check(item)) { // DICT
+      ray_item = raypy_init_dict_from_py(item);
+    } else if (PyList_Check(item) || PyTuple_Check(item)) { // LIST
+      ray_item = raypy_init_list_from_py(item);
+    } else {
+      PyObject *type_obj = (PyObject *)Py_TYPE(item);
+      PyObject *type_name = PyObject_GetAttrString(type_obj, "__name__");
+      if (type_name != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(type_name);
+        if (name_str != NULL) {
+          if (strcmp(name_str, "date") == 0) { // DATE
+            ray_item = raypy_init_date_from_py(item);
+          } else if (strcmp(name_str, "time") == 0) { // TIME
+            ray_item = raypy_init_time_from_py(item);
+          } else if (strcmp(name_str, "datetime") == 0) { // TIMESTAMP
+            ray_item = raypy_init_timestamp_from_py(item);
+          }
+        }
+        Py_DECREF(type_name);
+      }
+    }
+
+    if (ray_item == NULL) {
+      Py_DECREF(item);
+      PyErr_SetString(PyExc_TypeError, "Unsupported type for List item");
+      return NULL;
+    }
+
+    push_obj(&list_obj->obj, ray_item);
+    Py_DECREF(item);
+  }
+
+  Py_RETURN_NONE;
 }

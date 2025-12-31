@@ -277,15 +277,14 @@ def test_env_get_internal_function_by_name():
     assert result is None or isinstance(result, r.RayObject)
 
     # Failure case - invalid function name
-    assert FFI.env_get_internal_function_by_name("ssssss") is None
+    with pytest.raises(RuntimeError):
+        FFI.env_get_internal_function_by_name("ssssss")
 
 
 def test_env_get_internal_name_by_function():
     # Success case - get function first
     func = FFI.env_get_internal_function_by_name("+")
-    if func is not None:
-        name = FFI.env_get_internal_name_by_function(func)
-        assert isinstance(name, str)
+    assert FFI.env_get_internal_name_by_function(func) == "+"
 
     # Failure case - invalid function
     assert FFI.env_get_internal_name_by_function(FFI.init_i32(222222)) == "@fn"

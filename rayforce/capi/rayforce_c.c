@@ -23,6 +23,7 @@ int check_main_thread(void) {
   return 1;
 }
 
+// GENERIC UTILS
 PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   (void)self;
   (void)args; // Suppress unused parameter warning
@@ -46,6 +47,16 @@ static void RayObject_dealloc(RayObject *self) {
     drop_obj(self->obj);
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
+PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
+  if (ray_obj == NULL)
+    return NULL;
+
+  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
+  if (result != NULL)
+    result->obj = ray_obj;
+  return (PyObject *)result;
+}
+// --
 
 PyTypeObject RayObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce_c.RayObject",

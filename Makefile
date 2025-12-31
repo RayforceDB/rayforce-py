@@ -27,7 +27,7 @@ pull_rayforce_from_github:
 patch_rayforce_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'PY_OBJECTS = core/rayforce_c.o core/raypy_conversion.o core/raypy_constructors.o core/raypy_readers.o core/raypy_operations.o core/raypy_queries.o core/raypy_io.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@echo 'PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'PY_APP_OBJECTS = app/term.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) -I$$(shell python3 -c "import sysconfig; print(sysconfig.get_config_var(\"INCLUDEPY\"))") -Wno-macro-redefined' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
@@ -53,12 +53,14 @@ clean:
 rayforce_binaries:
 	@cp rayforce/capi/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cp rayforce/capi/rayforce_c.h tmp/rayforce-c/core/rayforce_c.h
-	@cp rayforce/capi/raypy_conversion.c tmp/rayforce-c/core/raypy_conversion.c
-	@cp rayforce/capi/raypy_constructors.c tmp/rayforce-c/core/raypy_constructors.c
-	@cp rayforce/capi/raypy_readers.c tmp/rayforce-c/core/raypy_readers.c
-	@cp rayforce/capi/raypy_operations.c tmp/rayforce-c/core/raypy_operations.c
+	@cp rayforce/capi/raypy_init_from_py.c tmp/rayforce-c/core/raypy_init_from_py.c
+	@cp rayforce/capi/raypy_read_from_rf.c tmp/rayforce-c/core/raypy_read_from_rf.c
 	@cp rayforce/capi/raypy_queries.c tmp/rayforce-c/core/raypy_queries.c
 	@cp rayforce/capi/raypy_io.c tmp/rayforce-c/core/raypy_io.c
+	@cp rayforce/capi/raypy_binary.c tmp/rayforce-c/core/raypy_binary.c
+	@cp rayforce/capi/raypy_dynlib.c tmp/rayforce-c/core/raypy_dynlib.c
+	@cp rayforce/capi/raypy_eval.c tmp/rayforce-c/core/raypy_eval.c
+	@cp rayforce/capi/raypy_iter.c tmp/rayforce-c/core/raypy_iter.c
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c && $(MAKE) release
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
