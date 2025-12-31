@@ -75,12 +75,26 @@ obj_p raypy_init_c8_from_py(PyObject *item);
 obj_p raypy_init_b8_from_py(PyObject *item);
 obj_p raypy_init_u8_from_py(PyObject *item);
 obj_p raypy_init_symbol_from_py(PyObject *item);
+obj_p raypy_init_string_from_py(PyObject *item);
+obj_p raypy_init_list_from_py(PyObject *item);
 obj_p raypy_init_guid_from_py(PyObject *item);
 obj_p raypy_init_date_from_py(PyObject *item);
 obj_p raypy_init_time_from_py(PyObject *item);
 obj_p raypy_init_timestamp_from_py(PyObject *item);
 obj_p raypy_init_dict_from_py(PyObject *item);
 obj_p raypy_init_list_from_py(PyObject *item);
+
+// Temporal utility functions
+int is_leap_year(int year);
+long days_since_epoch(int year, int month, int day);
+int parse_iso_date(const char *str, Py_ssize_t len, int *year, int *month,
+                   int *day);
+int parse_iso_time(const char *str, Py_ssize_t len, int *hour, int *minute,
+                   int *second, int *microsecond);
+int parse_iso_timestamp(const char *str, Py_ssize_t len, int *year, int *month,
+                        int *day, int *hour, int *minute, int *second,
+                        int *microsecond, int *tz_offset_hours,
+                        int *tz_offset_minutes);
 
 PyObject *raypy_wrap_ray_object(obj_p ray_obj);
 

@@ -139,8 +139,8 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def init_list() -> r.RayObject:
-        return r.init_list()
+    def init_list(item: list[t.Any]) -> r.RayObject:
+        return r.init_list(item)
 
     @staticmethod
     @errors.error_handler
