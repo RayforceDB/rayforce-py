@@ -61,6 +61,12 @@ int check_main_thread(void);
       return NULL;                                                             \
   } while (0)
 
+#if defined(__GNUC__) || defined(__clang__)
+#define UNUSED_SELF_PARAM __attribute__((unused))
+#else
+#define UNUSED_SELF_PARAM
+#endif
+
 obj_p raypy_init_i16_from_py(PyObject *item);
 obj_p raypy_init_i32_from_py(PyObject *item);
 obj_p raypy_init_i64_from_py(PyObject *item);
@@ -125,10 +131,8 @@ PyObject *raypy_get_obj_length(PyObject *self, PyObject *args);
 PyObject *raypy_eval_str(PyObject *self, PyObject *args);
 PyObject *raypy_get_error_obj(PyObject *self, PyObject *args);
 PyObject *raypy_binary_set(PyObject *self, PyObject *args);
-PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
-                                                  PyObject *args);
-PyObject *raypy_env_get_internal_name_by_function(PyObject *self,
-                                                  PyObject *args);
+PyObject *raypy_env_get_internal_fn_by_name(PyObject *self, PyObject *args);
+PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args);
 PyObject *raypy_eval_obj(PyObject *self, PyObject *args);
 PyObject *raypy_loadfn(PyObject *self, PyObject *args);
 PyObject *raypy_quote(PyObject *self, PyObject *args);

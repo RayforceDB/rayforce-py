@@ -271,23 +271,23 @@ def test_binary_set():
         FFI.binary_set(FFI.init_i32(42), value)
 
 
-def test_env_get_internal_function_by_name():
+def test_env_get_internal_fn_by_name():
     # Success case
-    result = FFI.env_get_internal_function_by_name("+")
+    result = FFI.env_get_internal_fn_by_name("+")
     assert result is None or isinstance(result, r.RayObject)
 
     # Failure case - invalid function name
     with pytest.raises(RuntimeError):
-        FFI.env_get_internal_function_by_name("ssssss")
+        FFI.env_get_internal_fn_by_name("ssssss")
 
 
-def test_env_get_internal_name_by_function():
+def test_env_get_internal_name_by_fn():
     # Success case - get function first
-    func = FFI.env_get_internal_function_by_name("+")
-    assert FFI.env_get_internal_name_by_function(func) == "+"
+    func = FFI.env_get_internal_fn_by_name("+")
+    assert FFI.env_get_internal_name_by_fn(func) == "+"
 
     # Failure case - invalid function
-    assert FFI.env_get_internal_name_by_function(FFI.init_i32(222222)) == "@fn"
+    assert FFI.env_get_internal_name_by_fn(FFI.init_i32(222222)) == "@fn"
 
 
 def test_set_obj_attrs():

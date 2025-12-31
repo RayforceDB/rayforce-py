@@ -254,13 +254,13 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def env_get_internal_function_by_name(name: str) -> r.RayObject:
-        return r.env_get_internal_function_by_name(name)
+    def env_get_internal_fn_by_name(name: str) -> r.RayObject:
+        return r.env_get_internal_fn_by_name(name)
 
     @staticmethod
     @errors.error_handler
-    def env_get_internal_name_by_function(obj: r.RayObject) -> str:
-        return r.env_get_internal_name_by_function(obj)
+    def env_get_internal_name_by_fn(obj: r.RayObject) -> str:
+        return r.env_get_internal_name_by_fn(obj)
 
     @staticmethod
     @errors.error_handler

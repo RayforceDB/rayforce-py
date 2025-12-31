@@ -12,7 +12,6 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
                         &nargs))
     return NULL;
 
-  // Create raw obj_p objects without Python wrappers to avoid use-after-free
   obj_p path_obj = vector(TYPE_C8, path_len);
   if (path_obj == NULL) {
     PyErr_SetString(PyExc_MemoryError, "Failed to allocate path object");
@@ -23,8 +22,7 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
   obj_p func_obj = vector(TYPE_C8, func_len);
   if (func_obj == NULL) {
     drop_obj(path_obj);
-    PyErr_SetString(PyExc_MemoryError,
-                    "Failed to allocate function name object");
+    PyErr_SetString(PyExc_MemoryError, "Failed to allocate fn name object");
     return NULL;
   }
   memcpy(AS_C8(func_obj), func_name, func_len);
@@ -37,32 +35,14 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result == NULL) {
-    drop_obj(path_obj);
-    drop_obj(func_obj);
-    drop_obj(nargs_obj);
-    return NULL;
-  }
-
-  obj_p args_array[3];
-  args_array[0] = path_obj;
-  args_array[1] = func_obj;
-  args_array[2] = nargs_obj;
-
-  result->obj = ray_loadfn(args_array, 3);
-
-  // Clean up temporary objects - ray_loadfn clones what it needs
+  obj_p ray_obj = ray_loadfn((obj_p[]){path_obj, func_obj, nargs_obj}, 3);
   drop_obj(path_obj);
   drop_obj(func_obj);
   drop_obj(nargs_obj);
 
-  if (result->obj == NULL) {
-    Py_DECREF(result);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "Failed to load function from shared library");
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "Failed load fn from shared library");
     return NULL;
   }
-
-  return (PyObject *)result;
+  return raypy_wrap_ray_object(ray_obj);
 }

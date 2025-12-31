@@ -11,8 +11,7 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
                         &RayObjectType, &item))
     return NULL;
 
-  obj_p result = ins_obj(&ray_obj->obj, (i64_t)index, clone_obj(item->obj));
-  if (result == NULL) {
+  if (ins_obj(&ray_obj->obj, (i64_t)index, clone_obj(item->obj)) == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute insert operation");
     return NULL;
   }
@@ -21,6 +20,7 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
 PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
+
   RayObject *ray_obj;
   RayObject *item;
 
@@ -28,8 +28,7 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
                         &item))
     return NULL;
 
-  obj_p result = push_obj(&ray_obj->obj, clone_obj(item->obj));
-  if (result == NULL) {
+  if (push_obj(&ray_obj->obj, clone_obj(item->obj)) == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute push operation");
     return NULL;
   }
@@ -38,6 +37,7 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
 PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
+
   RayObject *ray_obj;
   RayObject *idx_obj;
   RayObject *val_obj;
@@ -46,8 +46,7 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
                         &RayObjectType, &idx_obj, &RayObjectType, &val_obj))
     return NULL;
 
-  obj_p result = set_obj(&ray_obj->obj, idx_obj->obj, clone_obj(val_obj->obj));
-  if (result == NULL) {
+  if (set_obj(&ray_obj->obj, idx_obj->obj, clone_obj(val_obj->obj)) == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to execute set operation");
     return NULL;
   }

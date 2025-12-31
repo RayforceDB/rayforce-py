@@ -10,10 +10,7 @@ int check_main_thread(void) {
     return 0;
   }
 
-  unsigned long current_thread_id;
-  current_thread_id = (unsigned long)PyThread_get_thread_ident();
-
-  if (current_thread_id != g_main_thread_id) {
+  if ((unsigned long)PyThread_get_thread_ident() != g_main_thread_id) {
     PyErr_Format(PyExc_RuntimeError,
                  "Rayforce runtime can not be called from other threads than "
                  "the one where it was initialized from");
@@ -26,14 +23,15 @@ int check_main_thread(void) {
 // GENERIC UTILS
 PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   (void)self;
-  (void)args; // Suppress unused parameter warning
+  (void)args;
 
-  if (g_runtime != NULL)
-    Py_RETURN_NONE;
+  if (g_runtime != NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "Runtime already initialized");
+    return NULL;
+  }
 
   char *argv[] = {"py", "-r", "0", NULL};
-  g_runtime = runtime_create(3, argv);
-  if (g_runtime == NULL) {
+  if (runtime_create(3, argv) == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
     return NULL;
   }
@@ -41,15 +39,11 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   g_main_thread_id = (unsigned long)PyThread_get_thread_ident();
   Py_RETURN_NONE;
 }
-
-static void RayObject_dealloc(RayObject *self) {
-  if (self->obj != NULL && self->obj != NULL_OBJ)
-    drop_obj(self->obj);
-  Py_TYPE(self)->tp_free((PyObject *)self);
-}
 PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "Rayforce object can't be null");
     return NULL;
+  }
 
   RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
   if (result != NULL)
@@ -57,6 +51,12 @@ PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
   return (PyObject *)result;
 }
 // --
+
+static void RayObject_dealloc(RayObject *self) {
+  if (self->obj != NULL && self->obj != NULL_OBJ)
+    drop_obj(self->obj);
+  Py_TYPE(self)->tp_free((PyObject *)self);
+}
 
 PyTypeObject RayObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_rayforce_c.RayObject",
@@ -132,12 +132,10 @@ static PyMethodDef rayforce_methods[] = {
     {"get_error_obj", raypy_get_error_obj, METH_VARARGS, "Get error object"},
     {"binary_set", raypy_binary_set, METH_VARARGS,
      "Set value to symbol or file"},
-    {"env_get_internal_function_by_name",
-     raypy_env_get_internal_function_by_name, METH_VARARGS,
-     "Get internal function by name"},
-    {"env_get_internal_name_by_function",
-     raypy_env_get_internal_name_by_function, METH_VARARGS,
-     "Get internal function name"},
+    {"env_get_internal_fn_by_name", raypy_env_get_internal_fn_by_name,
+     METH_VARARGS, "Get internal function by name"},
+    {"env_get_internal_name_by_fn", raypy_env_get_internal_name_by_fn,
+     METH_VARARGS, "Get internal function name"},
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
     {"loadfn_from_file", raypy_loadfn, METH_VARARGS,
      "Load function from shared library"},

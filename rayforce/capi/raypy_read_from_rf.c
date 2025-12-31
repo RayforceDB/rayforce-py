@@ -191,8 +191,8 @@ PyObject *raypy_read_guid(PyObject *self, PyObject *args) {
 PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *item;
 
+  RayObject *item;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
@@ -212,8 +212,8 @@ PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
 PyObject *raypy_table_values(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *item;
 
+  RayObject *item;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
@@ -233,8 +233,8 @@ PyObject *raypy_table_values(PyObject *self, PyObject *args) {
 PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *item;
 
+  RayObject *item;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
@@ -254,8 +254,8 @@ PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
 PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *item;
 
+  RayObject *item;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
@@ -275,9 +275,9 @@ PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
 PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
+
   RayObject *item;
   RayObject *key_obj;
-
   if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &item, &RayObjectType,
                         &key_obj))
     return NULL;
@@ -298,9 +298,9 @@ PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
 PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
+
   RayObject *item;
   Py_ssize_t index;
-
   if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &item, &index))
     return NULL;
 
@@ -320,8 +320,8 @@ PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
 PyObject *raypy_get_obj_length(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *ray_obj;
 
+  RayObject *ray_obj;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
@@ -330,9 +330,9 @@ PyObject *raypy_get_obj_length(PyObject *self, PyObject *args) {
 PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
+
   RayObject *ray_obj;
   int full = 1;
-
   if (!PyArg_ParseTuple(args, "O!|p", &RayObjectType, &ray_obj, &full))
     return NULL;
 
@@ -349,45 +349,33 @@ PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
 PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *ray_obj;
 
-  if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+  RayObject *item;
+  if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p err = ray_obj->obj;
+  obj_p err = item->obj;
   if (err == NULL || err->type != TYPE_ERR) {
     return PyUnicode_FromString("Unknown error");
   }
 
-  obj_p result_dict = err_info(err);
-  RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
-  if (result == NULL) {
-    drop_obj(result_dict);
+  obj_p ray_obj = err_info(err);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_MemoryError, "Failed to get error info");
     return NULL;
   }
-
-  result->obj = clone_obj(result_dict);
-  drop_obj(result_dict);
-  if (result->obj == NULL || result->obj == NULL_OBJ) {
-    Py_DECREF(result);
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone error info dict");
-    return NULL;
-  }
-
-  return (PyObject *)result;
+  return raypy_wrap_ray_object(ray_obj);
 }
-PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
-                                                  PyObject *args) {
+PyObject *raypy_env_get_internal_fn_by_name(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
+
   const char *name;
   Py_ssize_t name_len;
-
   if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
     return NULL;
 
   obj_p func_obj = env_get_internal_function(name);
-
   if (func_obj == NULL_OBJ || func_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Function not found");
     return NULL;
@@ -400,12 +388,11 @@ PyObject *raypy_env_get_internal_function_by_name(PyObject *self,
   }
   return raypy_wrap_ray_object(ray_obj);
 }
-PyObject *raypy_env_get_internal_name_by_function(PyObject *self,
-                                                  PyObject *args) {
+PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *ray_obj;
 
+  RayObject *ray_obj;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
@@ -414,14 +401,13 @@ PyObject *raypy_env_get_internal_name_by_function(PyObject *self,
     PyErr_SetString(PyExc_RuntimeError, "Function not found");
     return NULL;
   }
-
   return PyUnicode_FromString(name);
 }
 PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *ray_obj;
 
+  RayObject *ray_obj;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
@@ -429,14 +415,13 @@ PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, "Object is NULL");
     return NULL;
   }
-
   return PyLong_FromLong(ray_obj->obj->type);
 }
 PyObject *raypy_rc(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
-  RayObject *ray_obj;
 
+  RayObject *ray_obj;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 

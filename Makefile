@@ -83,6 +83,7 @@ lint:
 	python3 -m ruff format tests/ rayforce/
 	python3 -m ruff check rayforce/ --fix
 	python3 -m mypy rayforce/
+	clang-format -i rayforce/capi/*
 
 ipython:
 	ipython -i -c "from rayforce import *"

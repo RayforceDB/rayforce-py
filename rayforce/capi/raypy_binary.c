@@ -34,7 +34,7 @@ PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args) {
     return NULL;
 
   ray_obj->obj->attrs = (char)value;
-  return PyLong_FromLong(ray_obj->obj->attrs);
+  Py_RETURN_NONE;
 }
 PyObject *raypy_quote(PyObject *self, PyObject *args) {
   (void)self;
