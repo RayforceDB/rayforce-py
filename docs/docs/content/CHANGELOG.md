@@ -6,6 +6,14 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.2.2`**
+
+- Better C API error handling
+- Performance improvements for initializing RF types from python collections (List, Vector, Table)
+
+2026-01-02 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.2.2/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.2.2)**
+
+
 ## **`0.2.1`**
 
 - C API speedup improvements

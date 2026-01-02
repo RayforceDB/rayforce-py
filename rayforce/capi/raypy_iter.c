@@ -12,7 +12,8 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
     return NULL;
 
   if (ins_obj(&ray_obj->obj, (i64_t)index, clone_obj(item->obj)) == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute insert operation");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "iter: failed to insert object at index");
     return NULL;
   }
   Py_RETURN_NONE;
@@ -29,7 +30,7 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
     return NULL;
 
   if (push_obj(&ray_obj->obj, clone_obj(item->obj)) == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute push operation");
+    PyErr_SetString(PyExc_RuntimeError, "iter: failed to push object");
     return NULL;
   }
   Py_RETURN_NONE;
@@ -47,7 +48,7 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
     return NULL;
 
   if (set_obj(&ray_obj->obj, idx_obj->obj, clone_obj(val_obj->obj)) == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute set operation");
+    PyErr_SetString(PyExc_RuntimeError, "iter: failed to set object at index");
     return NULL;
   }
   Py_RETURN_NONE;

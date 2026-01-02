@@ -12,14 +12,14 @@ PyObject *raypy_binary_set(PyObject *self, PyObject *args) {
 
   if (symbol_or_path->obj->type != -TYPE_SYMBOL &&
       symbol_or_path->obj->type != TYPE_C8) {
-    PyErr_SetString(PyExc_TypeError,
-                    "First argument must be a symbol or string");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "binary: first argument must be a symbol or string");
     return NULL;
   }
 
   obj_p ray_obj = binary_set(symbol_or_path->obj, value->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute set operation");
+    PyErr_SetString(PyExc_RuntimeError, "binary: failed to set value");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -46,7 +46,7 @@ PyObject *raypy_quote(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = ray_quote(item->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute quote operation");
+    PyErr_SetString(PyExc_RuntimeError, "binary: failed to quote object");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);

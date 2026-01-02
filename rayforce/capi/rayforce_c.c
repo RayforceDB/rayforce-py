@@ -6,14 +6,14 @@ static unsigned long g_main_thread_id = 0; // main thread ID
 
 int check_main_thread(void) {
   if (g_main_thread_id == 0) {
-    PyErr_SetString(PyExc_RuntimeError, "Runtime not initialized.");
+    PyErr_SetString(PyExc_RuntimeError, "runtime: not initialized");
     return 0;
   }
 
   if ((unsigned long)PyThread_get_thread_ident() != g_main_thread_id) {
-    PyErr_Format(PyExc_RuntimeError,
-                 "Rayforce runtime can not be called from other threads than "
-                 "the one where it was initialized from");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "runtime: cannot be called from threads other than the "
+                    "initialization thread");
     return 0;
   }
 
@@ -26,13 +26,14 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   (void)args;
 
   if (g_runtime != NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Runtime already initialized");
+    PyErr_SetString(PyExc_RuntimeError, "runtime: already initialized");
     return NULL;
   }
 
   char *argv[] = {"py", "-r", "0", NULL};
   if (runtime_create(3, argv) == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to initialize Rayforce");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "runtime: failed to initialize Rayforce");
     return NULL;
   }
 
@@ -41,7 +42,7 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
 }
 PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Rayforce object can't be null");
+    PyErr_SetString(PyExc_RuntimeError, "runtime: object cannot be null");
     return NULL;
   }
 

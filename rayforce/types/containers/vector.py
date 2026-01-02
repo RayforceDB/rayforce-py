@@ -17,8 +17,6 @@ class Vector(Container):
         ray_type: type[RayObject] | int | None = None,
         length: int | None = None,
     ):
-        self._element_ray_type = ray_type
-
         if ptr is not None:
             self.ptr = ptr
             self._validate_ptr(ptr)
@@ -26,13 +24,10 @@ class Vector(Container):
         elif items is not None:
             if ray_type is None:
                 raise errors.RayforceInitError("ray_type required when creating Vector from value")
-            self.ptr = self._create_from_value(items)
+            self.ptr = self._create_from_value(items, ray_type)
 
         elif length is not None and ray_type is not None:
-            type_code = ray_type if isinstance(ray_type, int) else ray_type.type_code
-            # Convert scalar type_code (negative) to vector type_code (positive)
-            if type_code < 0:
-                type_code = abs(type_code)
+            type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
             self.ptr = FFI.init_vector(type_code, length)
 
         else:
@@ -40,19 +35,15 @@ class Vector(Container):
                 "Vector requires either value, ptr, or (ray_type + length)",
             )
 
-    def _create_from_value(self, value: t.Sequence[t.Any]) -> r.RayObject:
-        if self._element_ray_type is None:
+    def _create_from_value(
+        self,
+        value: t.Sequence[t.Any],
+        ray_type: type[RayObject] | int | None = None,
+    ) -> r.RayObject:
+        if ray_type is None:
             raise errors.RayforceInitError("Element ray_type must be specified for Vector")
 
-        type_code = (
-            self._element_ray_type
-            if isinstance(self._element_ray_type, int)
-            else self._element_ray_type.type_code
-        )
-        # Convert scalar type_code (negative) to vector type_code (positive)
-        # Vectors use positive type codes, scalars use negative
-        if type_code < 0:
-            type_code = abs(type_code)
+        type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
         return FFI.init_vector(type_code, list(value))
 
     def to_python(self) -> list:

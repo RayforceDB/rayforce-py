@@ -17,7 +17,7 @@ PyObject *raypy_hopen(PyObject *self, PyObject *args) {
                       : ray_hopen((obj_p[]){path_obj->obj}, 1);
 
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to open handle");
+    PyErr_SetString(PyExc_RuntimeError, "io: failed to open handle");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -34,7 +34,7 @@ PyObject *raypy_hclose(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = ray_hclose(handle_obj->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to close handle");
+    PyErr_SetString(PyExc_RuntimeError, "io: failed to close handle");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -52,7 +52,7 @@ PyObject *raypy_write(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = ray_write(handle_obj->obj, data_obj->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to write data");
+    PyErr_SetString(PyExc_RuntimeError, "io: failed to write data");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);

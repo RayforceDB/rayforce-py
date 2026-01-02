@@ -339,5 +339,5 @@ def test_thread_safety():
     assert exception_type == RuntimeError, f"Expected RayforceThreadError, got {exception_type}"
     assert (
         exception_message
-        == "Rayforce runtime can not be called from other threads than the one where it was initialized from"
+        == "runtime: cannot be called from threads other than the initialization thread"
     )

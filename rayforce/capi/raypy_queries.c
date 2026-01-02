@@ -11,7 +11,8 @@ PyObject *raypy_update(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = eval_obj(ray_update(update_dict->obj));
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute update query");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "query: failed to execute update query");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -30,7 +31,8 @@ PyObject *raypy_insert(PyObject *self, PyObject *args) {
   obj_p ray_obj =
       eval_obj(ray_insert((obj_p[]){table_obj->obj, data_obj->obj}, 2));
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute insert query");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "query: failed to execute insert query");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -50,7 +52,8 @@ PyObject *raypy_upsert(PyObject *self, PyObject *args) {
   obj_p ray_obj = eval_obj(
       ray_upsert((obj_p[]){table_obj->obj, keys_obj->obj, data_obj->obj}, 3));
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to execute upsert query");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "query: failed to execute upsert query");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);

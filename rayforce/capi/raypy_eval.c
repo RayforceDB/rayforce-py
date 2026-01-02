@@ -10,7 +10,8 @@ PyObject *raypy_eval_str(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = ray_eval_str(item->obj, NULL_OBJ);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate expression");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "eval: failed to evaluate string expression");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -25,7 +26,7 @@ PyObject *raypy_eval_obj(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = eval_obj(item->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to evaluate expression");
+    PyErr_SetString(PyExc_RuntimeError, "eval: failed to evaluate object");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);

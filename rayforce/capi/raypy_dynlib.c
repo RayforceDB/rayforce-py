@@ -14,7 +14,8 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
 
   obj_p path_obj = vector(TYPE_C8, path_len);
   if (path_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to allocate path object");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "dynlib: failed to allocate path object");
     return NULL;
   }
   memcpy(AS_C8(path_obj), path, path_len);
@@ -22,7 +23,8 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
   obj_p func_obj = vector(TYPE_C8, func_len);
   if (func_obj == NULL) {
     drop_obj(path_obj);
-    PyErr_SetString(PyExc_MemoryError, "Failed to allocate fn name object");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "dynlib: failed to allocate function name object");
     return NULL;
   }
   memcpy(AS_C8(func_obj), func_name, func_len);
@@ -31,7 +33,8 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
   if (nargs_obj == NULL) {
     drop_obj(path_obj);
     drop_obj(func_obj);
-    PyErr_SetString(PyExc_MemoryError, "Failed to allocate nargs object");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "dynlib: failed to allocate nargs object");
     return NULL;
   }
 
@@ -41,7 +44,8 @@ PyObject *raypy_loadfn(PyObject *self, PyObject *args) {
   drop_obj(nargs_obj);
 
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed load fn from shared library");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "dynlib: failed to load function from shared library");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);

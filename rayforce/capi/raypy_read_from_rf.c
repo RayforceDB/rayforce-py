@@ -9,7 +9,7 @@ static RayObject *parse_ray_object(PyObject *args) {
 static int check_type(RayObject *ray_obj, int expected_type,
                       const char *type_name) {
   if (ray_obj->obj == NULL || ray_obj->obj->type != expected_type) {
-    PyErr_SetString(PyExc_TypeError, type_name);
+    PyErr_SetString(PyExc_RuntimeError, type_name);
     return 0;
   }
   return 1;
@@ -23,7 +23,7 @@ PyObject *raypy_read_i16(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_I16, "Object is not an i16"))
+  if (!check_type(ray_obj, -TYPE_I16, "read: object is not an i16"))
     return NULL;
 
   return PyLong_FromLong(ray_obj->obj->i16);
@@ -36,7 +36,7 @@ PyObject *raypy_read_i32(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_I32, "Object is not an i32"))
+  if (!check_type(ray_obj, -TYPE_I32, "read: object is not an i32"))
     return NULL;
 
   return PyLong_FromLong(ray_obj->obj->i32);
@@ -49,7 +49,7 @@ PyObject *raypy_read_i64(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_I64, "Object is not an i64"))
+  if (!check_type(ray_obj, -TYPE_I64, "read: object is not an i64"))
     return NULL;
 
   return PyLong_FromLongLong(ray_obj->obj->i64);
@@ -62,7 +62,7 @@ PyObject *raypy_read_f64(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_F64, "Object is not an f64"))
+  if (!check_type(ray_obj, -TYPE_F64, "read: object is not an f64"))
     return NULL;
 
   return PyFloat_FromDouble(ray_obj->obj->f64);
@@ -75,7 +75,7 @@ PyObject *raypy_read_c8(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_C8, "Object is not a c8"))
+  if (!check_type(ray_obj, -TYPE_C8, "read: object is not a c8"))
     return NULL;
 
   return PyUnicode_FromStringAndSize(&ray_obj->obj->c8, 1);
@@ -88,7 +88,7 @@ PyObject *raypy_read_string(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, TYPE_C8, "Object is not a string"))
+  if (!check_type(ray_obj, TYPE_C8, "read: object is not a string"))
     return NULL;
 
   return PyUnicode_FromStringAndSize(AS_C8(ray_obj->obj), ray_obj->obj->len);
@@ -101,7 +101,7 @@ PyObject *raypy_read_symbol(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_SYMBOL, "Object is not a symbol"))
+  if (!check_type(ray_obj, -TYPE_SYMBOL, "read: object is not a symbol"))
     return NULL;
 
   const char *str = str_from_symbol(ray_obj->obj->i64);
@@ -118,7 +118,7 @@ PyObject *raypy_read_b8(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_B8, "Object is not a B8 type"))
+  if (!check_type(ray_obj, -TYPE_B8, "read: object is not a b8"))
     return NULL;
 
   return PyBool_FromLong(ray_obj->obj->b8);
@@ -131,7 +131,7 @@ PyObject *raypy_read_u8(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_U8, "Object is not a U8 type"))
+  if (!check_type(ray_obj, -TYPE_U8, "read: object is not a u8"))
     return NULL;
 
   return PyLong_FromLong((long)ray_obj->obj->u8);
@@ -144,7 +144,7 @@ PyObject *raypy_read_date(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_DATE, "Object is not a DATE type"))
+  if (!check_type(ray_obj, -TYPE_DATE, "read: object is not a date"))
     return NULL;
 
   return PyLong_FromLong(ray_obj->obj->i32);
@@ -157,7 +157,7 @@ PyObject *raypy_read_time(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_TIME, "Object is not a TIME type"))
+  if (!check_type(ray_obj, -TYPE_TIME, "read: object is not a time"))
     return NULL;
 
   return PyLong_FromLong(ray_obj->obj->i32);
@@ -170,7 +170,7 @@ PyObject *raypy_read_timestamp(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_TIMESTAMP, "Object is not a TIMESTAMP type"))
+  if (!check_type(ray_obj, -TYPE_TIMESTAMP, "read: object is not a timestamp"))
     return NULL;
 
   return PyLong_FromLongLong(ray_obj->obj->i64);
@@ -183,7 +183,7 @@ PyObject *raypy_read_guid(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_GUID, "Object is not a GUID type"))
+  if (!check_type(ray_obj, -TYPE_GUID, "read: object is not a guid"))
     return NULL;
 
   return PyBytes_FromStringAndSize((const char *)AS_U8(ray_obj->obj), 16);
@@ -198,13 +198,13 @@ PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
 
   obj_p keys = AS_LIST(item->obj)[0];
   if (keys == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Table has no keys");
+    PyErr_SetString(PyExc_RuntimeError, "read: table has no keys");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(keys);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone keys");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone table keys");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -219,13 +219,13 @@ PyObject *raypy_table_values(PyObject *self, PyObject *args) {
 
   obj_p values = AS_LIST(item->obj)[1];
   if (values == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Table has no values");
+    PyErr_SetString(PyExc_RuntimeError, "read: table has no values");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(values);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone values");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone table values");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -240,13 +240,13 @@ PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
 
   obj_p keys = ray_key(item->obj);
   if (keys == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Dict has no keys");
+    PyErr_SetString(PyExc_RuntimeError, "read: dict has no keys");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(keys);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone dict keys");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone dict keys");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -261,13 +261,13 @@ PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
 
   obj_p values = ray_value(item->obj);
   if (values == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Dict has no values");
+    PyErr_SetString(PyExc_RuntimeError, "read: dict has no values");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(values);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone dict values");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone dict values");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -284,13 +284,14 @@ PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
 
   obj_p result = at_obj(item->obj, key_obj->obj);
   if (result == NULL) {
-    PyErr_SetString(PyExc_KeyError, "Key not found in dictionary");
+    PyErr_SetString(PyExc_RuntimeError, "read: key not found in dictionary");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(result);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone dictionary value");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "read: failed to clone dictionary value");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -305,14 +306,14 @@ PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p result = at_idx(item->obj, (i64_t)index);
-  if (item == NULL) {
-    PyErr_SetString(PyExc_KeyError, "Value not found at index");
+  if (result == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "read: value not found at index");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(result);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone item");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone item at index");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -338,7 +339,7 @@ PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
 
   obj_p item = obj_fmt(ray_obj->obj, (b8_t)full);
   if (item == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to format object");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to format table");
     return NULL;
   }
 
@@ -361,7 +362,7 @@ PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = err_info(err);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to get error info");
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to get error info");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -377,13 +378,14 @@ PyObject *raypy_env_get_internal_fn_by_name(PyObject *self, PyObject *args) {
 
   obj_p func_obj = env_get_internal_function(name);
   if (func_obj == NULL_OBJ || func_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Function not found");
+    PyErr_SetString(PyExc_RuntimeError, "read: function not found");
     return NULL;
   }
 
   obj_p ray_obj = clone_obj(func_obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to clone internal function");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "read: failed to clone internal function");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -398,7 +400,7 @@ PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args) {
 
   str_p name = env_get_internal_name(ray_obj->obj);
   if (name == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Function not found");
+    PyErr_SetString(PyExc_RuntimeError, "read: function name not found");
     return NULL;
   }
   return PyUnicode_FromString(name);
@@ -412,7 +414,7 @@ PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
     return NULL;
 
   if (ray_obj->obj == NULL) {
-    PyErr_SetString(PyExc_ValueError, "Object is NULL");
+    PyErr_SetString(PyExc_RuntimeError, "read: object is null");
     return NULL;
   }
   return PyLong_FromLong(ray_obj->obj->type);

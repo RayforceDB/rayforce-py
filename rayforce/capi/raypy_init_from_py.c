@@ -10,8 +10,11 @@ PyObject *raypy_init_i16(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_i16_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create i16 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_i32(PyObject *self, PyObject *args) {
@@ -23,8 +26,11 @@ PyObject *raypy_init_i32(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_i32_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create i32 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_i64(PyObject *self, PyObject *args) {
@@ -36,8 +42,11 @@ PyObject *raypy_init_i64(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_i64_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create i64 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_f64(PyObject *self, PyObject *args) {
@@ -49,8 +58,11 @@ PyObject *raypy_init_f64(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_f64_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create f64 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_c8(PyObject *self, PyObject *args) {
@@ -62,8 +74,11 @@ PyObject *raypy_init_c8(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_c8_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create c8 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_string(PyObject *self, PyObject *args) {
@@ -75,8 +90,11 @@ PyObject *raypy_init_string(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_string_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create string from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_symbol(PyObject *self, PyObject *args) {
@@ -88,8 +106,11 @@ PyObject *raypy_init_symbol(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_symbol_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create symbol from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_b8(PyObject *self, PyObject *args) {
@@ -101,8 +122,11 @@ PyObject *raypy_init_b8(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_b8_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create b8 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_u8(PyObject *self, PyObject *args) {
@@ -114,8 +138,11 @@ PyObject *raypy_init_u8(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_u8_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create u8 from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_date(PyObject *self, PyObject *args) {
@@ -127,8 +154,11 @@ PyObject *raypy_init_date(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_date_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create date from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_time(PyObject *self, PyObject *args) {
@@ -140,8 +170,11 @@ PyObject *raypy_init_time(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_time_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create time from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_timestamp(PyObject *self, PyObject *args) {
@@ -153,8 +186,11 @@ PyObject *raypy_init_timestamp(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_timestamp_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create timestamp from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
@@ -166,8 +202,11 @@ PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p ray_obj = raypy_init_guid_from_py(item);
-  if (ray_obj == NULL)
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create guid from Python object");
     return NULL;
+  }
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_init_list(PyObject *self, PyObject *args) {
@@ -180,6 +219,8 @@ PyObject *raypy_init_list(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = raypy_init_list_from_py(item);
   if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: failed to create list from Python object");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -197,7 +238,7 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = ray_table(keys_obj->obj, vals_obj->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_MemoryError, "Failed to create table");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to create table");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -215,7 +256,7 @@ PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
 
   obj_p ray_obj = ray_dict(keys_obj->obj, vals_obj->obj);
   if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to create dictionary");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to create dictionary");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -243,7 +284,7 @@ static int fill_obj_from_py_sequence(obj_p *target_obj, PyObject *fill,
       return -1;
     }
     if (ray_item == NULL) {
-      PyErr_SetString(PyExc_TypeError, error_msg);
+      PyErr_SetString(PyExc_RuntimeError, error_msg);
       return -1;
     }
 
@@ -276,7 +317,7 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
     int vector_type_code = type_code < 0 ? -type_code : type_code;
     ray_obj = vector(vector_type_code, (u64_t)length);
     if (ray_obj == NULL) {
-      PyErr_SetString(PyExc_MemoryError, "Failed to create vector");
+      PyErr_SetString(PyExc_RuntimeError, "init: failed to create vector");
       return NULL;
     }
   } else if (PySequence_Check(second_arg)) {
@@ -287,19 +328,20 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
     int vector_type_code = type_code < 0 ? -type_code : type_code;
     ray_obj = vector(vector_type_code, (u64_t)len);
     if (ray_obj == NULL) {
-      PyErr_SetString(PyExc_MemoryError, "Failed to create vector");
+      PyErr_SetString(PyExc_RuntimeError, "init: failed to create vector");
       return NULL;
     }
 
     if (fill_obj_from_py_sequence(&ray_obj, second_arg, vector_type_code, 1,
-                                  "Unsupported type code for bulk fill") < 0) {
+                                  "init: unsupported type code for bulk fill") <
+        0) {
       drop_obj(ray_obj);
       return NULL;
     }
   } else {
-    PyErr_SetString(
-        PyExc_TypeError,
-        "Second argument must be an integer (length) or a sequence (items)");
+    PyErr_SetString(PyExc_RuntimeError,
+                    "init: second argument must be an integer (length) or a "
+                    "sequence (items)");
     return NULL;
   }
 
@@ -386,7 +428,7 @@ obj_p raypy_init_guid_from_py(PyObject *item) {
   obj_p ray_obj = vector(TYPE_I64, 2);
   if (!ray_obj) {
     Py_DECREF(guid_str_obj);
-    PyErr_SetString(PyExc_MemoryError, "Failed to create GUID");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to create GUID");
     return NULL;
   }
 
@@ -394,7 +436,7 @@ obj_p raypy_init_guid_from_py(PyObject *item) {
   if (guid_from_str(guid_str, guid_len, *AS_GUID(ray_obj)) != 0) {
     drop_obj(ray_obj);
     Py_DECREF(guid_str_obj);
-    PyErr_SetString(PyExc_ValueError, "Invalid GUID format");
+    PyErr_SetString(PyExc_RuntimeError, "init: invalid GUID format");
     return NULL;
   }
 
@@ -430,12 +472,12 @@ obj_p raypy_init_date_from_py(PyObject *item) {
   drop_obj(ray_str);
 
   if (date_obj == NULL) {
-    PyErr_SetString(PyExc_ValueError, "Failed to cast to date");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to cast to date");
     return NULL;
   }
 
   if (date_obj->i32 == -730120) {
-    PyErr_SetString(PyExc_ValueError, "Failed to cast to date");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to cast to date");
     drop_obj(date_obj);
     return NULL;
   }
@@ -471,12 +513,12 @@ obj_p raypy_init_time_from_py(PyObject *item) {
   drop_obj(ray_str);
 
   if (time_obj == NULL) {
-    PyErr_SetString(PyExc_ValueError, "Failed to cast to time");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to cast to time");
     return NULL;
   }
 
   if (time_obj->i32 == NULL_I32) {
-    PyErr_SetString(PyExc_ValueError, "Failed to cast to time");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to cast to time");
     drop_obj(time_obj);
     return NULL;
   }
@@ -512,12 +554,12 @@ obj_p raypy_init_timestamp_from_py(PyObject *item) {
   drop_obj(ray_str);
 
   if (timestamp_obj == NULL) {
-    PyErr_SetString(PyExc_ValueError, "Failed to cast to timestamp");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to cast to timestamp");
     return NULL;
   }
 
   if (timestamp_obj->i64 == NULL_I64) {
-    PyErr_SetString(PyExc_ValueError, "Failed to cast to timestamp");
+    PyErr_SetString(PyExc_RuntimeError, "init: failed to cast to timestamp");
     drop_obj(timestamp_obj);
     return NULL;
   }
@@ -586,7 +628,7 @@ obj_p raypy_init_list_from_py(PyObject *item) {
     return NULL;
 
   if (fill_obj_from_py_sequence(&list_vec, item, 0, 0,
-                                "Unsupported type for List item") < 0) {
+                                "init: unsupported type for List item") < 0) {
     drop_obj(list_vec);
     return NULL;
   }
