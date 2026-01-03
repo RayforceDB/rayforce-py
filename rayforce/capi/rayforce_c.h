@@ -15,6 +15,7 @@
 #include "format.h"
 #include "guid.h"
 #include "io.h"
+#include "ipc.h"
 #include "items.h"
 #include "iter.h"
 #include "join.h"
@@ -156,5 +157,8 @@ PyObject *raypy_upsert(PyObject *self, PyObject *args);
 PyObject *raypy_hopen(PyObject *self, PyObject *args);
 PyObject *raypy_hclose(PyObject *self, PyObject *args);
 PyObject *raypy_write(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_listen(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_close_listener(PyObject *self, PyObject *args);
+PyObject *raypy_runtime_run(PyObject *self, PyObject *args);
 
 #endif

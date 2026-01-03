@@ -57,3 +57,47 @@ PyObject *raypy_write(PyObject *self, PyObject *args) {
   }
   return raypy_wrap_ray_object(ray_obj);
 }
+
+PyObject *raypy_ipc_listen(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  i64_t port;
+  runtime_p runtime;
+
+  if (!PyArg_ParseTuple(args, "L", &port))
+    return NULL;
+
+  runtime = runtime_get();
+  if (runtime == NULL || runtime->poll == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "ipc: runtime not initialized");
+    return NULL;
+  }
+
+  i64_t listener_id = ipc_listen(runtime->poll, port);
+  if (listener_id == -1) {
+    PyErr_SetString(PyExc_RuntimeError, "ipc: failed to listen on port");
+    return NULL;
+  }
+
+  return PyLong_FromLongLong(listener_id);
+}
+PyObject *raypy_ipc_close_listener(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  i64_t listener_id;
+  runtime_p runtime;
+
+  if (!PyArg_ParseTuple(args, "L", &listener_id))
+    return NULL;
+
+  runtime = runtime_get();
+  if (runtime == NULL || runtime->poll == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "ipc: runtime not initialized");
+    return NULL;
+  }
+
+  poll_deregister(runtime->poll, listener_id);
+  Py_RETURN_NONE;
+}

@@ -40,6 +40,20 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   g_main_thread_id = (unsigned long)PyThread_get_thread_ident();
   Py_RETURN_NONE;
 }
+PyObject *raypy_runtime_run(PyObject *self, PyObject *args) {
+  (void)self;
+  (void)args;
+  CHECK_MAIN_THREAD();
+
+  runtime_p runtime = runtime_get();
+  if (runtime == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "runtime: not initialized");
+    return NULL;
+  }
+
+  i32_t result = runtime_run();
+  return PyLong_FromLong(result);
+}
 PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "runtime: object cannot be null");
@@ -147,6 +161,11 @@ static PyMethodDef rayforce_methods[] = {
     {"hopen", raypy_hopen, METH_VARARGS, "Open file or socket handle"},
     {"hclose", raypy_hclose, METH_VARARGS, "Close file or socket handle"},
     {"write", raypy_write, METH_VARARGS, "Write data to file or socket"},
+    {"ipc_listen", raypy_ipc_listen, METH_VARARGS,
+     "Listen for IPC connections on port"},
+    {"ipc_close_listener", raypy_ipc_close_listener, METH_VARARGS,
+     "Close IPC listener"},
+    {"runtime_run", raypy_runtime_run, METH_VARARGS, "Run blocking event loop"},
     {"init_runtime", raypy_init_runtime, METH_VARARGS,
      "Initialize Rayforce runtime"},
 
