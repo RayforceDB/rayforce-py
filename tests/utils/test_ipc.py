@@ -4,10 +4,10 @@ import pytest
 from rayforce import String, _rayforce_c as r
 from rayforce.types import Table
 from rayforce import errors
-from rayforce.types.table import Expression
 from rayforce.utils.ipc import (
     IPCConnection,
-    IPCEngine,
+    IPCClient,
+    IPCServer,
     _python_to_ipc,
 )
 
@@ -31,7 +31,7 @@ class TestPythonToIPC:
 class TestIPCConnection:
     @pytest.fixture
     def mock_engine(self):
-        engine = MagicMock(spec=IPCEngine)
+        engine = MagicMock(spec=IPCClient)
         engine.pool = {}
         return engine
 
@@ -88,7 +88,7 @@ class TestIPCConnection:
 class TestIPCEngine:
     @pytest.fixture
     def engine(self):
-        return IPCEngine(host="localhost", port=5000)
+        return IPCClient(host="localhost", port=5000)
 
     @patch("rayforce.utils.ipc.FFI.get_obj_type")
     @patch("rayforce.utils.ipc.FFI.hopen")
@@ -155,3 +155,68 @@ class TestIPCEngine:
             mock_close2.assert_called_once()
 
         assert len(engine.pool) == 0
+
+
+class TestIPCServer:
+    @pytest.fixture
+    def server(self):
+        return IPCServer(port=5000)
+
+    def test_init_valid_port(self):
+        server = IPCServer(port=5000)
+        assert server.port == 5000
+        assert server._listener_id is None
+
+    @pytest.mark.parametrize("port", (0, 65536, -1))
+    def test_init_invalid_port_too_low(self, port):
+        with pytest.raises(errors.RayforceIPCError, match="Invalid port number"):
+            IPCServer(port=port)
+
+    @patch("rayforce.utils.ipc.FFI.ipc_listen")
+    @patch("rayforce.utils.ipc.FFI.runtime_run")
+    def test_listen_success(self, mock_runtime_run, mock_ipc_listen, server):
+        mock_ipc_listen.return_value = 123
+        mock_runtime_run.return_value = 0
+
+        server.listen()
+
+        mock_ipc_listen.assert_called_once_with(5000)
+        assert server._listener_id == 123
+        mock_runtime_run.assert_called_once()
+
+    @patch("rayforce.utils.ipc.FFI.ipc_listen")
+    @patch("rayforce.utils.ipc.FFI.runtime_run")
+    @patch("rayforce.utils.ipc.FFI.ipc_close_listener")
+    def test_listen_closes_on_exception(
+        self, mock_close, mock_runtime_run, mock_ipc_listen, server
+    ):
+        mock_ipc_listen.return_value = 123
+        mock_runtime_run.side_effect = RuntimeError("Test error")
+
+        with pytest.raises(RuntimeError, match="Test error"):
+            server.listen()
+
+        mock_ipc_listen.assert_called_once_with(5000)
+        mock_close.assert_called_once_with(123)
+        assert server._listener_id is None
+
+    @patch("rayforce.utils.ipc.FFI.ipc_listen")
+    @patch("rayforce.utils.ipc.FFI.runtime_run")
+    @patch("rayforce.utils.ipc.FFI.ipc_close_listener")
+    def test_listen_closes_on_keyboard_interrupt(
+        self, mock_close, mock_runtime_run, mock_ipc_listen, server
+    ):
+        mock_ipc_listen.return_value = 123
+        mock_runtime_run.side_effect = KeyboardInterrupt()
+
+        with pytest.raises(KeyboardInterrupt):
+            server.listen()
+
+        mock_ipc_listen.assert_called_once_with(5000)
+        mock_close.assert_called_once_with(123)
+        assert server._listener_id is None
+
+    def test_repr(self, server):
+        repr_str = repr(server)
+        assert "IPCServer" in repr_str
+        assert "port=5000" in repr_str

@@ -1,10 +1,11 @@
 from .conversion import python_to_ray, ray_to_python
 from .evaluation import eval_obj, eval_str
-from .ipc import IPCConnection, IPCEngine
+from .ipc import IPCClient, IPCConnection, IPCServer
 
 __all__ = [
+    "IPCClient",
     "IPCConnection",
-    "IPCEngine",
+    "IPCServer",
     "eval_obj",
     "eval_str",
     "python_to_ray",

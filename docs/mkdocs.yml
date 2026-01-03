@@ -133,8 +133,8 @@ nav:
       - Joins: content/documentation/query-guide/joins.md
       - Order By: content/documentation/query-guide/order-by.md
       - Group By: content/documentation/query-guide/group-by.md
+    - IPC: content/documentation/IPC.md
     - Plugins:
-      - IPC: content/documentation/plugins/ipc.md
       - Polars: content/documentation/plugins/polars.md
       - Pandas: content/documentation/plugins/pandas.md
       - KDB: content/documentation/plugins/kdb.md

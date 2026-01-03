@@ -47,7 +47,7 @@ def _python_to_ipc(data: t.Any) -> r.RayObject:
 
 
 class IPCConnection:
-    def __init__(self, engine: IPCEngine, handle: r.RayObject) -> None:
+    def __init__(self, engine: IPCClient, handle: r.RayObject) -> None:
         self.engine = engine
         self.handle = handle
         self._closed = False
@@ -85,19 +85,15 @@ class IPCConnection:
         return f"Connection(id:{id(self)}) - established at {self.established_at.isoformat()}"
 
 
-class IPCEngine:
+class IPCClient:
     def __init__(self, host: str, port: int | None = None) -> None:
         self.host = host
         self.port = port
         self.url = f"{host}:{port}" if port is not None else host
         self.pool: dict[int, IPCConnection] = {}
 
-    def __open_connection(self) -> r.RayObject:
-        path = String(self.url)
-        return FFI.hopen(path.ptr)
-
     def acquire(self) -> IPCConnection:
-        handle = self.__open_connection()
+        handle = FFI.hopen(String(self.url).ptr)
         if FFI.get_obj_type(handle) == r.TYPE_ERR:
             error_message = FFI.get_error_obj(handle)
             raise errors.RayforceIPCError(f"Error when establishing connection: {error_message}")
@@ -113,4 +109,41 @@ class IPCEngine:
         self.pool = {}
 
     def __repr__(self) -> str:
-        return f"IPCEngine(host={self.host}, port={self.port}, pool_size: {len(self.pool)})"
+        return f"IPCClient(host={self.host}, port={self.port}, pool_size: {len(self.pool)})"
+
+
+class IPCServer:
+    def __init__(self, port: int) -> None:
+        if not isinstance(port, int) or port < 1 or port > 65535:
+            raise errors.RayforceIPCError(
+                f"Invalid port number: {port}. Must be between 1 and 65535"
+            )
+
+        self.port = port
+        self._listener_id: int | None = None
+
+    def _close(self) -> None:
+        if self._listener_id is not None:
+            try:
+                FFI.ipc_close_listener(self._listener_id)
+            except Exception:
+                pass
+            finally:
+                self._listener_id = None
+
+    def listen(self) -> None:
+        self._listener_id = FFI.ipc_listen(self.port)
+
+        print(
+            f"Rayforce IPC Server listening on 0.0.0.0:{self.port} (id:{self._listener_id})",
+            flush=True,
+        )
+
+        try:
+            FFI.runtime_run()  # Start blocking event loop
+        except BaseException:
+            self._close()
+            raise
+
+    def __repr__(self) -> str:
+        return f"IPCServer(port={self.port})"

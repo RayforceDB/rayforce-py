@@ -284,6 +284,21 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def ipc_listen(port: int) -> int:
+        return r.ipc_listen(port)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_close_listener(listener_id: int) -> None:
+        return r.ipc_close_listener(listener_id)
+
+    @staticmethod
+    @errors.error_handler
+    def runtime_run() -> int:
+        return r.runtime_run()
+
+    @staticmethod
+    @errors.error_handler
     def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> None:
         return r.set_obj(obj, idx, value)
 

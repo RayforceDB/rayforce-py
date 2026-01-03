@@ -90,8 +90,9 @@ from .types import (  # noqa: E402
     Vector,
 )
 from .utils import (  # noqa: E402
+    IPCClient,
     IPCConnection,
-    IPCEngine,
+    IPCServer,
     eval_obj,
     eval_str,
     python_to_ray,
@@ -113,8 +114,9 @@ __all__ = [
     "Date",
     "Dict",
     "Fn",
+    "IPCClient",
     "IPCConnection",
-    "IPCEngine",
+    "IPCServer",
     "List",
     "Null",
     "Operation",
