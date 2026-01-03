@@ -5,6 +5,13 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.3.0`**
+
+- Add server-side IPC - initializing a Rayforce server via Python runtime
+- Improve IPC Client-side interface
+
+2026-01-03 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.3.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.3.0)**
+
 
 ## **`0.2.2`**
 
