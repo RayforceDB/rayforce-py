@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock, patch
 import pytest
 
-from rayforce import String, _rayforce_c as r
+from rayforce import QuotedSymbol, String, _rayforce_c as r, eval_obj, List
+from rayforce import Table, Column, I64, Symbol, Vector
 from rayforce.types import Table
 from rayforce import errors
+from rayforce.ffi import FFI
 from rayforce.utils.ipc import (
     IPCConnection,
     IPCClient,
@@ -220,3 +222,119 @@ class TestIPCServer:
         repr_str = repr(server)
         assert "IPCServer" in repr_str
         assert "port=5000" in repr_str
+
+
+class TestIPCQueryObjects:
+    @pytest.fixture
+    def mock_engine(self):
+        engine = MagicMock(spec=IPCClient)
+        engine.pool = {}
+        return engine
+
+    @pytest.fixture
+    def mock_handle(self):
+        handle = MagicMock(spec=r.RayObject)
+        return handle
+
+    @pytest.fixture
+    def connection(self, mock_engine, mock_handle):
+        with patch("rayforce.utils.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
+            return IPCConnection(engine=mock_engine, handle=mock_handle)
+
+    def _capture_and_eval(self, connection, query_obj):
+        captured_obj = None
+
+        def capture_write(handle, data):
+            nonlocal captured_obj
+            captured_obj = data
+            mock_result = MagicMock(spec=r.RayObject)
+            return mock_result
+
+        with patch("rayforce.utils.ipc.FFI.write", side_effect=capture_write):
+            with patch("rayforce.utils.ipc.ray_to_python", return_value="mocked_result"):
+                connection.execute(query_obj)
+
+        assert captured_obj is not None
+        assert isinstance(captured_obj, r.RayObject)
+
+        obj_type = FFI.get_obj_type(captured_obj)
+        assert obj_type != r.TYPE_ERR, "Captured object should not be an error"
+
+        return eval_obj(captured_obj)
+
+    def test_select_query_ipc(self, connection):
+        table = Table.from_dict(
+            {
+                "id": Vector(items=["001", "002"], ray_type=Symbol),
+                "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+                "age": Vector(items=[29, 34], ray_type=I64),
+            }
+        )
+        table.save("t")
+
+        query = Table.from_name("t").select("id", "name").where(Column("age") > 30)
+        result = self._capture_and_eval(connection, query)
+
+        assert isinstance(result, Table)
+        assert result.at_row(0)["id"] == "002"
+        assert result.at_row(0)["name"] == "bob"
+
+    def test_update_query_ipc(self, connection):
+        from rayforce import Table, Column, I64, Symbol, Vector
+
+        table = Table.from_dict(
+            {
+                "id": Vector(items=["001", "002"], ray_type=Symbol),
+                "age": Vector(items=[29, 34], ray_type=I64),
+            }
+        )
+        table.save("t")
+
+        query = Table.from_name("t").update(age=35).where(Column("id") == "001")
+        result = self._capture_and_eval(connection, query)
+
+        assert isinstance(result, Symbol)
+
+        result = Table.from_name("t").select("*").execute()
+        assert result.at_row(0)["id"] == "001"
+        assert result.at_row(0)["age"] == 35
+
+    def test_insert_query_ipc(self, connection):
+        from rayforce import Table, I64, Symbol, Vector
+
+        table = Table.from_dict(
+            {
+                "id": Vector(items=["001"], ray_type=Symbol),
+                "age": Vector(items=[29], ray_type=I64),
+            }
+        )
+        table.save("t")
+
+        query = Table.from_name("t").insert(id=["003"], age=[40])
+        result = self._capture_and_eval(connection, query)
+
+        assert isinstance(result, Symbol)
+
+        result = Table.from_name("t").select("*").execute()
+        assert result.at_row(1)["id"] == "003"
+        assert result.at_row(1)["age"] == 40
+
+    def test_upsert_query_ipc(self, connection):
+        from rayforce import Table, I64, Symbol, Vector
+
+        table = Table.from_dict(
+            {
+                "id": Vector(items=["001"], ray_type=Symbol),
+                "age": Vector(items=[29], ray_type=I64),
+            }
+        )
+        table.save("t")
+
+        query = Table.from_name("t").upsert(match_by_first=1, id="001", age=30)
+        result = self._capture_and_eval(connection, query)
+
+        assert isinstance(result, Symbol)
+
+        result = Table.from_name("t").select("*").execute()
+        assert result.at_row(0)["id"] == "001"
+        assert result.at_row(0)["age"] == 30

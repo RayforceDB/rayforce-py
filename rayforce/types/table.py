@@ -473,7 +473,7 @@ class _Join:
     def compile(self) -> tuple[r.RayObject, ...]:
         if isinstance(self.on, str):
             on = [self.on]
-        return (Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr)
+        return Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr
 
     def execute(self, type_: t.Literal[Operation.LEFT_JOIN | Operation.INNER_JOIN]) -> Table:
         return utils.eval_obj(List([type_, *self.compile()]))

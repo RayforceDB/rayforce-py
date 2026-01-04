@@ -43,7 +43,7 @@ Rayforce IPC Server listening on 0.0.0.0:5000 (id:123)
 
 ---
 
-## :material-client: IPC Client
+## :material-network: IPC Client
 
 The `IPCClient` class manages connections to remote Rayforce instances. It maintains a connection pool and provides a simple API for executing queries.
 

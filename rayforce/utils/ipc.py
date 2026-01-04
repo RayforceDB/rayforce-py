@@ -7,6 +7,7 @@ import typing as t
 from rayforce import _rayforce_c as r
 from rayforce import errors
 from rayforce.ffi import FFI
+from rayforce.types.containers.list import List
 from rayforce.types.containers.vector import String
 from rayforce.types.operators import Operation
 from rayforce.utils import ray_to_python
@@ -27,22 +28,24 @@ def _python_to_ipc(data: t.Any) -> r.RayObject:
 
     if isinstance(data, str):
         return String(data).ptr
+    if isinstance(data, List):
+        return data.ptr
     if isinstance(data, SelectQuery):
-        return Expression(Operation.LIST, Operation.SELECT, data.compile()).compile()
+        return Expression(Operation.SELECT, data.compile()).compile()
     if isinstance(data, UpdateQuery):
-        return Expression(Operation.LIST, Operation.UPDATE, data.compile()).compile()
+        return Expression(Operation.UPDATE, data.compile()).compile()
     if isinstance(data, InsertQuery):
-        return Expression(Operation.LIST, Operation.INSERT, data.compile()).compile()
+        return Expression(Operation.INSERT, data.table, data.compile()).compile()
     if isinstance(data, UpsertQuery):
-        return Expression(Operation.LIST, Operation.UPSERT, *data.compile()).compile()
+        return Expression(Operation.UPSERT, data.table, *data.compile()).compile()
     if isinstance(data, LeftJoin):
-        return Expression(Operation.LIST, Operation.LEFT_JOIN, *data.compile()).compile()
+        return Expression(Operation.LEFT_JOIN, *data.compile()).compile()
     if isinstance(data, InnerJoin):
-        return Expression(Operation.LIST, Operation.INNER_JOIN, *data.compile()).compile()
+        return Expression(Operation.INNER_JOIN, *data.compile()).compile()
     if isinstance(data, WindowJoin):
-        return Expression(Operation.LIST, Operation.WINDOW_JOIN, *data.compile()).compile()
+        return Expression(Operation.WINDOW_JOIN, *data.compile()).compile()
     if isinstance(data, WindowJoin1):
-        return Expression(Operation.LIST, Operation.WINDOW_JOIN1, *data.compile()).compile()
+        return Expression(Operation.WINDOW_JOIN1, *data.compile()).compile()
     raise errors.RayforceIPCError(f"Unsupported IPC data to send: {type(data)}")
 
 
