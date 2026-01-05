@@ -4,6 +4,16 @@ __all__ = [
     "IPCClient",
     "IPCConnection",
     "IPCServer",
-    # Do not import websockets here to avoid import errors.
-    # Websockets aren't core, but rather an optional plugin.
 ]
+
+# Import WebSocket classes conditionally
+try:
+    from .websocket import (  # noqa: F401
+        WebSocketClient,
+        WebSocketClientConnection,
+        WebSocketServer,
+    )
+
+    __all__.extend(["WebSocketClient", "WebSocketClientConnection", "WebSocketServer"])
+except ImportError:
+    pass
