@@ -7,46 +7,9 @@ import typing as t
 from rayforce import _rayforce_c as r
 from rayforce import errors
 from rayforce.ffi import FFI
-from rayforce.types.containers.list import List
+from rayforce.network import utils
 from rayforce.types.containers.vector import String
-from rayforce.types.operators import Operation
 from rayforce.utils import ray_to_python
-
-
-def _python_to_ipc(data: t.Any) -> r.RayObject:
-    from rayforce.types.table import (
-        Expression,
-        InnerJoin,
-        InsertQuery,
-        LeftJoin,
-        SelectQuery,
-        UpdateQuery,
-        UpsertQuery,
-        WindowJoin,
-        WindowJoin1,
-    )
-
-    if isinstance(data, str):
-        return String(data).ptr
-    if isinstance(data, List):
-        return data.ptr
-    if isinstance(data, SelectQuery):
-        return Expression(Operation.SELECT, data.compile()).compile()
-    if isinstance(data, UpdateQuery):
-        return Expression(Operation.UPDATE, data.compile()).compile()
-    if isinstance(data, InsertQuery):
-        return Expression(Operation.INSERT, data.table, data.compile()).compile()
-    if isinstance(data, UpsertQuery):
-        return Expression(Operation.UPSERT, data.table, *data.compile()).compile()
-    if isinstance(data, LeftJoin):
-        return Expression(Operation.LEFT_JOIN, *data.compile()).compile()
-    if isinstance(data, InnerJoin):
-        return Expression(Operation.INNER_JOIN, *data.compile()).compile()
-    if isinstance(data, WindowJoin):
-        return Expression(Operation.WINDOW_JOIN, *data.compile()).compile()
-    if isinstance(data, WindowJoin1):
-        return Expression(Operation.WINDOW_JOIN1, *data.compile()).compile()
-    raise errors.RayforceIPCError(f"Unsupported IPC data to send: {type(data)}")
 
 
 class IPCConnection:
@@ -60,7 +23,7 @@ class IPCConnection:
     def execute(self, data: t.Any) -> t.Any:
         if self._closed:
             raise errors.RayforceIPCError("Cannot write to closed connection")
-        return ray_to_python(FFI.write(self.handle, _python_to_ipc(data)))
+        return ray_to_python(FFI.write(self.handle, utils.python_to_ipc(data)))
 
     def close(self) -> None:
         if not self._closed:

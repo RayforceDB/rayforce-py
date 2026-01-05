@@ -10,9 +10,8 @@ import typing as t
 from rayforce import _rayforce_c as r
 from rayforce import errors
 from rayforce.ffi import FFI
-from rayforce.types.containers.list import List
+from rayforce.network import utils
 from rayforce.types.containers.vector import String, Vector
-from rayforce.types.operators import Operation
 from rayforce.types.scalars.numeric.unsigned import U8
 from rayforce.utils import ray_to_python
 
@@ -22,42 +21,6 @@ except ImportError as e:
     raise ImportError(
         "websockets library is required. Install it with: pip install websockets"
     ) from e
-
-
-def _python_to_websocket(data: t.Any) -> r.RayObject:
-    from rayforce.types.table import (
-        Expression,
-        InnerJoin,
-        InsertQuery,
-        LeftJoin,
-        SelectQuery,
-        UpdateQuery,
-        UpsertQuery,
-        WindowJoin,
-        WindowJoin1,
-    )
-
-    if isinstance(data, str):
-        return String(data).ptr
-    if isinstance(data, List):
-        return data.ptr
-    if isinstance(data, SelectQuery):
-        return Expression(Operation.SELECT, data.compile()).compile()
-    if isinstance(data, UpdateQuery):
-        return Expression(Operation.UPDATE, data.compile()).compile()
-    if isinstance(data, InsertQuery):
-        return Expression(Operation.INSERT, data.table, data.compile()).compile()
-    if isinstance(data, UpsertQuery):
-        return Expression(Operation.UPSERT, data.table, *data.compile()).compile()
-    if isinstance(data, LeftJoin):
-        return Expression(Operation.LEFT_JOIN, *data.compile()).compile()
-    if isinstance(data, InnerJoin):
-        return Expression(Operation.INNER_JOIN, *data.compile()).compile()
-    if isinstance(data, WindowJoin):
-        return Expression(Operation.WINDOW_JOIN, *data.compile()).compile()
-    if isinstance(data, WindowJoin1):
-        return Expression(Operation.WINDOW_JOIN1, *data.compile()).compile()
-    raise errors.RayforceIPCError(f"Unsupported WebSocket data to send: {type(data)}")
 
 
 class WebSocketServer:
@@ -267,7 +230,7 @@ class WebSocketClientConnection:
         if not self._handshake_complete:
             raise errors.RayforceIPCError("Handshake not completed")
 
-        serialized = FFI.ser_obj(_python_to_websocket(data))
+        serialized = FFI.ser_obj(utils.python_to_ipc(data))
 
         if FFI.get_obj_type(serialized) == r.TYPE_ERR:
             raise errors.RayforceIPCError(f"Serialization error: {FFI.get_error_obj(serialized)}")

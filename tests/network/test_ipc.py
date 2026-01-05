@@ -6,28 +6,28 @@ from rayforce import Table, Column, I64, Symbol, Vector
 from rayforce.types import Table
 from rayforce import errors
 from rayforce.ffi import FFI
+from rayforce.network.utils import python_to_ipc
 from rayforce.network.ipc import (
     IPCConnection,
     IPCClient,
     IPCServer,
-    _python_to_ipc,
 )
 
 
 class TestPythonToIPC:
     def test_python_to_ipc_string(self):
-        result = _python_to_ipc("test_string")
+        result = python_to_ipc("test_string")
         assert String(ptr=result).to_python() == "test_string"
 
     def test_python_to_ipc_query(self):
         table = Table.from_dict({"col": []})
         query = table.select("col")
-        result = _python_to_ipc(query)
+        result = python_to_ipc(query)
         assert isinstance(result, r.RayObject)
 
     def test_python_to_ipc_unsupported_type(self):
         with pytest.raises(errors.RayforceIPCError, match="Unsupported IPC data"):
-            _python_to_ipc(123)
+            python_to_ipc(123)
 
 
 class TestIPCConnection:
