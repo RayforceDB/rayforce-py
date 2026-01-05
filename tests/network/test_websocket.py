@@ -4,7 +4,7 @@ import asyncio
 
 from rayforce import _rayforce_c as r, I64, Vector, U8, String
 from rayforce import errors
-from rayforce.utils.websocket import WebSocketServer, WebSocketConnection
+from rayforce.network.websocket import WebSocketServer, WebSocketConnection
 
 
 class TestWebSocketServer:
@@ -44,7 +44,7 @@ class TestWebSocketServer:
         connection_mock.handle = AsyncMock()
         connection_mock.close = AsyncMock()
 
-        with patch("rayforce.utils.websocket.WebSocketConnection", return_value=connection_mock):
+        with patch("rayforce.network.websocket.WebSocketConnection", return_value=connection_mock):
             await server._handle_connection(mock_websocket)
 
         connection_mock.handle.assert_called_once()
@@ -60,7 +60,7 @@ class TestWebSocketServer:
         connection_mock.handle = AsyncMock(side_effect=RuntimeError("Test error"))
         connection_mock.close = AsyncMock()
 
-        with patch("rayforce.utils.websocket.WebSocketConnection", return_value=connection_mock):
+        with patch("rayforce.network.websocket.WebSocketConnection", return_value=connection_mock):
             await server._handle_connection(mock_websocket)
 
         connection_mock.close.assert_called_once()
@@ -74,8 +74,8 @@ class TestWebSocketServer:
         mock_stop = asyncio.Future()
         mock_serve = AsyncMock(return_value=mock_server)
 
-        with patch("rayforce.utils.websocket.serve", mock_serve):
-            with patch("rayforce.utils.websocket.asyncio.get_event_loop") as mock_get_loop:
+        with patch("rayforce.network.websocket.serve", mock_serve):
+            with patch("rayforce.network.websocket.asyncio.get_event_loop") as mock_get_loop:
                 mock_loop = MagicMock()
                 mock_loop.create_future.return_value = mock_stop
                 mock_loop.add_signal_handler = MagicMock()
@@ -108,9 +108,9 @@ class TestWebSocketConnection:
         mock_result = I64(42).ptr
         mock_string = String("(+ 1 2)")
 
-        with patch("rayforce.utils.websocket.String", return_value=mock_string):
-            with patch("rayforce.utils.websocket.FFI.eval_str", return_value=mock_result):
-                with patch("rayforce.utils.websocket.FFI.get_obj_type", return_value=r.TYPE_I64):
+        with patch("rayforce.network.websocket.String", return_value=mock_string):
+            with patch("rayforce.network.websocket.FFI.eval_str", return_value=mock_result):
+                with patch("rayforce.network.websocket.FFI.get_obj_type", return_value=r.TYPE_I64):
                     result = await connection._process_text_message("(+ 1 2)")
 
         assert result == mock_result
@@ -119,12 +119,12 @@ class TestWebSocketConnection:
     async def test_process_text_message_eval_error(self, connection):
         error_obj = String("Eval failed").ptr
 
-        with patch("rayforce.utils.websocket.FFI.eval_str", return_value=error_obj):
+        with patch("rayforce.network.websocket.FFI.eval_str", return_value=error_obj):
             with patch(
-                "rayforce.utils.websocket.FFI.get_obj_type",
+                "rayforce.network.websocket.FFI.get_obj_type",
                 side_effect=lambda x: r.TYPE_ERR if x is error_obj else r.TYPE_C8,
             ):
-                with patch("rayforce.utils.websocket.FFI.get_error_obj", return_value=error_obj):
+                with patch("rayforce.network.websocket.FFI.get_error_obj", return_value=error_obj):
                     with pytest.raises(errors.RayforceIPCError, match="Evaluation error"):
                         await connection._process_text_message("(+ 1 2)")
 
@@ -139,13 +139,13 @@ class TestWebSocketConnection:
             call_count[0] += 1
             return r.TYPE_I64
 
-        with patch("rayforce.utils.websocket.Vector", return_value=mock_vector):
-            with patch("rayforce.utils.websocket.FFI.de_obj", return_value=mock_deserialized):
+        with patch("rayforce.network.websocket.Vector", return_value=mock_vector):
+            with patch("rayforce.network.websocket.FFI.de_obj", return_value=mock_deserialized):
                 with patch(
-                    "rayforce.utils.websocket.FFI.get_obj_type",
+                    "rayforce.network.websocket.FFI.get_obj_type",
                     side_effect=get_obj_type_side_effect,
                 ):
-                    with patch("rayforce.utils.websocket.FFI.eval_obj", return_value=mock_result):
+                    with patch("rayforce.network.websocket.FFI.eval_obj", return_value=mock_result):
                         result = await connection._process_binary_message(b"test_data")
 
         assert result == mock_result
@@ -155,13 +155,13 @@ class TestWebSocketConnection:
         mock_error = MagicMock(spec=r.RayObject)
         mock_vector = MagicMock()
 
-        with patch("rayforce.utils.websocket.Vector", return_value=mock_vector):
-            with patch("rayforce.utils.websocket.FFI.de_obj", return_value=mock_error):
+        with patch("rayforce.network.websocket.Vector", return_value=mock_vector):
+            with patch("rayforce.network.websocket.FFI.de_obj", return_value=mock_error):
                 with patch(
-                    "rayforce.utils.websocket.FFI.get_obj_type",
+                    "rayforce.network.websocket.FFI.get_obj_type",
                     side_effect=lambda x: r.TYPE_ERR if x is mock_error else r.TYPE_C8,
                 ):
-                    with patch("rayforce.utils.websocket.FFI.get_error_obj", return_value="fail"):
+                    with patch("rayforce.network.websocket.FFI.get_error_obj", return_value="fail"):
                         with pytest.raises(errors.RayforceIPCError, match="fail"):
                             await connection._process_binary_message(b"test_data")
 
@@ -171,12 +171,14 @@ class TestWebSocketConnection:
         mock_serialized = I64(456).ptr
         mock_bytes = b"serialized_data"
 
-        with patch("rayforce.utils.websocket.FFI.ser_obj", return_value=mock_serialized):
+        with patch("rayforce.network.websocket.FFI.ser_obj", return_value=mock_serialized):
             with patch(
-                "rayforce.utils.websocket.FFI.get_obj_type",
+                "rayforce.network.websocket.FFI.get_obj_type",
                 side_effect=lambda x: r.TYPE_U8 if x is mock_serialized else r.TYPE_I64,
             ):
-                with patch("rayforce.utils.websocket.FFI.read_u8_vector", return_value=mock_bytes):
+                with patch(
+                    "rayforce.network.websocket.FFI.read_u8_vector", return_value=mock_bytes
+                ):
                     await connection._send_result(mock_result)
 
         connection.websocket.send.assert_called_once_with(mock_bytes)
@@ -186,12 +188,12 @@ class TestWebSocketConnection:
         mock_result = MagicMock(spec=r.RayObject)
         mock_error = MagicMock(spec=r.RayObject)
 
-        with patch("rayforce.utils.websocket.FFI.ser_obj", return_value=mock_error):
+        with patch("rayforce.network.websocket.FFI.ser_obj", return_value=mock_error):
             with patch(
-                "rayforce.utils.websocket.FFI.get_obj_type",
+                "rayforce.network.websocket.FFI.get_obj_type",
                 side_effect=lambda x: r.TYPE_ERR if x is mock_error else r.TYPE_C8,
             ):
-                with patch("rayforce.utils.websocket.FFI.get_error_obj", return_value="failed"):
+                with patch("rayforce.network.websocket.FFI.get_error_obj", return_value="failed"):
                     await connection._send_result(mock_result)
 
         connection.websocket.send.assert_called_once()

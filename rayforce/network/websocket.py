@@ -14,13 +14,10 @@ from rayforce.types.containers.vector import String, Vector
 from rayforce.types.scalars.numeric.unsigned import U8
 
 try:
-    import asyncio
-
     from websockets import Server, serve  # type: ignore[import-not-found]
 except ImportError as e:
-    module_name = str(e).split("'")[1]
     raise ImportError(
-        f"{module_name} library is required. Install it with: pip install {module_name}"
+        "websockets library is required. Install it with: pip install websockets"
     ) from e
 
 

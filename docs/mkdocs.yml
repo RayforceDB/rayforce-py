@@ -134,6 +134,7 @@ nav:
       - Order By: content/documentation/query-guide/order-by.md
       - Group By: content/documentation/query-guide/group-by.md
     - IPC: content/documentation/IPC.md
+    - Websocket: content/documentation/websocket.md
     - Plugins:
       - Polars: content/documentation/plugins/polars.md
       - Pandas: content/documentation/plugins/pandas.md

@@ -6,7 +6,7 @@ from rayforce import Table, Column, I64, Symbol, Vector
 from rayforce.types import Table
 from rayforce import errors
 from rayforce.ffi import FFI
-from rayforce.utils.ipc import (
+from rayforce.network.ipc import (
     IPCConnection,
     IPCClient,
     IPCServer,
@@ -44,11 +44,11 @@ class TestIPCConnection:
 
     @pytest.fixture
     def connection(self, mock_engine, mock_handle):
-        with patch("rayforce.utils.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
+        with patch("rayforce.network.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
             return IPCConnection(engine=mock_engine, handle=mock_handle)
 
-    @patch("rayforce.utils.ipc.FFI.write")
-    @patch("rayforce.utils.ipc.ray_to_python")
+    @patch("rayforce.network.ipc.FFI.write")
+    @patch("rayforce.network.ipc.ray_to_python")
     def test_execute(self, mock_ray_to_python, mock_write, connection):
         mock_write.return_value = MagicMock()
         mock_ray_to_python.return_value = "result"
@@ -63,7 +63,7 @@ class TestIPCConnection:
         with pytest.raises(errors.RayforceIPCError, match="Cannot write to closed connection"):
             connection.execute("test_query")
 
-    @patch("rayforce.utils.ipc.FFI.hclose")
+    @patch("rayforce.network.ipc.FFI.hclose")
     def test_close_removes_from_pool(self, mock_hclose, mock_engine, mock_handle):
         conn = IPCConnection(engine=mock_engine, handle=mock_handle)
         conn_id = id(conn)
@@ -74,7 +74,7 @@ class TestIPCConnection:
         assert conn._closed is True
         mock_hclose.assert_called_once_with(conn.handle)
 
-    @patch("rayforce.utils.ipc.FFI.hclose")
+    @patch("rayforce.network.ipc.FFI.hclose")
     def test_close_idempotent(self, mock_hclose, connection):
         connection.close()
         connection.close()
@@ -92,8 +92,8 @@ class TestIPCEngine:
     def engine(self):
         return IPCClient(host="localhost", port=5000)
 
-    @patch("rayforce.utils.ipc.FFI.get_obj_type")
-    @patch("rayforce.utils.ipc.FFI.hopen")
+    @patch("rayforce.network.ipc.FFI.get_obj_type")
+    @patch("rayforce.network.ipc.FFI.hopen")
     def test_acquire_success(self, mock_hopen, mock_get_obj_type, engine):
         mock_handle = MagicMock(spec=r.RayObject)
 
@@ -111,9 +111,9 @@ class TestIPCEngine:
         assert conn.handle == mock_handle
         assert id(conn) in engine.pool
 
-    @patch("rayforce.utils.ipc.FFI.get_obj_type")
-    @patch("rayforce.utils.ipc.FFI.hopen")
-    @patch("rayforce.utils.ipc.FFI.get_error_obj")
+    @patch("rayforce.network.ipc.FFI.get_obj_type")
+    @patch("rayforce.network.ipc.FFI.hopen")
+    @patch("rayforce.network.ipc.FFI.get_error_obj")
     def test_acquire_failure(self, mock_get_error, mock_hopen, mock_get_obj_type, engine):
         mock_error = MagicMock(spec=r.RayObject)
 
@@ -129,8 +129,8 @@ class TestIPCEngine:
         with pytest.raises(errors.RayforceIPCError, match="Error when establishing connection"):
             engine.acquire()
 
-    @patch("rayforce.utils.ipc.FFI.get_obj_type")
-    @patch("rayforce.utils.ipc.FFI.hopen")
+    @patch("rayforce.network.ipc.FFI.get_obj_type")
+    @patch("rayforce.network.ipc.FFI.hopen")
     def test_dispose_connections(self, mock_hopen, mock_get_obj_type, engine):
         mock_handle1 = MagicMock(spec=r.RayObject)
         mock_handle2 = MagicMock(spec=r.RayObject)
@@ -174,8 +174,8 @@ class TestIPCServer:
         with pytest.raises(errors.RayforceIPCError, match="Invalid port number"):
             IPCServer(port=port)
 
-    @patch("rayforce.utils.ipc.FFI.ipc_listen")
-    @patch("rayforce.utils.ipc.FFI.runtime_run")
+    @patch("rayforce.network.ipc.FFI.ipc_listen")
+    @patch("rayforce.network.ipc.FFI.runtime_run")
     def test_listen_success(self, mock_runtime_run, mock_ipc_listen, server):
         mock_ipc_listen.return_value = 123
         mock_runtime_run.return_value = 0
@@ -186,9 +186,9 @@ class TestIPCServer:
         assert server._listener_id == 123
         mock_runtime_run.assert_called_once()
 
-    @patch("rayforce.utils.ipc.FFI.ipc_listen")
-    @patch("rayforce.utils.ipc.FFI.runtime_run")
-    @patch("rayforce.utils.ipc.FFI.ipc_close_listener")
+    @patch("rayforce.network.ipc.FFI.ipc_listen")
+    @patch("rayforce.network.ipc.FFI.runtime_run")
+    @patch("rayforce.network.ipc.FFI.ipc_close_listener")
     def test_listen_closes_on_exception(
         self, mock_close, mock_runtime_run, mock_ipc_listen, server
     ):
@@ -202,9 +202,9 @@ class TestIPCServer:
         mock_close.assert_called_once_with(123)
         assert server._listener_id is None
 
-    @patch("rayforce.utils.ipc.FFI.ipc_listen")
-    @patch("rayforce.utils.ipc.FFI.runtime_run")
-    @patch("rayforce.utils.ipc.FFI.ipc_close_listener")
+    @patch("rayforce.network.ipc.FFI.ipc_listen")
+    @patch("rayforce.network.ipc.FFI.runtime_run")
+    @patch("rayforce.network.ipc.FFI.ipc_close_listener")
     def test_listen_closes_on_keyboard_interrupt(
         self, mock_close, mock_runtime_run, mock_ipc_listen, server
     ):
@@ -238,7 +238,7 @@ class TestIPCQueryObjects:
 
     @pytest.fixture
     def connection(self, mock_engine, mock_handle):
-        with patch("rayforce.utils.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
+        with patch("rayforce.network.ipc.FFI.get_obj_type", return_value=r.TYPE_I64):
             return IPCConnection(engine=mock_engine, handle=mock_handle)
 
     def _capture_and_eval(self, connection, query_obj):
@@ -250,8 +250,8 @@ class TestIPCQueryObjects:
             mock_result = MagicMock(spec=r.RayObject)
             return mock_result
 
-        with patch("rayforce.utils.ipc.FFI.write", side_effect=capture_write):
-            with patch("rayforce.utils.ipc.ray_to_python", return_value="mocked_result"):
+        with patch("rayforce.network.ipc.FFI.write", side_effect=capture_write):
+            with patch("rayforce.network.ipc.ray_to_python", return_value="mocked_result"):
                 connection.execute(query_obj)
 
         assert captured_obj is not None

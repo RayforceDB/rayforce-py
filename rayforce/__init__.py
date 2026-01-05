@@ -64,6 +64,11 @@ from .errors import (  # noqa: E402
     RayforceUserError,
     RayforceValueError,
 )
+from .network import (  # noqa: E402
+    IPCClient,
+    IPCConnection,
+    IPCServer,
+)
 from .types import (  # noqa: E402
     B8,
     C8,
@@ -90,9 +95,6 @@ from .types import (  # noqa: E402
     Vector,
 )
 from .utils import (  # noqa: E402
-    IPCClient,
-    IPCConnection,
-    IPCServer,
     eval_obj,
     eval_str,
     python_to_ray,
