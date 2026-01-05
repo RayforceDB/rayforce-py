@@ -299,6 +299,24 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def ser_obj(obj: r.RayObject) -> r.RayObject:
+        """Serialize RayObject to binary format with IPC header."""
+        return r.ser_obj(obj)
+
+    @staticmethod
+    @errors.error_handler
+    def de_obj(obj: r.RayObject) -> r.RayObject:
+        """Deserialize binary format with IPC header to RayObject."""
+        return r.de_obj(obj)
+
+    @staticmethod
+    @errors.error_handler
+    def read_u8_vector(obj: r.RayObject) -> bytes:
+        """Read U8 vector as Python bytes."""
+        return r.read_u8_vector(obj)
+
+    @staticmethod
+    @errors.error_handler
     def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> None:
         return r.set_obj(obj, idx, value)
 

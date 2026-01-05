@@ -160,5 +160,8 @@ PyObject *raypy_write(PyObject *self, PyObject *args);
 PyObject *raypy_ipc_listen(PyObject *self, PyObject *args);
 PyObject *raypy_ipc_close_listener(PyObject *self, PyObject *args);
 PyObject *raypy_runtime_run(PyObject *self, PyObject *args);
+PyObject *raypy_ser_obj(PyObject *self, PyObject *args);
+PyObject *raypy_de_obj(PyObject *self, PyObject *args);
+PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args);
 
 #endif

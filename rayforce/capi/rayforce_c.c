@@ -168,6 +168,12 @@ static PyMethodDef rayforce_methods[] = {
     {"runtime_run", raypy_runtime_run, METH_VARARGS, "Run blocking event loop"},
     {"init_runtime", raypy_init_runtime, METH_VARARGS,
      "Initialize Rayforce runtime"},
+    {"ser_obj", raypy_ser_obj, METH_VARARGS,
+     "Serialize RayObject to binary format"},
+    {"de_obj", raypy_de_obj, METH_VARARGS,
+     "Deserialize binary format to RayObject"},
+    {"read_u8_vector", raypy_read_u8_vector, METH_VARARGS,
+     "Read U8 vector as bytes"},
 
     {NULL, NULL, 0, NULL}};
 

@@ -33,6 +33,7 @@ wheelhouse/
 *.egg-info/
 
 # Misc
+examples/
 .vscode
 __pycache__
 script.py
