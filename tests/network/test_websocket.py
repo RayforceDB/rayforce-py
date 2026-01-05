@@ -100,8 +100,40 @@ class TestWebSocketConnection:
         websocket = AsyncMock()
         websocket.send = AsyncMock()
         websocket.close = AsyncMock()
+        websocket.recv = AsyncMock()
         websocket.__aiter__ = AsyncMock(return_value=iter([]))
         return WebSocketConnection(websocket=websocket, server=MagicMock(spec=WebSocketServer))
+
+    @pytest.mark.asyncio
+    async def test_perform_handshake_success(self, connection):
+        connection.websocket.recv = AsyncMock(return_value=bytes([1, 0x00]))
+        connection.websocket.send = AsyncMock()
+
+        await connection._perform_handshake()
+
+        assert connection._handshake_complete is True
+        connection.websocket.send.assert_called_once_with(bytes([1]))
+
+    @pytest.mark.asyncio
+    async def test_perform_handshake_invalid_format(self, connection):
+        connection.websocket.recv = AsyncMock(return_value=bytes([1, 0x01]))
+
+        with pytest.raises(errors.RayforceIPCError, match="Invalid handshake format"):
+            await connection._perform_handshake()
+
+    @pytest.mark.asyncio
+    async def test_perform_handshake_timeout(self, connection):
+        connection.websocket.recv = AsyncMock(side_effect=asyncio.TimeoutError())
+
+        with pytest.raises(errors.RayforceIPCError, match="Handshake timeout"):
+            await connection._perform_handshake()
+
+    @pytest.mark.asyncio
+    async def test_perform_handshake_text_message(self, connection):
+        connection.websocket.recv = AsyncMock(return_value="text")
+
+        with pytest.raises(errors.RayforceIPCError, match="Expected binary handshake"):
+            await connection._perform_handshake()
 
     @pytest.mark.asyncio
     async def test_process_text_message_success(self, connection):
@@ -218,6 +250,7 @@ class TestWebSocketConnection:
     @pytest.mark.asyncio
     async def test_handle_text_message(self, connection):
         mock_result = MagicMock(spec=r.RayObject)
+        connection._perform_handshake = AsyncMock()
         connection._process_text_message = AsyncMock(return_value=mock_result)
         connection._send_result = AsyncMock()
 
@@ -227,12 +260,14 @@ class TestWebSocketConnection:
         connection.websocket.__aiter__ = lambda self: message_generator()
         await connection.handle()
 
+        connection._perform_handshake.assert_called_once()
         connection._process_text_message.assert_called_once_with("(+ 1 2)")
         connection._send_result.assert_called_once_with(mock_result)
 
     @pytest.mark.asyncio
     async def test_handle_binary_message(self, connection):
         mock_result = MagicMock(spec=r.RayObject)
+        connection._perform_handshake = AsyncMock()
         connection._process_binary_message = AsyncMock(return_value=mock_result)
         connection._send_result = AsyncMock()
 
@@ -242,11 +277,13 @@ class TestWebSocketConnection:
         connection.websocket.__aiter__ = lambda self: message_generator()
         await connection.handle()
 
+        connection._perform_handshake.assert_called_once()
         connection._process_binary_message.assert_called_once_with(b"binary_data")
         connection._send_result.assert_called_once_with(mock_result)
 
     @pytest.mark.asyncio
     async def test_handle_message_error(self, connection):
+        connection._perform_handshake = AsyncMock()
         connection._process_text_message = AsyncMock(side_effect=RuntimeError("Processing error"))
         connection._send_error = AsyncMock()
 
@@ -257,11 +294,13 @@ class TestWebSocketConnection:
 
         await connection.handle()
 
+        connection._perform_handshake.assert_called_once()
         connection._send_error.assert_called_once()
         assert "Processing error" in connection._send_error.call_args[0][0]
 
     @pytest.mark.asyncio
     async def test_handle_stops_when_closed(self, connection):
+        connection._perform_handshake = AsyncMock()
         connection._closed = True
         connection._process_text_message = AsyncMock()
 
@@ -272,6 +311,7 @@ class TestWebSocketConnection:
         connection.websocket.__aiter__ = lambda self: message_generator()
         await connection.handle()
 
+        connection._perform_handshake.assert_called_once()
         connection._process_text_message.assert_not_called()  # Should not process any messages
 
     @pytest.mark.asyncio

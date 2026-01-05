@@ -81,14 +81,49 @@ class WebSocketServer:
 
 
 class WebSocketConnection:
+    RAYFORCE_VERSION = 1
+
     def __init__(self, websocket: t.Any, server: WebSocketServer) -> None:
         self.websocket = websocket
         self.server = server
         self._closed = False
+        self._handshake_complete = False
         self.established_at = datetime.now(UTC)
         self.disposed_at: datetime | None = None
 
+    @staticmethod
+    def _parse_handshake(handshake: bytes) -> None:
+        if not isinstance(handshake, bytes):
+            raise errors.RayforceIPCError(f"Expected binary handshake, got {type(handshake)}")
+
+        if len(handshake) < 2:
+            raise errors.RayforceIPCError(
+                f"Invalid handshake length: expected 2 bytes, got {len(handshake)}"
+            )
+
+        _, null_byte = handshake[0], handshake[1]
+
+        if null_byte != 0x00:
+            raise errors.RayforceIPCError(
+                f"Invalid handshake format: expected null terminator (0x00), got 0x{null_byte:02x}"
+            )
+
+    async def _perform_handshake(self) -> None:
+        try:
+            handshake = await asyncio.wait_for(self.websocket.recv(), timeout=5.0)
+            self._parse_handshake(handshake)
+            await self.websocket.send(bytes([self.RAYFORCE_VERSION]))
+            self._handshake_complete = True
+        except TimeoutError as e:
+            raise errors.RayforceIPCError("Handshake timeout: client did not send handshake") from e
+        except Exception as e:
+            if isinstance(e, errors.RayforceIPCError):
+                raise
+            raise errors.RayforceIPCError(f"Handshake error: {e}") from e
+
     async def handle(self) -> None:
+        await self._perform_handshake()
+
         async for message in self.websocket:
             if self._closed:
                 break
