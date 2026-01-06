@@ -1,3 +1,4 @@
+import pytest
 from rayforce import Table, TableColumnInterval, Vector, Symbol, I64, F64, Column
 from rayforce.types.scalars import Time
 
@@ -134,6 +135,95 @@ def test_left_join():
             assert sym_val == "MSFT"
 
     assert seen_syms == {"AAPL", "GOOGL", "MSFT"}
+
+
+def test_asof_join():
+    trades = Table(
+        {
+            "Sym": Vector(items=["AAPL", "AAPL", "GOOGL", "GOOGL"], ray_type=Symbol),
+            "Ts": Vector(
+                items=[
+                    Time("09:00:00.100"),  # 100ms
+                    Time("09:00:00.200"),  # 200ms
+                    Time("09:00:00.150"),  # 150ms
+                    Time("09:00:00.250"),  # 250ms
+                ],
+                ray_type=Time,
+            ),
+            "Price": Vector(items=[100, 200, 300, 400], ray_type=I64),
+        },
+    )
+    quotes = Table(
+        {
+            "Sym": Vector(
+                items=["AAPL", "AAPL", "AAPL", "GOOGL", "GOOGL", "GOOGL"],
+                ray_type=Symbol,
+            ),
+            "Ts": Vector(
+                items=[
+                    Time("09:00:00.050"),  # 50ms - before first AAPL trade
+                    Time("09:00:00.150"),  # 150ms - between AAPL trades
+                    Time("09:00:00.250"),  # 250ms - after second AAPL trade
+                    Time("09:00:00.100"),  # 100ms - before first GOOGL trade
+                    Time("09:00:00.200"),  # 200ms - between GOOGL trades
+                    Time("09:00:00.300"),  # 300ms - after second GOOGL trade
+                ],
+                ray_type=Time,
+            ),
+            "Bid": Vector(items=[45, 55, 65, 95, 105, 115], ray_type=I64),
+            "Ask": Vector(items=[70, 80, 90, 120, 130, 140], ray_type=I64),
+        },
+    )
+
+    result = trades.asof_join(quotes, on=["Sym", "Ts"]).execute()
+    assert isinstance(result, Table)
+
+    columns = result.columns()
+    assert len(columns) == 5
+    assert "Sym" in columns
+    assert "Ts" in columns
+    assert "Price" in columns
+    assert "Bid" in columns
+    assert "Ask" in columns
+
+    values = result.values()
+    assert len(values) == 5  # 5 columns
+    assert len(values[0]) == 4  # 4 rows
+
+    cols = list(result.columns())
+    sym_col = values[cols.index("Sym")]
+    ts_col = values[cols.index("Ts")]
+    price_col = values[cols.index("Price")]
+    bid_col = values[cols.index("Bid")]
+    ask_col = values[cols.index("Ask")]
+
+    for i in range(len(sym_col)):
+        sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
+        trade_time = str(ts_col[i])
+        price_val = price_col[i].value if hasattr(price_col[i], "value") else price_col[i]
+        bid_val = bid_col[i].value if hasattr(bid_col[i], "value") else bid_col[i]
+        ask_val = ask_col[i].value if hasattr(ask_col[i], "value") else ask_col[i]
+
+        if sym_val == "AAPL" and trade_time == "09:00:00.100":
+            # Should match quote at 50ms (Bid=45, Ask=70)
+            assert price_val == 100
+            assert bid_val == 45, f"Expected bid=45 for AAPL at 100ms, got {bid_val}"
+            assert ask_val == 70, f"Expected ask=70 for AAPL at 100ms, got {ask_val}"
+        elif sym_val == "AAPL" and trade_time == "09:00:00.200":
+            # Should match quote at 150ms (Bid=55, Ask=80)
+            assert price_val == 200
+            assert bid_val == 55, f"Expected bid=55 for AAPL at 200ms, got {bid_val}"
+            assert ask_val == 80, f"Expected ask=80 for AAPL at 200ms, got {ask_val}"
+        elif sym_val == "GOOGL" and trade_time == "09:00:00.150":
+            # Should match quote at 100ms (Bid=95, Ask=120)
+            assert price_val == 300
+            assert bid_val == 95, f"Expected bid=95 for GOOGL at 150ms, got {bid_val}"
+            assert ask_val == 120, f"Expected ask=120 for GOOGL at 150ms, got {ask_val}"
+        elif sym_val == "GOOGL" and trade_time == "09:00:00.250":
+            # Should match quote at 200ms (Bid=105, Ask=130)
+            assert price_val == 400
+            assert bid_val == 105, f"Expected bid=105 for GOOGL at 250ms, got {bid_val}"
+            assert ask_val == 130, f"Expected ask=130 for GOOGL at 250ms, got {ask_val}"
 
 
 def test_window_join():

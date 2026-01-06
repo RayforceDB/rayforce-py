@@ -9,6 +9,7 @@ if t.TYPE_CHECKING:
 def python_to_ipc(data: t.Any) -> r.RayObject:
     from rayforce import List, String, errors
     from rayforce.types.table import (
+        AsofJoin,
         Expression,
         InnerJoin,
         InsertQuery,
@@ -33,6 +34,7 @@ def python_to_ipc(data: t.Any) -> r.RayObject:
             UpdateQuery,
             InsertQuery,
             UpsertQuery,
+            AsofJoin,
             LeftJoin,
             InnerJoin,
             WindowJoin,

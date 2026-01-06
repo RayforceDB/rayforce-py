@@ -433,6 +433,9 @@ class TableQueryMixin:
     def left_join(self, other: Table, on: str | list[str]) -> LeftJoin:
         return LeftJoin(self, other, on)
 
+    def asof_join(self, other: Table, on: str | list[str]) -> AsofJoin:
+        return AsofJoin(self, other, on)
+
     def window_join(
         self,
         on: list[str],
@@ -483,6 +486,7 @@ class _Join(IPCQueryMixin):
         self.on = on
 
     def compile(self) -> tuple[r.RayObject, ...]:
+        on = self.on
         if isinstance(self.on, str):
             on = [self.on]
         return Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr
@@ -490,7 +494,9 @@ class _Join(IPCQueryMixin):
     def ipc(self, type_: Operation) -> r.RayObject:  # type: ignore[override]
         return Expression(type_, *self.compile()).compile()
 
-    def execute(self, type_: t.Literal[Operation.LEFT_JOIN | Operation.INNER_JOIN]) -> Table:
+    def execute(
+        self, type_: t.Literal[Operation.LEFT_JOIN | Operation.INNER_JOIN | Operation.ASOF_JOIN]
+    ) -> Table:
         return utils.eval_obj(List([type_, *self.compile()]))
 
 
@@ -549,6 +555,15 @@ class LeftJoin(_Join):
 
     def execute(self) -> Table:  # type: ignore[override]
         return super().execute(type_=Operation.LEFT_JOIN)
+
+
+class AsofJoin(_Join):
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return super().ipc(type_=Operation.ASOF_JOIN)
+
+    def execute(self) -> Table:  # type: ignore[override]
+        return super().execute(type_=Operation.ASOF_JOIN)
 
 
 class WindowJoin(_WindowJoin):
@@ -715,6 +730,8 @@ class UpdateQuery(IPCQueryMixin):
 
         if where_expr is not None:
             query_items["where"] = where_expr
+
+        print(Dict(query_items))
 
         return Dict(query_items).ptr
 
@@ -915,6 +932,7 @@ class TableColumnInterval:
 
 
 __all__ = [
+    "AsofJoin",
     "Column",
     "Expression",
     "InnerJoin",
