@@ -473,13 +473,18 @@ class IPCQueryMixin:
     if t.TYPE_CHECKING:
 
         @property
-        def ipc(self) -> Expression: ...
+        def ipc(self) -> r.RayObject: ...
 
     def ipcsave(self, name: str) -> Expression:
         return Expression(Operation.SET, name, self.ipc)
 
 
 class _Join(IPCQueryMixin):
+    type_: t.Literal[
+        Operation.LEFT_JOIN | Operation.INNER_JOIN | Operation.ASOF_JOIN | Operation.WINDOW_JOIN,
+        Operation.WINDOW_JOIN1,
+    ]
+
     def __init__(self, table: _TableProtocol, other: Table, on: str | list[str]) -> None:
         self.table = table
         self.other = other
@@ -491,13 +496,12 @@ class _Join(IPCQueryMixin):
             on = [self.on]
         return Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr
 
-    def ipc(self, type_: Operation) -> r.RayObject:  # type: ignore[override]
-        return Expression(type_, *self.compile()).compile()
+    @property
+    def ipc(self) -> r.RayObject:
+        return Expression(self.type_, *self.compile()).compile()
 
-    def execute(
-        self, type_: t.Literal[Operation.LEFT_JOIN | Operation.INNER_JOIN | Operation.ASOF_JOIN]
-    ) -> Table:
-        return utils.eval_obj(List([type_, *self.compile()]))
+    def execute(self) -> Table:
+        return utils.eval_obj(List([self.type_, *self.compile()]))
 
 
 class _WindowJoin(_Join):
@@ -533,55 +537,25 @@ class _WindowJoin(_Join):
             Dict(agg_dict).ptr,
         )
 
-    def execute(  # type: ignore[override]
-        self, type_: t.Literal[Operation.WINDOW_JOIN | Operation.WINDOW_JOIN1]
-    ) -> Table:
-        return utils.eval_obj(List([type_, *self.compile()]).ptr)
-
 
 class InnerJoin(_Join):
-    @property
-    def ipc(self) -> r.RayObject:  # type: ignore[override]
-        return super().ipc(type_=Operation.INNER_JOIN)
-
-    def execute(self) -> Table:  # type: ignore[override]
-        return super().execute(type_=Operation.INNER_JOIN)
+    type_ = Operation.INNER_JOIN
 
 
 class LeftJoin(_Join):
-    @property
-    def ipc(self) -> r.RayObject:  # type: ignore[override]
-        return super().ipc(type_=Operation.LEFT_JOIN)
-
-    def execute(self) -> Table:  # type: ignore[override]
-        return super().execute(type_=Operation.LEFT_JOIN)
+    type_ = Operation.LEFT_JOIN
 
 
 class AsofJoin(_Join):
-    @property
-    def ipc(self) -> r.RayObject:  # type: ignore[override]
-        return super().ipc(type_=Operation.ASOF_JOIN)
-
-    def execute(self) -> Table:  # type: ignore[override]
-        return super().execute(type_=Operation.ASOF_JOIN)
+    type_ = Operation.ASOF_JOIN
 
 
 class WindowJoin(_WindowJoin):
-    @property
-    def ipc(self) -> r.RayObject:  # type: ignore[override]
-        return super().ipc(type_=Operation.WINDOW_JOIN)
-
-    def execute(self) -> Table:  # type: ignore[override]
-        return super().execute(type_=Operation.WINDOW_JOIN)
+    type_ = Operation.WINDOW_JOIN
 
 
 class WindowJoin1(_WindowJoin):
-    @property
-    def ipc(self) -> r.RayObject:  # type: ignore[override]
-        return super().ipc(type_=Operation.WINDOW_JOIN1)
-
-    def execute(self) -> Table:  # type: ignore[override]
-        return super().execute(type_=Operation.WINDOW_JOIN1)
+    type_ = Operation.WINDOW_JOIN1
 
 
 class SelectQuery(IPCQueryMixin):
@@ -702,7 +676,7 @@ class UpdateQuery(IPCQueryMixin):
         self.where_condition = condition
         return self
 
-    def compile(self) -> r.RayObject:
+    def compile(self, *, ipc: bool = False) -> r.RayObject:
         where_expr = None
         if self.where_condition:
             if isinstance(self.where_condition, Expression):
@@ -717,7 +691,11 @@ class UpdateQuery(IPCQueryMixin):
             elif isinstance(value, Column):
                 converted_attrs[key] = value.name
             elif isinstance(value, str):
-                converted_attrs[key] = QuotedSymbol(value).ptr
+                converted_attrs[key] = (
+                    QuotedSymbol(value).ptr
+                    if not ipc
+                    else Expression(Operation.QUOTE, value).compile()
+                )
             else:
                 converted_attrs[key] = value
 
@@ -731,13 +709,11 @@ class UpdateQuery(IPCQueryMixin):
         if where_expr is not None:
             query_items["where"] = where_expr
 
-        print(Dict(query_items))
-
         return Dict(query_items).ptr
 
     @property
     def ipc(self) -> r.RayObject:  # type: ignore[override]
-        return Expression(Operation.UPDATE, self.compile()).compile()
+        return Expression(Operation.UPDATE, self.compile(ipc=True)).compile()
 
     def execute(self) -> Table:
         new_table = FFI.update(query=self.compile())
