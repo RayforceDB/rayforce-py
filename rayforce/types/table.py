@@ -277,11 +277,11 @@ class TableIOMixin:
         @property
         def evaled_ptr(self) -> r.RayObject: ...
 
-    def save(self, name: str, *, ipc: bool = False) -> Expression | None:
-        if ipc:
-            return Expression(Operation.SET, name, self.ptr)
+    def ipcsave(self, name: str) -> Expression:
+        return Expression(Operation.SET, name, self.ptr)
+
+    def save(self, name: str) -> None:
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
-        return None
 
     def set_splayed(self, path: str, symlink: str | None = None) -> None:
         _args = [FFI.init_string(path), self.evaled_ptr]
@@ -466,7 +466,17 @@ class Table(
     is_parted: bool = False
 
 
-class _Join:
+class IPCQueryMixin:
+    if t.TYPE_CHECKING:
+
+        @property
+        def ipc(self) -> Expression: ...
+
+    def ipcsave(self, name: str) -> Expression:
+        return Expression(Operation.SET, name, self.ipc)
+
+
+class _Join(IPCQueryMixin):
     def __init__(self, table: _TableProtocol, other: Table, on: str | list[str]) -> None:
         self.table = table
         self.other = other
@@ -476,6 +486,9 @@ class _Join:
         if isinstance(self.on, str):
             on = [self.on]
         return Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr
+
+    def ipc(self, type_: Operation) -> r.RayObject:  # type: ignore[override]
+        return Expression(type_, *self.compile()).compile()
 
     def execute(self, type_: t.Literal[Operation.LEFT_JOIN | Operation.INNER_JOIN]) -> Table:
         return utils.eval_obj(List([type_, *self.compile()]))
@@ -521,26 +534,42 @@ class _WindowJoin(_Join):
 
 
 class InnerJoin(_Join):
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return super().ipc(type_=Operation.INNER_JOIN)
+
     def execute(self) -> Table:  # type: ignore[override]
         return super().execute(type_=Operation.INNER_JOIN)
 
 
 class LeftJoin(_Join):
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return super().ipc(type_=Operation.LEFT_JOIN)
+
     def execute(self) -> Table:  # type: ignore[override]
         return super().execute(type_=Operation.LEFT_JOIN)
 
 
 class WindowJoin(_WindowJoin):
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return super().ipc(type_=Operation.WINDOW_JOIN)
+
     def execute(self) -> Table:  # type: ignore[override]
         return super().execute(type_=Operation.WINDOW_JOIN)
 
 
 class WindowJoin1(_WindowJoin):
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return super().ipc(type_=Operation.WINDOW_JOIN1)
+
     def execute(self) -> Table:  # type: ignore[override]
         return super().execute(type_=Operation.WINDOW_JOIN1)
 
 
-class SelectQuery:
+class SelectQuery(IPCQueryMixin):
     def __init__(
         self,
         table: _TableProtocol,
@@ -640,11 +669,15 @@ class SelectQuery:
 
         return Dict(query_items).ptr
 
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return Expression(Operation.SELECT, self.compile()).compile()
+
     def execute(self) -> Table:
         return utils.eval_obj(List([Operation.SELECT, self.compile()]))
 
 
-class UpdateQuery:
+class UpdateQuery(IPCQueryMixin):
     def __init__(self, table: _TableProtocol, **attributes):
         self.table = table
         self.attributes = attributes
@@ -685,6 +718,10 @@ class UpdateQuery:
 
         return Dict(query_items).ptr
 
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return Expression(Operation.UPDATE, self.compile()).compile()
+
     def execute(self) -> Table:
         new_table = FFI.update(query=self.compile())
         if self.table.is_reference:
@@ -692,7 +729,7 @@ class UpdateQuery:
         return Table(new_table)
 
 
-class InsertQuery:
+class InsertQuery(IPCQueryMixin):
     def __init__(self, table: _TableProtocol, *args, **kwargs):
         self.table = table
         self.args = args
@@ -745,6 +782,10 @@ class InsertQuery:
 
         return insertable
 
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return Expression(Operation.INSERT, self.table, self.compile(ipc=True)).compile()
+
     def execute(self) -> Table:
         new_table = FFI.insert(table=FFI.quote(self.table.ptr), data=self.compile())
         if self.table.is_reference:
@@ -752,7 +793,7 @@ class InsertQuery:
         return Table(new_table)
 
 
-class UpsertQuery:
+class UpsertQuery(IPCQueryMixin):
     def __init__(self, table: _TableProtocol, *args, match_by_first: int, **kwargs) -> None:
         self.table = table
         self.args = args
@@ -828,6 +869,10 @@ class UpsertQuery:
             raise errors.RayforceQueryCompilationError("Match by first has to be greater than 0")
 
         return I64(self.match_by_first).ptr, upsertable
+
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return Expression(Operation.UPSERT, self.table, *self.compile(ipc=True)).compile()
 
     def execute(self) -> Table:
         compiled = self.compile()
