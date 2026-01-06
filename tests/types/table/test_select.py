@@ -2,11 +2,11 @@ from rayforce import F64, I64, Column, Symbol, Table, Vector
 
 
 def test_select_with_single_where():
-    table = Table.from_dict(
+    table = Table(
         {
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
-            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
             "salary": Vector(items=[100000, 120000, 90000, 85000], ray_type=I64),
         },
     )
@@ -31,7 +31,7 @@ def test_select_with_single_where():
 
 
 def test_select_with_multiple_where_conditions():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol),
@@ -58,7 +58,7 @@ def test_select_with_multiple_where_conditions():
 
 
 def test_select_with_complex_and_or_conditions():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol),
@@ -81,7 +81,7 @@ def test_select_with_complex_and_or_conditions():
 
 
 def test_group_by_single_column():
-    table = Table.from_dict(
+    table = Table(
         {
             "dept": Vector(items=["eng", "eng", "marketing", "marketing", "hr"], ray_type=Symbol),
             "age": Vector(items=[29, 34, 41, 38, 35], ray_type=I64),
@@ -143,7 +143,7 @@ def test_group_by_single_column():
 
 
 def test_group_by_multiple_columns():
-    table = Table.from_dict(
+    table = Table(
         {
             "dept": Vector(items=["eng", "eng", "eng", "marketing", "marketing"], ray_type=Symbol),
             "level": Vector(
@@ -206,7 +206,7 @@ def test_group_by_multiple_columns():
 
 
 def test_group_by_with_filtered_aggregation():
-    table = Table.from_dict(
+    table = Table(
         {
             "category": Vector(items=["A", "A", "B", "B", "A"], ray_type=Symbol),
             "amount": Vector(items=[100, 200, 150, 250, 300], ray_type=I64),
@@ -265,7 +265,7 @@ def test_group_by_with_filtered_aggregation():
 
 
 def test_complex_select_with_computed_columns():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "price": Vector(items=[10.5, 20.0, 15.75], ray_type=F64),
@@ -294,7 +294,7 @@ def test_complex_select_with_computed_columns():
 
 
 def test_select_with_isin_operator():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana", "eli"], ray_type=Symbol),

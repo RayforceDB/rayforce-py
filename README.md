@@ -44,7 +44,7 @@ Python ORM for RayforceDB, a high-performance columnar database designed for ana
 >>> from rayforce import Table, Vector, Symbol, Time, F64
 >>> from rayforce.types.table import Column
 
->>> quotes = Table.from_dict({
+>>> quotes = Table({
         "symbol": Vector(items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"], ray_type=Symbol),
         "time": Vector(
             items=[

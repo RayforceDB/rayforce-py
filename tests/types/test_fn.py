@@ -29,7 +29,7 @@ def test_fn_fibonacci_direct_call():
 
 
 def test_fn_apply_to_column():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "value": Vector(items=[2, 3, 4], ray_type=I64),
@@ -55,7 +55,7 @@ def test_fn_apply_to_column():
 
 
 def test_fn_apply_with_aggregation():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "value": Vector(items=[2, 3, 4, 5], ray_type=I64),
@@ -82,7 +82,7 @@ def test_fn_apply_with_aggregation():
 
 
 def test_fn_apply_with_group_by():
-    table = Table.from_dict(
+    table = Table(
         {
             "category": Vector(items=["A", "A", "B", "B"], ray_type=Symbol),
             "value": Vector(items=[2, 3, 4, 5], ray_type=I64),
@@ -110,7 +110,7 @@ def test_fn_apply_with_group_by():
 
 
 def test_fn_normalize_with_multiple_args():
-    table = Table.from_dict(
+    table = Table(
         {
             "value": Vector(items=[50, 75, 100], ray_type=I64),
             "min_val": Vector(items=[0, 0, 0], ray_type=I64),
@@ -142,7 +142,7 @@ def test_fn_normalize_with_multiple_args():
 
 
 def test_fn_fibonacci_with_aggregation():
-    table = Table.from_dict(
+    table = Table(
         {
             "group": Vector(items=["A", "A", "B", "B"], ray_type=Symbol),
             "n": Vector(items=[0, 1, 2, 3], ray_type=I64),
@@ -174,7 +174,7 @@ def test_fn_fibonacci_with_aggregation():
 
 
 def test_fn_complex_expression():
-    table = Table.from_dict(
+    table = Table(
         {
             "x": Vector(items=[2, 3, 4], ray_type=I64),
             "y": Vector(items=[3, 4, 5], ray_type=I64),
@@ -203,7 +203,7 @@ def test_fn_complex_expression():
 
 
 def test_fn_conditional_lambda():
-    table = Table.from_dict(
+    table = Table(
         {
             "value": Vector(items=[-5, 0, 5, 10], ray_type=I64),
         },
@@ -231,7 +231,7 @@ def test_fn_conditional_lambda():
 
 
 def test_fn_with_where_clause():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "value": Vector(items=[2, 3, 4, 5], ray_type=I64),

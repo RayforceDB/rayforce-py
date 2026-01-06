@@ -6,13 +6,13 @@ Rayforce-Py supports two modes of operation for table queries: **inplace** and *
 
 ### Inplace Operations
 
-**Inplace operations** work directly on an in-memory `Table` object. The table exists as a Python object in your current session, typically created using methods like `Table.from_dict()`, `Table.from_csv()`, or returned from a previous query.
+**Inplace operations** work directly on an in-memory `Table` object. The table exists as a Python object in your current session, typically created using methods like `Table()`, `Table.from_csv()`, or returned from a previous query.
 
 ```python
 >>> from rayforce import Table, Vector, Symbol, I64, Column
 
 >>> # Create an in-memory table
->>> table = Table.from_dict({
+>>> table = Table({
 ...     "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
 ...     "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
 ...     "age": Vector(items=[29, 34, 41], ray_type=I64),
@@ -26,11 +26,11 @@ Rayforce-Py supports two modes of operation for table queries: **inplace** and *
 
 ### By Reference Operations
 
-**By reference operations** work on tables that have been saved to the Rayforce environment behind a Symbol using `table.save()`. These tables are stored in the Rayforce database and accessed via `Table.from_name()`.
+**By reference operations** work on tables that have been saved to the Rayforce environment behind a Symbol using `table.save()`. These tables are stored in the Rayforce database and accessed via `Table()`.
 
 ```python
 >>> # Create and save a table to the Rayforce environment
->>> table = Table.from_dict({
+>>> table = Table({
 ...     "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
 ...     "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
 ...     "age": Vector(items=[29, 34, 41], ray_type=I64),
@@ -39,7 +39,7 @@ Rayforce-Py supports two modes of operation for table queries: **inplace** and *
 
 >>> # By reference operation - works on the saved table reference
 >>> result = (
-...     Table.from_name("my_table")
+...     Table("my_table")
 ...     .update(age=100)
 ...     .where(Column("id") == "001")
 ...     .execute()

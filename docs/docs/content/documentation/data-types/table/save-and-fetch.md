@@ -7,19 +7,18 @@ Rayforce-Py gives you access to safely save a table behind a Rayforce environmen
 >>> table: Table
 >>> table.save("mytable")
 
->>> Table.from_name("mytable")
+>>> Table("mytable")
 TableReference['mytable']  # This is unfeched prepared state, and table has to be selected from database
 
->>> Table.from_name("mytable").columns()
+>>> Table("mytable").columns()
 Vector([Symbol('symbol'), Symbol('time'), Symbol('bid'), Symbol('ask')])
 
->>> Table.from_name("mytable").values()
+>>> Table("mytable").values()
 List([Vector ...])  # collapsed in documentation for convenience
 
->>> Table.from_name("mytable").select("*").execute()
+>>> Table("mytable").select("*").execute()
 Table[Symbol('symbol'), Symbol('time'), Symbol('bid'), Symbol('ask')]
 
->>> Table.from_name("test").select("time").execute()
+>>> Table("test").select("time").execute()
 Table[Symbol('time')]
 ```
-

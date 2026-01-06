@@ -4,7 +4,7 @@ from rayforce import Table, Vector, Symbol, I64, B8, Column
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_update_single_row(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
@@ -16,12 +16,7 @@ def test_update_single_row(is_inplace):
         result = table.update(age=100).where(Column("id") == "001").execute()
     else:
         table.save("test_update_single")
-        result = (
-            Table.from_name("test_update_single")
-            .update(age=100)
-            .where(Column("id") == "001")
-            .execute()
-        )
+        result = Table("test_update_single").update(age=100).where(Column("id") == "001").execute()
 
     assert isinstance(result, Table)
     values = result.values()
@@ -42,7 +37,7 @@ def test_update_single_row(is_inplace):
 
 
 def test_update_multiple_rows():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "dept": Vector(items=["eng", "eng", "marketing"], ray_type=Symbol),
@@ -52,10 +47,7 @@ def test_update_multiple_rows():
     table.save("test_update_multi")
 
     result = (
-        Table.from_name("test_update_multi")
-        .update(salary=150000)
-        .where(Column("dept") == "eng")
-        .execute()
+        Table("test_update_multi").update(salary=150000).where(Column("dept") == "eng").execute()
     )
 
     assert isinstance(result, Table)
@@ -78,7 +70,7 @@ def test_update_multiple_rows():
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_update_all_rows(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "status": Vector(items=["active", "active", "inactive"], ray_type=Symbol),
@@ -90,7 +82,7 @@ def test_update_all_rows(is_inplace):
         result = table.update(score=0).execute()
     else:
         table.save("test_update_all")
-        result = Table.from_name("test_update_all").update(score=0).execute()
+        result = Table("test_update_all").update(score=0).execute()
 
     assert isinstance(result, Table)
     values = result.values()
@@ -108,7 +100,7 @@ def test_update_all_rows(is_inplace):
 
 
 def test_update_multiple_columns():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -119,7 +111,7 @@ def test_update_multiple_columns():
     table.save("test_update_multi_cols")
 
     result = (
-        Table.from_name("test_update_multi_cols")
+        Table("test_update_multi_cols")
         .update(age=30, salary=55000)
         .where(Column("id") == "001")
         .execute()
@@ -140,7 +132,7 @@ def test_update_multiple_columns():
 
 
 def test_update_with_comparison_condition():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "age": Vector(items=[25, 30, 35], ray_type=I64),
@@ -149,9 +141,7 @@ def test_update_with_comparison_condition():
     )
     table.save("test_update_comparison")
 
-    result = (
-        Table.from_name("test_update_comparison").update(age=99).where(Column("age") > 30).execute()
-    )
+    result = Table("test_update_comparison").update(age=99).where(Column("age") > 30).execute()
 
     assert isinstance(result, Table)
     values = result.values()
@@ -163,7 +153,7 @@ def test_update_with_comparison_condition():
 
 
 def test_update_with_complex_condition():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "dept": Vector(items=["eng", "eng", "marketing", "eng"], ray_type=Symbol),
@@ -173,7 +163,7 @@ def test_update_with_complex_condition():
     table.save("test_update_complex")
 
     result = (
-        Table.from_name("test_update_complex")
+        Table("test_update_complex")
         .update(salary=150000)
         .where((Column("dept") == "eng") & (Column("salary") < 115000))
         .execute()
@@ -189,7 +179,7 @@ def test_update_with_complex_condition():
 
 
 def test_update_no_matching_rows():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "status": Vector(items=["active", "active"], ray_type=Symbol),
@@ -198,7 +188,7 @@ def test_update_no_matching_rows():
     table.save("test_update_no_match")
 
     result = (
-        Table.from_name("test_update_no_match")
+        Table("test_update_no_match")
         .update(status="inactive")
         .where(Column("id") == "999")  # No matching row
         .execute()

@@ -74,7 +74,7 @@ def test_table_from_csv_all_types(tmp_path):
 
 
 def test_set_csv(tmp_path):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
@@ -109,7 +109,7 @@ def test_set_csv(tmp_path):
 
 
 def test_set_csv_with_custom_separator(tmp_path):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -131,7 +131,7 @@ def test_set_csv_with_custom_separator(tmp_path):
 
 
 def test_set_splayed_and_from_splayed(tmp_path):
-    table = Table.from_dict(
+    table = Table(
         {
             "category": Vector(items=["A", "B", "A", "B"], ray_type=Symbol),
             "amount": Vector(items=[100, 200, 150, 250], ray_type=I64),
@@ -169,7 +169,7 @@ def test_set_splayed_and_from_splayed(tmp_path):
 
 
 def test_set_splayed_and_from_parted(tmp_path):
-    table = Table.from_dict(
+    table = Table(
         {
             "category": Vector(items=["A", "B", "C", "D"], ray_type=Symbol),
             "amount": Vector(items=[100, 200, 150, 250], ray_type=I64),
@@ -249,7 +249,7 @@ def test_set_splayed_and_from_parted(tmp_path):
 
 @pytest.mark.xfail(reason="Temporarily - COW is called, destructive operations are allowed")
 def test_splayed_table_destructive_operations_raise_error(tmp_path):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -279,7 +279,7 @@ def test_splayed_table_destructive_operations_raise_error(tmp_path):
 
 @pytest.mark.xfail(reason="Temporarily - COW is called, destructive operations are allowed")
 def test_parted_table_destructive_operations_raise_error(tmp_path):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -309,7 +309,7 @@ def test_parted_table_destructive_operations_raise_error(tmp_path):
 
 
 def test_concat_two_tables():
-    table1 = Table.from_dict(
+    table1 = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -317,7 +317,7 @@ def test_concat_two_tables():
         }
     )
 
-    table2 = Table.from_dict(
+    table2 = Table(
         {
             "id": Vector(items=["003", "004"], ray_type=Symbol),
             "name": Vector(items=["charlie", "dana"], ray_type=Symbol),
@@ -345,21 +345,21 @@ def test_concat_two_tables():
 
 
 def test_concat_multiple_tables():
-    table1 = Table.from_dict(
+    table1 = Table(
         {
             "id": Vector(items=["001"], ray_type=Symbol),
             "value": Vector(items=[10], ray_type=I64),
         }
     )
 
-    table2 = Table.from_dict(
+    table2 = Table(
         {
             "id": Vector(items=["002"], ray_type=Symbol),
             "value": Vector(items=[20], ray_type=I64),
         }
     )
 
-    table3 = Table.from_dict(
+    table3 = Table(
         {
             "id": Vector(items=["003"], ray_type=Symbol),
             "value": Vector(items=[30], ray_type=I64),
@@ -379,7 +379,7 @@ def test_concat_multiple_tables():
 
 
 def test_concat_empty_others():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -396,7 +396,7 @@ def test_concat_empty_others():
 
 
 def test_at_column():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
@@ -428,7 +428,7 @@ def test_at_column():
 
 
 def test_at_row():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
@@ -467,7 +467,7 @@ def test_at_row():
 
 
 def test_slice_with_single_argument():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
@@ -499,7 +499,7 @@ def test_slice_with_single_argument():
 
 
 def test_slice_with_two_arguments():
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),

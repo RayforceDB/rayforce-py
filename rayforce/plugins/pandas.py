@@ -91,4 +91,4 @@ def from_pandas(df: pd.DataFrame) -> Table:
             ray_type=ray_type,
         )
 
-    return Table.from_dict(vectors)
+    return Table(vectors)

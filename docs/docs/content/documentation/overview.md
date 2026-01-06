@@ -13,7 +13,7 @@ Initialise a table using `rayforce.Table`:
 >>> from datetime import time
 >>> from rayforce import Table, Vector, Symbol, Time, F64
 
->>> quotes = Table.from_dict({
+>>> quotes = Table({
         "symbol": Vector(items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"], ray_type=Symbol),
         "time": Vector(
             items=[

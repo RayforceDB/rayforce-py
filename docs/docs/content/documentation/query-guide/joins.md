@@ -12,7 +12,7 @@ Inner join combines two tables based on matching values in specified columns. On
 ```python
 >>> from rayforce import Table, Vector, Symbol, Time, I64, F64
 
->>> trades = Table.from_dict({
+>>> trades = Table({
         "sym": Vector(items=["AAPL", "AAPL", "GOOG", "GOOG"], ray_type=Symbol),
         "time": Vector(
             items=[
@@ -26,7 +26,7 @@ Inner join combines two tables based on matching values in specified columns. On
         "price": Vector(items=[100, 200, 300, 400], ray_type=I64),
     })
 
->>> quotes = Table.from_dict({
+>>> quotes = Table({
         "sym": Vector(items=["AAPL", "GOOG"], ray_type=Symbol),
         "bid": Vector(items=[50, 100], ray_type=I64),
         "ask": Vector(items=[75, 150], ray_type=I64),
@@ -59,7 +59,7 @@ Left join returns all rows from the left table and matching rows from the right 
 ```python
 >>> from rayforce import Table, Vector, Symbol, Time, I64, F64
 
->>> trades = Table.from_dict({
+>>> trades = Table({
         "sym": Vector(items=["AAPL", "MSFT", "GOOG"], ray_type=Symbol),
         "time": Vector(
             items=[
@@ -72,7 +72,7 @@ Left join returns all rows from the left table and matching rows from the right 
         "price": Vector(items=[100, 200, 300], ray_type=I64),
     })
 
->>> quotes = Table.from_dict({
+>>> quotes = Table({
         "sym": Vector(items=["AAPL", "GOOG"], ray_type=Symbol),
         "bid": Vector(items=[50, 100], ray_type=I64),
         "ask": Vector(items=[75, 150], ray_type=I64),
@@ -94,7 +94,7 @@ Window join matches records on specified columns and aggregates values from anot
 ```python
 >>> from rayforce import Table, TableColumnInterval, Vector, Symbol, Time, F64
 
->>> trades = Table.from_dict({
+>>> trades = Table({
         "sym": Vector(items=["AAPL", "GOOG"], ray_type=Symbol),
         "time": Vector(
             items=[Time("09:00:00.100"), Time("09:00:00.100")],
@@ -103,7 +103,7 @@ Window join matches records on specified columns and aggregates values from anot
         "price": Vector(items=[150.0, 200.0], ray_type=F64),
     })
 
->>> quotes = Table.from_dict({
+>>> quotes = Table({
         "sym": Vector(items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"], ray_type=Symbol),
         "time": Vector(
             items=[

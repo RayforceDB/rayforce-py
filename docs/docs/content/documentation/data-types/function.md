@@ -41,7 +41,7 @@ Functions can be applied to table columns using the `.apply()` method in queries
 ```python
 >>> from rayforce import Column, Fn, I64, Symbol, Table, Vector
 
->>> table = Table.from_dict({
+>>> table = Table({
     "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
     "value": Vector(items=[2, 3, 4], ray_type=I64),
 })
@@ -62,7 +62,7 @@ Vector([I64(4), I64(9), I64(16)])
 Functions can accept multiple arguments by applying them to multiple columns:
 
 ```python
->>> table = Table.from_dict({
+>>> table = Table({
     "x": Vector(items=[2, 3, 4], ray_type=I64),
     "y": Vector(items=[3, 4, 5], ray_type=I64),
 })
@@ -84,7 +84,7 @@ Vector([I64(13), I64(25), I64(41)])  # 2²+3²=13, 3²+4²=25, 4²+5²=41
 Functions can be combined with aggregation operations:
 
 ```python
->>> table = Table.from_dict({
+>>> table = Table({
     "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
     "value": Vector(items=[2, 3, 4, 5], ray_type=I64),
 })

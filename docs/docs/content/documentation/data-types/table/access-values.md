@@ -7,7 +7,7 @@ Rayforce-Py provides a handy interface to access [:octicons-table-24: Table](ove
 The `at_column()` method returns all values from a specific column as a [:material-vector-line: Vector](../vector.md).
 
 ```python
->>> table = Table.from_dict({
+>>> table = Table({
     "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
     "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
     "age": Vector(items=[29, 34, 41], ray_type=I64),
@@ -27,7 +27,7 @@ Vector([I64(29), I64(34), I64(41)])
 The `at_row()` method returns all column values for a specific row as a [:material-code-braces: Dict](../dict.md). The row index is zero-based.
 
 ```python
->>> table = Table.from_dict({
+>>> table = Table({
     "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
     "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
     "age": Vector(items=[29, 34, 41], ray_type=I64),
@@ -52,7 +52,7 @@ The `slice()` method returns a new table containing a subset of rows from the or
 When called with a single argument, it takes the first `n` rows:
 
 ```python
->>> table = Table.from_dict({
+>>> table = Table({
     "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
     "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
     "age": Vector(items=[29, 34, 41, 38], ray_type=I64),

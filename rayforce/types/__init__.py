@@ -17,7 +17,7 @@ from .scalars import (
     Time,
     Timestamp,
 )
-from .table import Column, Table, TableColumnInterval
+from .table import Column, Expression, Table, TableColumnInterval
 
 __all__ = [
     "B8",
@@ -31,6 +31,7 @@ __all__ = [
     "Column",
     "Date",
     "Dict",
+    "Expression",
     "Fn",
     "List",
     "Null",

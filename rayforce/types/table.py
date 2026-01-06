@@ -196,24 +196,32 @@ class TableInitMixin:
     _ptr: r.RayObject | str
     type_code: int
 
-    def __init__(
-        self,
-        ptr: r.RayObject | str,
-    ) -> None:
-        self._ptr = ptr
-        self.is_reference = isinstance(ptr, str)
+    def __init__(self, ptr: r.RayObject | str | dict[str, Vector]) -> None:
+        if isinstance(ptr, dict):
+            self._ptr, self.is_reference = (
+                FFI.init_table(
+                    columns=Vector(items=ptr.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
+                    values=List(ptr.values()).ptr,
+                ),
+                False,
+            )
+            return
+        if isinstance(ptr, r.RayObject):
+            if (_type := FFI.get_obj_type(ptr)) != self.type_code:
+                raise errors.RayforceInitError(
+                    f"Expected RayForce object of type {self.type_code}, got {_type}"
+                )
+            self._ptr, self.is_reference = ptr, False
+            return
+        if isinstance(ptr, str):
+            self._ptr, self.is_reference = ptr, True
+            return
+
+        raise errors.RayforceInitError(f"Unable to initialize Table from {type(ptr)}")
 
     @classmethod
     def from_ptr(cls, ptr: r.RayObject) -> t.Self:
-        if (_type := FFI.get_obj_type(ptr)) != cls.type_code:
-            raise errors.RayforceInitError(
-                f"Expected RayForce object of type {cls.type_code}, got {_type}"
-            )
-        return cls(ptr=ptr)
-
-    @classmethod
-    def from_name(cls, name: str) -> t.Self:
-        return cls(ptr=name)
+        return cls(ptr)
 
     @classmethod
     def from_csv(cls, column_types: list[RayObject], path: str) -> t.Self:
@@ -225,15 +233,6 @@ class TableInitMixin:
                     String(path),
                 ]
             )
-        )
-
-    @classmethod
-    def from_dict(cls, items: dict[str, Vector]) -> t.Self:
-        return cls.from_ptr(
-            FFI.init_table(
-                columns=Vector(items=items.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
-                values=List(items.values()).ptr,
-            ),
         )
 
     @property
@@ -278,8 +277,11 @@ class TableIOMixin:
         @property
         def evaled_ptr(self) -> r.RayObject: ...
 
-    def save(self, name: str) -> None:
+    def save(self, name: str, *, ipc: bool = False) -> Expression | None:
+        if ipc:
+            return Expression(Operation.SET, name, self.ptr)
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
+        return None
 
     def set_splayed(self, path: str, symlink: str | None = None) -> None:
         _args = [FFI.init_string(path), self.evaled_ptr]
@@ -686,8 +688,8 @@ class UpdateQuery:
     def execute(self) -> Table:
         new_table = FFI.update(query=self.compile())
         if self.table.is_reference:
-            return Table.from_name(Symbol(ptr=new_table).value)
-        return Table.from_ptr(new_table)
+            return Table(Symbol(ptr=new_table).value)
+        return Table(new_table)
 
 
 class InsertQuery:
@@ -699,12 +701,12 @@ class InsertQuery:
         if args and kwargs:
             raise errors.RayforceInitError("Insert query accepts args OR kwargs, not both")
 
-    def compile(self) -> r.RayObject:
+    def compile(self, *, ipc: bool = False) -> r.RayObject:
         if self.args:
             first = self.args[0]
 
             if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
-                _args = List([])
+                _args = List([]) if not ipc else List([Operation.LIST])
                 for sub in self.args:
                     _args.append(
                         Vector(
@@ -715,7 +717,9 @@ class InsertQuery:
                 insertable = _args.ptr
 
             else:
-                insertable = List(self.args).ptr
+                insertable = (
+                    List(self.args).ptr if not ipc else List([Operation.LIST, *self.args]).ptr
+                )
 
         elif self.kwargs:
             values = list(self.kwargs.values())
@@ -744,8 +748,8 @@ class InsertQuery:
     def execute(self) -> Table:
         new_table = FFI.insert(table=FFI.quote(self.table.ptr), data=self.compile())
         if self.table.is_reference:
-            return Table.from_name(Symbol(ptr=new_table).value)
-        return Table.from_ptr(new_table)
+            return Table(Symbol(ptr=new_table).value)
+        return Table(new_table)
 
 
 class UpsertQuery:
@@ -761,12 +765,12 @@ class UpsertQuery:
             raise errors.RayforceInitError("Match by first has to be greater than 0")
         self.match_by_first = match_by_first
 
-    def compile(self) -> tuple[r.RayObject, r.RayObject]:
+    def compile(self, *, ipc: bool = False) -> tuple[r.RayObject, r.RayObject]:
         if self.args:
             first = self.args[0]
 
             if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
-                _args = List([])
+                _args = List([]) if not ipc else List([Operation.LIST])
                 for sub in self.args:
                     _args.append(
                         Vector(
@@ -777,7 +781,7 @@ class UpsertQuery:
                 upsertable = _args.ptr
 
             else:
-                _args = List([])
+                _args = List([]) if not ipc else List([Operation.LIST])
                 for sub in self.args:
                     _args.append(
                         Vector(
@@ -829,8 +833,8 @@ class UpsertQuery:
         compiled = self.compile()
         new_table = FFI.upsert(table=FFI.quote(self.table.ptr), keys=compiled[0], data=compiled[1])
         if self.table.is_reference:
-            return Table.from_name(Symbol(ptr=new_table).value)
-        return Table.from_ptr(new_table)
+            return Table(Symbol(ptr=new_table).value)
+        return Table(new_table)
 
 
 class TableColumnInterval:

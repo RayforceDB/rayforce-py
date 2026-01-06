@@ -22,7 +22,7 @@ def test_null_in_vector():
 
 
 def test_null_in_table():
-    table = Table.from_dict({"test": Vector(ray_type=Null, items=[Null, Null])})
+    table = Table({"test": Vector(ray_type=Null, items=[Null, Null])})
 
     assert isinstance(table, Table)
     columns = table.columns()
@@ -37,7 +37,7 @@ def test_null_in_table():
 
 
 def test_null_table_values():
-    table = Table.from_dict({"null_col": Vector(ray_type=Null, items=[Null, Null, Null])})
+    table = Table({"null_col": Vector(ray_type=Null, items=[Null, Null, Null])})
 
     values = table.values()
     null_col = values[0]

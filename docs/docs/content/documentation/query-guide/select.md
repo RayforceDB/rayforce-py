@@ -54,11 +54,11 @@ Rayforce-Py provides a number of aggregations you may use when querying computed
 
 ### For Example:
 ```python
->>> scores = Table.from_dict({
+>>> scores = Table({
         "student_id": Vector([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], ray_type=I64),
         "score": Vector([85, 92, 78, 96, 88, 91, 83, 95, 87, 90], ray_type=I64),
         "subject": Vector(
-            ["Math", "Math", "Science", "Science", "Math", 
+            ["Math", "Math", "Science", "Science", "Math",
             "Science", "Math", "Science", "Math", "Chemistry"],
             ray_type=Symbol,
         ),
@@ -150,4 +150,3 @@ You can apply filters to aggregations using the `where()` method on columns:
 ```
 !!! note ""
     This computes the total for all rows, but only sums active rows for `active_total`.
-

@@ -20,7 +20,7 @@ class TestPythonToIPC:
         assert String(ptr=result).to_python() == "test_string"
 
     def test_python_to_ipc_query(self):
-        table = Table.from_dict({"col": []})
+        table = Table({"col": []})
         query = table.select("col")
         result = python_to_ipc(query)
         assert isinstance(result, r.RayObject)
@@ -263,7 +263,7 @@ class TestIPCQueryObjects:
         return eval_obj(captured_obj)
 
     def test_select_query_ipc(self, connection):
-        table = Table.from_dict(
+        table = Table(
             {
                 "id": Vector(items=["001", "002"], ray_type=Symbol),
                 "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -272,7 +272,7 @@ class TestIPCQueryObjects:
         )
         table.save("t")
 
-        query = Table.from_name("t").select("id", "name").where(Column("age") > 30)
+        query = Table("t").select("id", "name").where(Column("age") > 30)
         result = self._capture_and_eval(connection, query)
 
         assert isinstance(result, Table)
@@ -282,7 +282,7 @@ class TestIPCQueryObjects:
     def test_update_query_ipc(self, connection):
         from rayforce import Table, Column, I64, Symbol, Vector
 
-        table = Table.from_dict(
+        table = Table(
             {
                 "id": Vector(items=["001", "002"], ray_type=Symbol),
                 "age": Vector(items=[29, 34], ray_type=I64),
@@ -290,19 +290,19 @@ class TestIPCQueryObjects:
         )
         table.save("t")
 
-        query = Table.from_name("t").update(age=35).where(Column("id") == "001")
+        query = Table("t").update(age=35).where(Column("id") == "001")
         result = self._capture_and_eval(connection, query)
 
         assert isinstance(result, Symbol)
 
-        result = Table.from_name("t").select("*").execute()
+        result = Table("t").select("*").execute()
         assert result.at_row(0)["id"] == "001"
         assert result.at_row(0)["age"] == 35
 
     def test_insert_query_ipc(self, connection):
         from rayforce import Table, I64, Symbol, Vector
 
-        table = Table.from_dict(
+        table = Table(
             {
                 "id": Vector(items=["001"], ray_type=Symbol),
                 "age": Vector(items=[29], ray_type=I64),
@@ -310,19 +310,19 @@ class TestIPCQueryObjects:
         )
         table.save("t")
 
-        query = Table.from_name("t").insert(id=["003"], age=[40])
+        query = Table("t").insert(id=["003"], age=[40])
         result = self._capture_and_eval(connection, query)
 
         assert isinstance(result, Symbol)
 
-        result = Table.from_name("t").select("*").execute()
+        result = Table("t").select("*").execute()
         assert result.at_row(1)["id"] == "003"
         assert result.at_row(1)["age"] == 40
 
     def test_upsert_query_ipc(self, connection):
         from rayforce import Table, I64, Symbol, Vector
 
-        table = Table.from_dict(
+        table = Table(
             {
                 "id": Vector(items=["001"], ray_type=Symbol),
                 "age": Vector(items=[29], ray_type=I64),
@@ -330,11 +330,11 @@ class TestIPCQueryObjects:
         )
         table.save("t")
 
-        query = Table.from_name("t").upsert(match_by_first=1, id="001", age=30)
+        query = Table("t").upsert(match_by_first=1, id="001", age=30)
         result = self._capture_and_eval(connection, query)
 
         assert isinstance(result, Symbol)
 
-        result = Table.from_name("t").select("*").execute()
+        result = Table("t").select("*").execute()
         assert result.at_row(0)["id"] == "001"
         assert result.at_row(0)["age"] == 30

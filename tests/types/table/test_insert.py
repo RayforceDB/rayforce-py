@@ -4,7 +4,7 @@ from rayforce import Table, Vector, Symbol, I64
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_insert_single_row_kwargs(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -16,9 +16,7 @@ def test_insert_single_row_kwargs(is_inplace):
         result = table.insert(id="003", name="charlie", age=41).execute()
     else:
         table.save("test_insert_table")
-        result = (
-            Table.from_name("test_insert_table").insert(id="003", name="charlie", age=41).execute()
-        )
+        result = Table("test_insert_table").insert(id="003", name="charlie", age=41).execute()
 
     assert isinstance(result, Table)
 
@@ -31,7 +29,7 @@ def test_insert_single_row_kwargs(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_insert_single_row_args(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -43,7 +41,7 @@ def test_insert_single_row_args(is_inplace):
         result = table.insert("003", "charlie", 41).execute()
     else:
         table.save("test_insert_table")
-        result = Table.from_name("test_insert_table").insert("003", "charlie", 41).execute()
+        result = Table("test_insert_table").insert("003", "charlie", 41).execute()
 
     assert isinstance(result, Table)
 
@@ -56,7 +54,7 @@ def test_insert_single_row_args(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_insert_multiple_rows_kwargs(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -69,7 +67,7 @@ def test_insert_multiple_rows_kwargs(is_inplace):
     else:
         table.save("test_insert_table")
         result = (
-            Table.from_name("test_insert_table")
+            Table("test_insert_table")
             .insert(id=["003", "004"], name=["charlie", "megan"], age=[41, 30])
             .execute()
         )
@@ -89,7 +87,7 @@ def test_insert_multiple_rows_kwargs(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_insert_multiple_rows_args(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob"], ray_type=Symbol),
@@ -102,7 +100,7 @@ def test_insert_multiple_rows_args(is_inplace):
     else:
         table.save("test_insert_table")
         result = (
-            Table.from_name("test_insert_table")
+            Table("test_insert_table")
             .insert(["003", "004"], ["charlie", "megan"], [41, 30])
             .execute()
         )

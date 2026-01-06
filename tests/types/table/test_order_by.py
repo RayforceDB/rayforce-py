@@ -4,7 +4,7 @@ from rayforce import Table, Vector, Symbol, I64, Column
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_order_by_desc(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
@@ -16,7 +16,7 @@ def test_order_by_desc(is_inplace):
         result = table.xdesc(Column("age"))
     else:
         table.save("test_order_desc")
-        result = Table.from_name("test_order_desc").xdesc(Column("age"))
+        result = Table("test_order_desc").xdesc(Column("age"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -40,7 +40,7 @@ def test_order_by_desc(is_inplace):
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_order_by_asc(is_inplace):
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
             "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
@@ -52,7 +52,7 @@ def test_order_by_asc(is_inplace):
         result = table.xasc(Column("age"))
     else:
         table.save("test_order_asc")
-        result = Table.from_name("test_order_asc").xasc(Column("age"))
+        result = Table("test_order_asc").xasc(Column("age"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -77,7 +77,7 @@ def test_order_by_asc(is_inplace):
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_order_by_multiple_columns(is_inplace):
     """Test ordering by multiple columns."""
-    table = Table.from_dict(
+    table = Table(
         {
             "dept": Vector(items=["eng", "eng", "marketing", "marketing"], ray_type=Symbol),
             "salary": Vector(items=[100000, 120000, 90000, 110000], ray_type=I64),
@@ -89,7 +89,7 @@ def test_order_by_multiple_columns(is_inplace):
         result = table.xasc(Column("dept"), Column("salary"))
     else:
         table.save("test_order_multi")
-        result = Table.from_name("test_order_multi").xasc(Column("dept"), Column("salary"))
+        result = Table("test_order_multi").xasc(Column("dept"), Column("salary"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -121,7 +121,7 @@ def test_order_by_multiple_columns(is_inplace):
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_order_by_string_column(is_inplace):
     """Test ordering by string column."""
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["003", "001", "004", "002"], ray_type=Symbol),
             "name": Vector(items=["charlie", "alice", "dana", "bob"], ray_type=Symbol),
@@ -132,7 +132,7 @@ def test_order_by_string_column(is_inplace):
         result = table.xasc(Column("name"))
     else:
         table.save("test_order_string")
-        result = Table.from_name("test_order_string").xasc(Column("name"))
+        result = Table("test_order_string").xasc(Column("name"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -153,7 +153,7 @@ def test_order_by_string_column(is_inplace):
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_order_by_preserves_all_rows(is_inplace):
     """Test that ordering preserves all rows and columns."""
-    table = Table.from_dict(
+    table = Table(
         {
             "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
             "value": Vector(items=[3, 1, 2], ray_type=I64),
@@ -164,7 +164,7 @@ def test_order_by_preserves_all_rows(is_inplace):
         result = table.xasc(Column("value"))
     else:
         table.save("test_order_preserve")
-        result = Table.from_name("test_order_preserve").xasc(Column("value"))
+        result = Table("test_order_preserve").xasc(Column("value"))
 
     assert isinstance(result, Table)
 

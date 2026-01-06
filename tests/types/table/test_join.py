@@ -3,7 +3,7 @@ from rayforce.types.scalars import Time
 
 
 def test_inner_join():
-    trades = Table.from_dict(
+    trades = Table(
         {
             "Sym": Vector(items=["AAPL", "AAPL", "GOOGL", "GOOGL"], ray_type=Symbol),
             "Ts": Vector(
@@ -19,7 +19,7 @@ def test_inner_join():
         },
     )
 
-    quotes = Table.from_dict(
+    quotes = Table(
         {
             "Sym": Vector(items=["AAPL", "GOOGL"], ray_type=Symbol),
             "Bid": Vector(items=[50, 100], ray_type=I64),
@@ -67,7 +67,7 @@ def test_inner_join():
 
 
 def test_left_join():
-    trades = Table.from_dict(
+    trades = Table(
         {
             "Sym": Vector(items=["AAPL", "GOOGL", "MSFT"], ray_type=Symbol),
             "Ts": Vector(
@@ -82,7 +82,7 @@ def test_left_join():
         },
     )
 
-    quotes = Table.from_dict(
+    quotes = Table(
         {
             "Sym": Vector(items=["AAPL", "GOOGL"], ray_type=Symbol),
             "Bid": Vector(items=[50, 100], ray_type=I64),
@@ -138,7 +138,7 @@ def test_left_join():
 
 def test_window_join():
     # Create trades table
-    trades = Table.from_dict(
+    trades = Table(
         {
             "sym": Vector(items=["AAPL", "GOOG"], ray_type=Symbol),
             "time": Vector(
@@ -156,7 +156,7 @@ def test_window_join():
     # For trade at 100ms with window ±10ms (90ms to 110ms):
     # AAPL quotes: 90ms (bid=99), 95ms (bid=100), 105ms (bid=101), 110ms (bid=102)
     # GOOG quotes: 90ms (bid=199), 95ms (bid=200), 105ms (bid=201), 110ms (bid=202)
-    quotes = Table.from_dict(
+    quotes = Table(
         {
             "sym": Vector(
                 items=["AAPL", "AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG", "GOOG"],
@@ -236,7 +236,7 @@ def test_window_join():
 
 
 def test_window_join1():
-    trades = Table.from_dict(
+    trades = Table(
         {
             "sym": Vector(items=["AAPL", "AAPL", "GOOG", "GOOG"], ray_type=Symbol),
             "time": Vector(
@@ -252,7 +252,7 @@ def test_window_join1():
         },
     )
 
-    quotes = Table.from_dict(
+    quotes = Table(
         {
             "sym": Vector(
                 items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"],

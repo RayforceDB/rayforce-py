@@ -123,7 +123,7 @@ IPC supports sending Rayforce query objects directly, providing type safety and 
 ```python
 >>> from rayforce import Table, Column
 
->>> table = Table.from_name("server_side_table_name")
+>>> table = Table("server_side_table_name")
 >>> query = table.select("id", "name").where(Column("id") > 1)
 
 >>> with client.acquire() as conn:

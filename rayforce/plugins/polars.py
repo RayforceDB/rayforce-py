@@ -81,4 +81,4 @@ def from_polars(df: pl.DataFrame) -> Table:
         ray_type = _infer_ray_type_from_polars_dtype(df[col_name].dtype)
         vectors[col_name] = Vector(items=df[col_name].to_list(), ray_type=ray_type)
 
-    return Table.from_dict(vectors)
+    return Table(vectors)
