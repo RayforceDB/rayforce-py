@@ -1,5 +1,4 @@
-from rayforce import _rayforce_c as r
-from rayforce import Column, Fn, I64, Symbol, Table, Vector
+from rayforce import I64, Column, Fn, Symbol, Table, Vector
 
 
 def test_fn_direct_call_scalar():

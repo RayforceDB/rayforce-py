@@ -3,7 +3,7 @@ import datetime as dt
 import pytest
 
 from rayforce.plugins.pandas import from_pandas
-from rayforce.types import B8, Date, F64, I16, I32, I64, Symbol, Table, Timestamp
+from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp
 from rayforce.types.null import Null
 
 
@@ -223,9 +223,9 @@ def test_from_pandas_wrong_type_raises():
 
 
 def test_from_pandas_missing_dependency(monkeypatch):
-    from rayforce.plugins import pandas as pandas_module
-
     import sys
+
+    from rayforce.plugins import pandas as pandas_module
 
     original_pandas = sys.modules.get("pandas")
     if "pandas" in sys.modules:

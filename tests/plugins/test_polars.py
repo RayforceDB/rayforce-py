@@ -1,10 +1,10 @@
 import datetime as dt
-
 import platform
+
 import pytest
 
 from rayforce.plugins.polars import from_polars
-from rayforce.types import B8, F64, I16, I32, I64, Symbol, Table, Date, Timestamp
+from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp
 from rayforce.types.null import Null
 
 
@@ -162,9 +162,9 @@ def test_from_polars_string_types(polars):
 def test_from_polars_datetime_types(polars):
     dates = [dt.date(2023, 1, 1), dt.date(2023, 1, 2), dt.date(2023, 1, 3)]
     datetimes = [
-        dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.timezone.utc),
-        dt.datetime(2023, 1, 2, 12, 0, 0, tzinfo=dt.timezone.utc),
-        dt.datetime(2023, 1, 3, 12, 0, 0, tzinfo=dt.timezone.utc),
+        dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
+        dt.datetime(2023, 1, 2, 12, 0, 0, tzinfo=dt.UTC),
+        dt.datetime(2023, 1, 3, 12, 0, 0, tzinfo=dt.UTC),
     ]
 
     df = polars.DataFrame(
@@ -228,9 +228,9 @@ def test_from_polars_wrong_type_raises():
 
 
 def test_from_polars_missing_dependency(monkeypatch):
-    from rayforce.plugins import polars as polars_module
-
     import sys
+
+    from rayforce.plugins import polars as polars_module
 
     original_polars = sys.modules.get("polars")
     if "polars" in sys.modules:
@@ -308,11 +308,11 @@ def test_from_polars_mixed_types(polars):
             "salary": [50000.0, 60000.0, 70000.0, 55000.0, 65000.0],
             "active": [True, True, False, True, False],
             "hire_date": [
-                dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc),
-                dt.datetime(2019, 6, 15, tzinfo=dt.timezone.utc),
-                dt.datetime(2018, 3, 20, tzinfo=dt.timezone.utc),
-                dt.datetime(2021, 9, 10, tzinfo=dt.timezone.utc),
-                dt.datetime(2017, 12, 5, tzinfo=dt.timezone.utc),
+                dt.datetime(2020, 1, 1, tzinfo=dt.UTC),
+                dt.datetime(2019, 6, 15, tzinfo=dt.UTC),
+                dt.datetime(2018, 3, 20, tzinfo=dt.UTC),
+                dt.datetime(2021, 9, 10, tzinfo=dt.UTC),
+                dt.datetime(2017, 12, 5, tzinfo=dt.UTC),
             ],
         },
         schema={

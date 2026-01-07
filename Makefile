@@ -83,6 +83,7 @@ test-cov:
 lint:
 	python3 -m ruff format tests/ rayforce/
 	python3 -m ruff check rayforce/ --fix
+	python3 -m ruff check tests/ --fix --select I
 	python3 -m mypy rayforce/
 	clang-format -i rayforce/capi/*
 
@@ -103,6 +104,7 @@ wheels:
 citest:
 	python3 -m ruff format tests/ rayforce/ --check
 	python3 -m ruff check rayforce/
+	python3 -m ruff check tests/ --select I
 	python3 -m mypy rayforce/
 	python3 -m pytest -x -vv tests/
 

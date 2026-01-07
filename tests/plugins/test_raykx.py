@@ -1,9 +1,10 @@
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from rayforce import _rayforce_c as r
-from rayforce.plugins.raykx import KDBConnection, KDBEngine
 from rayforce.plugins import errors
+from rayforce.plugins.raykx import KDBConnection, KDBEngine
 
 
 class TestKDBConnection:

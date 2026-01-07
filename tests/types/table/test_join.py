@@ -1,5 +1,4 @@
-import pytest
-from rayforce import Table, TableColumnInterval, Vector, Symbol, I64, F64, Column
+from rayforce import F64, I64, Column, Symbol, Table, TableColumnInterval, Vector
 from rayforce.types.scalars import Time
 
 

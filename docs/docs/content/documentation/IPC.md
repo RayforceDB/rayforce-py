@@ -167,7 +167,7 @@ IPCClient(host=localhost, port=5000, pool_size: 0)
 
 ## :material-alert: Error Handling
 
-IPC operations can raise `RayforceIPCError` in various scenarios:
+IPC operations can raise `RayforceTCPError` in various scenarios:
 
 ```python
 >>> from rayforce import IPCClient, errors
@@ -176,7 +176,7 @@ IPC operations can raise `RayforceIPCError` in various scenarios:
 >>> try:
 ...     with client.acquire() as conn:
 ...         result = conn.execute("(+ 1 2)")
-... except errors.RayforceIPCError as e:
+... except errors.RayforceTCPError as e:
 ...     print(f"IPC Error: {e}")
 ```
 

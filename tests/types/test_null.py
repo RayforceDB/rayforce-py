@@ -1,8 +1,7 @@
-import pytest
-from rayforce import FFI, _rayforce_c as r
-from rayforce.types import Null, Vector, Table
+from rayforce import FFI
+from rayforce import _rayforce_c as r
+from rayforce.types import Null, Table, Vector
 from rayforce.types.registry import TypeRegistry
-from rayforce.types.scalars import Symbol, I64
 
 
 def test_null_to_python():

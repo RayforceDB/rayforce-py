@@ -1,4 +1,3 @@
-import pytest
 from rayforce import types as t
 
 

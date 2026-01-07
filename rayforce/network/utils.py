@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import typing as t
 
+from rayforce import errors
+
 if t.TYPE_CHECKING:
     from rayforce import _rayforce_c as r
+
+
+def validate_port(port: int) -> None:
+    if not isinstance(port, int) or port < 1 or port > 65535:
+        raise errors.RayforceValueError(f"Invalid port: {port}. Must be between 1 and 65535")
 
 
 def python_to_ipc(data: t.Any) -> r.RayObject:
@@ -23,7 +30,7 @@ def python_to_ipc(data: t.Any) -> r.RayObject:
 
     if isinstance(data, str):
         return String(data).ptr
-    if isinstance(data, List):
+    if isinstance(data, (List, String)):
         return data.ptr
     if isinstance(data, Expression):
         return data.compile()
@@ -42,4 +49,4 @@ def python_to_ipc(data: t.Any) -> r.RayObject:
         ),
     ):
         return data.ipc
-    raise errors.RayforceIPCError(f"Unsupported IPC data to send: {type(data)}")
+    raise errors.RayforceTCPError(f"Unsupported IPC data to send: {type(data)}")

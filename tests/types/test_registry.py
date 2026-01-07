@@ -1,8 +1,9 @@
 import pytest
+
 from rayforce import _rayforce_c as r
-from rayforce.types.registry import TypeRegistry
 from rayforce import errors
 from rayforce import types as t
+from rayforce.types.registry import TypeRegistry
 
 
 def test_register_and_get():

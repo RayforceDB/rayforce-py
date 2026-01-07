@@ -1,9 +1,10 @@
 import datetime as dt
+
 from rayforce import types as t
 
 
 def test_timestamp():
-    dt_obj = dt.datetime(2025, 5, 10, 14, 30, 45, tzinfo=dt.timezone.utc)
+    dt_obj = dt.datetime(2025, 5, 10, 14, 30, 45, tzinfo=dt.UTC)
     # Note: Timestamp comparison might need to account for timezone/millisecond precision
     result = t.Timestamp(dt_obj)
 

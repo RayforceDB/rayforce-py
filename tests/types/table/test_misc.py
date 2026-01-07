@@ -1,7 +1,8 @@
 import pytest
-from rayforce.types import Table, Vector, Column, Dict
-from rayforce.types.scalars import Symbol, Time, I64, F64, B8, Date, Timestamp
+
 from rayforce import errors
+from rayforce.types import Dict, Table, Vector
+from rayforce.types.scalars import B8, F64, I64, Date, Symbol, Time, Timestamp
 
 
 def test_table_from_csv_all_types(tmp_path):

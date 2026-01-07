@@ -1,12 +1,14 @@
 import datetime as dt
 import uuid
+
 import pytest
+
 from rayforce import _rayforce_c as r
-from rayforce.types.null import Null
-from rayforce.utils.conversion import python_to_ray, ray_to_python
 from rayforce import errors
-from rayforce.types.operators import Operation
 from rayforce import types as t
+from rayforce.types.null import Null
+from rayforce.types.operators import Operation
+from rayforce.utils.conversion import python_to_ray, ray_to_python
 
 
 def test_python_to_ray_bool():
@@ -32,7 +34,7 @@ def test_python_to_ray_float():
 
 
 def test_python_to_ray_datetime():
-    dt_obj = dt.datetime(2025, 5, 10, 14, 30, 45, tzinfo=dt.timezone.utc)
+    dt_obj = dt.datetime(2025, 5, 10, 14, 30, 45, tzinfo=dt.UTC)
     result = python_to_ray(dt_obj)
     assert isinstance(result, r.RayObject)
     assert isinstance(t.Timestamp(ptr=result).value, dt.datetime)

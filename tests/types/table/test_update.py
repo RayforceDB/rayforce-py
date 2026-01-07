@@ -1,5 +1,6 @@
 import pytest
-from rayforce import Table, Vector, Symbol, I64, B8, Column
+
+from rayforce import B8, I64, Column, Symbol, Table, Vector
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])

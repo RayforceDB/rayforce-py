@@ -1,8 +1,10 @@
-import pytest
 import threading
-from rayforce.ffi import FFI
+
+import pytest
+
 from rayforce import _rayforce_c as r
 from rayforce.errors import RayforceThreadError
+from rayforce.ffi import FFI
 
 
 @pytest.mark.parametrize(
@@ -94,8 +96,6 @@ def test_init_list():
 
 
 def test_init_dict():
-    from rayforce import List
-
     keys = FFI.init_vector(r.TYPE_SYMBOL, 2)
     values = FFI.init_list([FFI.init_i32(1), FFI.init_i32(2)])
 
@@ -208,8 +208,6 @@ def test_get_dict_values():
     assert isinstance(result, r.RayObject)
 
 
-# Until issue with error dict resolved
-@pytest.mark.skip
 def test_eval_str():
     # Success case
     expr = FFI.init_string("1")

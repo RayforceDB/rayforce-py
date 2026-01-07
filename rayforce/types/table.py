@@ -144,7 +144,7 @@ class Expression(AggregationMixin, OperatorMixin):
         self.operation = operation
         self.operands = operands
 
-    def compile(self) -> r.RayObject:
+    def compile(self, *, ipc: bool = False) -> r.RayObject:
         if (
             self.operation == Operation.MAP
             and len(self.operands) == 2
@@ -164,13 +164,13 @@ class Expression(AggregationMixin, OperatorMixin):
         converted_operands: list[t.Any] = []
         for operand in self.operands:
             if isinstance(operand, Expression):
-                converted_operands.append(operand.compile())
+                converted_operands.append(operand.compile(ipc=ipc))
             elif isinstance(operand, Column):
                 converted_operands.append(operand.name)
             elif hasattr(operand, "ptr"):
                 converted_operands.append(operand)
             elif isinstance(operand, str):
-                converted_operands.append(QuotedSymbol(operand))
+                converted_operands.append(List([Operation.QUOTE, operand]).ptr)
             else:
                 converted_operands.append(operand)
         # Convert operation to its primitive if it's an Operation enum
@@ -680,14 +680,14 @@ class UpdateQuery(IPCQueryMixin):
         where_expr = None
         if self.where_condition:
             if isinstance(self.where_condition, Expression):
-                where_expr = self.where_condition.compile()
+                where_expr = self.where_condition.compile(ipc=ipc)
             else:
                 where_expr = self.where_condition
 
         converted_attrs: dict[str, t.Any] = {}
         for key, value in self.attributes.items():
             if isinstance(value, Expression):
-                converted_attrs[key] = value.compile()
+                converted_attrs[key] = value.compile(ipc=ipc)
             elif isinstance(value, Column):
                 converted_attrs[key] = value.name
             elif isinstance(value, str):
