@@ -898,8 +898,13 @@ class TableColumnInterval:
                     [
                         Operation.AT,
                         self.table.ptr,
-                        QuotedSymbol(
-                            self.column.name if isinstance(self.column, Column) else self.column
+                        List(
+                            [
+                                Operation.QUOTE,
+                                self.column.name
+                                if isinstance(self.column, Column)
+                                else self.column,
+                            ]
                         ),
                     ]
                 ),
