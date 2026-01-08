@@ -38,7 +38,7 @@ fi
 echo "Patching Makefile for Python support..."
 cat >> "${EXEC_DIR}/tmp/rayforce-c/Makefile" << EOF
 
-PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o
+PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o
 PY_APP_OBJECTS = app/term.o
 python: CFLAGS = \$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I${PYTHON_INCLUDE} -Wno-macro-redefined
 python: LDFLAGS = \$(RELEASE_LDFLAGS) ${PYTHON_LDFLAGS}
@@ -57,6 +57,7 @@ cp "${EXEC_DIR}/rayforce/capi/raypy_binary.c" "${EXEC_DIR}/tmp/rayforce-c/core/r
 cp "${EXEC_DIR}/rayforce/capi/raypy_dynlib.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_dynlib.c"
 cp "${EXEC_DIR}/rayforce/capi/raypy_eval.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_eval.c"
 cp "${EXEC_DIR}/rayforce/capi/raypy_iter.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_iter.c"
+cp "${EXEC_DIR}/rayforce/capi/raypy_serde.c" "${EXEC_DIR}/tmp/rayforce-c/core/raypy_serde.c"
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
 make python

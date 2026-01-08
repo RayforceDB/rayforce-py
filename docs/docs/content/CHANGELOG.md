@@ -23,6 +23,8 @@ All notable changes to Rayforce-Py will be documented in this file.
 - **Added `asof_join()` method** to `Table` class for as-of joins (time-based joins). See [Joins documentation](./documentation/query-guide/joins.md#as-of-join) for details.
 - **Added `ipcsave()` method** to `Table` and query objects (`SelectQuery`, `UpdateQuery`, `InsertQuery`, `UpsertQuery`, `LeftJoin`, `InnerJoin`, `AsofJoin`, `WindowJoin`) for saving query results in IPC connections.
 
+2026-01-08 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.4.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.4.0)**
+
 
 ## **`0.3.1`**
 
