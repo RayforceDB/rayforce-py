@@ -30,7 +30,7 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  char *argv[] = {"py", "-r", "0", NULL};
+  char *argv[] = {"py", "-i", "0", NULL};
   if (runtime_create(3, argv) == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "runtime: failed to initialize Rayforce");
