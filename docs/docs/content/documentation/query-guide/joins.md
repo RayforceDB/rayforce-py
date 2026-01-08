@@ -87,6 +87,47 @@ Left join returns all rows from the left table and matching rows from the right 
     result = trades.left_join(quotes, on=["col1", "col2"]).execute()
     ```
 
+## :material-clock-fast: As-Of Join
+
+As-of join performs a value-based join where each row from the left table is matched with the most closest row from the right table that occurred at or before the left table's value, based on matching keys.
+
+```python
+>>> from rayforce import Table, Vector, Symbol, Time, I64
+
+>>> trades = Table({
+        "sym": Vector(items=["AAPL", "AAPL", "GOOGL", "GOOGL"], ray_type=Symbol),
+        "time": Vector(
+            items=[
+                Time("09:00:00.100"),  # 100ms
+                Time("09:00:00.200"),  # 200ms
+                Time("09:00:00.150"),  # 150ms
+                Time("09:00:00.250"),  # 250ms
+            ],
+            ray_type=Time,
+        ),
+        "price": Vector(items=[100, 200, 300, 400], ray_type=I64),
+    })
+
+>>> quotes = Table({
+        "sym": Vector(items=["AAPL", "AAPL", "AAPL", "GOOGL", "GOOGL", "GOOGL"], ray_type=Symbol),
+        "time": Vector(
+            items=[
+                Time("09:00:00.050"),  # 50ms - before first AAPL trade
+                Time("09:00:00.150"),  # 150ms - between AAPL trades
+                Time("09:00:00.250"),  # 250ms - after second AAPL trade
+                Time("09:00:00.100"),  # 100ms - before first GOOGL trade
+                Time("09:00:00.200"),  # 200ms - between GOOGL trades
+                Time("09:00:00.300"),  # 300ms - after second GOOGL trade
+            ],
+            ray_type=Time,
+        ),
+        "bid": Vector(items=[45, 55, 65, 95, 105, 115], ray_type=I64),
+        "ask": Vector(items=[70, 80, 90, 120, 130, 140], ray_type=I64),
+    })
+
+>>> result = trades.asof_join(quotes, on=["sym", "time"]).execute()
+```
+
 ## :material-window-maximize: Window Join
 
 Window join matches records on specified columns and aggregates values from another table within time windows. This is useful for financial data where you want to aggregate quotes that occurred near each trade.

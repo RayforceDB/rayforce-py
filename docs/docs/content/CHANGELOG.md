@@ -5,6 +5,25 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.4.0`**
+
+### Breaking Changes
+
+- **Network module restructuring**: IPC classes (`IPCClient`, `IPCConnection`, `IPCServer`) have been removed from the main package exports and replaced with TCP classes (`TCPClient`, `TCPServer`). The IPC functionality has been reorganized into the `rayforce.network` module.
+
+- **Error class renamed**: `RayforceIPCError` has been removed and replaced with `RayforceTCPError` for network-related errors.
+
+- **Table initialization API changed**: `Table.from_dict()` and `Table.from_name()` methods are removed. Use Table(dict/str) constructor directly instead.
+
+
+### New Features
+
+- **Added WebSocket support**: New `WSClient` and `WSServer` classes in `rayforce.network.websocket` module for WebSocket-based communication. See [WebSocket documentation](./documentation/websocket.md) for details.
+- **Added TCP client/server**: New `TCPClient` and `TCPServer` classes in `rayforce.network.tcp` module exported from the main package.
+- **Added `asof_join()` method** to `Table` class for as-of joins (time-based joins). See [Joins documentation](./documentation/query-guide/joins.md#as-of-join) for details.
+- **Added `ipcsave()` method** to `Table` and query objects (`SelectQuery`, `UpdateQuery`, `InsertQuery`, `UpsertQuery`, `LeftJoin`, `InnerJoin`, `AsofJoin`, `WindowJoin`) for saving query results in IPC connections.
+
+
 ## **`0.3.1`**
 
 - Improve client-side IPC by allowing sending pythonic queries into the IPC connection

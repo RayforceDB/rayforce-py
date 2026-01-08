@@ -1,32 +1,32 @@
 # :material-network: IPC Inter-Process Communication
 
-Rayforce-Py provides IPC (Inter-Process Communication) functionality to communicate with other Rayforce instances over the network. This allows you to build distributed systems, microservices, and client-server architectures using Rayforce's high-performance runtime.
+Rayforce-Py provides TCP-based IPC (Inter-Process Communication) functionality to communicate with other Rayforce instances over the network. This allows you to build distributed systems, microservices, and client-server architectures using Rayforce's high-performance runtime.
 
 ## :material-information: Overview
 
-IPC in Rayforce-Py consists of two main components:
+TCP IPC in Rayforce-Py consists of two main components:
 
-- **`IPCServer`** - Listens for incoming connections on a specified port
-- **`IPCClient`** - Connects to remote Rayforce instances and executes queries
+- **`TCPServer`** - Listens for incoming TCP connections on a specified port
+- **`TCPClient`** - Connects to remote Rayforce instances and executes queries
 
-The IPC implementation uses Rayforce's native runtime event loop, ensuring optimal performance and seamless integration with the Rayforce ecosystem.
+The TCP IPC implementation uses Rayforce's native runtime event loop, ensuring optimal performance and seamless integration with the Rayforce ecosystem.
 
 ---
 
-## :material-server: IPC Server
+## :material-server: TCP Server
 
-The `IPCServer` class allows you to create a server that listens for incoming IPC connections. The server runs on Rayforce's native event loop.
+The `TCPServer` class allows you to create a server that listens for incoming TCP connections. The server runs on Rayforce's native event loop.
 
 ### Creating a Server
 
-To create an IPC server, import `IPCServer` and initialize it with a port:
+To create a TCP server, import `TCPServer` and initialize it with a port:
 
 ```python
->>> from rayforce import IPCServer
+>>> from rayforce import TCPServer
 
->>> server = IPCServer(port=5000)
+>>> server = TCPServer(port=5000)
 >>> server
-IPCServer(port=5000)
+TCPServer(port=5000)
 ```
 
 ### Starting the Server
@@ -35,7 +35,7 @@ The `listen()` method starts the server and blocks until the event loop exits:
 
 ```python
 >>> server.listen()
-Rayforce IPC Server listening on 0.0.0.0:5000 (id:123)
+Rayforce IPC Server listening on 5000 (id:123)
 ```
 
 !!! note "Blocking Operation"
@@ -43,82 +43,43 @@ Rayforce IPC Server listening on 0.0.0.0:5000 (id:123)
 
 ---
 
-## :material-network: IPC Client
+## :material-network: TCP Client
 
-The `IPCClient` class manages connections to remote Rayforce instances. It maintains a connection pool and provides a simple API for executing queries.
+The `TCPClient` class provides a connection to a remote Rayforce instance. Each client represents a single connection.
 
 ### Initializing a Client
 
-To use IPC, first import the `IPCClient` and `IPCConnection`:
+To use TCP IPC, import `TCPClient`:
 
 ```python
->>> from rayforce import IPCClient
+>>> from rayforce import TCPClient
 ```
 
 Then initialize the client for a specific host and port:
 
 ```python
->>> client = IPCClient(host="localhost", port=5000)
+>>> client = TCPClient(host="localhost", port=5000)
 >>> client
-IPCClient(host=localhost, port=5000, pool_size: 0)
+TCPClient(localhost:5000) - alive: True
 ```
 
-### Opening a Connection
-
-There are two ways to open a connection with a Rayforce instance.
-
-#### Manual Connection Management
-
-Manually open a connection via the `.acquire()` method:
-
-```python
->>> conn = client.acquire()
->>> conn
-Connection(id:4382902992) - established at 2025-09-15T21:33:39.932434
->>> isinstance(conn, IPCConnection)
-True
-```
-
-Close the connection when done:
-
-```python
->>> conn.close()
->>> conn
-Connection(id:4382902992) - disposed at 2025-09-15T21:34:46.752071
-```
-
-#### Context Manager (Recommended)
-
-Use the context manager for automatic connection cleanup:
-
-```python
->>> with client.acquire() as conn:
-...     print(conn)
-Connection(id:4832080144) - established at 2025-09-15T21:35:39.232321
->>> print(conn)
-Connection(id:4832080144) - disposed at 2025-09-15T21:35:39.232500
-```
-
----
-
-## :material-code-tags: Executing Queries
+### Executing Queries
 
 The `.execute()` method allows you to send various types of data to the remote Rayforce instance.
 
-### Sending String Queries
+#### Sending String Queries
 
 You can send raw string queries:
 
 ```python
->>> with client.acquire() as conn:
-...     result = conn.execute("(+ 1 2)")
+>>> result = client.execute("(+ 1 2)")
 >>> print(result)
-I64(3)
+3
 ```
 
-### Sending Query Objects
+#### Sending Query Objects
 
-IPC supports sending Rayforce query objects directly, providing type safety and better integration:
+TCP IPC supports sending Rayforce query objects directly, providing type safety and better integration:
 
 ```python
 >>> from rayforce import Table, Column
@@ -126,63 +87,61 @@ IPC supports sending Rayforce query objects directly, providing type safety and 
 >>> table = Table("server_side_table_name")
 >>> query = table.select("id", "name").where(Column("id") > 1)
 
->>> with client.acquire() as conn:
-...     result = conn.execute(query)
+>>> result = client.execute(query)
 ```
 
-### Supported Query Types
+TCP IPC supports all major query types: `SelectQuery`, `UpdateQuery`, `InsertQuery`, `UpsertQuery`, `LeftJoin`, `InnerJoin`, `AsofJoin`, `WindowJoin`
 
-IPC supports all major query types:
+## :material-network: IPC Save
 
-- `SelectQuery` - SELECT operations
-- `UpdateQuery` - UPDATE operations
-- `InsertQuery` - INSERT operations
-- `UpsertQuery` - UPSERT operations
-- `LeftJoin`, `InnerJoin`, `WindowJoin` - JOIN operations
-
----
-
-## :material-database-cog: Connection Pooling
-
-The `IPCClient` maintains a pool of connections. You can manage multiple connections:
+The `ipcsave()` method allows you to save query results or tables to a remote Rayforce instance via IPC connections. This method returns an `Expression` that can be executed on a remote server.
 
 ```python
->>> client = IPCClient(host="localhost", port=5000)
+>>> from rayforce import Table, Column
 
->>> conn1 = client.acquire()
->>> conn2 = client.acquire()
->>> client
-IPCClient(host=localhost, port=5000, pool_size: 2)
+>>> table = Table("server_side_table_name")
+>>> query = table.select("id", "name").where(Column("id") > 1)
+
+>>> # Save the query result to a variable on the remote server
+>>> TCPClient.execute(query.ipcsave("filtered_results"))
 ```
 
-To dispose all connections at once:
+!!! note ""
+    The `ipcsave()` method returns an `Expression` that must be executed on a remote server via an IPC connection. It does not save locally like the `save()` method.
+
+
+### Connection Management
+
+The `TCPClient` supports context manager for automatic connection cleanup:
 
 ```python
->>> client.dispose_connections()
+>>> with TCPClient(host="localhost", port=5000) as client:
+...     result = client.execute("(+ 1 2)")
+...     print(result)
+```
+
+You can also manually close the connection:
+
+```python
+>>> client = TCPClient(host="localhost", port=5000)
+>>> result = client.execute("(+ 1 2)")
+>>> client.close()
 >>> client
-IPCClient(host=localhost, port=5000, pool_size: 0)
+TCPClient(localhost:5000) - alive: False
 ```
 
 ---
 
 ## :material-alert: Error Handling
 
-IPC operations can raise `RayforceTCPError` in various scenarios:
+TCP IPC operations can raise `RayforceTCPError` in various scenarios:
 
 ```python
->>> from rayforce import IPCClient, errors
+>>> from rayforce import TCPClient, errors
 
->>> client = IPCClient(host="localhost", port=9999)
 >>> try:
-...     with client.acquire() as conn:
-...         result = conn.execute("(+ 1 2)")
+...     client = TCPClient(host="localhost", port=9999)
+...     result = client.execute("(+ 1 2)")
 ... except errors.RayforceTCPError as e:
-...     print(f"IPC Error: {e}")
+...     print(f"TCP Error: {e}")
 ```
-
-Common error scenarios:
-
-- **Connection refused** - Server is not running or port is incorrect
-- **Port already in use** - Another process is using the specified port
-- **Connection closed** - Server closed the connection
-- **Invalid port** - Port number is out of valid range (1-65535)
