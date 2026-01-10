@@ -1311,11 +1311,43 @@ img.hero-logo.dark-only,
 
 
 /* ==================== */
+/* FEATURES INTRO       */
+/* ==================== */
+
+.features-intro-section {
+    text-align: center;
+    padding: 3rem 2rem 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.features-intro-section h2 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #04233b;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.features-intro-section h2 strong {
+    color: #e9a033;
+    font-weight: 700;
+}
+
+[data-md-color-scheme="slate"] .features-intro-section h2 {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .features-intro-section h2 strong {
+    color: #e9a033;
+}
+
+/* ==================== */
 /* FEATURES SECTION     */
 /* ==================== */
 
 .features-section {
-    padding: 4rem 0;
+    padding: 2rem 0 4rem;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -1370,12 +1402,61 @@ img.hero-logo.dark-only,
     background: transparent;
 }
 
+.bento-ticker-wrapper::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(233, 160, 51, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(4, 35, 59, 0.1), transparent),
+        radial-gradient(ellipse 40% 30% at 10% 60%, rgba(233, 160, 51, 0.08), transparent);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bento-ticker-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(4, 35, 59, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(4, 35, 59, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-md-color-scheme="slate"] .bento-ticker-wrapper::before {
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(233, 160, 51, 0.2), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(233, 160, 51, 0.1), transparent),
+        radial-gradient(ellipse 40% 30% at 10% 60%, rgba(10, 58, 92, 0.5), transparent);
+}
+
+[data-md-color-scheme="slate"] .bento-ticker-wrapper::after {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
 .bento-ticker-track {
     display: flex;
     gap: 2rem;
     animation: ticker-scroll 60s linear infinite;
     width: fit-content;
     will-change: transform;
+    position: relative;
+    z-index: 1;
+}
+
+.bento-ticker-track > .bento-grid + .bento-grid {
+    margin-left: 0;
 }
 
 @keyframes ticker-scroll {
@@ -1393,6 +1474,14 @@ img.hero-logo.dark-only,
     gap: 1.5rem;
     width: 1200px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.bento-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: contents;
 }
 
 .bento-card {
@@ -1407,6 +1496,16 @@ img.hero-logo.dark-only,
     display: flex;
     flex-direction: column;
     min-height: 240px;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.bento-card-link:hover .bento-card,
+.bento-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
+    z-index: 10;
 }
 
 .bento-card::before {
@@ -1422,11 +1521,6 @@ img.hero-logo.dark-only,
     pointer-events: none;
 }
 
-.bento-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
-    z-index: 10;
-}
 
 .bento-card:hover::before {
     opacity: 1;
@@ -1455,6 +1549,23 @@ img.hero-logo.dark-only,
 
 .bento-card-yellow {
     background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+}
+
+/* Brand color variants */
+.bento-card-brand-navy {
+    background: linear-gradient(135deg, #04233b 0%, #0a3a5c 100%);
+}
+
+.bento-card-brand-gold {
+    background: linear-gradient(135deg, #e9a033 0%, #f0b85a 100%);
+}
+
+.bento-card-brand-navy-light {
+    background: linear-gradient(135deg, #e8edf2 0%, #d4e0e8 100%);
+}
+
+.bento-card-brand-gold-light {
+    background: linear-gradient(135deg, #fef3e0 0%, #ffe5b8 100%);
 }
 
 /* Size variants for grid layout */
@@ -1498,6 +1609,22 @@ img.hero-logo.dark-only,
     color: #fef08a !important;
 }
 
+.bento-card-brand-navy .bento-icon {
+    color: #e9a033 !important;
+}
+
+.bento-card-brand-gold .bento-icon {
+    color: #04233b !important;
+}
+
+.bento-card-brand-navy-light .bento-icon {
+    color: #04233b !important;
+}
+
+.bento-card-brand-gold-light .bento-icon {
+    color: #04233b !important;
+}
+
 .bento-card-content h3 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -1528,6 +1655,26 @@ img.hero-logo.dark-only,
     color: #ffffff;
 }
 
+.bento-card-brand-navy .bento-card-content h3,
+.bento-card-brand-navy .bento-card-content h3 strong {
+    color: #ffffff;
+}
+
+.bento-card-brand-gold .bento-card-content h3,
+.bento-card-brand-gold .bento-card-content h3 strong {
+    color: #04233b;
+}
+
+.bento-card-brand-navy-light .bento-card-content h3,
+.bento-card-brand-navy-light .bento-card-content h3 strong {
+    color: #04233b;
+}
+
+.bento-card-brand-gold-light .bento-card-content h3,
+.bento-card-brand-gold-light .bento-card-content h3 strong {
+    color: #04233b;
+}
+
 .bento-card-content p {
     font-size: 0.95rem;
     line-height: 1.6;
@@ -1535,16 +1682,218 @@ img.hero-logo.dark-only,
     flex-grow: 1;
 }
 
+/* Performance text styling */
+.bento-performance-text {
+    flex-grow: 1;
+}
+
+.bento-performance-text p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0 0 1rem 0;
+    color: #04233b;
+}
+
+.bento-performance-text p strong {
+    color: #e9a033;
+    font-weight: 600;
+}
+
+/* Dark mode for performance text */
+[data-md-color-scheme="slate"] .bento-performance-text p {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .bento-performance-text p strong {
+    color: #e9a033;
+}
+
+/* Performance chart styling */
+.bento-performance-chart {
+    margin-top: 1rem;
+}
+
+.perf-bar {
+    margin-bottom: 0.75rem;
+}
+
+.perf-bar:last-child {
+    margin-bottom: 0;
+}
+
+.perf-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+}
+
+.perf-label {
+    font-weight: 500;
+    color: rgba(4, 35, 59, 0.7);
+}
+
+.perf-value {
+    font-weight: 600;
+    color: #04233b;
+}
+
+.perf-bar-container {
+    height: 6px;
+    background: rgba(4, 35, 59, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.perf-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.perf-bar-fill-pandas {
+    width: 100%;
+    background: linear-gradient(90deg, #e9a033 0%, #f0b85a 100%);
+}
+
+.perf-bar-fill-polars {
+    width: 37.5%;
+    background: linear-gradient(90deg, #04233b 0%, #0a3a5c 100%);
+}
+
+/* Dark mode for performance chart */
+[data-md-color-scheme="slate"] .perf-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+[data-md-color-scheme="slate"] .perf-value {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .perf-bar-container {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Vertical performance chart */
+.bento-performance-vertical-chart {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    height: 140px;
+}
+
+.perf-bar-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    gap: 0.5rem;
+    max-width: 60px;
+}
+
+.perf-bar-vertical-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin-bottom: 0.25rem;
+}
+
+.perf-bar-vertical-container {
+    width: 100%;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+    overflow: hidden;
+}
+
+.perf-bar-vertical-fill {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.6s ease;
+    position: relative;
+}
+
+.perf-bar-vertical-rayforce {
+    height: 18.7%;
+    background: linear-gradient(180deg, #e9a033 0%, #f0b85a 100%);
+}
+
+.perf-bar-vertical-polars {
+    height: 37.5%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+}
+
+.perf-bar-vertical-pandas {
+    height: 100%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+}
+
+.perf-bar-vertical-value {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #e9a033;
+    margin-top: 0.25rem;
+}
+
+/* Dark mode for vertical performance chart */
+[data-md-color-scheme="slate"] .bento-performance-vertical-chart {
+    border-top-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-md-color-scheme="slate"] .perf-bar-vertical-label {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+[data-md-color-scheme="slate"] .perf-bar-vertical-container {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-md-color-scheme="slate"] .perf-bar-vertical-value {
+    color: #e9a033;
+}
+
 .bento-card-pink .bento-card-content p,
 .bento-card-yellow .bento-card-content p,
 .bento-card-light-gray .bento-card-content p,
 .bento-card-purple .bento-card-content p {
-    color: rgba(4, 35, 59, 0.75);
+    color: #04233b;
 }
 
 .bento-card-green .bento-card-content p,
 .bento-card-gray .bento-card-content p {
-    color: rgba(255, 255, 255, 0.85);
+    color: #ffffff;
+}
+
+.bento-card-brand-navy .bento-card-content p {
+    color: #ffffff;
+}
+
+.bento-card-brand-gold .bento-card-content p {
+    color: #04233b;
+}
+
+.bento-card-brand-navy-light .bento-card-content p {
+    color: #04233b;
+}
+
+.bento-card-brand-gold-light .bento-card-content p {
+    color: #04233b;
+}
+
+/* Yellow accents for all cards */
+.bento-card-content p strong {
+    color: #e9a033;
+    font-weight: 600;
 }
 
 .bento-card-content .bento-link {
@@ -1568,6 +1917,22 @@ img.hero-logo.dark-only,
 .bento-card-green .bento-link,
 .bento-card-gray .bento-link {
     color: #fef08a;
+}
+
+.bento-card-brand-navy .bento-link {
+    color: #e9a033;
+}
+
+.bento-card-brand-gold .bento-link {
+    color: #04233b;
+}
+
+.bento-card-brand-navy-light .bento-link {
+    color: #04233b;
+}
+
+.bento-card-brand-gold-light .bento-link {
+    color: #04233b;
 }
 
 .bento-card-content .bento-link:hover {
@@ -1605,6 +1970,22 @@ img.hero-logo.dark-only,
     background: linear-gradient(135deg, rgba(254, 249, 195, 0.2) 0%, rgba(254, 240, 138, 0.2) 100%);
 }
 
+[data-md-color-scheme="slate"] .bento-card-brand-navy {
+    background: linear-gradient(135deg, rgba(4, 35, 59, 0.8) 0%, rgba(10, 58, 92, 0.8) 100%);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold {
+    background: linear-gradient(135deg, rgba(233, 160, 51, 0.6) 0%, rgba(240, 184, 90, 0.6) 100%);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy-light {
+    background: linear-gradient(135deg, rgba(232, 237, 242, 0.25) 0%, rgba(212, 224, 232, 0.25) 100%);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold-light {
+    background: linear-gradient(135deg, rgba(254, 243, 224, 0.2) 0%, rgba(255, 229, 184, 0.2) 100%);
+}
+
 [data-md-color-scheme="slate"] .bento-card {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
 }
@@ -1627,8 +2008,50 @@ img.hero-logo.dark-only,
 [data-md-color-scheme="slate"] .bento-card-pink .bento-card-content p,
 [data-md-color-scheme="slate"] .bento-card-yellow .bento-card-content p,
 [data-md-color-scheme="slate"] .bento-card-light-gray .bento-card-content p,
-[data-md-color-scheme="slate"] .bento-card-purple .bento-card-content p {
-    color: rgba(255, 255, 255, 0.85);
+[data-md-color-scheme="slate"] .bento-card-purple .bento-card-content p,
+[data-md-color-scheme="slate"] .bento-card-green .bento-card-content p,
+[data-md-color-scheme="slate"] .bento-card-gray .bento-card-content p {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy .bento-card-content h3,
+[data-md-color-scheme="slate"] .bento-card-brand-navy .bento-card-content h3 strong {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold .bento-card-content h3,
+[data-md-color-scheme="slate"] .bento-card-brand-gold .bento-card-content h3 strong {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy-light .bento-card-content h3,
+[data-md-color-scheme="slate"] .bento-card-brand-navy-light .bento-card-content h3 strong {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold-light .bento-card-content h3,
+[data-md-color-scheme="slate"] .bento-card-brand-gold-light .bento-card-content h3 strong {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy .bento-card-content p {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold .bento-card-content p {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy-light .bento-card-content p {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold-light .bento-card-content p {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .bento-card-content p strong {
+    color: #e9a033;
 }
 
 [data-md-color-scheme="slate"] .bento-card-pink .bento-icon,
@@ -1643,6 +2066,38 @@ img.hero-logo.dark-only,
 [data-md-color-scheme="slate"] .bento-card-light-gray .bento-link,
 [data-md-color-scheme="slate"] .bento-card-purple .bento-link {
     color: #fef08a;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy .bento-icon {
+    color: #e9a033 !important;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold .bento-icon {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy-light .bento-icon {
+    color: #e9a033 !important;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold-light .bento-icon {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy .bento-link {
+    color: #e9a033;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold .bento-link {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-navy-light .bento-link {
+    color: #e9a033;
+}
+
+[data-md-color-scheme="slate"] .bento-card-brand-gold-light .bento-link {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Responsive design */

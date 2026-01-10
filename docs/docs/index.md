@@ -50,139 +50,218 @@ hide:
 
 </div>
 
-<div class="features-section" markdown>
+<div class="features-intro-section scroll-fade-in" markdown>
+## Built for **Speed**, Designed for **Scale**
 
-# Queries that feel **natural** {.scroll-fade-in}
+</div>
+
+<div class="features-section" markdown>
 
 <div class="bento-ticker-wrapper scroll-fade-in">
 <div class="bento-ticker-track">
 <div class="bento-grid">
-<div class="bento-card bento-card-large bento-card-pink">
-<div class="bento-card-content" markdown>
-:material-lightning-bolt:{ .lg .middle .bento-icon }
-
-### **Blazing Fast Performance**
-
-Experience **5.34x faster** performance than Pandas and **2x faster** than Polars on analytical workloads. Columnar storage with SIMD vectorization delivers sub-millisecond query execution with near-zero overhead compared to native RayforceDB.
+<a href="content/get-started/technical-details.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-gold">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>0 Overhead</strong></h3>
+<p>Zero overhead compared to native RayforceDB. Direct C API integration ensures minimal latency between Python and the runtime engine.</p>
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-green">
-<div class="bento-card-content" markdown>
-:fontawesome-solid-feather-pointed:{ .lg .middle .bento-icon }
-
-### **Pythonic API**
-
-Chainable, fluent query syntax that feels natural. Write expressive data transformations with zero learning curve. Seamless integration through C API with minimal overhead between Python and RayforceDB runtime.
-
-[:octicons-arrow-right-24: Learn More](content/documentation/overview.md){ .bento-link }
+<a href="content/documentation/plugins/polars.html" class="bento-card-link">
+<div class="bento-card bento-card-wide bento-card-brand-navy-light">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Integration with Polars/Pandas</strong></h3>
+<p>Seamlessly integrate with your existing data science stack. Full compatibility with Pandas DataFrames and Polars DataFrames through built-in plugins.</p>
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-gray">
-<div class="bento-card-content" markdown>
-:material-language-python:{ .lg .middle .bento-icon }
-
-### **Zero Dependencies**
-
-Lightweight core under **1 MB footprint**. Pure Python implementation with no external libraries required. Simple deployment, focus on performance without the bloat.
+<a href="content/get-started/benchmarks.html" class="bento-card-link">
+<div class="bento-card bento-card-tall bento-card-brand-navy">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Performance</strong></h3>
+<p>Experience <strong>blazing fast</strong> query execution with columnar storage and SIMD vectorization. Optimized for analytical workloads with sub-millisecond performance.</p>
+<div class="bento-performance-vertical-chart">
+<div class="perf-bar-vertical">
+<div class="perf-bar-vertical-label">Rayforce</div>
+<div class="perf-bar-vertical-container">
+<div class="perf-bar-vertical-fill perf-bar-vertical-rayforce"></div>
+</div>
+<div class="perf-bar-vertical-value">1.0x</div>
+</div>
+<div class="perf-bar-vertical">
+<div class="perf-bar-vertical-label">Polars</div>
+<div class="perf-bar-vertical-container">
+<div class="perf-bar-vertical-fill perf-bar-vertical-polars"></div>
+</div>
+<div class="perf-bar-vertical-value">2.0x</div>
+</div>
+<div class="perf-bar-vertical">
+<div class="perf-bar-vertical-label">Pandas</div>
+<div class="perf-bar-vertical-container">
+<div class="perf-bar-vertical-fill perf-bar-vertical-pandas"></div>
+</div>
+<div class="perf-bar-vertical-value">5.34x</div>
 </div>
 </div>
-
-<div class="bento-card bento-card-tall bento-card-light-gray">
-<div class="bento-card-content" markdown>
-:material-rocket-launch:{ .lg .middle .bento-icon }
-
-### **Production Ready**
-
-Battle-tested columnar engine optimized for real-world analytics and data processing pipelines. Rich type system with 15+ data types including integers, floats, symbols, dates, timestamps, and more. Full compatibility with Pandas and Polars data formats.
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-purple">
-<div class="bento-card-content" markdown>
-:material-memory:{ .lg .middle .bento-icon }
-
-### **In-Process Embedding**
-
-No separate database server needed. Embed directly in your application for immediate data access with zero network overhead. Automatic memory management with reference counting between Python and Rayforce runtime.
+<a href="content/documentation/query-guide/overview.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-gold-light">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Pythonic Syntax</strong></h3>
+<p>Chainable, fluent query syntax that feels natural. Write expressive data transformations with zero learning curve.</p>
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-wide bento-card-yellow">
-<div class="bento-card-content" markdown>
-:material-cloud-outline:{ .lg .middle .bento-icon }
-
-### **Enterprise Scale**
-
-Scale effortlessly on any cloud infrastructure. Optimized memory usage and CPU efficiency reduce operational costs. Perfect for time-series data, big data analytics, and high-frequency data processing workloads.
+<a href="content/documentation/plugins/kdb.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-gold">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>KDB Plugin</strong></h3>
+<p>Native KDB+ integration plugin for seamless data exchange and query execution in KDB+ environments.</p>
 </div>
 </div>
+</a>
+
+<a href="content/documentation/websocket.html" class="bento-card-link">
+<div class="bento-card bento-card-wide bento-card-brand-navy">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Websocket and TCP Servers</strong></h3>
+<p>Real-time data streaming and remote query execution through WebSocket and TCP connections. Build interactive dashboards, live analytics, and distributed data processing applications.</p>
+</div>
+</div>
+</a>
+
+<a href="content/get-started/overview.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-navy-light">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>0 Dependencies</strong></h3>
+<p>Lightweight core with no external dependencies. Pure Python implementation with minimal footprint for simple deployment.</p>
+</div>
+</div>
+</a>
 </div>
 
 <!-- Duplicate grid for seamless loop -->
 <div class="bento-grid">
-<div class="bento-card bento-card-large bento-card-pink">
-<div class="bento-card-content" markdown>
-:material-lightning-bolt:{ .lg .middle .bento-icon }
-
-### **Blazing Fast Performance**
-
-Experience **5.34x faster** performance than Pandas and **2x faster** than Polars on analytical workloads. Columnar storage with SIMD vectorization delivers sub-millisecond query execution with near-zero overhead compared to native RayforceDB.
+<a href="content/get-started/technical-details.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-gold">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>0 Overhead</strong></h3>
+<p>Zero overhead compared to native RayforceDB. Direct C API integration ensures minimal latency between Python and the runtime engine.</p>
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-green">
-<div class="bento-card-content" markdown>
-:fontawesome-solid-feather-pointed:{ .lg .middle .bento-icon }
-
-### **Pythonic API**
-
-Chainable, fluent query syntax that feels natural. Write expressive data transformations with zero learning curve. Seamless integration through C API with minimal overhead between Python and RayforceDB runtime.
-
-[:octicons-arrow-right-24: Learn More](content/documentation/overview.md){ .bento-link }
+<a href="content/documentation/plugins/polars.html" class="bento-card-link">
+<div class="bento-card bento-card-wide bento-card-brand-navy-light">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Integration with Polars/Pandas</strong></h3>
+<p>Seamlessly integrate with your existing data science stack. Full compatibility with Pandas DataFrames and Polars DataFrames through built-in plugins.</p>
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-gray">
-<div class="bento-card-content" markdown>
-:material-language-python:{ .lg .middle .bento-icon }
-
-### **Zero Dependencies**
-
-Lightweight core under **1 MB footprint**. Pure Python implementation with no external libraries required. Simple deployment, focus on performance without the bloat.
+<a href="content/get-started/benchmarks.html" class="bento-card-link">
+<div class="bento-card bento-card-tall bento-card-brand-navy">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Performance</strong></h3>
+<p>Experience <strong>blazing fast</strong> query execution with columnar storage and SIMD vectorization. Optimized for analytical workloads with sub-millisecond performance.</p>
+<div class="bento-performance-vertical-chart">
+<div class="perf-bar-vertical">
+<div class="perf-bar-vertical-label">Rayforce</div>
+<div class="perf-bar-vertical-container">
+<div class="perf-bar-vertical-fill perf-bar-vertical-rayforce"></div>
+</div>
+<div class="perf-bar-vertical-value">1.0x</div>
+</div>
+<div class="perf-bar-vertical">
+<div class="perf-bar-vertical-label">Polars</div>
+<div class="perf-bar-vertical-container">
+<div class="perf-bar-vertical-fill perf-bar-vertical-polars"></div>
+</div>
+<div class="perf-bar-vertical-value">2.0x</div>
+</div>
+<div class="perf-bar-vertical">
+<div class="perf-bar-vertical-label">Pandas</div>
+<div class="perf-bar-vertical-container">
+<div class="perf-bar-vertical-fill perf-bar-vertical-pandas"></div>
+</div>
+<div class="perf-bar-vertical-value">5.34x</div>
 </div>
 </div>
-
-<div class="bento-card bento-card-tall bento-card-light-gray">
-<div class="bento-card-content" markdown>
-:material-rocket-launch:{ .lg .middle .bento-icon }
-
-### **Production Ready**
-
-Battle-tested columnar engine optimized for real-world analytics and data processing pipelines. Rich type system with 15+ data types including integers, floats, symbols, dates, timestamps, and more. Full compatibility with Pandas and Polars data formats.
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-purple">
-<div class="bento-card-content" markdown>
-:material-memory:{ .lg .middle .bento-icon }
-
-### **In-Process Embedding**
-
-No separate database server needed. Embed directly in your application for immediate data access with zero network overhead. Automatic memory management with reference counting between Python and Rayforce runtime.
+<a href="content/documentation/query-guide/overview.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-gold-light">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Pythonic Syntax</strong></h3>
+<p>Chainable, fluent query syntax that feels natural. Write expressive data transformations with zero learning curve.</p>
 </div>
 </div>
+</a>
 
-<div class="bento-card bento-card-wide bento-card-yellow">
-<div class="bento-card-content" markdown>
-:material-cloud-outline:{ .lg .middle .bento-icon }
-
-### **Enterprise Scale**
-
-Scale effortlessly on any cloud infrastructure. Optimized memory usage and CPU efficiency reduce operational costs. Perfect for time-series data, big data analytics, and high-frequency data processing workloads.
+<a href="content/documentation/plugins/kdb.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-gold">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>KDB Plugin</strong></h3>
+<p>Native KDB+ integration plugin for seamless data exchange and query execution in KDB+ environments.</p>
 </div>
 </div>
+</a>
+
+<a href="content/documentation/websocket.html" class="bento-card-link">
+<div class="bento-card bento-card-wide bento-card-brand-navy">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Websocket and TCP Servers</strong></h3>
+<p>Real-time data streaming and remote query execution through WebSocket and TCP connections. Build interactive dashboards, live analytics, and distributed data processing applications.</p>
+</div>
+</div>
+</a>
+
+<a href="content/get-started/overview.html" class="bento-card-link">
+<div class="bento-card bento-card-brand-navy-light">
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>0 Dependencies</strong></h3>
+<p>Lightweight core with no external dependencies. Pure Python implementation with minimal footprint for simple deployment.</p>
+</div>
+</div>
+</a>
 </div>
 </div>
 </div>
@@ -271,38 +350,34 @@ table[<span class="code-string">'age'</span>] = table[<span class="code-string">
 <div class="bento-ticker-track">
 <div class="bento-grid">
 <div class="bento-card bento-card-wide bento-card-purple">
-<div class="bento-card-content" markdown>
-:fontawesome-brands-python:{ .lg .middle .bento-icon }
-
-### **Python Ecosystem Integration**
-
-Seamlessly integrate with your existing data science stack. Full compatibility with Pandas DataFrames and Polars DataFrames through built-in plugins. Convert data effortlessly between formats while maintaining type safety and performance.
-
-[:octicons-arrow-right-24: View Plugins](content/documentation/plugins/polars.md){ .bento-link }
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Pandas & Polars Integration</strong></h3>
+<p>Seamlessly integrate with your existing data science stack. Full compatibility with Pandas DataFrames and Polars DataFrames through built-in plugins. Convert data effortlessly between formats while maintaining type safety and performance.</p>
+<a href="content/documentation/plugins/polars.md" class="bento-link">View Plugins :octicons-arrow-right-24:</a>
 </div>
 </div>
 
 <div class="bento-card bento-card-pink">
-<div class="bento-card-content" markdown>
+<div class="bento-card-content">
+<div markdown>
 :material-web:{ .lg .middle .bento-icon }
-
-### **WebSocket Support**
-
-Real-time data streaming and remote query execution through WebSocket connections. Build interactive dashboards, live analytics, and distributed data processing applications with native WebSocket protocol support.
-
-[:octicons-arrow-right-24: WebSocket Docs](content/documentation/websocket.md){ .bento-link }
+</div>
+<h3><strong>WebSocket Support</strong></h3>
+<p>Real-time data streaming and remote query execution through WebSocket connections. Build interactive dashboards, live analytics, and distributed data processing applications with native WebSocket protocol support.</p>
+<a href="content/documentation/websocket.md" class="bento-link">WebSocket Docs :octicons-arrow-right-24:</a>
 </div>
 </div>
 
 <div class="bento-card bento-card-green">
-<div class="bento-card-content" markdown>
+<div class="bento-card-content">
+<div markdown>
 :material-database:{ .lg .middle .bento-icon }
-
-### **RayforceDB Core**
-
-Built on top of RayforceDB, a high-performance columnar vector database written in pure C. Leverage optimized SIMD operations, efficient memory layouts, and battle-tested algorithms designed for analytical workloads.
-
-[:octicons-arrow-right-24: Learn More](https://rayforcedb.com){ .bento-link }
+</div>
+<h3><strong>RayforceDB Core</strong></h3>
+<p>Built on top of RayforceDB, a high-performance columnar vector database written in pure C. Leverage optimized SIMD operations, efficient memory layouts, and battle-tested algorithms designed for analytical workloads.</p>
+<a href="https://rayforcedb.com" class="bento-link">Learn More :octicons-arrow-right-24:</a>
 </div>
 </div>
 </div>
@@ -310,38 +385,34 @@ Built on top of RayforceDB, a high-performance columnar vector database written 
 <!-- Duplicate grid for seamless loop -->
 <div class="bento-grid">
 <div class="bento-card bento-card-wide bento-card-purple">
-<div class="bento-card-content" markdown>
-:fontawesome-brands-python:{ .lg .middle .bento-icon }
-
-### **Python Ecosystem Integration**
-
-Seamlessly integrate with your existing data science stack. Full compatibility with Pandas DataFrames and Polars DataFrames through built-in plugins. Convert data effortlessly between formats while maintaining type safety and performance.
-
-[:octicons-arrow-right-24: View Plugins](content/documentation/plugins/polars.md){ .bento-link }
+<div class="bento-card-content">
+<div markdown>
+</div>
+<h3><strong>Pandas & Polars Integration</strong></h3>
+<p>Seamlessly integrate with your existing data science stack. Full compatibility with Pandas DataFrames and Polars DataFrames through built-in plugins. Convert data effortlessly between formats while maintaining type safety and performance.</p>
+<a href="content/documentation/plugins/polars.md" class="bento-link">View Plugins :octicons-arrow-right-24:</a>
 </div>
 </div>
 
 <div class="bento-card bento-card-pink">
-<div class="bento-card-content" markdown>
+<div class="bento-card-content">
+<div markdown>
 :material-web:{ .lg .middle .bento-icon }
-
-### **WebSocket Support**
-
-Real-time data streaming and remote query execution through WebSocket connections. Build interactive dashboards, live analytics, and distributed data processing applications with native WebSocket protocol support.
-
-[:octicons-arrow-right-24: WebSocket Docs](content/documentation/websocket.md){ .bento-link }
+</div>
+<h3><strong>WebSocket Support</strong></h3>
+<p>Real-time data streaming and remote query execution through WebSocket connections. Build interactive dashboards, live analytics, and distributed data processing applications with native WebSocket protocol support.</p>
+<a href="content/documentation/websocket.md" class="bento-link">WebSocket Docs :octicons-arrow-right-24:</a>
 </div>
 </div>
 
 <div class="bento-card bento-card-green">
-<div class="bento-card-content" markdown>
+<div class="bento-card-content">
+<div markdown>
 :material-database:{ .lg .middle .bento-icon }
-
-### **RayforceDB Core**
-
-Built on top of RayforceDB, a high-performance columnar vector database written in pure C. Leverage optimized SIMD operations, efficient memory layouts, and battle-tested algorithms designed for analytical workloads.
-
-[:octicons-arrow-right-24: Learn More](https://rayforcedb.com){ .bento-link }
+</div>
+<h3><strong>RayforceDB Core</strong></h3>
+<p>Built on top of RayforceDB, a high-performance columnar vector database written in pure C. Leverage optimized SIMD operations, efficient memory layouts, and battle-tested algorithms designed for analytical workloads.</p>
+<a href="https://rayforcedb.com" class="bento-link">Learn More :octicons-arrow-right-24:</a>
 </div>
 </div>
 </div>
