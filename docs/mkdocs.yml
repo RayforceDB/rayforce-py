@@ -39,7 +39,7 @@ theme:
   font:
     text: Outfit
     code: JetBrains Mono
-  logo: assets/py_logo_dark.svg
+  logo: assets/py_logo_light.svg
 
 
 extra:

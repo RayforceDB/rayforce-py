@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <span style="color: var(--gold-500); font-weight: 700;">1,225 μs</span>
       </div>
       <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, var(--gold-500), var(--gold-400)); height: 100%; width: 17.8%;"></div>
+        <div style="background: linear-gradient(90deg, #f5c542, #f5c542); height: 100%; width: 17.8%;"></div>
       </div>
     </div>
     <div style="color: var(--gold-500); font-weight: 700; min-width: 60px; text-align: right;">1.00x</div>
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <span style="color: var(--navy-300); font-weight: 700;">1,207 μs</span>
       </div>
       <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, var(--navy-400), var(--navy-300)); height: 100%; width: 17.6%;"></div>
+        <div style="background: linear-gradient(90deg, #f5c542, #f5c542); height: 100%; width: 17.6%;"></div>
       </div>
     </div>
     <div style="color: var(--navy-300); font-weight: 700; min-width: 60px; text-align: right;">1.00x</div>
