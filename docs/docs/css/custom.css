@@ -1,26 +1,3 @@
-/*
- *   Copyright (c) 2025 Anton Kundenko <singaraiona@gmail.com>
- *   All rights reserved.
- *
- *   Permission is hereby granted, free of charge, to any person obtaining a copy
- *   of this software and associated documentation files (the "Software"), to deal
- *   in the Software without restriction, including without limitation the rights
- *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *   copies of the Software, and to permit persons to whom the Software is
- *   furnished to do so, subject to the following conditions:
- *
- *   The above copyright notice and this permission notice shall be included in all
- *   copies or substantial portions of the Software.
- *
- *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *   SOFTWARE.
- */
-
 /* ============================================================================
    PRODUCTION-GRADE COLOR PALETTE SYSTEM
    Navy & Gold Theme
@@ -56,35 +33,35 @@
   --text-tertiary: #718096;       /* Tertiary/muted text - WCAG AA (4.8:1) */
   --text-muted: #64748B;
   --text-inverse: #ffffff;         /* Text on dark backgrounds */
-  
+
   /* Background Colors - Light navy tones */
   --bg-primary: #ffffff;           /* Main background */
   --bg-secondary: var(--navy-100); /* Secondary background (cards, sections) */
   --bg-tertiary: var(--navy-200);  /* Tertiary background (hover states) */
   --bg-elevated: #ffffff;          /* Elevated surfaces (modals, dropdowns) */
-  
+
   /* Border Colors - Subtle navy */
   --border-primary: var(--navy-200); /* Primary borders */
   --border-secondary: var(--navy-300); /* Secondary borders */
   --border-focus: var(--gold-500);    /* Focus ring (gold accent) */
-  
+
   /* Accent Colors - Gold */
   --accent-primary: var(--gold-500);  /* Primary accent (gold) */
   --accent-hover: var(--gold-400);     /* Hover state - lighter gold */
   --accent-active: var(--gold-600);    /* Active state - darker gold */
   --accent-light: #fef3c7;             /* Light accent background */
-  
+
   /* Link Colors */
   --link-color: var(--gold-600);       /* Links - matches accent */
   --link-hover: var(--gold-500);       /* Link hover */
   --link-visited: var(--gold-700);     /* Visited links */
-  
+
   /* Code Colors - Subtle, readable */
   --code-bg: var(--navy-100);         /* Code block background */
   --code-text: #1a1a1a;               /* Code text */
   --code-border: var(--navy-200);      /* Code block border */
   --code-inline-bg: var(--navy-100);   /* Inline code background */
-  
+
   /* Syntax Highlighting - Accessible, low-saturation */
   --code-hl-keyword: #7c3aed;         /* Keywords (purple) - WCAG AA */
   --code-hl-string: #059669;           /* Strings (green) - WCAG AA */
@@ -93,44 +70,44 @@
   --code-hl-comment: #64748b;          /* Comments (muted gray) */
   --code-hl-operator: var(--navy-600); /* Operators (navy) */
   --code-hl-punctuation: #475569;      /* Punctuation (gray) */
-  
+
   /* Callout Colors - Semantic, accessible */
   --callout-info-bg: #dbeafe;         /* Info background */
   --callout-info-border: #3b82f6;      /* Info border */
   --callout-info-text: #1e40af;        /* Info text */
-  
+
   --callout-warn-bg: #fef3c7;         /* Warning background */
   --callout-warn-border: var(--gold-500); /* Warning border */
   --callout-warn-text: var(--gold-700);   /* Warning text */
-  
+
   --callout-danger-bg: #fee2e2;       /* Danger background */
   --callout-danger-border: #ef4444;   /* Danger border */
   --callout-danger-text: #991b1b;     /* Danger text */
-  
+
   --callout-success-bg: #d1fae5;      /* Success background */
   --callout-success-border: #10b981;  /* Success border */
   --callout-success-text: #065f46;    /* Success text */
-  
+
   /* Shadow Colors */
   --shadow-sm: rgba(0, 0, 0, 0.05);
   --shadow-md: rgba(0, 0, 0, 0.1);
   --shadow-lg: rgba(0, 0, 0, 0.15);
-  
+
   /* Gradients */
   --gradient-gold: linear-gradient(135deg, var(--gold-500), var(--gold-300));
   --gradient-hero: linear-gradient(180deg, var(--navy-900) 0%, var(--navy-800) 100%);
   --gradient-card: linear-gradient(145deg, rgba(27, 54, 93, 0.4) 0%, rgba(17, 24, 39, 0.8) 100%);
-  
+
   /* Typography */
   --font-display: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  
+
   /* Spacing */
   --section-padding: clamp(2rem, 4vw, 3.5rem);
   --container-width: 1280px;
   --border-radius: 12px;
   --border-radius-lg: 20px;
-  
+
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-base: 250ms ease;
@@ -147,35 +124,35 @@
   --text-tertiary: #64748B;        /* Tertiary/muted text - WCAG AA */
   --text-muted: #64748B;
   --text-inverse: #1a1a1a;         /* Text on light backgrounds */
-  
+
   /* Background Colors - Navy theme */
   --bg-primary: var(--navy-900);    /* Main background */
   --bg-secondary: var(--navy-800);  /* Secondary background */
   --bg-tertiary: #151D2E;           /* Tertiary background */
   --bg-elevated: var(--navy-800);   /* Elevated surfaces */
-  
+
   /* Border Colors - Subtle navy */
   --border-primary: var(--navy-700);  /* Primary borders */
   --border-secondary: var(--navy-600); /* Secondary borders */
   --border-focus: var(--gold-500);     /* Focus ring (gold) */
-  
+
   /* Accent Colors - Gold */
   --accent-primary: var(--gold-500);  /* Primary accent (gold) */
   --accent-hover: var(--gold-400);     /* Hover state - lighter gold */
   --accent-active: var(--gold-600);    /* Active state - darker gold */
   --accent-light: rgba(233, 163, 32, 0.2); /* Light accent background */
-  
+
   /* Link Colors */
   --link-color: var(--gold-400);       /* Links */
   --link-hover: var(--gold-300);       /* Link hover */
   --link-visited: var(--gold-500);     /* Visited links */
-  
+
   /* Code Colors */
   --code-bg: var(--navy-800);         /* Code block background */
   --code-text: #F8FAFC;               /* Code text */
   --code-border: var(--navy-700);     /* Code block border */
   --code-inline-bg: var(--navy-800);   /* Inline code background */
-  
+
   /* Syntax Highlighting - Adjusted for dark mode */
   --code-hl-keyword: #a78bfa;         /* Keywords (lighter purple) */
   --code-hl-string: #34d399;           /* Strings (lighter green) */
@@ -184,44 +161,44 @@
   --code-hl-comment: #94a3b8;         /* Comments (muted) */
   --code-hl-operator: var(--gold-500); /* Operators (gold) */
   --code-hl-punctuation: #cbd5e0;      /* Punctuation */
-  
+
   /* Callout Colors - Darker backgrounds */
   --callout-info-bg: #1e3a5f;         /* Info background */
   --callout-info-border: #60a5fa;     /* Info border */
   --callout-info-text: #93c5fd;       /* Info text */
-  
+
   --callout-warn-bg: rgba(233, 163, 32, 0.2); /* Warning background */
   --callout-warn-border: var(--gold-500);      /* Warning border */
   --callout-warn-text: var(--gold-300);        /* Warning text */
-  
+
   --callout-danger-bg: #7f1d1d;       /* Danger background */
   --callout-danger-border: #f87171;   /* Danger border */
   --callout-danger-text: #fca5a5;     /* Danger text */
-  
+
   --callout-success-bg: #064e3b;      /* Success background */
   --callout-success-border: #34d399;  /* Success border */
   --callout-success-text: #6ee7b7;    /* Success text */
-  
+
   /* Shadow Colors - Lighter for dark mode */
   --shadow-sm: rgba(0, 0, 0, 0.3);
   --shadow-md: rgba(0, 0, 0, 0.5);
   --shadow-lg: rgba(0, 0, 0, 0.7);
-  
+
   /* Gradients */
   --gradient-gold: linear-gradient(135deg, var(--gold-500), var(--gold-300));
   --gradient-hero: linear-gradient(180deg, var(--navy-900) 0%, var(--navy-800) 100%);
   --gradient-card: linear-gradient(145deg, rgba(27, 54, 93, 0.4) 0%, rgba(17, 24, 39, 0.8) 100%);
-  
+
   /* Typography */
   --font-display: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  
+
   /* Spacing */
   --section-padding: clamp(2rem, 4vw, 3.5rem);
   --container-width: 1280px;
   --border-radius: 12px;
   --border-radius-lg: 20px;
-  
+
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-base: 250ms ease;

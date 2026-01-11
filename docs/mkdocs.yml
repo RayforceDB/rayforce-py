@@ -47,7 +47,7 @@ extra:
       - icon: fontawesome/brands/github
         link: https://github.com/RayforceDB/rayforce-py
 
-copyright: Copyright &copy; 2025 RayforceDB
+copyright: Copyright &copy; 2026 RayforceDB
 
 plugins:
   - offline
