@@ -42,3 +42,4 @@ docs/site/
 .rayhist.dat
 tables/
 .python-version
+test_data_2gb.parquet

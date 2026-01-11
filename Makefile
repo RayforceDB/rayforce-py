@@ -27,7 +27,7 @@ pull_rayforce_from_github:
 patch_rayforce_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@echo 'PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_init_from_buffer.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'PY_APP_OBJECTS = app/term.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) -I$$(shell python3 -c "import sysconfig; print(sysconfig.get_config_var(\"INCLUDEPY\"))") -Wno-macro-redefined' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
@@ -54,6 +54,7 @@ rayforce_binaries:
 	@cp rayforce/capi/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cp rayforce/capi/rayforce_c.h tmp/rayforce-c/core/rayforce_c.h
 	@cp rayforce/capi/raypy_init_from_py.c tmp/rayforce-c/core/raypy_init_from_py.c
+	@cp rayforce/capi/raypy_init_from_buffer.c tmp/rayforce-c/core/raypy_init_from_buffer.c
 	@cp rayforce/capi/raypy_read_from_rf.c tmp/rayforce-c/core/raypy_read_from_rf.c
 	@cp rayforce/capi/raypy_queries.c tmp/rayforce-c/core/raypy_queries.c
 	@cp rayforce/capi/raypy_io.c tmp/rayforce-c/core/raypy_io.c

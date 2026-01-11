@@ -111,6 +111,10 @@ static PyMethodDef rayforce_methods[] = {
      "Create a new dictionary object"},
     {"init_vector", raypy_init_vector, METH_VARARGS,
      "Create a new vector object"},
+    {"init_vector_from_arrow_array", raypy_init_vector_from_arrow_array,
+     METH_VARARGS,
+     "Create a new vector object from PyArrow Array (zero-copy Arrow buffer "
+     "access)"},
     {"read_i16", raypy_read_i16, METH_VARARGS, "Read i16 value from object"},
     {"read_i32", raypy_read_i32, METH_VARARGS, "Read i32 value from object"},
     {"read_i64", raypy_read_i64, METH_VARARGS, "Read i64 value from object"},

@@ -116,6 +116,7 @@ PyObject *raypy_init_list(PyObject *self, PyObject *args);
 PyObject *raypy_init_table(PyObject *self, PyObject *args);
 PyObject *raypy_init_dict(PyObject *self, PyObject *args);
 PyObject *raypy_init_vector(PyObject *self, PyObject *args);
+PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args);
 PyObject *raypy_read_i16(PyObject *self, PyObject *args);
 PyObject *raypy_read_i32(PyObject *self, PyObject *args);
 PyObject *raypy_read_i64(PyObject *self, PyObject *args);

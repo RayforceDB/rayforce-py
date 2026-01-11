@@ -29,7 +29,8 @@ rayforce = "rayforce.cli:main"
 [project.optional-dependencies]
 pandas = ["pandas>=2.0.0"]
 polars = ["polars>=0.19.0"]
-all = ["pandas>=2.0.0", "polars>=0.19.0"]
+parquet = ["pyarrow>=10.0.0"]
+all = ["pandas>=2.0.0", "polars>=0.19.0", "pyarrow>=10.0.0"]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",

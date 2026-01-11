@@ -139,6 +139,11 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def init_vector_from_arrow_array(type_code: int, arrow_array: t.Any) -> r.RayObject:
+        return r.init_vector_from_arrow_array(type_code, arrow_array)
+
+    @staticmethod
+    @errors.error_handler
     def init_list(item: list[t.Any]) -> r.RayObject:
         return r.init_list(item)
 

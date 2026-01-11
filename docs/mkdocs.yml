@@ -136,6 +136,7 @@ nav:
     - IPC: content/documentation/IPC.md
     - Websocket: content/documentation/websocket.md
     - Plugins:
+      - Parquet: content/documentation/plugins/parquet.md
       - Polars: content/documentation/plugins/polars.md
       - Pandas: content/documentation/plugins/pandas.md
       - KDB: content/documentation/plugins/kdb.md
