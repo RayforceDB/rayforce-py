@@ -1,5 +1,3 @@
-import pytest
-
 from rayforce import F64, I64, Column, Symbol, Table, TableColumnInterval, Vector
 from rayforce.types.scalars import Time
 
@@ -227,7 +225,6 @@ def test_asof_join():
             assert ask_val == 130, f"Expected ask=130 for GOOGL at 250ms, got {ask_val}"
 
 
-@pytest.mark.skip
 def test_window_join():
     # Create trades table
     trades = Table(
@@ -327,7 +324,6 @@ def test_window_join():
             assert max_ask == 212.0, f"Expected max_ask=212.0 for GOOG, got {max_ask}"
 
 
-@pytest.mark.skip
 def test_window_join1():
     trades = Table(
         {
