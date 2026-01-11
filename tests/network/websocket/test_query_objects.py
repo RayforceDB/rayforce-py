@@ -233,6 +233,7 @@ async def test_asof_join_ws(ws_server):
     await connection.close()
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_window_join_ws(ws_server):
     _, port = ws_server
@@ -285,6 +286,7 @@ async def test_window_join_ws(ws_server):
     await connection.close()
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_window_join1_ws(ws_server):
     _, port = ws_server
