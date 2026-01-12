@@ -2166,7 +2166,7 @@ img.hero-logo.dark-only,
 }
 
 .perf-bar-vertical-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 500;
     color: #888888;
     text-align: center;
@@ -3276,6 +3276,11 @@ img.hero-logo.dark-only,
         padding: 1.5rem 1rem 0 1rem;
     }
 
+    .hero-content {
+        display: flex;
+        flex-direction: column-reverse;
+    }
+
     .hero-section h1 {
         font-size: 2rem;
     }
@@ -3284,11 +3289,19 @@ img.hero-logo.dark-only,
         font-size: 1.1rem;
     }
 
+    .hero-logo-wrapper {
+        order: 2;
+    }
+
+    .hero-text {
+        order: 1;
+    }
+
     .hero-logo,
     .hero-section img.hero-logo,
     .hero-content img.hero-logo {
-        max-width: 500px !important;
-        margin-bottom: 24px !important;
+        max-width: 350px !important;
+        margin: 0 auto 24px !important;
     }
 
     .hero-btn {

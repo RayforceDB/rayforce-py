@@ -14,7 +14,7 @@
   --hero-content-max-width: 1200px;
 
   /* Typography */
-  --hero-h1-size: 2.5rem;
+  --hero-h1-size: 2.3rem;
   --hero-h1-size-mobile: 1.75rem;
   --hero-description-size: 1.25rem;
   --hero-description-size-mobile: 1rem;
@@ -290,15 +290,17 @@ body:has(.hero-section) article > h1:first-child {
 /* Subtitle logo (RayforceDB logo in text) */
 .hero-description .hero-subtitle-logo,
 .hero-subtitle-logo {
-  height: 1.725em !important;
+  height: 1.825em !important;
   max-height: 2.59rem !important;
   width: auto !important;
-  display: inline !important;
+  display: inline-block !important;
   vertical-align: middle !important;
-  line-height: inherit !important;
+  line-height: 1 !important;
   margin: 0 0.25rem !important;
   padding: 0 !important;
   object-fit: contain !important;
+  position: relative;
+  top: -0.04rem;
 }
 
 .hero-subtitle-logo--light {
@@ -900,6 +902,33 @@ body:has(.hero-section) article > h1:first-child {
 
   .hero-content {
     padding-top: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .hero-logo-wrapper {
+    order: -1;
+  }
+
+  .hero-text {
+    text-align: center;
+  }
+
+  .hero-text h1,
+  .hero-content h1 {
+    text-align: center;
+  }
+
+  .hero-description {
+    text-align: center;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-socials {
+    justify-content: center;
   }
 
   .features-section h2 {

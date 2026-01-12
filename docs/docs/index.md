@@ -8,7 +8,7 @@ hide:
 <div class="hero-content" markdown>
 
 <div class="hero-text scroll-fade-in" markdown>
-# Experience Database **Like Never Before** {.scroll-fade-in}
+# Experience Database<br>**Like Never Before** {.scroll-fade-in}
 
 <div class="hero-description scroll-fade-in">
   <span class="hero-description-faded">Get sub-millisecond <a href="https://rayforcedb.com" class="hero-subtitle-logo-link"><img src="assets/logo_light_full.svg" alt="RayforceDB" class="hero-subtitle-logo hero-subtitle-logo--dark"><img src="assets/logo_dark_full.svg" alt="RayforceDB" class="hero-subtitle-logo hero-subtitle-logo--light"></a> performance on analytical workloads through columnar storage and SIMD vectorization - all while writing beautiful, <strong>Pythonic code</strong>.</span>
