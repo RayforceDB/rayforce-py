@@ -49,19 +49,15 @@ hide:
 </div>
 </div>
 
-<div class="features-intro-section scroll-fade-in" markdown>
+<div class="bento-section scroll-fade-in">
+<div class="bento-grid-static">
 
-<div class="bento-ticker-wrapper scroll-fade-in">
-<div class="bento-ticker-track">
-<div class="bento-grid">
 <a href="content/get-started/technical-details.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold" style="transform: scale(0.85);">
+<div class="bento-card bento-card-brand-gold">
 <div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Zero Overhead</strong></h3> <p>Performance is on par with native RayforceDB. Direct C API integration minimizes latency between Python and the runtime engine.</p>
-<br>
-<div class="hero-socials scroll-fade-in">
+<h3><strong>Zero Overhead</strong></h3>
+<p>Performance is on par with native RayforceDB. Direct C API integration minimizes latency between Python and the runtime engine.</p>
+<div class="hero-socials">
 <a href="content/get-started/benchmarks.html" title="Benchmarks" class="hero-social-link">
   <img src="assets/benchmark-icon.svg" alt="Benchmarks" class="hero-social-icon">
 </a>
@@ -74,11 +70,10 @@ hide:
 </a>
 
 <a href="content/get-started/benchmarks.html" class="bento-card-link">
-<div class="bento-card bento-card-wide bento-card-brand-navy-light" style="transform: scale(0.85);">
+<div class="bento-card bento-card-wide bento-card-brand-navy-light">
 <div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Performance</strong></h3> <p>Delivers <strong>blazingly-fast</strong> query execution through columnar storage and SIMD vectorization. Designed for analytical workloads with consistent sub-millisecond latency.</p>
+<h3><strong>Performance</strong></h3>
+<p>Delivers <strong>blazingly-fast</strong> query execution through columnar storage and SIMD vectorization. Designed for analytical workloads with consistent sub-millisecond latency.</p>
 <div class="bento-performance-vertical-chart">
 <div class="perf-bar-vertical">
 <div class="perf-bar-vertical-label">Rayforce</div>
@@ -107,12 +102,11 @@ hide:
 </a>
 
 <a href="content/get-started/benchmarks.html" class="bento-card-link">
-<div class="bento-card bento-card-tall bento-card-brand-navy" style="transform: scale(0.85);">
+<div class="bento-card bento-card-tall bento-card-brand-navy">
 <div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Ecosystem</strong></h3> <p>RayforceDB provides a wide range of ways to <strong>operate on and introspect data</strong>. Support spans <strong>multiple languages and in-house tools</strong>, enabling the development of high-performance solutions.</p>
-<div class="hero-socials scroll-fade-in">
+<h3><strong>Ecosystem</strong></h3>
+<p>RayforceDB provides a wide range of ways to <strong>operate on and introspect data</strong>. Support spans <strong>multiple languages and in-house tools</strong>, enabling the development of high-performance solutions.</p>
+<div class="hero-socials">
 <a href="https://core.rayforcedb.com" title="RayforceDB" class="hero-social-link-light">
   <img src="assets/logo_dark.svg" alt="RayforceDB" class="hero-social-icon-light">
 </a>
@@ -128,10 +122,8 @@ hide:
 </a>
 
 <a href="content/documentation/query-guide/overview.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold-light" style="transform: scale(0.85);">
+<div class="bento-card bento-card-brand-gold-light">
 <div class="bento-card-content">
-<div markdown>
-</div>
 <h3><strong>Pythonic Syntax</strong></h3>
 <p>Chainable query syntax that <strong>feels natural</strong>. Write expressive data transformations with <strong>zero learning curve</strong>.</p>
 </div>
@@ -139,247 +131,19 @@ hide:
 </a>
 
 <a href="content/documentation/plugins/kdb.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold" style="transform: scale(0.85);">
+<div class="bento-card bento-card-brand-gold">
 <div class="bento-card-content">
-<div markdown>
-</div>
 <h3><strong>Plugin Ecosystem</strong></h3>
-<p>Multiple embedded plugins are available, including Parquet, Pandas, Polars, and KDB+, with ongoing expansion. <a href="content/documentation/plugins/polars.html">See more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <line x1="5" y1="12" x2="19" y2="12"></line>
-  <polyline points="12 5 19 12 12 19"></polyline>
-  </svg> </a></p>
+<p>Multiple embedded plugins are available, including Parquet, Pandas, Polars, and KDB+, with ongoing expansion.</p>
 </div>
 </div>
 </a>
 
 <a href="content/documentation/websocket.html" class="bento-card-link">
-<div class="bento-card bento-card-wide bento-card-brand-navy" style="transform: scale(0.85);">
+<div class="bento-card bento-card-wide bento-card-brand-navy">
 <div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>WebSocket and TCP Servers</strong></h3> <p>Execute queries over WebSocket and TCP connections with low latency. <strong>Deploy servers</strong>, organize data in a <strong>distributed manner</strong>, enable monitoring, and build distributed data processing applications <strong>efficiently</strong>.</p>
-</div>
-</div>
-</a>
-
-</div>
-
-<div class="bento-grid">
-<a href="content/get-started/technical-details.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Zero Overhead</strong></h3> <p>Performance is on par with native RayforceDB. Direct C API integration minimizes latency between Python and the runtime engine.</p>
-<br>
-<div class="hero-socials scroll-fade-in">
-<a href="content/get-started/benchmarks.html" title="Benchmarks" class="hero-social-link">
-  <img src="assets/benchmark-icon.svg" alt="Benchmarks" class="hero-social-icon">
-</a>
-<a href="content/get-started/technical-details.html" title="Technical Details" class="hero-social-link">
-  <img src="assets/wrench-icon.svg" alt="Technical Details" class="hero-social-icon">
-</a>
-</div>
-</div>
-</div>
-</a>
-
-<a href="content/get-started/benchmarks.html" class="bento-card-link">
-<div class="bento-card bento-card-wide bento-card-brand-navy-light" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Performance</strong></h3> <p>Delivers <strong>blazingly-fast</strong> query execution through columnar storage and SIMD vectorization. Designed for analytical workloads with consistent sub-millisecond latency.</p>
-<div class="bento-performance-vertical-chart">
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Rayforce</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-rayforce"></div>
-</div>
-<div class="perf-bar-vertical-value">1.0x</div>
-</div>
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Polars</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-polars"></div>
-</div>
-<div class="perf-bar-vertical-value">2.0x</div>
-</div>
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Pandas</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-pandas"></div>
-</div>
-<div class="perf-bar-vertical-value">5.34x</div>
-</div>
-</div>
-</div>
-</div>
-</a>
-
-<a href="content/get-started/benchmarks.html" class="bento-card-link">
-<div class="bento-card bento-card-tall bento-card-brand-navy" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Ecosystem</strong></h3> <p>RayforceDB provides a wide range of ways to <strong>operate on and introspect data</strong>. Support spans <strong>multiple languages and in-house tools</strong>, enabling the development of high-performance solutions.</p>
-<div class="hero-socials scroll-fade-in">
-<a href="https://core.rayforcedb.com" title="RayforceDB" class="hero-social-link-light">
-  <img src="assets/logo_dark.svg" alt="RayforceDB" class="hero-social-icon-light">
-</a>
-<a href="https://vscode.rayforcedb.com" title="Rayforce-VSCode" class="hero-social-link-light">
-  <img src="assets/vscode.svg" alt="Rayforce-VSCode" class="hero-social-icon-light">
-</a>
-<a href="https://rs.rayforcedb.com" title="Rayforce-Rust" class="hero-social-link-light">
-  <img src="assets/rust_logo.svg" alt="Rayforce-Rust" class="hero-social-icon-light">
-</a>
-</div>
-</div>
-</div>
-</a>
-
-<a href="content/documentation/query-guide/overview.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold-light" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Pythonic Syntax</strong></h3>
-<p>Chainable query syntax that <strong>feels natural</strong>. Write expressive data transformations with <strong>zero learning curve</strong>.</p>
-</div>
-</div>
-</a>
-
-<a href="content/documentation/plugins/kdb.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Plugin Ecosystem</strong></h3>
-<p>Multiple embedded plugins are available, including Parquet, Pandas, Polars, and KDB+, with ongoing expansion. <a href="content/documentation/plugins/polars.html">See more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <line x1="5" y1="12" x2="19" y2="12"></line>
-  <polyline points="12 5 19 12 12 19"></polyline>
-  </svg> </a></p>
-</div>
-</div>
-</a>
-
-<a href="content/documentation/websocket.html" class="bento-card-link">
-<div class="bento-card bento-card-wide bento-card-brand-navy" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>WebSocket and TCP Servers</strong></h3> <p>Execute queries over WebSocket and TCP connections with low latency. <strong>Deploy servers</strong>, organize data in a <strong>distributed manner</strong>, enable monitoring, and build distributed data processing applications <strong>efficiently</strong>.</p>
-</div>
-</div>
-</a>
-
-</div>
-
-<div class="bento-grid">
-<a href="content/get-started/technical-details.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Zero Overhead</strong></h3> <p>Performance is on par with native RayforceDB. Direct C API integration minimizes latency between Python and the runtime engine.</p>
-<br>
-<div class="hero-socials scroll-fade-in">
-<a href="content/get-started/benchmarks.html" title="Benchmarks" class="hero-social-link">
-  <img src="assets/benchmark-icon.svg" alt="Benchmarks" class="hero-social-icon">
-</a>
-<a href="content/get-started/technical-details.html" title="Technical Details" class="hero-social-link">
-  <img src="assets/wrench-icon.svg" alt="Technical Details" class="hero-social-icon">
-</a>
-</div>
-</div>
-</div>
-</a>
-
-<a href="content/get-started/benchmarks.html" class="bento-card-link">
-<div class="bento-card bento-card-wide bento-card-brand-navy-light" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Performance</strong></h3> <p>Delivers <strong>blazingly-fast</strong> query execution through columnar storage and SIMD vectorization. Designed for analytical workloads with consistent sub-millisecond latency.</p>
-<div class="bento-performance-vertical-chart">
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Rayforce</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-rayforce"></div>
-</div>
-<div class="perf-bar-vertical-value">1.0x</div>
-</div>
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Polars</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-polars"></div>
-</div>
-<div class="perf-bar-vertical-value">2.0x</div>
-</div>
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Pandas</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-pandas"></div>
-</div>
-<div class="perf-bar-vertical-value">5.34x</div>
-</div>
-</div>
-</div>
-</div>
-</a>
-
-<a href="content/get-started/benchmarks.html" class="bento-card-link">
-<div class="bento-card bento-card-tall bento-card-brand-navy" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Ecosystem</strong></h3> <p>RayforceDB provides a wide range of ways to <strong>operate on and introspect data</strong>. Support spans <strong>multiple languages and in-house tools</strong>, enabling the development of high-performance solutions.</p>
-<div class="hero-socials scroll-fade-in">
-<a href="https://core.rayforcedb.com" title="RayforceDB" class="hero-social-link-light">
-  <img src="assets/logo_dark.svg" alt="RayforceDB" class="hero-social-icon-light">
-</a>
-<a href="https://vscode.rayforcedb.com" title="Rayforce-VSCode" class="hero-social-link-light">
-  <img src="assets/vscode.svg" alt="Rayforce-VSCode" class="hero-social-icon-light">
-</a>
-<a href="https://rs.rayforcedb.com" title="Rayforce-Rust" class="hero-social-link-light">
-  <img src="assets/rust_logo.svg" alt="Rayforce-Rust" class="hero-social-icon-light">
-</a>
-</div>
-</div>
-</div>
-</a>
-
-<a href="content/documentation/query-guide/overview.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold-light" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Pythonic Syntax</strong></h3>
-<p>Chainable query syntax that <strong>feels natural</strong>. Write expressive data transformations with <strong>zero learning curve</strong>.</p>
-</div>
-</div>
-</a>
-
-<a href="content/documentation/plugins/kdb.html" class="bento-card-link">
-<div class="bento-card bento-card-brand-gold" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>Plugin Ecosystem</strong></h3>
-<p>Multiple embedded plugins are available, including Parquet, Pandas, Polars, and KDB+, with ongoing expansion. <a href="content/documentation/plugins/polars.html">See more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <line x1="5" y1="12" x2="19" y2="12"></line>
-  <polyline points="12 5 19 12 12 19"></polyline>
-  </svg> </a></p>
-</div>
-</div>
-</a>
-
-<a href="content/documentation/websocket.html" class="bento-card-link">
-<div class="bento-card bento-card-wide bento-card-brand-navy" style="transform: scale(0.85);">
-<div class="bento-card-content">
-<div markdown>
-</div>
-<h3><strong>WebSocket and TCP Servers</strong></h3> <p>Execute queries over WebSocket and TCP connections with low latency. <strong>Deploy servers</strong>, organize data in a <strong>distributed manner</strong>, enable monitoring, and build distributed data processing applications <strong>efficiently</strong>.</p>
+<h3><strong>WebSocket and TCP Servers</strong></h3>
+<p>Execute queries over WebSocket and TCP connections with low latency. <strong>Deploy servers</strong>, organize data in a <strong>distributed manner</strong>, and build distributed data processing applications.</p>
 </div>
 </div>
 </a>
@@ -387,16 +151,12 @@ hide:
 </div>
 </div>
 
+<div class="cta-section scroll-fade-in">
+<div class="cta-content">
+<h2>Get started in <strong>seconds</strong></h2>
+<p>Rayforce-Py is open source under MIT license. Install, import, and run your first query today!</p>
+<a href="content/get-started/overview.html" class="md-button md-button--primary">Get Started</a>
 </div>
-
-<div class="cta-section scroll-fade-in" markdown>
-
-## Get started in **seconds**
-
-Rayforce-Py is open source under MIT license. Install, import, and run your first query today!
-
-[Get Started](content/get-started/overview.html){ .md-button .md-button--primary }
-
 </div>
 
 <div class="home-footer">
@@ -436,6 +196,17 @@ Rayforce-Py is open source under MIT license. Install, import, and run your firs
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Move CTA section outside of md-content to avoid MkDocs formatting
+  const ctaSection = document.querySelector('.cta-section');
+  const homeFooter = document.querySelector('.home-footer');
+  if (ctaSection && homeFooter) {
+    const mdMain = document.querySelector('.md-main');
+    if (mdMain) {
+      mdMain.parentNode.insertBefore(ctaSection, mdMain.nextSibling);
+      mdMain.parentNode.insertBefore(homeFooter, ctaSection.nextSibling);
+    }
+  }
+
   // Tab switching functionality
   document.querySelectorAll('.code-tab').forEach(tab => {
     tab.addEventListener('click', function() {
@@ -520,87 +291,5 @@ document.addEventListener('DOMContentLoaded', function() {
       el.classList.add('visible');
     }
   });
-
-  // Manual scroll control for bento ticker
-  const tickerWrapper = document.querySelector('.bento-ticker-wrapper');
-  const tickerTrack = document.querySelector('.bento-ticker-track');
-
-  if (tickerWrapper && tickerTrack) {
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-    let autoScrollInterval;
-    const scrollSpeed = 0.5; // pixels per frame
-
-    // Get single grid width (we have 3 copies)
-    const singleGridWidth = tickerTrack.scrollWidth / 3;
-
-    // Auto scroll function
-    function autoScroll() {
-      if (!isDown) {
-        tickerWrapper.scrollLeft += scrollSpeed;
-
-        // Infinite scroll logic - reset when we've scrolled past one grid
-        if (tickerWrapper.scrollLeft >= singleGridWidth * 2) {
-          tickerWrapper.scrollLeft = tickerWrapper.scrollLeft - singleGridWidth;
-        }
-      }
-      autoScrollInterval = requestAnimationFrame(autoScroll);
-    }
-
-    // Start auto scroll
-    autoScroll();
-
-    // Mouse down event - pause auto scroll
-    tickerWrapper.addEventListener('mousedown', (e) => {
-      isDown = true;
-      tickerWrapper.style.cursor = 'grabbing';
-      startX = e.pageX - tickerWrapper.offsetLeft;
-      scrollLeft = tickerWrapper.scrollLeft;
-      e.preventDefault(); // Prevent text selection
-    });
-
-    // Mouse leave event
-    tickerWrapper.addEventListener('mouseleave', () => {
-      if (isDown) {
-        isDown = false;
-        tickerWrapper.style.cursor = 'grab';
-      }
-    });
-
-    // Mouse up event
-    tickerWrapper.addEventListener('mouseup', () => {
-      if (isDown) {
-        isDown = false;
-        tickerWrapper.style.cursor = 'grab';
-      }
-    });
-
-    // Mouse move event
-    tickerWrapper.addEventListener('mousemove', (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - tickerWrapper.offsetLeft;
-      const walk = (x - startX);
-      const newScrollLeft = scrollLeft - walk;
-      tickerWrapper.scrollLeft = newScrollLeft;
-
-      // Infinite scroll logic for manual scroll - seamless loop
-      if (newScrollLeft >= singleGridWidth * 2) {
-        const offset = newScrollLeft - singleGridWidth;
-        tickerWrapper.scrollLeft = offset;
-        scrollLeft = offset;
-        startX = x;
-      } else if (newScrollLeft <= 0) {
-        const offset = singleGridWidth + newScrollLeft;
-        tickerWrapper.scrollLeft = offset;
-        scrollLeft = offset;
-        startX = x;
-      }
-    });
-
-    // Set cursor style
-    tickerWrapper.style.cursor = 'grab';
-  }
 });
 </script>

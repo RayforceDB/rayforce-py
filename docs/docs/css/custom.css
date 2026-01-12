@@ -72,9 +72,17 @@ body:has(.hero-section) .md-content,
 body:has(.hero-section) .md-content__inner,
 body:has(.hero-section) .md-main__inner,
 body:has(.hero-section) .md-main,
-body:has(.hero-section) .md-container {
+body:has(.hero-section) .md-container,
+body:has(.hero-section) .md-typeset {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
+    overflow: visible !important;
+    max-width: none !important;
+}
+
+body:has(.hero-section) .md-content__inner {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .flex-container {
@@ -157,10 +165,10 @@ body:has(.hero-section) .md-container {
   --link-visited: var(--gold-700);     /* Visited links */
 
   /* Code Colors - Subtle, readable */
-  --code-bg: var(--navy-100);         /* Code block background */
+  --code-bg: #e8eef4;                 /* Code block background - light navy */
   --code-text: #1a1a1a;               /* Code text */
-  --code-border: var(--navy-200);      /* Code block border */
-  --code-inline-bg: var(--navy-100);   /* Inline code background */
+  --code-border: #d0dbe6;             /* Code block border */
+  --code-inline-bg: #e8eef4;          /* Inline code background */
 
   /* Syntax Highlighting - Accessible, low-saturation */
   --code-hl-keyword: #7c3aed;         /* Keywords (purple) - WCAG AA */
@@ -168,7 +176,7 @@ body:has(.hero-section) .md-container {
   --code-hl-number: var(--gold-600);  /* Numbers (gold) - WCAG AA */
   --code-hl-function: #0284c7;         /* Functions (blue) - WCAG AA */
   --code-hl-comment: #64748b;          /* Comments (muted gray) */
-  --code-hl-operator: var(--navy-600); /* Operators (navy) */
+  --code-hl-operator: #04233b;         /* Operators (navy) */
   --code-hl-punctuation: #475569;      /* Punctuation (gray) */
 
   /* Callout Colors - Semantic, accessible */
@@ -1685,69 +1693,74 @@ img.hero-logo.dark-only,
 }
 
 /* ==================== */
-/* BENTO TICKER         */
+/* BENTO SECTION        */
 /* ==================== */
 
-.bento-ticker-wrapper {
+.bento-section {
     width: 100vw;
-    overflow: hidden;
-    margin-top: -3rem;
-    margin-bottom: -1rem;
-    position: relative;
-    z-index: 1;
     margin-left: calc(-50vw + 50%);
-    padding: 2rem 4rem;
-    background-color: var(--hero-bg-dark);
+    padding: 4rem 2rem;
+    position: relative;
+    background: linear-gradient(135deg, #021828 0%, #04233b 50%, #021828 100%);
+}
+
+.bento-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-image:
-        radial-gradient(ellipse 60% 80% at 20% 50%, rgba(233, 160, 51, 0.15), transparent),
-        radial-gradient(ellipse 50% 70% at 80% 50%, rgba(233, 160, 51, 0.1), transparent),
         linear-gradient(rgba(233, 163, 32, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(233, 163, 32, 0.05) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
+    background-size: 60px 60px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+    pointer-events: none;
+    z-index: 0;
 }
 
-[data-md-color-scheme="default"] .bento-ticker-wrapper {
-    background-color: var(--hero-bg-light);
+.bento-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 120%, rgba(233, 160, 51, 0.2), transparent),
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(233, 160, 51, 0.1), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 40%, rgba(10, 58, 92, 0.5), transparent);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-md-color-scheme="default"] .bento-section {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%);
+}
+
+[data-md-color-scheme="default"] .bento-section::after {
     background-image:
-        radial-gradient(ellipse 60% 80% at 20% 50%, rgba(233, 160, 51, 0.12), transparent),
-        radial-gradient(ellipse 50% 70% at 80% 50%, rgba(59, 130, 246, 0.08), transparent),
         linear-gradient(rgba(27, 54, 93, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(27, 54, 93, 0.03) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
+    background-size: 60px 60px;
 }
 
-.bento-ticker-track {
-    display: flex;
-    gap: 0.7rem;
-    animation: ticker-scroll 60s linear infinite;
-    width: fit-content;
-    will-change: transform;
-    position: relative;
-    z-index: 2;
+[data-md-color-scheme="default"] .bento-section::before {
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 120%, rgba(233, 160, 51, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(233, 160, 51, 0.1), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 40%, rgba(4, 35, 59, 0.08), transparent);
 }
 
-.bento-ticker-track > .bento-grid + .bento-grid {
-    margin-left: 0;
-}
-
-@keyframes ticker-scroll {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-.bento-grid {
+.bento-grid-static {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.7rem;
-    width: 100vw;
-    padding: 2rem 0;
-    box-sizing: border-box;
-    /* margin-left: calc(-50vw + 50%); */
-    flex-shrink: 0;
-    /* position: relative; */
+    gap: 1.2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
     z-index: 1;
 }
 
@@ -1793,7 +1806,7 @@ img.hero-logo.dark-only,
 
 .bento-card-link:hover .bento-card,
 .bento-card:hover {
-    transform: translateY(-6px) scale(0.90);
+    transform: translateY(-6px);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
     z-index: 10;
 }
@@ -2463,19 +2476,19 @@ img.hero-logo.dark-only,
     color: rgba(255, 255, 255, 0.9);
 }
 
-/* Responsive design */
+/* Responsive design for bento section */
 @media (max-width: 768px) {
-    .bento-ticker-wrapper {
-        padding: 1.5rem 0;
+    .bento-section {
+        padding: 2rem 1rem;
     }
 
-    .bento-grid {
-        width: calc(100vw);
+    .bento-grid-static {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .bento-card {
-        min-height: 200px;
+        min-height: auto;
         padding: 1.5rem;
     }
 
@@ -2491,7 +2504,19 @@ img.hero-logo.dark-only,
     }
 
     .bento-card-content h3 {
-        font-size: 1.25rem;
+        font-size: 1.1rem;
+    }
+
+    .bento-card-content p {
+        font-size: 0.9rem;
+    }
+
+    .bento-performance-vertical-chart {
+        gap: 0.8rem;
+    }
+
+    .perf-bar-vertical-label {
+        font-size: 0.7rem;
     }
 }
 
@@ -2903,10 +2928,14 @@ img.hero-logo.dark-only,
 /* ==================== */
 
 .cta-section {
-    text-align: center;
     padding: 4rem 2rem;
-    max-width: 800px;
+    text-align: center;
+}
+
+.cta-content {
+    max-width: 1200px;
     margin: 0 auto;
+    text-align: center;
 }
 
 .cta-section h2 {
@@ -2927,15 +2956,31 @@ img.hero-logo.dark-only,
     margin-bottom: 2rem;
 }
 
+[data-md-color-scheme="slate"] .cta-section h2 {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .cta-section p {
+    color: rgba(255, 255, 255, 0.7);
+}
+
 .cta-section .md-button {
     margin: 0.5rem;
     border-radius: 50px;
-    padding: 0.8rem 2rem;
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
 }
 
 .cta-section .md-button--primary {
+    background-color: #e9a033;
+    border-color: #e9a033;
+    color: #04233b;
+}
+
+[data-md-color-scheme="default"] .cta-section .md-button--primary {
     background-color: #04233b;
     border-color: #04233b;
+    color: #ffffff;
 }
 
 .cta-section .md-button--primary:hover {

@@ -3,21 +3,22 @@
 Rayforce-Py is a powerful library which allows you to effectively execute statements inside RayforceDB runtime using handy Pythonic syntax.
 
 ```python
-      table.select(
-          total=Column("amount").sum(),
-          active_total=Column("amount").where(Column("status") == "active").sum(),
-          count=Column("amount").count(),
-      )
-      .by("category")
-      .execute()
-      ┌──────────┬───────┬──────────────┬───────┐
-      │ category │ total │ active_total │ count │
-      ├──────────┼───────┼──────────────┼───────┤
-      │ A        │ 600   │ 100          │ 3     │
-      │ B        │ 400   │ 400          │ 2     │
-      ├──────────┴───────┴──────────────┴───────┤
-      │ 2 rows (2 shown) 4 columns (4 shown)    │
-      └─────────────────────────────────────────┘
+>>> table.select(
+        total=Column("amount").sum(),
+        active_total=Column("amount").where(Column("status") == "active").sum(),
+        count=Column("amount").count(),
+    )
+    .by("category")
+    .execute()
+
+Out:┌──────────┬───────┬──────────────┬───────┐
+    │ category │ total │ active_total │ count │
+    ├──────────┼───────┼──────────────┼───────┤
+    │ A        │ 600   │ 100          │ 3     │
+    │ B        │ 400   │ 400          │ 2     │
+    ├──────────┴───────┴──────────────┴───────┤
+    │ 2 rows (2 shown) 4 columns (4 shown)    │
+    └─────────────────────────────────────────┘
 ```
 
 !!! note ""

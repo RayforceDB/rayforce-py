@@ -827,7 +827,7 @@ body:has(.hero-section) article > h1:first-child {
 
 .home-footer-section h3 {
   color: rgba(255, 255, 255, 0.95);
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 600;
   margin-bottom: 1rem;
 }
@@ -842,6 +842,7 @@ body:has(.hero-section) article > h1:first-child {
 
 .home-footer-section ul li {
   margin-bottom: 0.75rem;
+  font-size: 1.1rem;
 }
 
 .home-footer-section ul li a {
@@ -878,7 +879,7 @@ body:has(.hero-section) article > h1:first-child {
 .home-footer-bottom p {
   margin: 0;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 [data-md-color-scheme="default"] .home-footer-bottom p {
