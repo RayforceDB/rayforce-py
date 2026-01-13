@@ -1,8 +1,43 @@
 #include "rayforce_c.h"
+#include <pthread.h>
+#include <stdlib.h>
 
 void *g_runtime = NULL;
 
+// Objects dropped from non-main threads (asyncio) are queued here and processed
+// later
+static pthread_mutex_t g_dealloc_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned long g_main_thread_id = 0; // main thread ID
+
+static obj_p *g_dealloc_queue = NULL;
+static size_t g_dealloc_queue_size = 0;
+static size_t g_dealloc_queue_capacity = 0;
+
+static void queue_for_dealloc(obj_p obj) {
+  pthread_mutex_lock(&g_dealloc_mutex);
+  if (g_dealloc_queue_size >= g_dealloc_queue_capacity) {
+    size_t new_capacity =
+        g_dealloc_queue_capacity == 0 ? 16 : g_dealloc_queue_capacity * 2;
+    obj_p *new_queue = realloc(g_dealloc_queue, new_capacity * sizeof(obj_p));
+    if (new_queue == NULL) {
+      pthread_mutex_unlock(&g_dealloc_mutex);
+      return;
+    }
+    g_dealloc_queue = new_queue;
+    g_dealloc_queue_capacity = new_capacity;
+  }
+  g_dealloc_queue[g_dealloc_queue_size++] = obj;
+  pthread_mutex_unlock(&g_dealloc_mutex);
+}
+
+static void process_deferred_dealloc(void) {
+  pthread_mutex_lock(&g_dealloc_mutex);
+  for (size_t i = 0; i < g_dealloc_queue_size; i++) {
+    drop_obj(g_dealloc_queue[i]);
+  }
+  g_dealloc_queue_size = 0;
+  pthread_mutex_unlock(&g_dealloc_mutex);
+}
 
 int check_main_thread(void) {
   if (g_main_thread_id == 0) {
@@ -17,6 +52,7 @@ int check_main_thread(void) {
     return 0;
   }
 
+  process_deferred_dealloc();
   return 1;
 }
 
@@ -68,8 +104,16 @@ PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
 // --
 
 static void RayObject_dealloc(RayObject *self) {
-  if (self->obj != NULL && self->obj != NULL_OBJ)
-    drop_obj(self->obj);
+  if (self->obj != NULL && self->obj != NULL_OBJ) {
+    // if gc deallocates objects from background threads, we need to ensure
+    // that drop_obj always called from the main thread.
+    if (g_main_thread_id != 0 &&
+        (unsigned long)PyThread_get_thread_ident() == g_main_thread_id) {
+      drop_obj(self->obj);
+    } else {
+      queue_for_dealloc(self->obj);
+    }
+  }
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
