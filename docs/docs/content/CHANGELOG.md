@@ -5,6 +5,18 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.4.1`**
+
+### New Features
+
+- **Apache Parquet Support (Beta)**: Added `load_parquet()` function to read Parquet files directly into Rayforce Tables. Uses PyArrow for efficient zero-copy data access where possible. See [Parquet documentation](./documentation/plugins/parquet.md) for details.
+
+## Bug fixes
+- Fix for temporal type comparisons with integers
+
+2026-01-13 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.4.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.4.1)**
+
+
 ## **`0.4.0`**
 
 ### Breaking Changes
