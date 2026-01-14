@@ -50,10 +50,10 @@ endif
 
 pull_rayforce_from_github:
 ifeq ($(UNAME_S),Windows)
-	@if exist "$(EXEC_DIR)/tmp/rayforce-c" rmdir /S /Q "$(EXEC_DIR)/tmp/rayforce-c"
+	@if exist tmp\rayforce-c rmdir /S /Q tmp\rayforce-c
 	@echo Cloning rayforce repo from GitHub...
-	@git clone $(RAYFORCE_GITHUB) "$(EXEC_DIR)/tmp/rayforce-c"
-	@xcopy /E /I /Y "$(EXEC_DIR)\tmp\rayforce-c\core" "$(EXEC_DIR)\rayforce\rayforce"
+	@git clone $(RAYFORCE_GITHUB) tmp/rayforce-c
+	@xcopy /E /I /Y tmp\rayforce-c\core rayforce\rayforce\
 else
 	@rm -rf $(EXEC_DIR)/tmp/rayforce-c && \
 	echo "⬇️  Cloning rayforce repo from GitHub..."; \
@@ -64,14 +64,14 @@ endif
 patch_rayforce_makefile:
 ifeq ($(UNAME_S),Windows)
 	@echo Patching Makefile for Python support...
-	@echo. >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo # Build Python module >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_init_from_buffer.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo PY_APP_OBJECTS = app/term.o >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo python: CFLAGS = $$(RELEASE_CFLAGS) -I"$(PYTHON_INCLUDE)" -Wno-macro-redefined >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo python: LDFLAGS = $(RELEASE_LDFLAGS) >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo python: $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS) >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
-	@echo 	$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS) >> "$(EXEC_DIR)/tmp/rayforce-c/Makefile"
+	@echo. >> tmp\rayforce-c\Makefile
+	@echo # Build Python module >> tmp\rayforce-c\Makefile
+	@echo PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_init_from_buffer.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o >> tmp\rayforce-c\Makefile
+	@echo PY_APP_OBJECTS = app/term.o >> tmp\rayforce-c\Makefile
+	@echo python: CFLAGS = $$(RELEASE_CFLAGS) -I"$(PYTHON_INCLUDE)" -Wno-macro-redefined >> tmp\rayforce-c\Makefile
+	@echo python: LDFLAGS = $(RELEASE_LDFLAGS) >> tmp\rayforce-c\Makefile
+	@echo python: $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS) >> tmp\rayforce-c\Makefile
+	@echo 	$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS) >> tmp\rayforce-c\Makefile
 else
 	@echo "🔧 Patching Makefile for Python support..."
 	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
@@ -86,17 +86,16 @@ endif
 clean:
 ifeq ($(UNAME_S),Windows)
 	@echo Cleaning cache and generated files...
-	@if exist "$(EXEC_DIR)\rayforce\_rayforce_c.pyd" del /F /Q "$(EXEC_DIR)\rayforce\_rayforce_c.pyd"
-	@if exist "$(EXEC_DIR)\rayforce\_rayforce.c*.pyd" del /F /Q "$(EXEC_DIR)\rayforce\_rayforce.c*.pyd"
-	@if exist "$(EXEC_DIR)\rayforce\rayforce.dll" del /F /Q "$(EXEC_DIR)\rayforce\rayforce.dll"
-	@if exist "$(EXEC_DIR)\rayforce\plugins\raykx.dll" del /F /Q "$(EXEC_DIR)\rayforce\plugins\raykx.dll"
-	@if exist "$(EXEC_DIR)\rayforce\bin" rmdir /S /Q "$(EXEC_DIR)\rayforce\bin"
-	@if exist "$(EXEC_DIR)\build" rmdir /S /Q "$(EXEC_DIR)\build"
-	@if exist "$(EXEC_DIR)\dist" rmdir /S /Q "$(EXEC_DIR)\dist"
+	@if exist rayforce\_rayforce_c.pyd del /F /Q rayforce\_rayforce_c.pyd
+	@if exist rayforce\rayforce.dll del /F /Q rayforce\rayforce.dll
+	@if exist rayforce\plugins\raykx.dll del /F /Q rayforce\plugins\raykx.dll
+	@if exist rayforce\bin rmdir /S /Q rayforce\bin
+	@if exist build rmdir /S /Q build
+	@if exist dist rmdir /S /Q dist
 	@for /d /r . %%d in (__pycache__) do @if exist "%%d" rmdir /S /Q "%%d"
 	@for /d %%d in (*.egg-info) do @if exist "%%d" rmdir /S /Q "%%d"
-	@if exist "$(EXEC_DIR)\rayforce\rayforce" rmdir /S /Q "$(EXEC_DIR)\rayforce\rayforce"
-	@if exist "$(EXEC_DIR)\tmp" rmdir /S /Q "$(EXEC_DIR)\tmp"
+	@if exist rayforce\rayforce rmdir /S /Q rayforce\rayforce
+	@if exist tmp rmdir /S /Q tmp
 else
 	@echo "🧹 Cleaning cache and generated files..."
 	@cd $(EXEC_DIR) && rm -rf \
@@ -116,25 +115,25 @@ endif
 
 rayforce_binaries:
 ifeq ($(UNAME_S),Windows)
-	@copy rayforce\capi\rayforce_c.c tmp\rayforce-c\core\rayforce_c.c
-	@copy rayforce\capi\rayforce_c.h tmp\rayforce-c\core\rayforce_c.h
-	@copy rayforce\capi\raypy_init_from_py.c tmp\rayforce-c\core\raypy_init_from_py.c
-	@copy rayforce\capi\raypy_init_from_buffer.c tmp\rayforce-c\core\raypy_init_from_buffer.c
-	@copy rayforce\capi\raypy_read_from_rf.c tmp\rayforce-c\core\raypy_read_from_rf.c
-	@copy rayforce\capi\raypy_queries.c tmp\rayforce-c\core\raypy_queries.c
-	@copy rayforce\capi\raypy_io.c tmp\rayforce-c\core\raypy_io.c
-	@copy rayforce\capi\raypy_binary.c tmp\rayforce-c\core\raypy_binary.c
-	@copy rayforce\capi\raypy_dynlib.c tmp\rayforce-c\core\raypy_dynlib.c
-	@copy rayforce\capi\raypy_eval.c tmp\rayforce-c\core\raypy_eval.c
-	@copy rayforce\capi\raypy_iter.c tmp\rayforce-c\core\raypy_iter.c
-	@copy rayforce\capi\raypy_serde.c tmp\rayforce-c\core\raypy_serde.c
-	@cd tmp\rayforce-c && $(MAKE) python
-	@cd tmp\rayforce-c && $(MAKE) release
-	@cd tmp\rayforce-c\ext\raykx && $(MAKE) release
+	@copy rayforce\capi\rayforce_c.c tmp\rayforce-c\core\
+	@copy rayforce\capi\rayforce_c.h tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_init_from_py.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_init_from_buffer.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_read_from_rf.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_queries.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_io.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_binary.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_dynlib.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_eval.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_iter.c tmp\rayforce-c\core\
+	@copy rayforce\capi\raypy_serde.c tmp\rayforce-c\core\
+	cd tmp\rayforce-c && $(MAKE) python
+	cd tmp\rayforce-c && $(MAKE) release
+	cd tmp\rayforce-c\ext\raykx && $(MAKE) release
 	@copy tmp\rayforce-c\$(LIBNAME) rayforce\_rayforce_c.pyd
-	@copy tmp\rayforce-c\ext\raykx\$(RAYKX_LIB_NAME) rayforce\plugins\$(RAYKX_LIB_NAME)
+	@copy tmp\rayforce-c\ext\raykx\$(RAYKX_LIB_NAME) rayforce\plugins\
 	@if not exist rayforce\bin mkdir rayforce\bin
-	@copy tmp\rayforce-c\$(RAYFORCE_BIN) rayforce\bin\$(RAYFORCE_BIN)
+	@copy tmp\rayforce-c\$(RAYFORCE_BIN) rayforce\bin\
 else
 	@cp rayforce/capi/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cp rayforce/capi/rayforce_c.h tmp/rayforce-c/core/rayforce_c.h
