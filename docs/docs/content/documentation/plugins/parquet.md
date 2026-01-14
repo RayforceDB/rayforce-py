@@ -1,6 +1,5 @@
 # :fontawesome-solid-table: Apache Parquet Integration
 
-WIP
 !!! warning "Beta Feature"
     Parquet support is currently in beta and may behave unexpectedly. Please report any issues you encounter.
 
