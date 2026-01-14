@@ -22,6 +22,13 @@ git clone "${RAYFORCE_GITHUB}" "${EXEC_DIR}/tmp/rayforce-c"
 cp -r "${EXEC_DIR}/tmp/rayforce-c/core" "${EXEC_DIR}/rayforce/rayforce"
 
 UNAME_S=$(uname -s)
+
+echo "Patching Makefiles to use portable CPU target instead of -march=native..."
+if [[ "$UNAME_S" != "Darwin" ]]; then
+    # Replace -march=native with -march=x86-64-v3 (AVX2 baseline) for portable Linux builds
+    sed -i 's/-march=native/-march=x86-64-v3/g' "${EXEC_DIR}/tmp/rayforce-c/Makefile"
+    sed -i 's/-march=native/-march=x86-64-v3/g' "${EXEC_DIR}/tmp/rayforce-c/ext/raykx/Makefile"
+fi
 PYTHON_INCLUDE=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))")
 PYTHON_PYVER=$($PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
