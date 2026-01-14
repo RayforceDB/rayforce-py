@@ -529,3 +529,23 @@ def test_slice_with_two_arguments():
     assert [s.value for s in id_col] == ["001", "002", "003"]
     assert [s.value for s in name_col] == ["alice", "bob", "charlie"]
     assert [v.value for v in age_col] == [29, 34, 41]
+
+
+@pytest.mark.parametrize("is_inplace", [True, False])
+def test_shape(is_inplace):
+    num_rows = 1000
+    table = Table(
+        {
+            "id": Vector(items=list(range(num_rows)), ray_type=I64),
+            "value": Vector(items=[float(i) * 1.5 for i in range(num_rows)], ray_type=F64),
+            "category": Vector(items=[f"cat_{i % 10}" for i in range(num_rows)], ray_type=Symbol),
+        },
+    )
+
+    if is_inplace:
+        result = table.shape()
+    else:
+        table.save("test_shape_large")
+        result = Table("test_shape_large").shape()
+
+    assert result == (3, num_rows)

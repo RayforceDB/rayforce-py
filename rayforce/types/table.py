@@ -352,6 +352,15 @@ class TableValueAccessorMixin:
     def values(self) -> List:
         return utils.ray_to_python(FFI.get_table_values(self.evaled_ptr))
 
+    @DestructiveOperationHandler()
+    def shape(self) -> tuple:
+        return (
+            utils.eval_obj(List([Operation.COUNT, [Operation.KEY, self.evaled_ptr]])),  # x
+            utils.eval_obj(
+                List([Operation.COUNT, [Operation.AT, [Operation.VALUE, self.evaled_ptr], 0]])
+            ),  # y
+        )
+
 
 class TableReprMixin:
     _ptr: r.RayObject | str

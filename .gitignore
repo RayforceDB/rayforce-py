@@ -37,6 +37,8 @@ examples/
 .vscode
 __pycache__
 script.py
+script.q
+script.rfl
 .DS_Store
 docs/site/
 .rayhist.dat
@@ -44,3 +46,4 @@ tables/
 .python-version
 *.parquet
 .claude/
+db/
