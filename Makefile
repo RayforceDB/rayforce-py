@@ -49,7 +49,7 @@ pull_rayforce_from_github:
 
 patch_rayforce_makefile:
 	@echo Patching Makefile for Python support...
-	@$(PYTHON) -c "open('tmp/rayforce-c/Makefile', 'a').write('\n# Build Python module\nPY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_init_from_buffer.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o\nPY_APP_OBJECTS = app/term.o\npython: CFLAGS = $$(RELEASE_CFLAGS) -I\"$(PYTHON_INCLUDE)\" -Wno-macro-redefined\npython: LDFLAGS = $(RELEASE_LDFLAGS)\npython: $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS)\n\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)\n')"
+	@type python_patch.mk >> tmp\rayforce-c\Makefile
 
 clean:
 	@echo Cleaning cache and generated files...
@@ -76,7 +76,7 @@ rayforce_binaries:
 	@copy rayforce\capi\raypy_eval.c tmp\rayforce-c\core\
 	@copy rayforce\capi\raypy_iter.c tmp\rayforce-c\core\
 	@copy rayforce\capi\raypy_serde.c tmp\rayforce-c\core\
-	cd tmp\rayforce-c && $(MAKE) python
+	cd tmp\rayforce-c && $(MAKE) python PYTHON_INCLUDE="$(PYTHON_INCLUDE)" PYTHON_LDFLAGS="$(RELEASE_LDFLAGS)" PYTHON_LIBNAME="$(LIBNAME)" PYTHON_SHARED_FLAGS="$(SHARED_COMPILE_FLAGS)"
 	cd tmp\rayforce-c && $(MAKE) release
 	cd tmp\rayforce-c\ext\raykx && $(MAKE) release
 	@copy tmp\rayforce-c\$(LIBNAME) rayforce\_rayforce_c.pyd
@@ -99,13 +99,7 @@ pull_rayforce_from_github:
 
 patch_rayforce_makefile:
 	@echo "Patching Makefile for Python support..."
-	@echo '\n# Build Python module' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'PY_OBJECTS = core/rayforce_c.o core/raypy_init_from_py.o core/raypy_init_from_buffer.o core/raypy_read_from_rf.o core/raypy_queries.o core/raypy_io.o core/raypy_binary.o core/raypy_dynlib.o core/raypy_eval.o core/raypy_iter.o core/raypy_serde.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'PY_APP_OBJECTS = app/term.o' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'python: CFLAGS = $$(RELEASE_CFLAGS) -I$$(shell python3 -c "import sysconfig; print(sysconfig.get_config_var(\"INCLUDEPY\"))") -Wno-macro-redefined' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'python: LDFLAGS = $(RELEASE_LDFLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo 'python: $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@echo '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(CORE_OBJECTS) $$(PY_OBJECTS) $$(PY_APP_OBJECTS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@cat $(EXEC_DIR)/python_patch.mk >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 
 clean:
 	@echo "Cleaning cache and generated files..."
@@ -123,6 +117,8 @@ clean:
 		rayforce/rayforce/ \
 		tmp/
 
+UNIX_PYTHON_INCLUDE = $(shell python3 -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))")
+
 rayforce_binaries:
 	@cp rayforce/capi/rayforce_c.c tmp/rayforce-c/core/rayforce_c.c
 	@cp rayforce/capi/rayforce_c.h tmp/rayforce-c/core/rayforce_c.h
@@ -136,7 +132,7 @@ rayforce_binaries:
 	@cp rayforce/capi/raypy_eval.c tmp/rayforce-c/core/raypy_eval.c
 	@cp rayforce/capi/raypy_iter.c tmp/rayforce-c/core/raypy_iter.c
 	@cp rayforce/capi/raypy_serde.c tmp/rayforce-c/core/raypy_serde.c
-	@cd tmp/rayforce-c && $(MAKE) python
+	@cd tmp/rayforce-c && $(MAKE) python PYTHON_INCLUDE="$(UNIX_PYTHON_INCLUDE)" PYTHON_LDFLAGS="$(RELEASE_LDFLAGS)" PYTHON_LIBNAME="$(LIBNAME)" PYTHON_SHARED_FLAGS="$(SHARED_COMPILE_FLAGS)"
 	@cd tmp/rayforce-c && $(MAKE) release
 	@cd tmp/rayforce-c/ext/raykx && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
