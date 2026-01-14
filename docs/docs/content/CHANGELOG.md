@@ -5,6 +5,13 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.4.1`**
+
+- Internal release - fix build for Linux
+
+2026-01-14
+
+
 ## **`0.4.0`**
 
 ### Breaking Changes

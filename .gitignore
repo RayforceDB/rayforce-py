@@ -42,3 +42,5 @@ docs/site/
 .rayhist.dat
 tables/
 .python-version
+*.parquet
+.claude/
