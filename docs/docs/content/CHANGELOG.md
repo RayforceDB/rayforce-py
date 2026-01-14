@@ -5,6 +5,14 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.4.2`**
+
+### Bug fixes
+- Fix CI/CD Makefile patch for manylinux container CPU flags
+
+2026-01-14 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.4.2/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.4.2)**
+
+
 ## **`0.4.1`**
 
 ### New Features
