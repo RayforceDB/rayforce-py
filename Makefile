@@ -64,25 +64,25 @@ clean:
 	@if exist tmp rmdir /S /Q tmp
 
 rayforce_binaries:
-	@copy rayforce\capi\rayforce_c.c tmp\rayforce-c\core\
-	@copy rayforce\capi\rayforce_c.h tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_init_from_py.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_init_from_buffer.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_read_from_rf.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_queries.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_io.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_binary.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_dynlib.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_eval.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_iter.c tmp\rayforce-c\core\
-	@copy rayforce\capi\raypy_serde.c tmp\rayforce-c\core\
+	copy rayforce\capi\rayforce_c.c tmp\rayforce-c\core\rayforce_c.c
+	copy rayforce\capi\rayforce_c.h tmp\rayforce-c\core\rayforce_c.h
+	copy rayforce\capi\raypy_init_from_py.c tmp\rayforce-c\core\raypy_init_from_py.c
+	copy rayforce\capi\raypy_init_from_buffer.c tmp\rayforce-c\core\raypy_init_from_buffer.c
+	copy rayforce\capi\raypy_read_from_rf.c tmp\rayforce-c\core\raypy_read_from_rf.c
+	copy rayforce\capi\raypy_queries.c tmp\rayforce-c\core\raypy_queries.c
+	copy rayforce\capi\raypy_io.c tmp\rayforce-c\core\raypy_io.c
+	copy rayforce\capi\raypy_binary.c tmp\rayforce-c\core\raypy_binary.c
+	copy rayforce\capi\raypy_dynlib.c tmp\rayforce-c\core\raypy_dynlib.c
+	copy rayforce\capi\raypy_eval.c tmp\rayforce-c\core\raypy_eval.c
+	copy rayforce\capi\raypy_iter.c tmp\rayforce-c\core\raypy_iter.c
+	copy rayforce\capi\raypy_serde.c tmp\rayforce-c\core\raypy_serde.c
 	cd tmp\rayforce-c && $(MAKE) python PYTHON_INCLUDE="$(PYTHON_INCLUDE)" PYTHON_LDFLAGS="$(RELEASE_LDFLAGS)" PYTHON_LIBNAME="$(LIBNAME)" PYTHON_SHARED_FLAGS="$(SHARED_COMPILE_FLAGS)"
 	cd tmp\rayforce-c && $(MAKE) release
 	cd tmp\rayforce-c\ext\raykx && $(MAKE) release
-	@copy tmp\rayforce-c\$(LIBNAME) rayforce\_rayforce_c.pyd
-	@copy tmp\rayforce-c\ext\raykx\$(RAYKX_LIB_NAME) rayforce\plugins\
-	@if not exist rayforce\bin mkdir rayforce\bin
-	@copy tmp\rayforce-c\$(RAYFORCE_BIN) rayforce\bin\
+	copy tmp\rayforce-c\$(LIBNAME) rayforce\_rayforce_c.pyd
+	copy tmp\rayforce-c\ext\raykx\$(RAYKX_LIB_NAME) rayforce\plugins\$(RAYKX_LIB_NAME)
+	if not exist rayforce\bin mkdir rayforce\bin
+	copy tmp\rayforce-c\$(RAYFORCE_BIN) rayforce\bin\$(RAYFORCE_BIN)
 
 # ============================================================================
 # Unix (Darwin/Linux) targets
