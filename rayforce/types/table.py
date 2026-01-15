@@ -28,9 +28,15 @@ if t.TYPE_CHECKING:
 class _TableProtocol(t.Protocol):
     _ptr: r.RayObject | str
     is_reference: bool
+    is_parted: bool
 
     @property
     def ptr(self) -> r.RayObject: ...
+
+    @property
+    def evaled_ptr(self) -> r.RayObject: ...
+
+    def columns(self) -> Vector: ...
 
 
 class AggregationMixin:
@@ -459,7 +465,7 @@ class TableValueAccessorMixin:
                 f"Invalid target type: {to_type}. Must be a Rayforce type like I64, F64, Symbol."
             )
 
-        select_args = {}
+        select_args: dict[str, Expression | Column] = {}
         for col in current_cols:
             if col == column:
                 select_args[col] = Expression(
@@ -523,38 +529,38 @@ class TableQueryMixin:
         def ptr(self) -> r.RayObject: ...
 
     def select(self, *cols, **computed_cols) -> SelectQuery:
-        return SelectQuery(table=self).select(*cols, **computed_cols)
+        return SelectQuery(table=t.cast("_TableProtocol", self)).select(*cols, **computed_cols)
 
     def where(self, condition: Expression) -> SelectQuery:
-        return SelectQuery(table=self).where(condition)
+        return SelectQuery(table=t.cast("_TableProtocol", self)).where(condition)
 
     def by(self, *cols, **computed_cols) -> SelectQuery:
-        return SelectQuery(table=self).by(*cols, **computed_cols)
+        return SelectQuery(table=t.cast("_TableProtocol", self)).by(*cols, **computed_cols)
 
     def update(self, **kwargs) -> UpdateQuery:
-        return UpdateQuery(self, **kwargs)
+        return UpdateQuery(t.cast("_TableProtocol", self), **kwargs)
 
     def insert(self, *args, **kwargs) -> InsertQuery:
-        return InsertQuery(self, *args, **kwargs)
+        return InsertQuery(t.cast("_TableProtocol", self), *args, **kwargs)
 
     def upsert(self, *args, key_columns: int, **kwargs) -> UpsertQuery:
-        return UpsertQuery(self, *args, key_columns=key_columns, **kwargs)
+        return UpsertQuery(t.cast("_TableProtocol", self), *args, key_columns=key_columns, **kwargs)
 
-    def concat(self, *others: Table) -> Table:
-        result: Table = self  # type: ignore[assignment]
+    def concat(self, *others: _TableProtocol) -> Table:
+        result: _TableProtocol = t.cast("_TableProtocol", self)
         for other in others:
             expr = Expression(Operation.CONCAT, result.ptr, other.ptr)
             result = t.cast("Table", utils.eval_obj(expr.compile()))
-        return result
+        return t.cast("Table", result)
 
-    def inner_join(self, other: Table, on: str | list[str]) -> InnerJoin:
-        return InnerJoin(self, other, on)
+    def inner_join(self, other: _TableProtocol, on: str | list[str]) -> InnerJoin:
+        return InnerJoin(t.cast("_TableProtocol", self), other, on)
 
-    def left_join(self, other: Table, on: str | list[str]) -> LeftJoin:
-        return LeftJoin(self, other, on)
+    def left_join(self, other: _TableProtocol, on: str | list[str]) -> LeftJoin:
+        return LeftJoin(t.cast("_TableProtocol", self), other, on)
 
-    def asof_join(self, other: Table, on: str | list[str]) -> AsofJoin:
-        return AsofJoin(self, other, on)
+    def asof_join(self, other: _TableProtocol, on: str | list[str]) -> AsofJoin:
+        return AsofJoin(t.cast("_TableProtocol", self), other, on)
 
     def window_join(
         self,
@@ -563,7 +569,7 @@ class TableQueryMixin:
         interval: TableColumnInterval,
         **aggregations,
     ) -> WindowJoin:
-        return WindowJoin(self, on, join_with, interval, **aggregations)
+        return WindowJoin(t.cast("_TableProtocol", self), on, join_with, interval, **aggregations)
 
     def window_join1(
         self,
@@ -572,7 +578,7 @@ class TableQueryMixin:
         interval: TableColumnInterval,
         **aggregations,
     ) -> WindowJoin1:
-        return WindowJoin1(self, on, join_with, interval, **aggregations)
+        return WindowJoin1(t.cast("_TableProtocol", self), on, join_with, interval, **aggregations)
 
 
 class Table(
@@ -608,7 +614,7 @@ class _Join(IPCQueryMixin):
         | Operation.WINDOW_JOIN1
     ]
 
-    def __init__(self, table: _TableProtocol, other: Table, on: str | list[str]) -> None:
+    def __init__(self, table: _TableProtocol, other: _TableProtocol, on: str | list[str]) -> None:
         self.table = table
         self.other = other
         self.on = on
@@ -981,9 +987,6 @@ class UpsertQuery(IPCQueryMixin):
                 upsertable = Dict.from_items(keys=keys, values=_values).ptr
         else:
             raise errors.RayforceQueryCompilationError("No data to insert")
-
-        if self.key_columns <= 0:
-            raise errors.RayforceQueryCompilationError("key_columns must be greater than 0")
 
         return I64(self.key_columns).ptr, upsertable
 
