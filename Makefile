@@ -82,8 +82,8 @@ test-cov:
 	python3 -m pytest -x -vv --cov=rayforce --cov-report=term-missing tests/
 
 lint:
-	python3 -m ruff format tests/ rayforce/
-	python3 -m ruff check rayforce/ --fix
+	python3 -m ruff format tests/ rayforce/ benchmark/
+	python3 -m ruff check rayforce/ benchmark/ --fix
 	python3 -m ruff check tests/ --fix --select I
 	python3 -m mypy rayforce/
 	clang-format -i rayforce/capi/*

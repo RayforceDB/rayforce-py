@@ -1,3 +1,4 @@
+import duckdb
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -59,10 +60,15 @@ def prepare_data():
     # Prepare Polars DF
     pl_df = pl.DataFrame(data)
 
+    # Prepare DuckDB connection with native table (faster than registered pandas df)
+    duck_conn = duckdb.connect()
+    duck_conn.register("_temp_df", df)
+    duck_conn.execute("CREATE TABLE df AS SELECT * FROM _temp_df")
+
     # Prepare Rayforce-Py table
     table = Table(convert_to_vectors(data))
 
     # Prepare Rayforce table (used in runtime)
     table.save("t")
 
-    return df, pl_df, table
+    return df, pl_df, duck_conn, table

@@ -1,6 +1,7 @@
-from rayforce import eval_str, Column
-from timer import time_microseconds
 import polars as pl
+from timer import time_microseconds
+
+from rayforce import Column, eval_str
 
 
 class BenchmarkError(Exception): ...
@@ -41,6 +42,17 @@ class Q1:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q1_duckdb(conn):
+        """
+        Q1: Group by id1, sum v1
+        """
+
+        def run():
+            return conn.execute("SELECT id1, SUM(v1) as v1_sum FROM df GROUP BY id1").fetchdf()
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q1_native_rayforce(table_name):
         """
         Q1: Group by id1, sum v1
@@ -51,20 +63,17 @@ class Q1:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             # Handle Rayforce scalar types (F64, I64, etc.)
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             # Handle Rayforce scalar types with value property
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q2:
@@ -102,6 +111,19 @@ class Q2:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q2_duckdb(conn):
+        """
+        Q2: Group by id1, id2, sum v1
+        """
+
+        def run():
+            return conn.execute(
+                "SELECT id1, id2, SUM(v1) as v1_sum FROM df GROUP BY id1, id2"
+            ).fetchdf()
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q2_native_rayforce(table_name):
         """
         Q2: Group by id1, id2, sum v1
@@ -112,18 +134,15 @@ class Q2:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q3:
@@ -161,9 +180,21 @@ class Q3:
 
         def run():
             return df.group_by("id3").agg(
-                pl.col("v1").sum().alias("v1_sum"),
-                pl.col("v3").mean().alias("v3_avg")
+                pl.col("v1").sum().alias("v1_sum"), pl.col("v3").mean().alias("v3_avg")
             )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q3_duckdb(conn):
+        """
+        Q3: Group by id3, sum v1, avg v3
+        """
+
+        def run():
+            return conn.execute(
+                "SELECT id3, SUM(v1) as v1_sum, AVG(v3) as v3_avg FROM df GROUP BY id3"
+            ).fetchdf()
 
         return time_microseconds(run)
 
@@ -178,18 +209,15 @@ class Q3:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q4:
@@ -219,11 +247,7 @@ class Q4:
         """
 
         def run():
-            return (
-                df.groupby("id3")
-                .agg({"v1": "mean", "v2": "mean", "v3": "mean"})
-                .reset_index()
-            )
+            return df.groupby("id3").agg({"v1": "mean", "v2": "mean", "v3": "mean"}).reset_index()
 
         return time_microseconds(run)
 
@@ -237,8 +261,21 @@ class Q4:
             return df.group_by("id3").agg(
                 pl.col("v1").mean().alias("v1_avg"),
                 pl.col("v2").mean().alias("v2_avg"),
-                pl.col("v3").mean().alias("v3_avg")
+                pl.col("v3").mean().alias("v3_avg"),
             )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q4_duckdb(conn):
+        """
+        Q4: Group by id3, avg v1, avg v2, avg v3
+        """
+
+        def run():
+            return conn.execute(
+                "SELECT id3, AVG(v1) as v1_avg, AVG(v2) as v2_avg, AVG(v3) as v3_avg FROM df GROUP BY id3"
+            ).fetchdf()
 
         return time_microseconds(run)
 
@@ -253,18 +290,15 @@ class Q4:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q5:
@@ -294,11 +328,7 @@ class Q5:
         """
 
         def run():
-            return (
-                df.groupby("id3")
-                .agg({"v1": "sum", "v2": "sum", "v3": "sum"})
-                .reset_index()
-            )
+            return df.groupby("id3").agg({"v1": "sum", "v2": "sum", "v3": "sum"}).reset_index()
 
         return time_microseconds(run)
 
@@ -312,8 +342,21 @@ class Q5:
             return df.group_by("id3").agg(
                 pl.col("v1").sum().alias("v1_sum"),
                 pl.col("v2").sum().alias("v2_sum"),
-                pl.col("v3").sum().alias("v3_sum")
+                pl.col("v3").sum().alias("v3_sum"),
             )
+
+        return time_microseconds(run)
+
+    @staticmethod
+    def benchmark_q5_duckdb(conn):
+        """
+        Q5: Group by id3, sum v1, sum v2, sum v3
+        """
+
+        def run():
+            return conn.execute(
+                "SELECT id3, SUM(v1) as v1_sum, SUM(v2) as v2_sum, SUM(v3) as v3_sum FROM df GROUP BY id3"
+            ).fetchdf()
 
         return time_microseconds(run)
 
@@ -328,18 +371,15 @@ class Q5:
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 class Q6:
@@ -351,9 +391,7 @@ class Q6:
 
         def run():
             return (
-                table.select(
-                    range_v1_v2=(Column("v1").max() - Column("v2").min())
-                )
+                table.select(range_v1_v2=(Column("v1").max() - Column("v2").min()))
                 .by("id3")
                 .execute()
             )
@@ -387,28 +425,40 @@ class Q6:
         return time_microseconds(run)
 
     @staticmethod
+    def benchmark_q6_duckdb(conn):
+        """
+        Q6: Group by id3, max(v1) - min(v2)
+        """
+
+        def run():
+            return conn.execute(
+                "SELECT id3, MAX(v1) - MIN(v2) as range_v1_v2 FROM df GROUP BY id3"
+            ).fetchdf()
+
+        return time_microseconds(run)
+
+    @staticmethod
     def benchmark_q6_native_rayforce(table_name):
         """
         Q6: Group by id3, max(v1) - min(v2)
         """
 
-        query = f"(timeit (select {{range_v1_v2: (- (max v1) (min v2)) by: id3 from: {table_name}}}))"
+        query = (
+            f"(timeit (select {{range_v1_v2: (- (max v1) (min v2)) by: id3 from: {table_name}}}))"
+        )
         result = eval_str(query)
 
         if isinstance(result, dict) and "time" in result:
             return result["time"] * 1000, result
-        elif isinstance(result, (int, float)):
+        if isinstance(result, (int, float)):
             return result * 1000, result
-        elif hasattr(result, "to_python"):
+        if hasattr(result, "to_python"):
             value = result.to_python()
             return value * 1000, result
-        elif hasattr(result, "value"):
+        if hasattr(result, "value"):
             value = result.value
             return value * 1000, result
-        else:
-            raise BenchmarkError(
-                f"rayforce runtime returned unsupported measure: {type(result)}"
-            )
+        raise BenchmarkError(f"rayforce runtime returned unsupported measure: {type(result)}")
 
 
 benchmarks = [
@@ -417,6 +467,7 @@ benchmarks = [
         Q1.benchmark_q1_rayforce,
         Q1.benchmark_q1_pandas,
         Q1.benchmark_q1_polars,
+        Q1.benchmark_q1_duckdb,
         Q1.benchmark_q1_native_rayforce,
     ),
     (
@@ -424,6 +475,7 @@ benchmarks = [
         Q2.benchmark_q2_rayforce,
         Q2.benchmark_q2_pandas,
         Q2.benchmark_q2_polars,
+        Q2.benchmark_q2_duckdb,
         Q2.benchmark_q2_native_rayforce,
     ),
     (
@@ -431,6 +483,7 @@ benchmarks = [
         Q3.benchmark_q3_rayforce,
         Q3.benchmark_q3_pandas,
         Q3.benchmark_q3_polars,
+        Q3.benchmark_q3_duckdb,
         Q3.benchmark_q3_native_rayforce,
     ),
     (
@@ -438,6 +491,7 @@ benchmarks = [
         Q4.benchmark_q4_rayforce,
         Q4.benchmark_q4_pandas,
         Q4.benchmark_q4_polars,
+        Q4.benchmark_q4_duckdb,
         Q4.benchmark_q4_native_rayforce,
     ),
     (
@@ -445,6 +499,7 @@ benchmarks = [
         Q5.benchmark_q5_rayforce,
         Q5.benchmark_q5_pandas,
         Q5.benchmark_q5_polars,
+        Q5.benchmark_q5_duckdb,
         Q5.benchmark_q5_native_rayforce,
     ),
     (
@@ -452,6 +507,7 @@ benchmarks = [
         Q6.benchmark_q6_rayforce,
         Q6.benchmark_q6_pandas,
         Q6.benchmark_q6_polars,
+        Q6.benchmark_q6_duckdb,
         Q6.benchmark_q6_native_rayforce,
     ),
 ]
