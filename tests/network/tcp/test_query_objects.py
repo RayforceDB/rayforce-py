@@ -129,7 +129,7 @@ def test_upsert_query_tcp(client):
     )
     table.save("t")
 
-    query = Table("t").upsert(match_by_first=1, id="001", age=30)
+    query = Table("t").upsert(key_columns=1, id="001", age=30)
     result = _capture_and_eval(client, query)
 
     assert isinstance(result, Symbol)

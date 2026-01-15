@@ -106,7 +106,7 @@ async def test_upsert_query_ws(ws_server):
     )
     table.save("t")
 
-    query = Table("t").upsert(match_by_first=1, id="001", age=30)
+    query = Table("t").upsert(key_columns=1, id="001", age=30)
     result = await connection.execute(query)
 
     assert isinstance(result, Table)

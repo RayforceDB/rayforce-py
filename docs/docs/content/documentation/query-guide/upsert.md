@@ -2,17 +2,17 @@
 
 Rayforce-Py allows you to execute upsert queries in multiple ways.
 
-Upsert is different than insert [:material-table-plus: Insert](./insert.md). It uses `match_by_first` keyword argument
+Upsert is different than insert [:material-table-plus: Insert](./insert.md). It uses `key_columns` keyword argument
 
 !!! warning ""
-    **`match_by_first`** : `int`
+    **`key_columns`** : `int`
         The number of first columns that Rayforce will search to find a match for updating. If no match is found, an insert is performed.
 
 ### Upserting a single record
 
 Using args:
 ```python
->>> table.upsert(1, "Alice", 28.5, match_by_first=1).execute()
+>>> table.upsert(1, "Alice", 28.5, key_columns=1).execute()
 ```
 !!! note ""
     The order of arguments <b>must match</b> the order of the table columns.
@@ -23,7 +23,7 @@ Using kwargs:
         id=1,
         name="Alice",
         age=28.5,
-        match_by_first=1,
+        key_columns=1,
     ).execute()
 ```
 
@@ -35,7 +35,7 @@ Using args:
         [1, 2, 3],
         ["Alice", "Bob", "Sam"],
         [28.5, 15.3, 10.2],
-        match_by_first=1,
+        key_columns=1,
     ).execute()
 ```
 !!! note ""
@@ -47,7 +47,7 @@ Using kwargs:
         id=[1, 2, 3],
         name=["Alice", "Bob", "Sam"],
         age=[28.5, 15.3, 10.2],
-        match_by_first=1
+        key_columns=1
     ).execute()
 ```
 

@@ -2,17 +2,17 @@
 
 You can sort the table using the following approach:
 
-### XASC sorting
+### Ascending sort
 ```python
->>> result = table.xasc("salary")
+>>> result = table.sort_asc("salary")
 ```
 
-## XDESC sorting
+## Descending sort
 ```python
->>> result = table.xdesc("salary")
+>>> result = table.sort_desc("salary")
 ```
 
 ## Sort by multiple columns
 ```python
->>> result = table.xdesc("name", "salary")
+>>> result = table.sort_desc("name", "salary")
 ```

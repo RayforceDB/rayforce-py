@@ -14,12 +14,12 @@ def test_upsert_single_row_kwargs(is_inplace):
     )
 
     if is_inplace:
-        result = table.upsert(id="001", name="alice_updated", age=30, match_by_first=1).execute()
+        result = table.upsert(id="001", name="alice_updated", age=30, key_columns=1).execute()
     else:
         table.save("test_upsert_table")
         result = (
             Table("test_upsert_table")
-            .upsert(id="001", name="alice_updated", age=30, match_by_first=1)
+            .upsert(id="001", name="alice_updated", age=30, key_columns=1)
             .execute()
         )
 
@@ -42,13 +42,11 @@ def test_upsert_single_row_args(is_inplace):
     )
 
     if is_inplace:
-        result = table.upsert("001", "alice_updated", 30, match_by_first=1).execute()
+        result = table.upsert("001", "alice_updated", 30, key_columns=1).execute()
     else:
         table.save("test_upsert_table")
         result = (
-            Table("test_upsert_table")
-            .upsert("001", "alice_updated", 30, match_by_first=1)
-            .execute()
+            Table("test_upsert_table").upsert("001", "alice_updated", 30, key_columns=1).execute()
         )
 
     assert isinstance(result, Table)
@@ -74,7 +72,7 @@ def test_upsert_multiple_rows_kwargs(is_inplace):
             id=["001", "003"],
             name=["alice_new", "charlie"],
             age=[30, 41],
-            match_by_first=1,
+            key_columns=1,
         ).execute()
     else:
         table.save("test_upsert_multi")
@@ -84,7 +82,7 @@ def test_upsert_multiple_rows_kwargs(is_inplace):
                 id=["001", "003"],
                 name=["alice_new", "charlie"],
                 age=[30, 41],
-                match_by_first=1,
+                key_columns=1,
             )
             .execute()
         )
@@ -114,7 +112,7 @@ def test_upsert_multiple_rows_args(is_inplace):
             ["001", "003"],
             ["alice_new", "charlie"],
             [30, 41],
-            match_by_first=1,
+            key_columns=1,
         ).execute()
     else:
         table.save("test_upsert_multi")
@@ -124,7 +122,7 @@ def test_upsert_multiple_rows_args(is_inplace):
                 ["001", "003"],
                 ["alice_new", "charlie"],
                 [30, 41],
-                match_by_first=1,
+                key_columns=1,
             )
             .execute()
         )
@@ -152,7 +150,7 @@ def test_upsert_to_empty_table():
         ["001", "003"],
         ["alice", "charlie"],
         [30, 41],
-        match_by_first=1,
+        key_columns=1,
     ).execute()
 
     assert isinstance(result, Table)

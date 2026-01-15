@@ -14,10 +14,10 @@ def test_order_by_desc(is_inplace):
     )
 
     if is_inplace:
-        result = table.xdesc(Column("age"))
+        result = table.sort_desc(Column("age"))
     else:
         table.save("test_order_desc")
-        result = Table("test_order_desc").xdesc(Column("age"))
+        result = Table("test_order_desc").sort_desc(Column("age"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -50,10 +50,10 @@ def test_order_by_asc(is_inplace):
     )
 
     if is_inplace:
-        result = table.xasc(Column("age"))
+        result = table.sort_asc(Column("age"))
     else:
         table.save("test_order_asc")
-        result = Table("test_order_asc").xasc(Column("age"))
+        result = Table("test_order_asc").sort_asc(Column("age"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -87,10 +87,10 @@ def test_order_by_multiple_columns(is_inplace):
     )
 
     if is_inplace:
-        result = table.xasc(Column("dept"), Column("salary"))
+        result = table.sort_asc(Column("dept"), Column("salary"))
     else:
         table.save("test_order_multi")
-        result = Table("test_order_multi").xasc(Column("dept"), Column("salary"))
+        result = Table("test_order_multi").sort_asc(Column("dept"), Column("salary"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -130,10 +130,10 @@ def test_order_by_string_column(is_inplace):
     )
 
     if is_inplace:
-        result = table.xasc(Column("name"))
+        result = table.sort_asc(Column("name"))
     else:
         table.save("test_order_string")
-        result = Table("test_order_string").xasc(Column("name"))
+        result = Table("test_order_string").sort_asc(Column("name"))
 
     assert isinstance(result, Table)
     values = result.values()
@@ -162,10 +162,10 @@ def test_order_by_preserves_all_rows(is_inplace):
     )
 
     if is_inplace:
-        result = table.xasc(Column("value"))
+        result = table.sort_asc(Column("value"))
     else:
         table.save("test_order_preserve")
-        result = Table("test_order_preserve").xasc(Column("value"))
+        result = Table("test_order_preserve").sort_asc(Column("value"))
 
     assert isinstance(result, Table)
 

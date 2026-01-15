@@ -335,13 +335,13 @@ class TableValueAccessorMixin:
         return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
 
     @DestructiveOperationHandler()
-    def slice(self, start_idx: int, tail: int | None = None) -> Table:
-        if not isinstance(start_idx, int) or (tail is not None and not isinstance(tail, int)):
-            raise errors.RayforceConversionError("Number of rows has to an integer")
+    def take(self, n: int, offset: int = 0) -> Table:
+        if not isinstance(n, int) or not isinstance(offset, int):
+            raise errors.RayforceConversionError("Number of rows has to be an integer")
 
-        args: int | Vector = start_idx
-        if tail is not None:
-            args = Vector(items=[start_idx, tail], ray_type=I64)
+        args: int | Vector = n
+        if offset != 0:
+            args = Vector(items=[offset, n], ray_type=I64)
 
         return utils.eval_obj(List([Operation.TAKE, self.evaled_ptr, args]))
 
@@ -353,13 +353,12 @@ class TableValueAccessorMixin:
         return utils.ray_to_python(FFI.get_table_values(self.evaled_ptr))
 
     @DestructiveOperationHandler()
-    def shape(self) -> tuple:
-        return (
-            utils.eval_obj(List([Operation.COUNT, [Operation.KEY, self.evaled_ptr]])),  # x
-            utils.eval_obj(
-                List([Operation.COUNT, [Operation.AT, [Operation.VALUE, self.evaled_ptr], 0]])
-            ),  # y
+    def shape(self) -> tuple[int, int]:
+        rows = utils.eval_obj(
+            List([Operation.COUNT, [Operation.AT, [Operation.VALUE, self.evaled_ptr], 0]])
         )
+        cols = utils.eval_obj(List([Operation.COUNT, [Operation.KEY, self.evaled_ptr]]))
+        return (rows, cols)
 
 
 class TableReprMixin:
@@ -389,14 +388,14 @@ class TableOrderByMixin:
         @property
         def evaled_ptr(self) -> r.RayObject: ...
 
-    def xasc(self, *cols: Column) -> Table:
-        _cols = [c.name for c in cols]
+    def sort_asc(self, *cols: Column | str) -> Table:
+        _cols = [c.name if isinstance(c, Column) else c for c in cols]
         return utils.eval_obj(
             List([Operation.XASC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
         )
 
-    def xdesc(self, *cols: Column) -> Table:
-        _cols = [c.name for c in cols]
+    def sort_desc(self, *cols: Column | str) -> Table:
+        _cols = [c.name if isinstance(c, Column) else c for c in cols]
         return utils.eval_obj(
             List([Operation.XDESC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
         )
@@ -426,8 +425,8 @@ class TableQueryMixin:
     def insert(self, *args, **kwargs) -> InsertQuery:
         return InsertQuery(self, *args, **kwargs)
 
-    def upsert(self, *args, match_by_first: int, **kwargs) -> UpsertQuery:
-        return UpsertQuery(self, *args, match_by_first=match_by_first, **kwargs)
+    def upsert(self, *args, key_columns: int, **kwargs) -> UpsertQuery:
+        return UpsertQuery(self, *args, key_columns=key_columns, **kwargs)
 
     def concat(self, *others: Table) -> Table:
         result: Table = self  # type: ignore[assignment]
@@ -676,14 +675,15 @@ class SelectQuery(IPCQueryMixin):
 
 
 class UpdateQuery(IPCQueryMixin):
-    def __init__(self, table: _TableProtocol, **attributes):
+    def __init__(
+        self, table: _TableProtocol, where_condition: Expression | None = None, **attributes
+    ):
         self.table = table
         self.attributes = attributes
-        self.where_condition: Expression | None = None
+        self.where_condition = where_condition
 
     def where(self, condition: Expression) -> UpdateQuery:
-        self.where_condition = condition
-        return self
+        return UpdateQuery(self.table, where_condition=condition, **self.attributes)
 
     def compile(self, *, ipc: bool = False) -> r.RayObject:
         where_expr = None
@@ -796,7 +796,7 @@ class InsertQuery(IPCQueryMixin):
 
 
 class UpsertQuery(IPCQueryMixin):
-    def __init__(self, table: _TableProtocol, *args, match_by_first: int, **kwargs) -> None:
+    def __init__(self, table: _TableProtocol, *args, key_columns: int, **kwargs) -> None:
         self.table = table
         self.args = args
         self.kwargs = kwargs
@@ -804,9 +804,9 @@ class UpsertQuery(IPCQueryMixin):
         if args and kwargs:
             raise errors.RayforceInitError("Upsert query accepts args OR kwargs, not both")
 
-        if match_by_first <= 0:
-            raise errors.RayforceInitError("Match by first has to be greater than 0")
-        self.match_by_first = match_by_first
+        if key_columns <= 0:
+            raise errors.RayforceInitError("key_columns must be greater than 0")
+        self.key_columns = key_columns
 
     def compile(self, *, ipc: bool = False) -> tuple[r.RayObject, r.RayObject]:
         if self.args:
@@ -867,10 +867,10 @@ class UpsertQuery(IPCQueryMixin):
         else:
             raise errors.RayforceQueryCompilationError("No data to insert")
 
-        if self.match_by_first <= 0:
-            raise errors.RayforceQueryCompilationError("Match by first has to be greater than 0")
+        if self.key_columns <= 0:
+            raise errors.RayforceQueryCompilationError("key_columns must be greater than 0")
 
-        return I64(self.match_by_first).ptr, upsertable
+        return I64(self.key_columns).ptr, upsertable
 
     @property
     def ipc(self) -> r.RayObject:  # type: ignore[override]

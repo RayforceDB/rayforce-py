@@ -275,7 +275,7 @@ def test_splayed_table_destructive_operations_raise_error(tmp_path):
         loaded_table.insert(id="003", name="charlie", age=41)
 
     with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
-        loaded_table.upsert(id="001", name="alice_updated", age=30, match_by_first=1)
+        loaded_table.upsert(id="001", name="alice_updated", age=30, key_columns=1)
 
 
 @pytest.mark.xfail(reason="Temporarily - COW is called, destructive operations are allowed")
@@ -306,7 +306,7 @@ def test_parted_table_destructive_operations_raise_error(tmp_path):
         loaded_table.insert(id="003", name="charlie", age=41)
 
     with pytest.raises(errors.RayforcePartedTableError, match="use .select\\(\\) first"):
-        loaded_table.upsert(id="001", name="alice_updated", age=30, match_by_first=1)
+        loaded_table.upsert(id="001", name="alice_updated", age=30, key_columns=1)
 
 
 def test_concat_two_tables():
@@ -467,7 +467,7 @@ def test_at_row():
     }
 
 
-def test_slice_with_single_argument():
+def test_take_rows():
     table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
@@ -477,9 +477,9 @@ def test_slice_with_single_argument():
     )
 
     # Take first 2 rows
-    sliced = table.slice(2)
-    assert isinstance(sliced, Table)
-    values = sliced.values()
+    result = table.take(2)
+    assert isinstance(result, Table)
+    values = result.values()
     assert len(values) == 3
     assert len(values[0]) == 2
 
@@ -489,8 +489,8 @@ def test_slice_with_single_argument():
     assert [v.value for v in age_col] == [29, 34]
 
     # Take first 3 rows
-    sliced = table.slice(3)
-    values = sliced.values()
+    result = table.take(3)
+    values = result.values()
     assert len(values[0]) == 3
 
     id_col, name_col, age_col = values
@@ -499,7 +499,7 @@ def test_slice_with_single_argument():
     assert [v.value for v in age_col] == [29, 34, 41]
 
 
-def test_slice_with_two_arguments():
+def test_take_with_offset():
     table = Table(
         {
             "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
@@ -508,10 +508,10 @@ def test_slice_with_two_arguments():
         }
     )
 
-    # Take 2 rows starting from index 1
-    sliced = table.slice(1, 2)
-    assert isinstance(sliced, Table)
-    values = sliced.values()
+    # Take 2 rows starting from offset 1
+    result = table.take(2, offset=1)
+    assert isinstance(result, Table)
+    values = result.values()
     assert len(values) == 3
     assert len(values[0]) == 2
 
@@ -520,9 +520,9 @@ def test_slice_with_two_arguments():
     assert [s.value for s in name_col] == ["bob", "charlie"]
     assert [v.value for v in age_col] == [34, 41]
 
-    # Take 3 rows starting from index 0
-    sliced = table.slice(0, 3)
-    values = sliced.values()
+    # Take 3 rows starting from offset 0
+    result = table.take(3, offset=0)
+    values = result.values()
     assert len(values[0]) == 3
 
     id_col, name_col, age_col = values
@@ -548,4 +548,4 @@ def test_shape(is_inplace):
         table.save("test_shape_large")
         result = Table("test_shape_large").shape()
 
-    assert result == (3, num_rows)
+    assert result == (num_rows, 3)

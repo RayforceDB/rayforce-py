@@ -45,9 +45,9 @@ Dict({'id': '001', 'name': 'alice', 'age': 29})
 {'id': '003', 'name': 'charlie', 'age': 41}
 ```
 
-## Slice a Table
+## Take Rows from a Table
 
-The `slice()` method returns a new table containing a subset of rows from the original table.
+The `take()` method returns a new table containing a subset of rows from the original table.
 
 When called with a single argument, it takes the first `n` rows:
 
@@ -58,7 +58,7 @@ When called with a single argument, it takes the first `n` rows:
     "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
 })
 
->>> first_two = table.slice(2)
+>>> first_two = table.take(2)
 >>> print(first_two)
 ┌────────┬────────┬────────────────────┐
 │   id   │  name  │        age         │
@@ -71,10 +71,10 @@ When called with a single argument, it takes the first `n` rows:
 └──────────────────────────────────────┘
 ```
 
-When called with two arguments, it takes `tail` rows starting from `start_idx`:
+When called with an `offset` argument, it takes `n` rows starting from the offset:
 
 ```python
->>> middle_rows = table.slice(1, 2)
+>>> middle_rows = table.take(2, offset=1)
 >>> print(middle_rows)
 ┌────────┬─────────┬───────────────────┐
 │   id   │  name   │        age        │
@@ -87,10 +87,10 @@ When called with two arguments, it takes `tail` rows starting from `start_idx`:
 └──────────────────────────────────────┘
 ```
 
-When called negative number of rows, it takes `tail` rows:
+When called with a negative number, it takes the last `n` rows:
 
 ```python
->>> last_rows = table.slice(-2)
+>>> last_rows = table.take(-2)
 >>> print(last_rows)
 ┌────────┬─────────┬───────────────────┐
 │   id   │  name   │        age        │
