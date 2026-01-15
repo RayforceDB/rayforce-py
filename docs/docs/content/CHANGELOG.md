@@ -14,7 +14,9 @@ All notable changes to Rayforce-Py will be documented in this file.
 
 - **`match_by_first` renamed to `key_columns`**: In `upsert()`, the parameter `match_by_first` has been renamed to `key_columns` for clarity.
 
-- **Sorting API changed**: `xasc()` and `xdesc()` methods have been replaced with `order_by(*cols, desc=False)` which returns a query that must be executed. This allows chaining with other query operations. See [Order By documentation](./documentation/query-guide/order-by.md).
+- **`Table.from_parted`** now accepts `name` instead of `symfile` argument.
+
+- **Sorting API changed**: `xasc()` and `xdesc()` methods have been replaced with `order_by(*cols, desc=False)` which returns a query that must be executed. This allows chaining with other query operations. See [Order By documentation](https://py.rayforcedb.com/content/documentation/query-guide/order-by.md).
 
 
 ### New Features
@@ -31,13 +33,17 @@ All notable changes to Rayforce-Py will be documented in this file.
 
 - **`dtypes` property**: Get column types as a dictionary with `table.dtypes`.
 
-- **`drop()` method**: Remove columns with `table.drop("col1", "col2")`. See [Transform documentation](./documentation/data-types/table/transform.md).
+- **`drop()` method**: Remove columns with `table.drop("col1", "col2")`. See [Transform documentation](https://py.rayforcedb.com/content/documentation/data-types/table/transform.html).
 
-- **`rename()` method**: Rename columns with `table.rename({"old": "new"})`. See [Transform documentation](./documentation/data-types/table/transform.md).
+- **`rename()` method**: Rename columns with `table.rename({"old": "new"})`. See [Transform documentation](https://py.rayforcedb.com/content/documentation/data-types/table/transform.html).
 
-- **`cast()` method**: Change column types with `table.cast("col", I64)`. See [Transform documentation](./documentation/data-types/table/transform.md).
+- **`cast()` method**: Change column types with `table.cast("col", I64)`. See [Transform documentation](https://py.rayforcedb.com/content/documentation/data-types/table/transform.html).
 
 - **Chainable `order_by()`**: Sort results as part of query chain: `table.select(...).where(...).order_by("col").execute()`.
+
+### Bug fixes
+
+- Fix issue when applying a boolean vector filter for a table.
 
 2026-01-15 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.0)**
 
