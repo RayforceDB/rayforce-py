@@ -6,6 +6,15 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.5.1`**
+
+### New Features
+
+- **`pivot()` method**: Reshape data from long to wide format. Supports multiple index columns and aggregation functions (`sum`, `count`, `avg`, `min`, `max`, `first`, `last`). See [Pivot documentation](https://py.rayforcedb.com/content/documentation/query-guide/pivot.md) for details.
+
+2026-01-16 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.1)**
+
+
 ## **`0.5.0`**
 
 ### Breaking Changes
