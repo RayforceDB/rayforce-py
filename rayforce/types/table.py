@@ -567,9 +567,9 @@ class TableQueryMixin:
         index: str | list[str],
         columns: str,
         values: str,
-        aggfunc: t.Literal["sum", "count", "avg", "min", "max"] = "min",
-    ) -> Table:
-        return PivotQuery(t.cast("_TableProtocol", self), index, columns, values, aggfunc).execute()
+        aggfunc: t.Literal["sum", "count", "avg", "min", "max", "first", "last"],
+    ) -> PivotQuery:
+        return PivotQuery(t.cast("_TableProtocol", self), index, columns, values, aggfunc)
 
 
 class Table(
@@ -1025,6 +1025,8 @@ class PivotQuery:
         "avg": Operation.AVG,
         "min": Operation.MIN,
         "max": Operation.MAX,
+        "first": Operation.FIRST,
+        "last": Operation.LAST,
     }
 
     def __init__(

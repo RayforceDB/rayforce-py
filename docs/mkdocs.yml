@@ -134,6 +134,7 @@ nav:
       - Joins: content/documentation/query-guide/joins.md
       - Order By: content/documentation/query-guide/order-by.md
       - Group By: content/documentation/query-guide/group-by.md
+      - Pivot: content/documentation/query-guide/pivot.md
     - IPC: content/documentation/IPC.md
     - Websocket: content/documentation/websocket.md
     - Plugins:

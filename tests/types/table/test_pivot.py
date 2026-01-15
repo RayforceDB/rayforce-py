@@ -19,7 +19,7 @@ def test_pivot_simple():
         }
     )
 
-    result = table.pivot(index="symbol", columns="metric", values="value")
+    result = table.pivot(index="symbol", columns="metric", values="value", aggfunc="min").execute()
 
     columns = [str(c) for c in result.columns()]
     assert "symbol" in columns
@@ -46,7 +46,9 @@ def test_pivot_with_multiple_index_columns():
         }
     )
 
-    result = table.pivot(index=["date", "symbol"], columns="metric", values="value")
+    result = table.pivot(
+        index=["date", "symbol"], columns="metric", values="value", aggfunc="min"
+    ).execute()
 
     columns = [str(c) for c in result.columns()]
     assert "date" in columns
@@ -71,7 +73,7 @@ def test_pivot_with_sum_aggfunc():
         }
     )
 
-    result = table.pivot(index="category", columns="type", values="value", aggfunc="sum")
+    result = table.pivot(index="category", columns="type", values="value", aggfunc="sum").execute()
 
     columns = [str(c) for c in result.columns()]
     assert "x" in columns
@@ -95,7 +97,9 @@ def test_pivot_with_count_aggfunc():
         }
     )
 
-    result = table.pivot(index="category", columns="type", values="value", aggfunc="count")
+    result = table.pivot(
+        index="category", columns="type", values="value", aggfunc="count"
+    ).execute()
 
     assert len(result) == 2
 
@@ -116,7 +120,9 @@ def test_pivot_with_avg_aggfunc():
         }
     )
 
-    result = table.pivot(index="category", columns="metric", values="value", aggfunc="avg")
+    result = table.pivot(
+        index="category", columns="metric", values="value", aggfunc="avg"
+    ).execute()
 
     assert len(result) == 2
 
@@ -135,7 +141,7 @@ def test_pivot_with_min_aggfunc():
         }
     )
 
-    result = table.pivot(index="category", columns="type", values="value", aggfunc="min")
+    result = table.pivot(index="category", columns="type", values="value", aggfunc="min").execute()
 
     # A has x: min(10,20)=10, y: 30; B has x: 40, y: 50
     result_dict = _get_pivot_values(result, "category")
@@ -154,9 +160,49 @@ def test_pivot_with_max_aggfunc():
         }
     )
 
-    result = table.pivot(index="category", columns="type", values="value", aggfunc="max")
+    result = table.pivot(index="category", columns="type", values="value", aggfunc="max").execute()
 
     # A has x: max(10,20)=20, y: 30; B has x: 40, y: 50
+    result_dict = _get_pivot_values(result, "category")
+    assert result_dict["A"]["x"] == 20
+    assert result_dict["A"]["y"] == 30
+    assert result_dict["B"]["x"] == 40
+    assert result_dict["B"]["y"] == 50
+
+
+def test_pivot_with_first_aggfunc():
+    table = Table(
+        {
+            "category": Vector(items=["A", "A", "A", "B", "B"], ray_type=Symbol),
+            "type": Vector(items=["x", "x", "y", "x", "y"], ray_type=Symbol),
+            "value": Vector(items=[10, 20, 30, 40, 50], ray_type=I64),
+        }
+    )
+
+    result = table.pivot(
+        index="category", columns="type", values="value", aggfunc="first"
+    ).execute()
+
+    # A has x: first(10,20)=10, y: 30; B has x: 40, y: 50
+    result_dict = _get_pivot_values(result, "category")
+    assert result_dict["A"]["x"] == 10
+    assert result_dict["A"]["y"] == 30
+    assert result_dict["B"]["x"] == 40
+    assert result_dict["B"]["y"] == 50
+
+
+def test_pivot_with_last_aggfunc():
+    table = Table(
+        {
+            "category": Vector(items=["A", "A", "A", "B", "B"], ray_type=Symbol),
+            "type": Vector(items=["x", "x", "y", "x", "y"], ray_type=Symbol),
+            "value": Vector(items=[10, 20, 30, 40, 50], ray_type=I64),
+        }
+    )
+
+    result = table.pivot(index="category", columns="type", values="value", aggfunc="last").execute()
+
+    # A has x: last(10,20)=20, y: 30; B has x: 40, y: 50
     result_dict = _get_pivot_values(result, "category")
     assert result_dict["A"]["x"] == 20
     assert result_dict["A"]["y"] == 30
@@ -173,7 +219,7 @@ def test_pivot_single_value_per_cell():
         }
     )
 
-    result = table.pivot(index="row", columns="col", values="val")
+    result = table.pivot(index="row", columns="col", values="val", aggfunc="min").execute()
 
     assert len(result) == 2
     columns = [str(c) for c in result.columns()]
@@ -196,7 +242,7 @@ def test_pivot_preserves_order():
         }
     )
 
-    result = table.pivot(index="id", columns="key", values="value", aggfunc="min")
+    result = table.pivot(index="id", columns="key", values="value", aggfunc="min").execute()
 
     # third, first, second
     columns = [str(c) for c in result.columns()]
@@ -208,22 +254,3 @@ def test_pivot_preserves_order():
     assert result_dict["a"]["third"] == 3
     assert result_dict["a"]["first"] == 1
     assert result_dict["a"]["second"] == 2
-
-
-def test_pivot_followed_by_select():
-    table = Table(
-        {
-            "symbol": Vector(items=["AAPL", "AAPL", "GOOG", "GOOG"], ray_type=Symbol),
-            "metric": Vector(items=["price", "volume", "price", "volume"], ray_type=Symbol),
-            "value": Vector(items=[150, 1000, 2800, 500], ray_type=I64),
-        }
-    )
-
-    result = (
-        table.pivot(index="symbol", columns="metric", values="value")
-        .select("symbol", "price")
-        .execute()
-    )
-    columns = [str(c) for c in result.columns()]
-    assert "symbol" in columns
-    assert "price" in columns
