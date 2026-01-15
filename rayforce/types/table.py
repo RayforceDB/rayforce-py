@@ -498,27 +498,6 @@ class TableReprMixin:
         return f"Table{self.columns()}"
 
 
-class TableOrderByMixin:
-    _ptr: r.RayObject | str
-
-    if t.TYPE_CHECKING:
-
-        @property
-        def evaled_ptr(self) -> r.RayObject: ...
-
-    def sort_asc(self, *cols: Column | str) -> Table:
-        _cols = [c.name if isinstance(c, Column) else c for c in cols]
-        return utils.eval_obj(
-            List([Operation.XASC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
-        )
-
-    def sort_desc(self, *cols: Column | str) -> Table:
-        _cols = [c.name if isinstance(c, Column) else c for c in cols]
-        return utils.eval_obj(
-            List([Operation.XDESC, self.evaled_ptr, Vector(_cols, ray_type=Symbol)])
-        )
-
-
 class TableQueryMixin:
     _ptr: r.RayObject | str
 
@@ -545,6 +524,9 @@ class TableQueryMixin:
 
     def upsert(self, *args, key_columns: int, **kwargs) -> UpsertQuery:
         return UpsertQuery(t.cast("_TableProtocol", self), *args, key_columns=key_columns, **kwargs)
+
+    def order_by(self, *cols: Column | str, desc: bool = False) -> SelectQuery:
+        return SelectQuery(table=t.cast("_TableProtocol", self)).order_by(*cols, desc=desc)
 
     def concat(self, *others: _TableProtocol) -> Table:
         result: _TableProtocol = t.cast("_TableProtocol", self)
@@ -586,7 +568,6 @@ class Table(
     TableValueAccessorMixin,
     TableReprMixin,
     TableQueryMixin,
-    TableOrderByMixin,
     TableIOMixin,
 ):
     type_code = r.TYPE_TABLE
@@ -694,6 +675,7 @@ class SelectQuery(IPCQueryMixin):
         select_cols: tuple[t.Any, t.Any] | None = None,
         where_conditions: list[Expression] | None = None,
         by_cols: tuple[tuple[t.Any, ...], dict[str, t.Any]] | None = None,
+        order_by_cols: tuple[tuple[str, ...], bool] | None = None,
     ) -> None:
         self.table = table
         self._select_cols = select_cols
@@ -701,6 +683,7 @@ class SelectQuery(IPCQueryMixin):
         self._by_cols: tuple[tuple[t.Any, ...], dict[str, t.Any]] = (
             by_cols if by_cols is not None else ((), {})
         )
+        self._order_by_cols = order_by_cols
         self._ptr: r.RayObject | None = None
 
     def select(self, *cols, **computed_cols) -> SelectQuery:
@@ -709,6 +692,7 @@ class SelectQuery(IPCQueryMixin):
             select_cols=(cols, computed_cols),
             where_conditions=self._where_conditions,
             by_cols=self._by_cols,
+            order_by_cols=self._order_by_cols,
         )
 
     def where(self, condition: Expression) -> SelectQuery:
@@ -719,6 +703,7 @@ class SelectQuery(IPCQueryMixin):
             select_cols=self._select_cols,
             where_conditions=new_conditions,
             by_cols=self._by_cols,
+            order_by_cols=self._order_by_cols,
         )
 
     def by(self, *cols, **computed_cols) -> SelectQuery:
@@ -727,6 +712,16 @@ class SelectQuery(IPCQueryMixin):
             select_cols=self._select_cols,
             where_conditions=self._where_conditions,
             by_cols=(cols, computed_cols),
+            order_by_cols=self._order_by_cols,
+        )
+
+    def order_by(self, *cols: Column | str, desc: bool = False) -> SelectQuery:
+        return SelectQuery(
+            table=self.table,
+            select_cols=self._select_cols,
+            where_conditions=self._where_conditions,
+            by_cols=self._by_cols,
+            order_by_cols=(tuple(c.name if isinstance(c, Column) else c for c in cols), desc),
         )
 
     @property
@@ -792,6 +787,18 @@ class SelectQuery(IPCQueryMixin):
         return Expression(Operation.SELECT, self.compile()).compile()
 
     def execute(self) -> Table:
+        if self._order_by_cols:
+            cols, desc = self._order_by_cols
+            return utils.eval_obj(
+                List(
+                    [
+                        Operation.XDESC if desc else Operation.XASC,
+                        List([Operation.SELECT, self.compile()]),
+                        Vector(list(cols), ray_type=Symbol),
+                    ]
+                )
+            )
+
         return utils.eval_obj(List([Operation.SELECT, self.compile()]))
 
 

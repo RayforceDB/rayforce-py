@@ -14,15 +14,15 @@ def test_order_by_desc(is_inplace):
     )
 
     if is_inplace:
-        result = table.sort_desc(Column("age"))
+        result = table.order_by(Column("age"), desc=True).execute()
     else:
         table.save("test_order_desc")
-        result = Table("test_order_desc").sort_desc(Column("age"))
+        result = Table("test_order_desc").order_by(Column("age"), desc=True).execute()
 
     assert isinstance(result, Table)
     values = result.values()
 
-    # Verify descending order: 41 > 38 > 34 > 29
+    # Verify desc order: 41 > 38 > 34 > 29
     assert values[2][0].value == 41
     assert values[2][1].value == 38
     assert values[2][2].value == 34
@@ -50,10 +50,10 @@ def test_order_by_asc(is_inplace):
     )
 
     if is_inplace:
-        result = table.sort_asc(Column("age"))
+        result = table.order_by(Column("age")).execute()
     else:
         table.save("test_order_asc")
-        result = Table("test_order_asc").sort_asc(Column("age"))
+        result = Table("test_order_asc").order_by(Column("age")).execute()
 
     assert isinstance(result, Table)
     values = result.values()
@@ -87,10 +87,10 @@ def test_order_by_multiple_columns(is_inplace):
     )
 
     if is_inplace:
-        result = table.sort_asc(Column("dept"), Column("salary"))
+        result = table.order_by(Column("dept"), Column("salary")).execute()
     else:
         table.save("test_order_multi")
-        result = Table("test_order_multi").sort_asc(Column("dept"), Column("salary"))
+        result = Table("test_order_multi").order_by(Column("dept"), Column("salary")).execute()
 
     assert isinstance(result, Table)
     values = result.values()
@@ -130,10 +130,10 @@ def test_order_by_string_column(is_inplace):
     )
 
     if is_inplace:
-        result = table.sort_asc(Column("name"))
+        result = table.order_by(Column("name")).execute()
     else:
         table.save("test_order_string")
-        result = Table("test_order_string").sort_asc(Column("name"))
+        result = Table("test_order_string").order_by(Column("name")).execute()
 
     assert isinstance(result, Table)
     values = result.values()
@@ -162,10 +162,10 @@ def test_order_by_preserves_all_rows(is_inplace):
     )
 
     if is_inplace:
-        result = table.sort_asc(Column("value"))
+        result = table.order_by(Column("value")).execute()
     else:
         table.save("test_order_preserve")
-        result = Table("test_order_preserve").sort_asc(Column("value"))
+        result = Table("test_order_preserve").order_by(Column("value")).execute()
 
     assert isinstance(result, Table)
 
@@ -182,3 +182,49 @@ def test_order_by_preserves_all_rows(is_inplace):
     # Verify all values present (just reordered)
     all_values = [values[1][i].value for i in range(3)]
     assert set(all_values) == {1, 2, 3}
+
+
+def test_order_by_chained_with_select():
+    """Test that order_by can be chained with select."""
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["charlie", "alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[30, 25, 28], ray_type=I64),
+        },
+    )
+
+    result = table.select("name", "age").order_by("age").execute()
+
+    assert isinstance(result, Table)
+    columns = result.columns()
+    assert len(columns) == 2
+    assert "name" in columns
+    assert "age" in columns
+    assert "id" not in columns
+
+    values = result.values()
+    # Should be ordered by age: 25, 28, 30
+    assert values[1][0].value == 25
+    assert values[1][1].value == 28
+    assert values[1][2].value == 30
+
+
+def test_order_by_chained_with_where():
+    """Test that order_by can be chained with where."""
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[25, 30, 35, 28], ray_type=I64),
+        },
+    )
+
+    result = table.where(Column("age") > 26).order_by("age").execute()
+
+    assert isinstance(result, Table)
+    values = result.values()
+    # Should have 3 rows (age > 26), ordered: 28, 30, 35
+    assert len(values[0]) == 3
+    assert values[1][0].value == 28
+    assert values[1][1].value == 30
+    assert values[1][2].value == 35
