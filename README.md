@@ -27,10 +27,11 @@ Python ORM for RayforceDB, a high-performance columnar database designed for ana
 
 ## Features
 
-- **Pythonic API** - Chainable, fluent query syntax
-- **High Performance** - Minimal overhead between Python and RayforceDB runtime via C API
+- **Pythonic API** - Chainable, convenient, intuitive and fluent query syntax
+- **High Performance** - One of the fastest solutions available, minimal overhead between Python and RayforceDB runtime via C API
 - **Lightweight** - Core is less than 1 MB footprint
-- **Active Development** - Continuously expanding functionality
+- **0 dependencies** - Library operates without dependencies - pure Python and C
+- **Rapid Development** - Continuously expanding functionality
 
 ![RayforcePy Benchmarks](https://raw.githubusercontent.com/RayforceDB/rayforce-py/refs/heads/master/docs/docs/assets/benchmark.png)
 
@@ -41,8 +42,7 @@ Python ORM for RayforceDB, a high-performance columnar database designed for ana
 
 ```python
 >>> from datetime import time
->>> from rayforce import Table, Vector, Symbol, Time, F64
->>> from rayforce.types.table import Column
+>>> from rayforce import Table, Column, Vector, Symbol, Time, F64
 
 >>> quotes = Table({
         "symbol": Vector(items=["AAPL", "AAPL", "AAPL", "GOOG", "GOOG", "GOOG"], ray_type=Symbol),
@@ -106,4 +106,4 @@ Launching Rayforce...
 
 ---
 
-**Built with ❤️ for high-performance data processing | <a href="https://py.rayforcedb.com/content/license.html">MIT Licenced</a> | RayforceDB Team**
+**Built with ❤️ for high-performance data processing | <a href="https://py.rayforcedb.com/content/license.html">MIT Licensed</a> | RayforceDB Team**
