@@ -562,6 +562,15 @@ class TableQueryMixin:
     ) -> WindowJoin1:
         return WindowJoin1(t.cast("_TableProtocol", self), on, join_with, interval, **aggregations)
 
+    def pivot(
+        self,
+        index: str | list[str],
+        columns: str,
+        values: str,
+        aggfunc: t.Literal["sum", "count", "avg", "min", "max"] = "min",
+    ) -> Table:
+        return PivotQuery(t.cast("_TableProtocol", self), index, columns, values, aggfunc).execute()
+
 
 class Table(
     TableInitMixin,
@@ -1009,6 +1018,61 @@ class UpsertQuery(IPCQueryMixin):
         return Table(new_table)
 
 
+class PivotQuery:
+    AGGFUNC_MAP: t.ClassVar[dict[str, Operation]] = {
+        "sum": Operation.SUM,
+        "count": Operation.COUNT,
+        "avg": Operation.AVG,
+        "min": Operation.MIN,
+        "max": Operation.MAX,
+    }
+
+    def __init__(
+        self,
+        table: _TableProtocol,
+        index: str | list[str],
+        columns: str,
+        values: str,
+        aggfunc: str = "min",
+    ) -> None:
+        if aggfunc not in self.AGGFUNC_MAP:
+            raise errors.RayforceValueError(
+                f"Invalid aggfunc '{aggfunc}'. Must be one of: {list(self.AGGFUNC_MAP.keys())}"
+            )
+        self.table = t.cast("Table", table)
+        self.index = [index] if isinstance(index, str) else list(index)
+        self.columns = columns
+        self.values = values
+        self.aggfunc = aggfunc
+
+    def execute(self) -> Table:
+        distinct = self.table.select(_col=Column(self.columns).distinct()).execute()
+        unique_values = [v.value if hasattr(v, "value") else v for v in distinct["_col"]]
+        if not unique_values:
+            raise errors.RayforceValueError(f"No values in pivot column '{self.columns}'")
+
+        tables: list[Table] = []
+        for val in unique_values:
+            filtered = (
+                self.table.select(*self.index, self.values)
+                .where(Column(self.columns) == val)
+                .execute()
+            )
+            tables.append(
+                filtered.select(
+                    **{str(val): Expression(self.AGGFUNC_MAP[self.aggfunc], Column(self.values))}
+                )
+                .by(*self.index)
+                .execute()
+            )
+
+        result = tables[0]
+        for tbl in tables[1:]:
+            result = result.left_join(tbl, on=self.index).execute()
+
+        return result
+
+
 class TableColumnInterval:
     def __init__(
         self,
@@ -1053,6 +1117,7 @@ __all__ = [
     "InnerJoin",
     "InsertQuery",
     "LeftJoin",
+    "PivotQuery",
     "Table",
     "TableColumnInterval",
     "UpdateQuery",
