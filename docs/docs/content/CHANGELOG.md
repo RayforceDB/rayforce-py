@@ -6,6 +6,42 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.5.0`**
+
+### Breaking Changes
+
+- **`slice()` renamed to `take()`**: The `slice(start_idx, tail)` method has been renamed to `take(n, offset=0)` with a cleaner signature.
+
+- **`match_by_first` renamed to `key_columns`**: In `upsert()`, the parameter `match_by_first` has been renamed to `key_columns` for clarity.
+
+- **Sorting API changed**: `xasc()` and `xdesc()` methods have been replaced with `order_by(*cols, desc=False)` which returns a query that must be executed. This allows chaining with other query operations. See [Order By documentation](./documentation/query-guide/order-by.md).
+
+
+### New Features
+
+- **Bracket notation access**: Access columns using `table["col"]` for a single column or `table[["col1", "col2"]]` for multiple columns.
+
+- **`shape()`**: method returns `(rows, cols)` to see table shape
+
+- **`len()` support**: Get row count with `len(table)`.
+
+- **`head()` and `tail()` methods**: Get first/last n rows with `table.head(5)` or `table.tail(5)`.
+
+- **`describe()` method**: Get summary statistics (count, mean, min, max) for numeric columns.
+
+- **`dtypes` property**: Get column types as a dictionary with `table.dtypes`.
+
+- **`drop()` method**: Remove columns with `table.drop("col1", "col2")`. See [Transform documentation](./documentation/data-types/table/transform.md).
+
+- **`rename()` method**: Rename columns with `table.rename({"old": "new"})`. See [Transform documentation](./documentation/data-types/table/transform.md).
+
+- **`cast()` method**: Change column types with `table.cast("col", I64)`. See [Transform documentation](./documentation/data-types/table/transform.md).
+
+- **Chainable `order_by()`**: Sort results as part of query chain: `table.select(...).where(...).order_by("col").execute()`.
+
+2026-01-15 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.0)**
+
+
 ## **`0.4.3`**
 
 ### New Features
@@ -86,6 +122,6 @@ https://py.rayforcedb.com/content/documentation/IPC.html#sending-query-objects
 
 ## **`0.1.5`**
 
-- [Added `slice()` method to Table for extracting subsets of rows](https://py.rayforcedb.com/content/documentation/data-types/table/access-values.html#slice-a-table)
+- Added `slice()` method to Table for extracting subsets of rows (renamed to `take()` in 0.4.4)
 
 2025-12-24 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.1.5/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.1.5)**
