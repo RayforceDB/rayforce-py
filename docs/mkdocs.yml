@@ -109,6 +109,7 @@ nav:
         - Overview: content/documentation/data-types/table/overview.md
         - Create: content/documentation/data-types/table/create.md
         - Access Values: content/documentation/data-types/table/access-values.md
+        - Transform: content/documentation/data-types/table/transform.md
         - Save and Fetch: content/documentation/data-types/table/save-and-fetch.md
         - Splayed and Parted: content/documentation/data-types/table/splayed-and-parted.md
       - Integers: content/documentation/data-types/integers.md

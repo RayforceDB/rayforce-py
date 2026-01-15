@@ -2,6 +2,42 @@
 
 Rayforce-Py provides a handy interface to access [:octicons-table-24: Table](overview.md) columns and values.
 
+## Row Count
+
+Use the built-in `len()` function to get the number of rows in a table:
+
+```python
+>>> table = Table({
+    "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+    "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+    "age": Vector(items=[29, 34, 41], ray_type=I64),
+})
+
+>>> len(table)
+3
+```
+
+## Bracket Notation Access
+
+You can use Python's bracket notation to access columns directly:
+
+**Single column** - returns a [:material-vector-line: Vector](../vector.md):
+
+```python
+>>> table["name"]
+Vector([Symbol('alice'), Symbol('bob'), Symbol('charlie')])
+
+>>> table["age"]
+Vector([I64(29), I64(34), I64(41)])
+```
+
+**Multiple columns** - returns a new [:octicons-table-24: Table](overview.md):
+
+```python
+>>> table[["id", "name"]]
+Table(columns=['id', 'name'])
+```
+
 ## Access a Specific Column
 
 The `at_column()` method returns all values from a specific column as a [:material-vector-line: Vector](../vector.md).
@@ -102,6 +138,61 @@ When called with a negative number, it takes the last `n` rows:
 │ 2 rows (2 shown) 3 columns (3 shown) │
 └──────────────────────────────────────┘
 ```
+
+## Head and Tail
+
+The `head()` and `tail()` methods provide convenient shortcuts for getting the first or last rows:
+
+```python
+>>> table = Table({
+    "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+    "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+    "age": Vector(items=[29, 34, 41, 38, 25], ray_type=I64),
+})
+
+>>> table.head(3)  # First 3 rows (default is 5)
+Table(columns=['id', 'name', 'age'])
+
+>>> table.tail(2)  # Last 2 rows (default is 5)
+Table(columns=['id', 'name', 'age'])
+```
+
+## Column Types
+
+The `dtypes` property returns a dictionary mapping column names to their data types:
+
+```python
+>>> table = Table({
+    "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+    "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+    "age": Vector(items=[29, 34, 41], ray_type=I64),
+    "salary": Vector(items=[50000.0, 60000.0, 70000.0], ray_type=F64),
+})
+
+>>> table.dtypes
+{'id': 'SYMBOL', 'name': 'SYMBOL', 'age': 'I64', 'salary': 'F64'}
+```
+
+## Describe
+
+The `describe()` method returns summary statistics for numeric columns:
+
+```python
+>>> table = Table({
+    "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+    "age": Vector(items=[29, 34, 41], ray_type=I64),
+    "salary": Vector(items=[50000.0, 60000.0, 70000.0], ray_type=F64),
+})
+
+>>> table.describe()
+{
+    'age': {'count': 3, 'mean': 34.666666666666664, 'min': 29, 'max': 41},
+    'salary': {'count': 3, 'mean': 60000.0, 'min': 50000.0, 'max': 70000.0}
+}
+```
+
+!!! note ""
+    The `describe()` method only includes numeric columns (I64, F64, etc.) in its output.
 
 ## Get Column Names and Values
 

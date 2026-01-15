@@ -257,10 +257,10 @@ class TableInitMixin:
         return _tbl
 
     @classmethod
-    def from_parted(cls, path: str, symfile: str) -> Table:
+    def from_parted(cls, path: str, name: str) -> Table:
         _args = [FFI.init_string(path)]
-        if symfile is not None:
-            _args.append(QuotedSymbol(symfile).ptr)
+        if name is not None:
+            _args.append(QuotedSymbol(name).ptr)
         _tbl = utils.eval_obj(List([Operation.GET_PARTED, *_args]))
         _tbl.is_parted = True
         return _tbl
@@ -359,6 +359,118 @@ class TableValueAccessorMixin:
         )
         cols = utils.eval_obj(List([Operation.COUNT, [Operation.KEY, self.evaled_ptr]]))
         return (rows, cols)
+
+    @DestructiveOperationHandler()
+    def __len__(self) -> int:
+        return utils.eval_obj(
+            List([Operation.COUNT, [Operation.AT, [Operation.VALUE, self.evaled_ptr], 0]])
+        ).value
+
+    @DestructiveOperationHandler()
+    def __getitem__(self, key: str | list[str]) -> Vector | List | Table:
+        if isinstance(key, str):
+            return self.at_column(key)
+        if isinstance(key, list):
+            return t.cast("Table", self).select(*key).execute()
+        raise errors.RayforceConversionError(
+            f"Key must be a string or list of strings, got {type(key).__name__}"
+        )
+
+    @DestructiveOperationHandler()
+    def head(self, n: int = 5) -> Table:
+        return t.cast("Table", self).take(n)
+
+    @DestructiveOperationHandler()
+    def tail(self, n: int = 5) -> Table:
+        return t.cast("Table", self).take(-n)
+
+    @DestructiveOperationHandler()
+    def describe(self) -> dict[str, dict[str, t.Any]]:
+        stats: dict[str, dict[str, t.Any]] = {}
+        columns, values = self.columns(), self.values()
+
+        numeric_types = {r.TYPE_I64, r.TYPE_I32, r.TYPE_I16, r.TYPE_F64, r.TYPE_U8}
+
+        def _extract(val: t.Any) -> t.Any:
+            return val.value if hasattr(val, "value") else val
+
+        for i, col_name in enumerate(columns):
+            col_vector = values[i]
+            if not col_vector:
+                continue
+
+            if FFI.get_obj_type(col_vector.ptr) not in numeric_types:
+                continue
+
+            name = col_name.value if hasattr(col_name, "value") else str(col_name)
+
+            stats[name] = {
+                "count": _extract(utils.eval_obj(List([Operation.COUNT, col_vector.ptr]))),
+                "mean": _extract(utils.eval_obj(List([Operation.AVG, col_vector.ptr]))),
+                "min": _extract(utils.eval_obj(List([Operation.MIN, col_vector.ptr]))),
+                "max": _extract(utils.eval_obj(List([Operation.MAX, col_vector.ptr]))),
+            }
+
+        return stats
+
+    @property
+    def dtypes(self) -> dict[str, str]:
+        meta = utils.eval_obj(
+            List([Operation.AS, [Operation.QUOTE, "DICT"], [Operation.META, self.evaled_ptr]])
+        )
+        names, types = meta["name"], meta["type"]
+
+        return {
+            (n.value if hasattr(n, "value") else str(n)): t.value if hasattr(t, "value") else str(t)
+            for n, t in zip(names, types, strict=True)
+        }
+
+    @DestructiveOperationHandler()
+    def drop(self, *cols: str) -> Table:
+        current_cols = {c.value if hasattr(c, "value") else str(c) for c in self.columns()}
+        cols_to_drop = set(cols)
+        if unknown := (cols_to_drop - current_cols):
+            raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
+        if keep := [c for c in current_cols if c not in cols_to_drop]:
+            return t.cast("Table", self).select(*keep).execute()
+        raise errors.RayforceConversionError("Cannot drop all columns")
+
+    @DestructiveOperationHandler()
+    def rename(self, mapping: dict[str, str]) -> Table:
+        current_cols = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        unknown = set(mapping.keys()) - set(current_cols)
+        if unknown:
+            raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
+
+        select_args = {}
+        for col in current_cols:
+            new_name = mapping.get(col, col)
+            select_args[new_name] = Column(col)
+
+        return t.cast("Table", self).select(**select_args).execute()
+
+    def cast(self, column: str, to_type: type) -> Table:
+        current_cols = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        if column not in current_cols:
+            raise errors.RayforceConversionError(f"Column not found: {column}")
+
+        if not hasattr(to_type, "ray_name"):
+            raise errors.RayforceConversionError(
+                f"Invalid target type: {to_type}. Must be a Rayforce type like I64, F64, Symbol."
+            )
+
+        select_args = {}
+        for col in current_cols:
+            if col == column:
+                select_args[col] = Expression(
+                    Operation.AS,
+                    QuotedSymbol(to_type.ray_name.lower()),
+                    Column(col),
+                )
+            else:
+                select_args[col] = Column(col)
+
+        return t.cast("Table", self).select(**select_args).execute()
 
 
 class TableReprMixin:
@@ -489,8 +601,11 @@ class IPCQueryMixin:
 
 class _Join(IPCQueryMixin):
     type_: t.Literal[
-        Operation.LEFT_JOIN | Operation.INNER_JOIN | Operation.ASOF_JOIN | Operation.WINDOW_JOIN,
-        Operation.WINDOW_JOIN1,
+        Operation.LEFT_JOIN
+        | Operation.INNER_JOIN
+        | Operation.ASOF_JOIN
+        | Operation.WINDOW_JOIN
+        | Operation.WINDOW_JOIN1
     ]
 
     def __init__(self, table: _TableProtocol, other: Table, on: str | list[str]) -> None:

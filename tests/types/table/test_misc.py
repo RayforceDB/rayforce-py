@@ -549,3 +549,273 @@ def test_shape(is_inplace):
         result = Table("test_shape_large").shape()
 
     assert result == (num_rows, 3)
+
+
+def test_len():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38, 25], ray_type=I64),
+        }
+    )
+
+    assert len(table) == 5
+
+
+def test_getitem_single_column():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    name_col = table["name"]
+    assert len(name_col) == 3
+    assert [s.value for s in name_col] == ["alice", "bob", "charlie"]
+
+    age_col = table["age"]
+    assert [v.value for v in age_col] == [29, 34, 41]
+
+
+def test_getitem_multiple_columns():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    result = table[["id", "name"]]
+    assert isinstance(result, Table)
+    columns = result.columns()
+    assert len(columns) == 2
+    assert Symbol("id") in columns
+    assert Symbol("name") in columns
+    assert Symbol("age") not in columns
+
+
+def test_head():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+        }
+    )
+
+    # Default head (5 rows)
+    result = table.head()
+    assert len(result) == 5
+
+    # Head with n=2
+    result = table.head(2)
+    assert len(result) == 2
+    values = result.values()
+    assert [s.value for s in values[0]] == ["001", "002"]
+    assert [s.value for s in values[1]] == ["alice", "bob"]
+
+
+def test_tail():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+        }
+    )
+
+    # Tail with n=2
+    result = table.tail(2)
+    assert len(result) == 2
+    values = result.values()
+    assert [s.value for s in values[0]] == ["004", "005"]
+    assert [s.value for s in values[1]] == ["dana", "eve"]
+
+
+def test_describe():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+            "age": Vector(items=[20, 30, 40, 50], ray_type=I64),
+            "salary": Vector(items=[50000.0, 60000.0, 70000.0, 80000.0], ray_type=F64),
+        }
+    )
+
+    stats = table.describe()
+
+    # Symbol column should be skipped
+    assert "id" not in stats
+
+    # Numeric columns should have stats
+    assert "age" in stats
+    assert stats["age"]["count"] == 4
+    assert stats["age"]["mean"] == 35.0
+    assert stats["age"]["min"] == 20
+    assert stats["age"]["max"] == 50
+
+    assert "salary" in stats
+    assert stats["salary"]["count"] == 4
+    assert stats["salary"]["mean"] == 65000.0
+    assert stats["salary"]["min"] == 50000.0
+    assert stats["salary"]["max"] == 80000.0
+
+
+def test_dtypes():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+            "salary": Vector(items=[50000.0, 60000.0, 70000.0], ray_type=F64),
+        }
+    )
+
+    dtypes = table.dtypes
+    assert dtypes["id"] == "SYMBOL"
+    assert dtypes["age"] == "I64"
+    assert dtypes["salary"] == "F64"
+
+
+def test_drop_single_column():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    result = table.drop("age")
+    assert isinstance(result, Table)
+    columns = result.columns()
+    assert len(columns) == 2
+    assert Symbol("id") in columns
+    assert Symbol("name") in columns
+    assert Symbol("age") not in columns
+
+
+def test_drop_multiple_columns():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+            "salary": Vector(items=[50000, 60000, 70000], ray_type=I64),
+        }
+    )
+
+    result = table.drop("age", "salary")
+    assert isinstance(result, Table)
+    columns = result.columns()
+    assert len(columns) == 2
+    assert Symbol("id") in columns
+    assert Symbol("name") in columns
+
+
+def test_drop_unknown_column_raises():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceConversionError, match="Columns not found"):
+        table.drop("unknown_column")
+
+
+def test_rename_single_column():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    result = table.rename({"name": "full_name"})
+    assert isinstance(result, Table)
+    columns = result.columns()
+    assert Symbol("full_name") in columns
+    assert Symbol("name") not in columns
+    assert Symbol("id") in columns
+    assert Symbol("age") in columns
+
+    # Verify data is preserved
+    full_name_col = result["full_name"]
+    assert [s.value for s in full_name_col] == ["alice", "bob", "charlie"]
+
+
+def test_rename_multiple_columns():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        }
+    )
+
+    result = table.rename({"id": "user_id", "name": "full_name"})
+    columns = result.columns()
+    assert Symbol("user_id") in columns
+    assert Symbol("full_name") in columns
+    assert Symbol("id") not in columns
+    assert Symbol("name") not in columns
+
+
+def test_rename_unknown_column_raises():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceConversionError, match="Columns not found"):
+        table.rename({"unknown": "new_name"})
+
+
+def test_cast_i64_to_f64():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    assert table.dtypes["age"] == "I64"
+
+    result = table.cast("age", F64)
+    assert result.dtypes["age"] == "F64"
+
+    # Verify values are preserved
+    age_col = result["age"]
+    assert [v.value for v in age_col] == [29.0, 34.0, 41.0]
+
+
+def test_cast_f64_to_i64():
+    table = Table(
+        {
+            "price": Vector(items=[10.5, 20.7, 30.9], ray_type=F64),
+        }
+    )
+
+    assert table.dtypes["price"] == "F64"
+
+    result = table.cast("price", I64)
+    assert result.dtypes["price"] == "I64"
+
+    # Values are truncated when cast to int
+    price_col = result["price"]
+    assert [v.value for v in price_col] == [10, 20, 30]
+
+
+def test_cast_unknown_column_raises():
+    table = Table(
+        {
+            "id": Vector(items=["001", "002"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceConversionError, match="Column not found"):
+        table.cast("unknown", F64)
