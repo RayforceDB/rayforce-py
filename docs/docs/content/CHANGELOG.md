@@ -6,6 +6,19 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.5.2`**
+
+### New Features
+
+- **Vector operations**: Added operations for Vector types including arithmetic (`+`, `-`, `*`, `/`), comparison (`<`, `<=`, `>`, `>=`, `eq`, `ne`), logical (`and_`, `or_`, `not_`), aggregation (`sum`, `min`, `max`, `average`), element access (`first`, `last`, `take`, `at`), set operations (`union`, `sect`, `except_`), search (`find`, `within`, `filter`), sort (`asc`, `desc`, `iasc`, `rank`, `reverse`, `negate`), and functional (`map`).
+
+- **Dict operations**: Added key/value access (`key`, `value`) and sort operations (`asc`, `desc`) for Dict types.
+
+- **Scalar operations**: Added arithmetic, comparison, and math operations (`ceil`, `floor`, `round`) for numeric scalar types (I16, I32, I64, F64).
+
+2026-01-16 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.2/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.2)**
+
+
 ## **`0.5.1`**
 
 ### New Features
