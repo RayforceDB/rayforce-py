@@ -6,6 +6,39 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.5.3`**
+
+### New Features
+
+- **SQL Query Support**: Query tables using familiar SQL syntax with the new `Table.sql()` method. Supports `SELECT`, `UPDATE`, `INSERT`, and `UPSERT` (via `ON CONFLICT`) statements. Requires optional `sqlglot` dependency. See [SQL documentation](./documentation/plugins/sql.md) for details.
+
+  ```python
+  # SELECT with WHERE, GROUP BY, ORDER BY
+  result = table.sql("SELECT dept, AVG(salary) FROM self WHERE age > 25 GROUP BY dept")
+
+  # UPDATE with expressions
+  result = table.sql("UPDATE self SET salary = salary * 1.1 WHERE rating > 4")
+
+  # INSERT
+  result = table.sql("INSERT INTO self (id, name) VALUES (1, 'Alice'), (2, 'Bob')")
+
+  # UPSERT (insert or update)
+  result = table.sql("INSERT INTO self (id, name) VALUES (1, 'Updated') ON CONFLICT (id) DO UPDATE")
+  ```
+
+- **Vector type inference**: `Vector` now automatically infers the element type from the first item when `ray_type` is not specified.
+
+  ```python
+  # Before: ray_type was required
+  v = Vector([1, 2, 3], ray_type=I64)
+
+  # Now: type is inferred automatically
+  v = Vector([1, 2, 3])  # Infers I64 from first element
+  ```
+
+2026-01-17 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.3/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.3)**
+
+
 ## **`0.5.2`**
 
 ### New Features
