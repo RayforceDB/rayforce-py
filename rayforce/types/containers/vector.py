@@ -46,8 +46,10 @@ class Vector(
 
         elif items is not None:
             if ray_type is None:
-                raise errors.RayforceInitError("ray_type required when creating Vector from value")
-            self.ptr = self._create_from_value(items, ray_type)
+                if not items:
+                    raise errors.RayforceInitError("Cannot infer vector type for empty items")
+                ray_type = FFI.get_obj_type(utils.python_to_ray(items[0]))
+            self.ptr = self._create_from_value(value=items, ray_type=ray_type)
 
         elif length is not None and ray_type is not None:
             type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
@@ -55,17 +57,12 @@ class Vector(
 
         else:
             raise errors.RayforceInitError(
-                "Vector requires either value, ptr, or (ray_type + length)",
+                "Vector requires either items, ptr, or (ray_type + length)",
             )
 
-    def _create_from_value(
-        self,
-        value: t.Sequence[t.Any],
-        ray_type: type[RayObject] | int | None = None,
+    def _create_from_value(  # type: ignore[override]
+        self, value: t.Sequence[t.Any], ray_type: type[RayObject] | int
     ) -> r.RayObject:
-        if ray_type is None:
-            raise errors.RayforceInitError("Element ray_type must be specified for Vector")
-
         type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
         return FFI.init_vector(type_code, list(value))
 
