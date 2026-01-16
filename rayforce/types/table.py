@@ -571,6 +571,11 @@ class TableQueryMixin:
     ) -> PivotQuery:
         return PivotQuery(t.cast("_TableProtocol", self), index, columns, values, aggfunc)
 
+    def sql(self, query: str) -> Table:
+        from rayforce.plugins.sql import sql_query
+
+        return sql_query(query, t.cast("Table", self))
+
 
 class Table(
     TableInitMixin,
