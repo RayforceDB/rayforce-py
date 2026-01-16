@@ -5,12 +5,32 @@ import typing as t
 from rayforce import _rayforce_c as r
 from rayforce import errors
 from rayforce.ffi import FFI
-from rayforce.types.base import Container
+from rayforce.types.base import (
+    AggContainerMixin,
+    AriphmeticContainerMixin,
+    ComparisonContainerMixin,
+    ElementAccessContainerMixin,
+    FunctionalContainerMixin,
+    IterableContainerMixin,
+    SearchContainerMixin,
+    SetOperationContainerMixin,
+    SortContainerMixin,
+)
 from rayforce.types.registry import TypeRegistry
 from rayforce.utils.conversion import python_to_ray
 
 
-class List(Container):
+class List(
+    SortContainerMixin,
+    IterableContainerMixin,
+    AggContainerMixin,
+    AriphmeticContainerMixin,
+    ComparisonContainerMixin,
+    ElementAccessContainerMixin,
+    SetOperationContainerMixin,
+    SearchContainerMixin,
+    FunctionalContainerMixin,
+):
     type_code = r.TYPE_LIST
     ray_name = "LIST"
 

@@ -4,12 +4,22 @@ import typing as t
 
 from rayforce import _rayforce_c as r
 from rayforce.ffi import FFI
-from rayforce.types.base import Container
+from rayforce.types.base import (
+    ElementAccessContainerMixin,
+    MappableContainerMixin,
+    SearchContainerMixin,
+    SortContainerMixin,
+)
 from rayforce.types.registry import TypeRegistry
 from rayforce.utils.conversion import python_to_ray, ray_to_python
 
 
-class Dict(Container):
+class Dict(
+    SortContainerMixin,
+    ElementAccessContainerMixin,
+    SearchContainerMixin,
+    MappableContainerMixin,
+):
     type_code = r.TYPE_DICT
     ray_name = "DICT"
 

@@ -3,12 +3,35 @@ from __future__ import annotations
 import typing as t
 
 from rayforce import _rayforce_c as r
-from rayforce import errors
+from rayforce import errors, utils
 from rayforce.ffi import FFI
-from rayforce.types.base import Container, RayObject
+from rayforce.types.base import (
+    AggContainerMixin,
+    AriphmeticContainerMixin,
+    ComparisonContainerMixin,
+    ElementAccessContainerMixin,
+    FunctionalContainerMixin,
+    IterableContainerMixin,
+    RayObject,
+    SearchContainerMixin,
+    SetOperationContainerMixin,
+    SortContainerMixin,
+)
+from rayforce.types.containers.list import List
+from rayforce.types.operators import Operation
 
 
-class Vector(Container):
+class Vector(
+    SortContainerMixin,
+    IterableContainerMixin,
+    AggContainerMixin,
+    AriphmeticContainerMixin,
+    ComparisonContainerMixin,
+    ElementAccessContainerMixin,
+    SetOperationContainerMixin,
+    SearchContainerMixin,
+    FunctionalContainerMixin,
+):
     def __init__(
         self,
         items: t.Sequence[t.Any] | None = None,
@@ -53,28 +76,27 @@ class Vector(Container):
         return FFI.get_obj_length(self.ptr)
 
     def __getitem__(self, idx: int) -> t.Any:
-        from rayforce.utils.conversion import ray_to_python
-
         if idx < 0:
             idx = len(self) + idx
         if idx < 0 or idx >= len(self):
             raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
-        return ray_to_python(FFI.at_idx(self.ptr, idx))
+        return utils.ray_to_python(FFI.at_idx(self.ptr, idx))
 
     def __setitem__(self, idx: int, value: t.Any) -> None:
-        from rayforce.utils.conversion import python_to_ray
-
         if idx < 0:
             idx = len(self) + idx
         if not 0 <= idx < len(self):
-            raise errors.RayforceIndexError("Vector index out of range")
+            raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
-        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=python_to_ray(value))
+        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=utils.python_to_ray(value))
 
     def __iter__(self) -> t.Iterator[t.Any]:
         for i in range(len(self)):
             yield self[i]
+
+    def reverse(self) -> Vector:
+        return utils.eval_obj(List([Operation.REVERSE, self.ptr]))
 
 
 class String(Vector):
@@ -82,10 +104,7 @@ class String(Vector):
     type_code = r.TYPE_C8
 
     def __init__(
-        self,
-        value: str | Vector | None = None,
-        *,
-        ptr: r.RayObject | None = None,
+        self, value: str | Vector | None = None, *, ptr: r.RayObject | None = None
     ) -> None:
         if ptr and (_type := FFI.get_obj_type(ptr)) != self.type_code:
             raise errors.RayforceInitError(
