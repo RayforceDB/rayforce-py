@@ -417,6 +417,67 @@ body:has(.hero-section) article > h1:first-child {
   height: 16px;
 }
 
+/* Demo button - secondary style with gradient glow */
+.hero-demo-button {
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: transparent !important;
+  color: #e9a033 !important;
+  border: 2px solid #e9a033 !important;
+  isolation: isolate;
+  transition: all 0.3s ease;
+}
+
+.hero-demo-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #e9a033, #f0b85a);
+  transition: left 0.4s ease;
+  z-index: -1;
+}
+
+.hero-demo-button:hover::before {
+  left: 0;
+}
+
+.hero-demo-button:hover {
+  color: #04233b !important;
+  border-color: #e9a033 !important;
+  box-shadow: 0 0 20px rgba(233, 160, 51, 0.4);
+}
+
+.hero-demo-button svg {
+  fill: currentColor;
+  stroke: none;
+  transition: transform 0.3s ease;
+}
+
+.hero-demo-button:hover svg {
+  transform: scale(1.2);
+}
+
+[data-md-color-scheme="default"] .hero-demo-button {
+  color: #1B365D !important;
+  border-color: #1B365D !important;
+}
+
+[data-md-color-scheme="default"] .hero-demo-button::before {
+  background: linear-gradient(90deg, #1B365D, #2a4a7a);
+}
+
+[data-md-color-scheme="default"] .hero-demo-button:hover {
+  color: #ffffff !important;
+  border-color: #1B365D !important;
+  box-shadow: 0 0 20px rgba(27, 54, 93, 0.3);
+}
+
 /* Hero socials */
 .hero-text .hero-socials,
 .hero-socials {
