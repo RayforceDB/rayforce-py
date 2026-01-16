@@ -77,15 +77,45 @@ class ParsedSelect:
     order_by: list[tuple[str, bool]] = field(default_factory=list)  # (col, is_desc)
 
 
+@dataclass
+class ParsedUpdate:
+    assignments: dict[str, ParsedExpr]
+    where_clause: ParsedExpr | None = None
+
+
+@dataclass
+class ParsedInsert:
+    columns: list[str] | None
+    values: list[list[ParsedExpr]]
+
+
+@dataclass
+class ParsedUpsert:
+    columns: list[str] | None
+    values: list[list[ParsedExpr]]
+    key_columns: int
+
+
+ParsedQuery = ParsedSelect | ParsedUpdate | ParsedInsert | ParsedUpsert
+
+
 class SQLParser:
-    def parse(self, sql: str) -> ParsedSelect:
+    def parse(self, sql: str) -> ParsedQuery:
         sqlglot = _ensure_sqlglot()
         ast = sqlglot.parse_one(sql)
 
-        if ast.key != "select":
-            raise ValueError(f"Only SELECT statements are supported, got: {ast.key}")
+        if ast.key == "select":
+            return self._parse_select(ast)
+        if ast.key == "update":
+            return self._parse_update(ast)
+        if ast.key == "insert":
+            if ast.args.get("conflict"):  # on conflict
+                return self._parse_upsert(ast)
+            return self._parse_insert(ast)
 
-        return self._parse_select(ast)
+        raise ValueError(
+            f"Only SELECT, UPDATE, INSERT, and UPSERT statements are supported, got: {ast.key}"
+        )
 
     def _parse_select(self, node: exp.Select) -> ParsedSelect:
         import sqlglot.expressions as exp
@@ -126,6 +156,97 @@ class SQLParser:
             group_by=group_by,
             order_by=order_by,
         )
+
+    def _parse_update(self, node: exp.Expression) -> ParsedUpdate:
+        import sqlglot.expressions as exp
+
+        assignments: dict[str, ParsedExpr] = {}
+        for expr in node.expressions:
+            if isinstance(expr, exp.EQ):
+                col_name = expr.this.name if isinstance(expr.this, exp.Column) else str(expr.this)
+                assignments[col_name] = self._parse_expr(expr.expression)
+
+        where_clause = None
+        if node.args.get("where"):
+            where_clause = self._parse_expr(node.args["where"].this)
+
+        return ParsedUpdate(assignments=assignments, where_clause=where_clause)
+
+    def _parse_insert(self, node: exp.Expression) -> ParsedInsert:
+        import sqlglot.expressions as exp
+
+        columns: list[str] | None = None
+        if hasattr(node.this, "expressions") and node.this.expressions:
+            columns = [
+                col.name if isinstance(col, exp.Column) else str(col)
+                for col in node.this.expressions
+            ]
+
+        values: list[list[ParsedExpr]] = []
+        values_clause = node.args.get("expression")
+        if values_clause and hasattr(values_clause, "expressions"):
+            for row_tuple in values_clause.expressions:
+                if hasattr(row_tuple, "expressions"):
+                    row = [self._parse_expr(val) for val in row_tuple.expressions]
+                    values.append(row)
+
+        if not values:
+            raise ValueError("INSERT statement must have VALUES")
+
+        return ParsedInsert(columns=columns, values=values)
+
+    def _parse_upsert(self, node: exp.Expression) -> ParsedUpsert:
+        import sqlglot.expressions as exp
+
+        columns: list[str] | None = None
+        if hasattr(node.this, "expressions") and node.this.expressions:
+            columns = [
+                col.name if isinstance(col, exp.Column) else str(col)
+                for col in node.this.expressions
+            ]
+
+        values: list[list[ParsedExpr]] = []
+        values_clause = node.args.get("expression")
+        if values_clause and hasattr(values_clause, "expressions"):
+            for row_tuple in values_clause.expressions:
+                if hasattr(row_tuple, "expressions"):
+                    row = [self._parse_expr(val) for val in row_tuple.expressions]
+                    values.append(row)
+
+        if not values:
+            raise ValueError("UPSERT statement must have VALUES")
+
+        conflict = node.args.get("conflict")
+        conflict_keys: list[str] = []
+        if conflict:
+            action = conflict.args.get("action")
+            if action and str(action) == "DO NOTHING":
+                raise ValueError("ON CONFLICT DO NOTHING is not supported, use DO UPDATE")
+
+            # Get conflict key columns
+            keys = conflict.args.get("conflict_keys", [])
+            conflict_keys = [k.name if hasattr(k, "name") else str(k) for k in keys]
+
+            # MySQL-style ON DUPLICATE KEY doesn't have conflict_keys
+            if conflict.args.get("duplicate") and not conflict_keys:
+                raise ValueError(
+                    "ON DUPLICATE KEY UPDATE requires explicit key columns. "
+                    "Use: ON CONFLICT (col1, col2) DO UPDATE"
+                )
+
+        if not conflict_keys:
+            raise ValueError("UPSERT requires ON CONFLICT (key_columns) clause")
+
+        # Validate that conflict keys match the first N columns
+        if columns:
+            for i, key in enumerate(conflict_keys):
+                if i >= len(columns) or columns[i] != key:
+                    raise ValueError(
+                        f"Conflict key '{key}' must match the first {len(conflict_keys)} columns. "
+                        f"Expected '{columns[i] if i < len(columns) else 'N/A'}' at position {i}"
+                    )
+
+        return ParsedUpsert(columns=columns, values=values, key_columns=len(conflict_keys))
 
     def _parse_expr(self, node: exp.Expression) -> ParsedExpr:
         import sqlglot.expressions as exp
@@ -240,7 +361,18 @@ class SQLParser:
 
 
 class SQLCompiler:
-    def compile(self, parsed: ParsedSelect, table: Table) -> Table:
+    def compile(self, parsed: ParsedQuery, table: Table) -> Table:
+        if isinstance(parsed, ParsedSelect):
+            return self._compile_select(parsed, table)
+        if isinstance(parsed, ParsedUpdate):
+            return self._compile_update(parsed, table)
+        if isinstance(parsed, ParsedInsert):
+            return self._compile_insert(parsed, table)
+        if isinstance(parsed, ParsedUpsert):
+            return self._compile_upsert(parsed, table)
+        raise ValueError(f"Unsupported query type: {type(parsed).__name__}")
+
+    def _compile_select(self, parsed: ParsedSelect, table: Table) -> Table:
         select_args: list[str] = []
         select_kwargs: dict[str, t.Any] = {}
 
@@ -273,6 +405,61 @@ class SQLCompiler:
             query = query.order_by(*cols, desc=desc)
 
         return query.execute()
+
+    def _compile_update(self, parsed: ParsedUpdate, table: Table) -> Table:
+        update_kwargs: dict[str, t.Any] = {}
+        for col_name, expr in parsed.assignments.items():
+            compiled = self._compile_expr(expr)
+            update_kwargs[col_name] = compiled
+
+        query = table.update(**update_kwargs)
+
+        if parsed.where_clause:
+            where_expr = self._compile_expr(parsed.where_clause)
+            query = query.where(where_expr)
+
+        return query.execute()
+
+    def _compile_insert(self, parsed: ParsedInsert, table: Table) -> Table:
+        compiled_rows: list[list[t.Any]] = []
+        for row in parsed.values:
+            compiled_row = [self._compile_expr(val) for val in row]
+            compiled_rows.append(compiled_row)
+
+        if parsed.columns:
+            # INSERT with column names: use kwargs style
+            insert_kwargs: dict[str, list[t.Any]] = {col: [] for col in parsed.columns}
+            for row in compiled_rows:
+                for i, col in enumerate(parsed.columns):
+                    insert_kwargs[col].append(row[i])
+            return table.insert(**insert_kwargs).execute()
+
+        if len(compiled_rows) == 1:
+            return table.insert(*compiled_rows[0]).execute()
+
+        num_cols = len(compiled_rows[0])  # transpose
+        col_values = [[row[i] for row in compiled_rows] for i in range(num_cols)]
+        return table.insert(*col_values).execute()
+
+    def _compile_upsert(self, parsed: ParsedUpsert, table: Table) -> Table:
+        compiled_rows: list[list[t.Any]] = []
+        for row in parsed.values:
+            compiled_row = [self._compile_expr(val) for val in row]
+            compiled_rows.append(compiled_row)
+
+        if parsed.columns:
+            upsert_kwargs: dict[str, list[t.Any]] = {col: [] for col in parsed.columns}
+            for row in compiled_rows:
+                for i, col in enumerate(parsed.columns):
+                    upsert_kwargs[col].append(row[i])
+            return table.upsert(**upsert_kwargs, key_columns=parsed.key_columns).execute()
+
+        if len(compiled_rows) == 1:
+            return table.upsert(*compiled_rows[0], key_columns=parsed.key_columns).execute()
+
+        num_cols = len(compiled_rows[0])  # transpose
+        col_values = [[row[i] for row in compiled_rows] for i in range(num_cols)]
+        return table.upsert(*col_values, key_columns=parsed.key_columns).execute()
 
     def _compile_expr(self, expr: ParsedExpr) -> t.Any:
         from rayforce.types.table import Column

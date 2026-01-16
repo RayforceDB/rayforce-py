@@ -153,9 +153,220 @@ def test_complex_aggregation(sqlglot, sample_table):
     assert len(result) == 2  # eng and sales have people > 25
 
 
+def test_update_single_column(sqlglot, sample_table):
+    result = sample_table.sql("UPDATE self SET salary = 99999.0 WHERE id = 1")
+    # Find the row with id=1 and check salary
+    for i, id_val in enumerate(result["id"]):
+        if id_val.value == 1:
+            assert result["salary"][i].value == 99999.0
+            break
+
+
+def test_update_all_rows(sqlglot, sample_table):
+    result = sample_table.sql("UPDATE self SET age = 100")
+    for age_val in result["age"]:
+        assert age_val.value == 100
+
+
+def test_update_with_expression(sqlglot, sample_table):
+    result = sample_table.sql("UPDATE self SET salary = salary + 1000.0 WHERE age > 30")
+    # Original salaries were 50000, 60000, 70000, 55000, 65000
+    # Ages > 30: Charlie (35, 70000->71000), Eve (32, 65000->66000)
+    for i, age_val in enumerate(result["age"]):
+        if age_val.value > 30:
+            assert result["salary"][i].value > 65000  # All updated values should be > 65000
+
+
+def test_update_multiple_columns(sqlglot, sample_table):
+    result = sample_table.sql("UPDATE self SET age = 99, salary = 1.0 WHERE id = 2")
+    for i, id_val in enumerate(result["id"]):
+        if id_val.value == 2:
+            assert result["age"][i].value == 99
+            assert result["salary"][i].value == 1.0
+            break
+
+
+def test_update_with_complex_where(sqlglot, sample_table):
+    result = sample_table.sql(
+        "UPDATE self SET salary = 0.0 WHERE (dept = 'eng' OR dept = 'sales') AND age < 30"
+    )
+    # Should update Alice (eng, 25) and Diana (sales, 28)
+    updated_count = sum(1 for s in result["salary"] if s.value == 0.0)
+    assert updated_count == 2
+
+
+def test_insert_single_row_with_columns(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1, 2], ray_type=I64),
+            "name": Vector(["Alice", "Bob"], ray_type=Symbol),
+        }
+    )
+    result = table.sql("INSERT INTO self (id, name) VALUES (3, 'Charlie')")
+    assert len(result) == 3
+    assert result["id"][2].value == 3
+    assert result["name"][2].value == "Charlie"
+
+
+def test_insert_multiple_rows_with_columns(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "name": Vector(["Alice"], ray_type=Symbol),
+        }
+    )
+    result = table.sql("INSERT INTO self (id, name) VALUES (2, 'Bob'), (3, 'Charlie')")
+    assert len(result) == 3
+    ids = [v.value for v in result["id"]]
+    assert ids == [1, 2, 3]
+
+
+def test_insert_without_columns(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "name": Vector(["Alice"], ray_type=Symbol),
+        }
+    )
+    result = table.sql("INSERT INTO self VALUES (2, 'Bob')")
+    assert len(result) == 2
+    assert result["id"][1].value == 2
+    assert result["name"][1].value == "Bob"
+
+
+def test_insert_multiple_rows_without_columns(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "name": Vector(["Alice"], ray_type=Symbol),
+        }
+    )
+    result = table.sql("INSERT INTO self VALUES (2, 'Bob'), (3, 'Charlie')")
+    assert len(result) == 3
+
+
+def test_insert_with_float_values(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "price": Vector([10.5], ray_type=F64),
+        }
+    )
+    result = table.sql("INSERT INTO self (id, price) VALUES (2, 20.5)")
+    assert len(result) == 2
+    assert result["price"][1].value == 20.5
+
+
+def test_insert_with_negative_values(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "value": Vector([100], ray_type=I64),
+        }
+    )
+    result = table.sql("INSERT INTO self (id, value) VALUES (2, -50)")
+    assert len(result) == 2
+    assert result["value"][1].value == -50
+
+
+def test_upsert_update_existing(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1, 2], ray_type=I64),
+            "name": Vector(["Alice", "Bob"], ray_type=Symbol),
+        }
+    )
+    result = table.sql(
+        "INSERT INTO self (id, name) VALUES (1, 'Alice Updated') ON CONFLICT (id) DO UPDATE"
+    )
+    assert len(result) == 2
+    # Find row with id=1 and verify name was updated
+    for i, id_val in enumerate(result["id"]):
+        if id_val.value == 1:
+            assert result["name"][i].value == "Alice Updated"
+            break
+
+
+def test_upsert_insert_new(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1, 2], ray_type=I64),
+            "name": Vector(["Alice", "Bob"], ray_type=Symbol),
+        }
+    )
+    result = table.sql(
+        "INSERT INTO self (id, name) VALUES (3, 'Charlie') ON CONFLICT (id) DO UPDATE"
+    )
+    assert len(result) == 3
+    ids = [v.value for v in result["id"]]
+    assert 3 in ids
+
+
+def test_upsert_multiple_rows(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "name": Vector(["Alice"], ray_type=Symbol),
+        }
+    )
+    result = table.sql("""
+        INSERT INTO self (id, name)
+        VALUES (1, 'Alice Updated'), (2, 'Bob')
+        ON CONFLICT (id) DO UPDATE
+    """)
+    assert len(result) == 2
+    names = [v.value for v in result["name"]]
+    assert "Alice Updated" in names
+    assert "Bob" in names
+
+
+def test_upsert_composite_key(sqlglot):
+    table = Table(
+        {
+            "region": Vector(["US", "EU"], ray_type=Symbol),
+            "id": Vector([1, 1], ray_type=I64),
+            "value": Vector([100, 200], ray_type=I64),
+        }
+    )
+    # Use first 2 columns as composite key
+    result = table.sql("""
+        INSERT INTO self (region, id, value)
+        VALUES ('US', 1, 150)
+        ON CONFLICT (region, id) DO UPDATE
+    """)
+    assert len(result) == 2
+    # Find US/1 row and verify value was updated
+    for i, region in enumerate(result["region"]):
+        if region.value == "US" and result["id"][i].value == 1:
+            assert result["value"][i].value == 150
+            break
+
+
+def test_upsert_do_nothing_raises(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "name": Vector(["Alice"], ray_type=Symbol),
+        }
+    )
+    with pytest.raises(ValueError, match="DO NOTHING is not supported"):
+        table.sql("INSERT INTO self (id, name) VALUES (1, 'Bob') ON CONFLICT (id) DO NOTHING")
+
+
+def test_upsert_mismatched_key_raises(sqlglot):
+    table = Table(
+        {
+            "id": Vector([1], ray_type=I64),
+            "name": Vector(["Alice"], ray_type=Symbol),
+        }
+    )
+    with pytest.raises(ValueError, match="must match the first"):
+        table.sql("INSERT INTO self (id, name) VALUES (1, 'Bob') ON CONFLICT (name) DO UPDATE")
+
+
 def test_invalid_sql_raises(sqlglot, sample_table):
-    with pytest.raises(ValueError, match="Only SELECT"):
-        sample_table.sql("INSERT INTO self VALUES (1, 2, 3)")
+    with pytest.raises(ValueError, match="Only SELECT, UPDATE, INSERT, and UPSERT"):
+        sample_table.sql("DELETE FROM self WHERE id = 1")
 
 
 def test_negative_number(sqlglot, sample_table):

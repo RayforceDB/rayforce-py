@@ -147,11 +147,124 @@ employees.sql("SELECT name, salary / 12 AS monthly_salary FROM self")
 employees.sql("SELECT name, salary + 5000 AS adjusted_salary FROM self")
 ```
 
+## UPDATE Statements
+
+Modify existing rows using UPDATE with SET and optional WHERE:
+
+```python
+# Update all rows
+employees.sql("UPDATE self SET salary = 50000.0")
+
+# Update with WHERE clause
+employees.sql("UPDATE self SET salary = 100000.0 WHERE level = 'senior'")
+
+# Update multiple columns
+employees.sql("UPDATE self SET salary = 75000.0, level = 'mid' WHERE id = 5")
+
+# Update with expressions (using column values)
+employees.sql("UPDATE self SET salary = salary * 1.1 WHERE rating > 4.0")
+
+# Update with complex WHERE
+employees.sql("UPDATE self SET salary = salary + 5000.0 WHERE (dept = 'eng' OR dept = 'sales') AND years > 3")
+```
+
+**Note:** UPDATE returns the modified table. The original table is not mutated.
+
+## INSERT Statements
+
+Add new rows to a table using INSERT with VALUES:
+
+```python
+>>> employees = Table({
+...     "id": Vector([1, 2], ray_type=I64),
+...     "name": Vector(["Alice", "Bob"], ray_type=Symbol),
+...     "salary": Vector([50000.0, 60000.0], ray_type=F64),
+... })
+
+# Insert single row with column names
+>>> result = employees.sql("INSERT INTO self (id, name, salary) VALUES (3, 'Charlie', 70000.0)")
+>>> print(len(result))
+3
+
+# Insert multiple rows
+>>> result = employees.sql("""
+...     INSERT INTO self (id, name, salary)
+...     VALUES (4, 'Diana', 55000.0), (5, 'Eve', 65000.0)
+... """)
+>>> print(len(result))
+5
+
+# Insert without column names (values must match table column order)
+>>> result = employees.sql("INSERT INTO self VALUES (6, 'Frank', 72000.0)")
+```
+
+**Note:** INSERT returns a new table with the added rows. The original table is not mutated.
+
+## UPSERT (INSERT ... ON CONFLICT)
+
+Perform upsert operations (insert or update) using the `ON CONFLICT` clause:
+
+```python
+>>> products = Table({
+...     "id": Vector([1, 2], ray_type=I64),
+...     "name": Vector(["Widget", "Gadget"], ray_type=Symbol),
+...     "price": Vector([10.0, 20.0], ray_type=F64),
+... })
+
+# Update existing row (id=1 exists)
+>>> result = products.sql("""
+...     INSERT INTO self (id, name, price)
+...     VALUES (1, 'Widget Pro', 15.0)
+...     ON CONFLICT (id) DO UPDATE
+... """)
+>>> print(result["name"][0].value)
+Widget Pro
+
+# Insert new row (id=3 doesn't exist)
+>>> result = products.sql("""
+...     INSERT INTO self (id, name, price)
+...     VALUES (3, 'Gizmo', 30.0)
+...     ON CONFLICT (id) DO UPDATE
+... """)
+>>> print(len(result))
+3
+
+# Upsert multiple rows at once
+>>> result = products.sql("""
+...     INSERT INTO self (id, name, price)
+...     VALUES (1, 'Widget Updated', 12.0), (4, 'Doohickey', 25.0)
+...     ON CONFLICT (id) DO UPDATE
+... """)
+```
+
+### Composite Keys
+
+Use multiple columns as the conflict key by listing them in the `ON CONFLICT` clause:
+
+```python
+>>> inventory = Table({
+...     "region": Vector(["US", "EU"], ray_type=Symbol),
+...     "sku": Vector(["A001", "A001"], ray_type=Symbol),
+...     "quantity": Vector([100, 50], ray_type=I64),
+... })
+
+# Use (region, sku) as composite key
+>>> result = inventory.sql("""
+...     INSERT INTO self (region, sku, quantity)
+...     VALUES ('US', 'A001', 150)
+...     ON CONFLICT (region, sku) DO UPDATE
+... """)
+```
+
+**Important:** The conflict key columns must match the first N columns in the INSERT column list (in order). This is required because Rayforce uses positional key columns.
+
+**Note:** UPSERT returns a new table with the changes applied. The original table is not mutated. `ON CONFLICT DO NOTHING` is not supported.
+
 ## Limitations
 
 The current SQL implementation supports common query patterns but has some limitations:
 
-- Only `SELECT` statements are supported (no `INSERT`, `UPDATE`, `DELETE`)
+- `DELETE` statements are not supported
 - `JOIN` operations are not yet supported via SQL (use the native `.inner_join()`, `.left_join()` methods)
 - Subqueries are not supported
 - `HAVING` clause is not supported
