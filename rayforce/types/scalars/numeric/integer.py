@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from rayforce import _rayforce_c as r
 from rayforce.ffi import FFI
-from rayforce.types.base import Scalar
+from rayforce.types.base import (
+    AggScalarMixin,
+    AriphmeticScalarMixin,
+    ComparisonScalarMixin,
+)
 from rayforce.types.registry import TypeRegistry
 
 
-class I16(Scalar):
+class I16(AriphmeticScalarMixin, ComparisonScalarMixin, AggScalarMixin):
     type_code = -r.TYPE_I16
     ray_name = "i16"
 
@@ -17,7 +21,7 @@ class I16(Scalar):
         return FFI.read_i16(self.ptr)
 
 
-class I32(Scalar):
+class I32(AriphmeticScalarMixin, ComparisonScalarMixin, AggScalarMixin):
     type_code = -r.TYPE_I32
     ray_name = "i32"
 
@@ -28,7 +32,7 @@ class I32(Scalar):
         return FFI.read_i32(self.ptr)
 
 
-class I64(Scalar):
+class I64(AriphmeticScalarMixin, ComparisonScalarMixin, AggScalarMixin):
     type_code = -r.TYPE_I64
     ray_name = "i64"
 

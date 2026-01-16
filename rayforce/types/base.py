@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import typing as t
 
-from rayforce import FFI, errors
+from rayforce import FFI, errors, utils
 from rayforce import _rayforce_c as r
 
 
@@ -98,3 +98,220 @@ class Container(RayObject):
 
     def __bool__(self) -> bool:
         return len(self) > 0
+
+
+def _eval_operation(operation: str, *args: t.Any) -> t.Any:
+    from rayforce import List, Operation
+
+    return utils.eval_obj(List([getattr(Operation, operation), *args]))
+
+
+class _AriphmeticMixin:
+    def __add__(self, other) -> t.Any:
+        return _eval_operation("ADD", self, other)
+
+    def __sub__(self, other) -> t.Any:
+        return _eval_operation("SUBTRACT", self, other)
+
+    def __mul__(self, other) -> t.Any:
+        return _eval_operation("MULTIPLY", self, other)
+
+    def __truediv__(self, other) -> t.Any:
+        return _eval_operation("DIVIDE", self, other)
+
+    def __mod__(self, other) -> t.Any:
+        return _eval_operation("MODULO", self, other)
+
+    def __radd__(self, other) -> t.Any:
+        return _eval_operation("ADD", other, self)
+
+    def __rsub__(self, other) -> t.Any:
+        return _eval_operation("SUBTRACT", other, self)
+
+    def __rmul__(self, other) -> t.Any:
+        return _eval_operation("MULTIPLY", other, self)
+
+    def __rtruediv__(self, other) -> t.Any:
+        return _eval_operation("DIVIDE", other, self)
+
+
+class AriphmeticScalarMixin(Scalar, _AriphmeticMixin): ...
+
+
+class AriphmeticContainerMixin(Container, _AriphmeticMixin): ...
+
+
+class _ComparisonMixin:
+    def __lt__(self, other) -> t.Any:
+        return _eval_operation("LESS_THAN", self, other)
+
+    def __le__(self, other) -> t.Any:
+        return _eval_operation("LESS_EQUAL", self, other)
+
+    def __gt__(self, other) -> t.Any:
+        return _eval_operation("GREATER_THAN", self, other)
+
+    def __ge__(self, other) -> t.Any:
+        return _eval_operation("GREATER_EQUAL", self, other)
+
+    def eq(self, other) -> t.Any:
+        return _eval_operation("EQUALS", self, other)
+
+    def ne(self, other) -> t.Any:
+        return _eval_operation("NOT_EQUALS", self, other)
+
+    def and_(self, other) -> t.Any:
+        return _eval_operation("AND", self, other)
+
+    def or_(self, other) -> t.Any:
+        return _eval_operation("OR", self, other)
+
+    def not_(self) -> t.Any:
+        return _eval_operation("NOT", self)
+
+    def like(self, pattern: t.Any) -> t.Any:
+        return _eval_operation("LIKE", self, pattern)
+
+    def nil(self) -> t.Any:
+        return _eval_operation("NIL_Q", self)
+
+
+class ComparisonScalarMixin(Scalar, _ComparisonMixin): ...
+
+
+class ComparisonContainerMixin(Container, _ComparisonMixin): ...
+
+
+class SortContainerMixin(Container):
+    def asc(self) -> t.Any:
+        return _eval_operation("ASC", self)
+
+    def desc(self) -> t.Any:
+        return _eval_operation("DESC", self)
+
+    def iasc(self) -> t.Any:
+        return _eval_operation("IASC", self)
+
+    def idesc(self) -> t.Any:
+        return _eval_operation("IDESC", self)
+
+    def rank(self) -> t.Any:
+        return _eval_operation("RANK", self)
+
+    def xrank(self, i: int) -> t.Any:
+        return _eval_operation("XRANK", self, i)
+
+    def negate(self) -> t.Any:
+        return _eval_operation("NEGATE", self)
+
+
+class IterableContainerMixin(Container):
+    def reverse(self) -> t.Any:
+        return _eval_operation("REVERSE", self)
+
+
+class _AggMixin:
+    def ceil(self) -> t.Any:
+        return _eval_operation("CEIL", self)
+
+    def floor(self) -> t.Any:
+        return _eval_operation("FLOOR", self)
+
+    def round(self) -> t.Any:
+        return _eval_operation("ROUND", self)
+
+    def xbar(self, i: int) -> t.Any:
+        return _eval_operation("XBAR", self, i)
+
+
+class AggScalarMixin(_AggMixin, Scalar): ...
+
+
+class AggContainerMixin(_AggMixin, Container):
+    def sum(self) -> t.Any:
+        return _eval_operation("SUM", self)
+
+    def average(self) -> t.Any:
+        return _eval_operation("AVG", self)
+
+    def median(self) -> t.Any:
+        return _eval_operation("MEDIAN", self)
+
+    def deviation(self) -> t.Any:
+        return _eval_operation("DEVIATION", self)
+
+    def min(self) -> t.Any:
+        return _eval_operation("MIN", self)
+
+    def max(self) -> t.Any:
+        return _eval_operation("MAX", self)
+
+
+class ElementAccessContainerMixin(Container):
+    def first(self) -> t.Any:
+        return _eval_operation("FIRST", self)
+
+    def last(self) -> t.Any:
+        return _eval_operation("LAST", self)
+
+    def take(self, i: int) -> t.Any:
+        return _eval_operation("TAKE", self, i)
+
+    def at(self, index: t.Any) -> t.Any:
+        return _eval_operation("AT", self, index)
+
+
+class SetOperationContainerMixin(Container):
+    def except_(self, other: t.Any) -> t.Any:
+        return _eval_operation("EXCEPT", self, other)
+
+    def union(self, other: t.Any) -> t.Any:
+        return _eval_operation("UNION", self, other)
+
+    def sect(self, other: t.Any) -> t.Any:
+        return _eval_operation("SECT", self, other)
+
+
+class SearchContainerMixin(Container):
+    def in_(self, other: t.Any) -> t.Any:
+        return _eval_operation("IN", other, self)
+
+    def find(self, value: t.Any) -> t.Any:
+        return _eval_operation("FIND", self, value)
+
+    def filter(self, mask: t.Any) -> t.Any:
+        return _eval_operation("FILTER", self, mask)
+
+    def within(self, range_: t.Any) -> t.Any:
+        return _eval_operation("WITHIN", self, range_)
+
+
+class FunctionalContainerMixin(Container):
+    def map(self, fn: t.Any) -> t.Any:
+        return _eval_operation("MAP", fn, self)
+
+    def pmap(self, fn: t.Any) -> t.Any:
+        return _eval_operation("PMAP", fn, self)
+
+    def fold(self, fn: t.Any) -> t.Any:
+        return _eval_operation("FOLD", fn, self)
+
+    def apply(self, fn: t.Any, *others: t.Any) -> t.Any:
+        return _eval_operation("APPLY", fn, self, *others)
+
+
+class _MappableMixin:
+    def key(self) -> t.Any:
+        return _eval_operation("KEY", self)
+
+    def value(self) -> t.Any:
+        return _eval_operation("VALUE", self)
+
+
+class MappableScalarMixin(_MappableMixin, Scalar): ...
+
+
+class MappableContainerMixin(_MappableMixin, Container): ...
+
+
+ValueAccessContainerMixin = ElementAccessContainerMixin  # backward compatibility

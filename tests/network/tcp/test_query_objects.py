@@ -5,12 +5,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rayforce import (
-    F64,
     I64,
     Column,
     Symbol,
     Table,
-    TableColumnInterval,
     Vector,
 )
 from rayforce import (

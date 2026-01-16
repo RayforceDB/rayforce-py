@@ -3,11 +3,15 @@ from __future__ import annotations
 from rayforce import _rayforce_c as r
 from rayforce import errors
 from rayforce.ffi import FFI
-from rayforce.types.base import Scalar
+from rayforce.types.base import (
+    AggScalarMixin,
+    AriphmeticScalarMixin,
+    ComparisonScalarMixin,
+)
 from rayforce.types.registry import TypeRegistry
 
 
-class U8(Scalar):
+class U8(AriphmeticScalarMixin, ComparisonScalarMixin, AggScalarMixin):
     type_code = -r.TYPE_U8
     ray_name = "u8"
 
