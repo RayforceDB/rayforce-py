@@ -47,3 +47,31 @@ Dict({
     'docs': {'is_this_docs': True}
 })
 ```
+
+## Operations
+
+Dicts support various operations through mixins.
+
+### Key/Value Access
+
+```python
+>>> d = Dict({"a": 1, "b": 2, "c": 3})
+
+>>> d.key()
+Vector([Symbol('a'), Symbol('b'), Symbol('c')])
+
+>>> d.value()
+List([I64(1), I64(2), I64(3)])
+```
+
+### Sort Operations
+
+```python
+>>> d = Dict({"c": 3, "a": 1, "b": 2})
+
+>>> d.asc()
+Dict({'a': 1, 'b': 2, 'c': 3})
+
+>>> d.desc()
+Dict({'c': 3, 'b': 2, 'a': 1})
+```

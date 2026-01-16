@@ -31,3 +31,68 @@ I64(123)  # type: rayforce.I64
 >>> i64.value
 123  # type: int
 ```
+
+## Operations
+
+Integer types support arithmetic, comparison, and math operations.
+
+### Arithmetic Operations
+
+```python
+>>> a = I64(10)
+>>> b = I64(3)
+
+>>> a + b
+I64(13)
+
+>>> a - b
+I64(7)
+
+>>> a * b
+I64(30)
+
+>>> a / b
+I64(3)
+
+>>> a % b
+I64(1)
+```
+
+### Comparison Operations
+
+```python
+>>> a = I64(10)
+>>> b = I64(20)
+
+>>> a < b
+B8(True)
+
+>>> a > b
+B8(False)
+
+>>> a <= b
+B8(True)
+
+>>> a.eq(b)
+B8(False)
+
+>>> a.ne(b)
+B8(True)
+```
+
+### Math Operations
+
+```python
+>>> from rayforce import F64
+
+>>> f = F64(3.7)
+
+>>> f.ceil()
+F64(4.0)
+
+>>> f.floor()
+F64(3.0)
+
+>>> f.round()
+F64(4.0)
+```
