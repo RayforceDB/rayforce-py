@@ -3268,6 +3268,47 @@ img.hero-logo.dark-only,
 }
 
 /* ==================== */
+/* MOBILE SIDEBAR FIX   */
+/* ==================== */
+
+@media screen and (max-width: 76.1875em) {
+    /* Move overlay to not cover sidebar area */
+    .md-overlay {
+        left: 12.1rem !important;
+        width: calc(100% - 12.1rem) !important;
+    }
+
+    /* When drawer is open, clip header to not overlap sidebar */
+    [data-md-toggle="drawer"]:checked ~ .md-header {
+        clip-path: inset(0 0 0 12.1rem) !important;
+    }
+
+    /* Ensure sidebar is visible */
+    .md-sidebar--primary {
+        z-index: 9999 !important;
+    }
+
+    /* Fix double-tap issue on touch devices */
+    .md-nav__link,
+    .md-nav__item > label,
+    .md-nav__item label[for],
+    .md-nav__toggle ~ label,
+    .md-nav label,
+    .md-sidebar--primary label {
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent;
+        cursor: pointer !important;
+    }
+
+    /* Ensure toggle labels are immediately clickable */
+    .md-nav__item--nested > input + label,
+    .md-nav__item--nested > label {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+    }
+}
+
+/* ==================== */
 /* RESPONSIVE           */
 /* ==================== */
 
