@@ -272,17 +272,17 @@ from rayforce.plugins.sql import SQLQuery
 client = TCPClient(host="localhost", port=5000)
 
 # Execute SQL query on remote table
-query = SQLQuery("employees", "SELECT dept, AVG(salary) FROM self GROUP BY dept")
+query = SQLQuery(Table("employees"), "SELECT dept, AVG(salary) FROM self GROUP BY dept")
 result = client.execute(query)
 
 # All SQL operations are supported
-update_query = SQLQuery("employees", "UPDATE self SET salary = salary * 1.1 WHERE rating > 4")
+update_query = SQLQuery(Table("employees"), "UPDATE self SET salary = salary * 1.1 WHERE rating > 4")
 client.execute(update_query)
 
-insert_query = SQLQuery("employees", "INSERT INTO self (id, name) VALUES (100, 'New Hire')")
+insert_query = SQLQuery(Table("employees"), "INSERT INTO self (id, name) VALUES (100, 'New Hire')")
 client.execute(insert_query)
 
-upsert_query = SQLQuery("employees", """
+upsert_query = SQLQuery(Table("employees"), """
     INSERT INTO self (id, name, salary)
     VALUES (100, 'Updated', 75000)
     ON CONFLICT (id) DO UPDATE

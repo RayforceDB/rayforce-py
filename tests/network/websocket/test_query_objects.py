@@ -353,7 +353,7 @@ async def test_sql_select_query_ws(ws_server):
     )
     table.save("employees")
 
-    query = SQLQuery("employees", "SELECT name, age FROM self WHERE age > 25")
+    query = SQLQuery(Table("employees"), "SELECT name, age FROM self WHERE age > 25")
     result = await connection.execute(query)
 
     assert isinstance(result, Table)
@@ -379,7 +379,7 @@ async def test_sql_update_query_ws(ws_server):
     )
     table.save("employees")
 
-    query = SQLQuery("employees", "UPDATE self SET salary = 75000.0 WHERE id = 1")
+    query = SQLQuery(Table("employees"), "UPDATE self SET salary = 75000.0 WHERE id = 1")
     result = await connection.execute(query)
 
     assert isinstance(result, Table)
@@ -402,7 +402,7 @@ async def test_sql_insert_query_ws(ws_server):
     )
     table.save("employees")
 
-    query = SQLQuery("employees", "INSERT INTO self (id, name) VALUES (2, 'bob')")
+    query = SQLQuery(Table("employees"), "INSERT INTO self (id, name) VALUES (2, 'bob')")
     result = await connection.execute(query)
 
     assert isinstance(result, Table)
@@ -429,7 +429,7 @@ async def test_sql_upsert_query_ws(ws_server):
 
     # Update existing row
     query = SQLQuery(
-        "employees",
+        Table("employees"),
         "INSERT INTO self (id, name) VALUES (1, 'alice_updated') ON CONFLICT (id) DO UPDATE",
     )
     result = await connection.execute(query)
@@ -456,7 +456,7 @@ async def test_sql_complex_select_ws(ws_server):
     table.save("employees")
 
     query = SQLQuery(
-        "employees",
+        Table("employees"),
         "SELECT dept, AVG(salary) AS avg_salary FROM self GROUP BY dept",
     )
     result = await connection.execute(query)

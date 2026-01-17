@@ -100,7 +100,7 @@ You can send SQL queries to remote tables using the `SQLQuery` class:
 >>> from rayforce import TCPClient
 >>> from rayforce.plugins.sql import SQLQuery
 
->>> query = SQLQuery("employees", "SELECT dept, AVG(salary) FROM self GROUP BY dept")
+>>> query = SQLQuery(Table("employees"), "SELECT dept, AVG(salary) FROM self GROUP BY dept")
 >>> result = client.execute(query)
 ```
 

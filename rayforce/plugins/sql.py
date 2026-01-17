@@ -482,21 +482,18 @@ class SQLCompiler:
         return "expr"
 
 
-def sql_query(query: str, table: Table) -> Table:
+def sql_query(table: Table, query: str) -> Table:
     return SQLCompiler().compile(SQLParser().parse(query), table)
 
 
 class SQLQuery:
-    def __init__(self, table: str, query: str) -> None:
-        self.table_name = table
-        self.query_str = query
-        self._parsed = SQLParser().parse(query)
+    def __init__(self, table: Table, query: str) -> None:
+        self.table = table
+        self.parsed = SQLParser().parse(query)
 
     @property
     def ipc(self):
-        from rayforce.types.table import Table
-
-        return SQLIPCCompiler().compile(self._parsed, Table(self.table_name)).ipc
+        return SQLIPCCompiler().compile(self.parsed, self.table).ipc
 
 
 class SQLIPCCompiler(SQLCompiler):

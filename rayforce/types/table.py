@@ -574,7 +574,7 @@ class TableQueryMixin:
     def sql(self, query: str) -> Table:
         from rayforce.plugins.sql import sql_query
 
-        return sql_query(query, t.cast("Table", self))
+        return sql_query(t.cast("Table", self), query)
 
 
 class Table(

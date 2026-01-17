@@ -429,21 +429,21 @@ def test_in_combined_with_and(sqlglot, sample_table):
 def test_sql_query_ipc_select(sqlglot):
     from rayforce.plugins.sql import SQLQuery
 
-    query = SQLQuery("employees", "SELECT name, age FROM self WHERE age > 30")
+    query = SQLQuery(Table("employees"), "SELECT name, age FROM self WHERE age > 30")
     assert query.ipc is not None
 
 
 def test_sql_query_ipc_update(sqlglot):
     from rayforce.plugins.sql import SQLQuery
 
-    query = SQLQuery("employees", "UPDATE self SET salary = 100000.0 WHERE level = 'senior'")
+    query = SQLQuery(Table("employees"), "UPDATE self SET salary = 100000.0 WHERE level = 'senior'")
     assert query.ipc is not None
 
 
 def test_sql_query_ipc_insert(sqlglot):
     from rayforce.plugins.sql import SQLQuery
 
-    query = SQLQuery("employees", "INSERT INTO self (id, name) VALUES (1, 'Alice')")
+    query = SQLQuery(Table("employees"), "INSERT INTO self (id, name) VALUES (1, 'Alice')")
     assert query.ipc is not None
 
 
@@ -451,7 +451,8 @@ def test_sql_query_ipc_upsert(sqlglot):
     from rayforce.plugins.sql import SQLQuery
 
     query = SQLQuery(
-        "employees", "INSERT INTO self (id, name) VALUES (1, 'Alice') ON CONFLICT (id) DO UPDATE"
+        Table("employees"),
+        "INSERT INTO self (id, name) VALUES (1, 'Alice') ON CONFLICT (id) DO UPDATE",
     )
     assert query.ipc is not None
 
@@ -459,10 +460,8 @@ def test_sql_query_ipc_upsert(sqlglot):
 def test_sql_query_stores_parsed(sqlglot):
     from rayforce.plugins.sql import ParsedSelect, SQLQuery
 
-    query = SQLQuery("employees", "SELECT * FROM self")
-    assert isinstance(query._parsed, ParsedSelect)
-    assert query.table_name == "employees"
-    assert query.query_str == "SELECT * FROM self"
+    query = SQLQuery(Table("employees"), "SELECT * FROM self")
+    assert isinstance(query.parsed, ParsedSelect)
 
 
 def test_missing_sqlglot_raises(monkeypatch):
