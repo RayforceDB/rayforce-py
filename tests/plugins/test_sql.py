@@ -365,7 +365,7 @@ def test_upsert_mismatched_key_raises(sqlglot):
 
 
 def test_invalid_sql_raises(sqlglot, sample_table):
-    with pytest.raises(ValueError, match="Only SELECT, UPDATE, INSERT, and UPSERT"):
+    with pytest.raises(ValueError, match="Statement not supported"):
         sample_table.sql("DELETE FROM self WHERE id = 1")
 
 
