@@ -92,6 +92,20 @@ TCP IPC supports sending Rayforce query objects directly, providing type safety 
 
 TCP IPC supports all major query types: `SelectQuery`, `UpdateQuery`, `InsertQuery`, `UpsertQuery`, `LeftJoin`, `InnerJoin`, `AsofJoin`, `WindowJoin`
 
+#### Sending SQL Queries
+
+You can send SQL queries to remote tables using the `SQLQuery` class:
+
+```python
+>>> from rayforce import TCPClient
+>>> from rayforce.plugins.sql import SQLQuery
+
+>>> query = SQLQuery("employees", "SELECT dept, AVG(salary) FROM self GROUP BY dept")
+>>> result = client.execute(query)
+```
+
+See [SQL documentation](./plugins/sql.md#sql-over-ipc) for more details.
+
 ## :material-network: IPC Save
 
 The `ipcsave()` method allows you to save query results or tables to a remote Rayforce instance via IPC connections. This method returns an `Expression` that can be executed on a remote server.

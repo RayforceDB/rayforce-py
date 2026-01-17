@@ -6,6 +6,15 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.5.4`**
+
+### New Features
+
+- **SQL over IPC**: Send SQL queries to remote Rayforce servers via TCP or WebSocket using the new `SQLQuery` class. [Documentation](https://py.rayforcedb.com/content/documentation/plugins/sql.html)
+
+2026-01-17 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.4/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.4)**
+
+
 ## **`0.5.3`**
 
 ### New Features

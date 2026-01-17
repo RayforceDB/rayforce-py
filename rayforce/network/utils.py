@@ -15,6 +15,7 @@ def validate_port(port: int) -> None:
 
 def python_to_ipc(data: t.Any) -> r.RayObject:
     from rayforce import List, String, errors
+    from rayforce.plugins.sql import SQLQuery
     from rayforce.types.table import (
         AsofJoin,
         Expression,
@@ -34,6 +35,8 @@ def python_to_ipc(data: t.Any) -> r.RayObject:
         return data.ptr
     if isinstance(data, Expression):
         return data.compile()
+    if isinstance(data, SQLQuery):
+        return data.ipc
     if isinstance(
         data,
         (

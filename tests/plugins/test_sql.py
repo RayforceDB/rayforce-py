@@ -425,7 +425,48 @@ def test_in_combined_with_and(sqlglot, sample_table):
     assert len(result) >= 1
 
 
+# SQLQuery IPC tests
+def test_sql_query_ipc_select(sqlglot):
+    from rayforce.plugins.sql import SQLQuery
+
+    query = SQLQuery("employees", "SELECT name, age FROM self WHERE age > 30")
+    assert query.ipc is not None
+
+
+def test_sql_query_ipc_update(sqlglot):
+    from rayforce.plugins.sql import SQLQuery
+
+    query = SQLQuery("employees", "UPDATE self SET salary = 100000.0 WHERE level = 'senior'")
+    assert query.ipc is not None
+
+
+def test_sql_query_ipc_insert(sqlglot):
+    from rayforce.plugins.sql import SQLQuery
+
+    query = SQLQuery("employees", "INSERT INTO self (id, name) VALUES (1, 'Alice')")
+    assert query.ipc is not None
+
+
+def test_sql_query_ipc_upsert(sqlglot):
+    from rayforce.plugins.sql import SQLQuery
+
+    query = SQLQuery(
+        "employees", "INSERT INTO self (id, name) VALUES (1, 'Alice') ON CONFLICT (id) DO UPDATE"
+    )
+    assert query.ipc is not None
+
+
+def test_sql_query_stores_parsed(sqlglot):
+    from rayforce.plugins.sql import ParsedSelect, SQLQuery
+
+    query = SQLQuery("employees", "SELECT * FROM self")
+    assert isinstance(query._parsed, ParsedSelect)
+    assert query.table_name == "employees"
+    assert query.query_str == "SELECT * FROM self"
+
+
 def test_missing_sqlglot_raises(monkeypatch):
+    import importlib
     import sys
 
     from rayforce.plugins import sql as sql_module
@@ -443,8 +484,6 @@ def test_missing_sqlglot_raises(monkeypatch):
 
     monkeypatch.setattr("builtins.__import__", mock_import)
 
-    import importlib
-
     importlib.reload(sql_module)
 
     from rayforce.plugins.sql import _ensure_sqlglot
@@ -452,5 +491,8 @@ def test_missing_sqlglot_raises(monkeypatch):
     with pytest.raises(ImportError, match="sqlglot is required"):
         _ensure_sqlglot()
 
+    # Restore sqlglot and reload the module to restore proper state
     if original_sqlglot:
         sys.modules["sqlglot"] = original_sqlglot
+    monkeypatch.undo()
+    importlib.reload(sql_module)

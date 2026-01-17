@@ -260,6 +260,38 @@ Use multiple columns as the conflict key by listing them in the `ON CONFLICT` cl
 
 **Note:** UPSERT returns a new table with the changes applied. The original table is not mutated. `ON CONFLICT DO NOTHING` is not supported.
 
+## SQL over IPC
+
+Send SQL queries to a remote Rayforce server using the `SQLQuery` class:
+
+```python
+from rayforce import TCPClient
+from rayforce.plugins.sql import SQLQuery
+
+# Connect to remote server
+client = TCPClient(host="localhost", port=5000)
+
+# Execute SQL query on remote table
+query = SQLQuery("employees", "SELECT dept, AVG(salary) FROM self GROUP BY dept")
+result = client.execute(query)
+
+# All SQL operations are supported
+update_query = SQLQuery("employees", "UPDATE self SET salary = salary * 1.1 WHERE rating > 4")
+client.execute(update_query)
+
+insert_query = SQLQuery("employees", "INSERT INTO self (id, name) VALUES (100, 'New Hire')")
+client.execute(insert_query)
+
+upsert_query = SQLQuery("employees", """
+    INSERT INTO self (id, name, salary)
+    VALUES (100, 'Updated', 75000)
+    ON CONFLICT (id) DO UPDATE
+""")
+client.execute(upsert_query)
+```
+
+The `SQLQuery` class parses the SQL on the client side and sends the compiled query to the server for execution. This provides the same functionality as `Table.sql()` but for remote tables.
+
 ## Limitations
 
 The current SQL implementation supports common query patterns but has some limitations:

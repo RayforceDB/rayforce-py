@@ -524,3 +524,107 @@ class SQLCompiler:
 
 def sql_query(query: str, table: Table) -> Table:
     return SQLCompiler().compile(SQLParser().parse(query), table)
+
+
+class SQLQuery:
+    def __init__(self, table: str, query: str) -> None:
+        self.table_name = table
+        self.query_str = query
+        self._parsed = SQLParser().parse(query)
+
+    @property
+    def ipc(self):
+        from rayforce.types.table import Table
+
+        table = Table(self.table_name)
+        query_obj = SQLIPCCompiler().compile(self._parsed, table)
+        return query_obj.ipc
+
+
+class SQLIPCCompiler(SQLCompiler):
+    def _compile_select(self, parsed: ParsedSelect, table: Table):
+        select_args: list[str] = []
+        select_kwargs: dict[str, t.Any] = {}
+
+        for alias, expr in parsed.columns:
+            if expr.type == ExprType.STAR:
+                select_args.append("*")
+            elif expr.type == ExprType.COLUMN and alias is None:
+                select_args.append(expr.value)
+            else:
+                compiled = self._compile_expr(expr)
+                name = alias if alias else self._infer_name(expr)
+                select_kwargs[name] = compiled
+
+        if select_args or select_kwargs:
+            query = table.select(*select_args, **select_kwargs)
+        else:
+            query = table.select("*")
+
+        if parsed.where_clause:
+            where_expr = self._compile_expr(parsed.where_clause)
+            query = query.where(where_expr)
+
+        if parsed.group_by:
+            query = query.by(*parsed.group_by)
+
+        if parsed.order_by:
+            cols = [col for col, _ in parsed.order_by]
+            desc = any(is_desc for _, is_desc in parsed.order_by)
+            query = query.order_by(*cols, desc=desc)
+
+        return query
+
+    def _compile_update(self, parsed: ParsedUpdate, table: Table):
+        update_kwargs: dict[str, t.Any] = {}
+        for col_name, expr in parsed.assignments.items():
+            compiled = self._compile_expr(expr)
+            update_kwargs[col_name] = compiled
+
+        query = table.update(**update_kwargs)
+
+        if parsed.where_clause:
+            where_expr = self._compile_expr(parsed.where_clause)
+            query = query.where(where_expr)
+
+        return query
+
+    def _compile_insert(self, parsed: ParsedInsert, table: Table):
+        compiled_rows: list[list[t.Any]] = []
+        for row in parsed.values:
+            compiled_row = [self._compile_expr(val) for val in row]
+            compiled_rows.append(compiled_row)
+
+        if parsed.columns:
+            insert_kwargs: dict[str, list[t.Any]] = {col: [] for col in parsed.columns}
+            for row in compiled_rows:
+                for i, col in enumerate(parsed.columns):
+                    insert_kwargs[col].append(row[i])
+            return table.insert(**insert_kwargs)
+
+        if len(compiled_rows) == 1:
+            return table.insert(*compiled_rows[0])
+
+        num_cols = len(compiled_rows[0])
+        col_values = [[row[i] for row in compiled_rows] for i in range(num_cols)]
+        return table.insert(*col_values)
+
+    def _compile_upsert(self, parsed: ParsedUpsert, table: Table):
+        compiled_rows: list[list[t.Any]] = []
+        for row in parsed.values:
+            compiled_row = [self._compile_expr(val) for val in row]
+            compiled_rows.append(compiled_row)
+
+        if parsed.columns:
+            upsert_kwargs: dict[str, list[t.Any]] = {col: [] for col in parsed.columns}
+            for row in compiled_rows:
+                for i, col in enumerate(parsed.columns):
+                    upsert_kwargs[col].append(row[i])
+            return table.upsert(**upsert_kwargs, key_columns=parsed.key_columns)
+
+        if len(compiled_rows) == 1:
+            return table.upsert(*compiled_rows[0], key_columns=parsed.key_columns)
+
+        num_cols = len(compiled_rows[0])
+        col_values = [[row[i] for row in compiled_rows] for i in range(num_cols)]
+        return table.upsert(*col_values, key_columns=parsed.key_columns)

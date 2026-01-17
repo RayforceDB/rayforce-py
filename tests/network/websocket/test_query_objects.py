@@ -7,6 +7,7 @@ import pytest_asyncio
 
 from rayforce import F64, I64, Column, Symbol, Table, TableColumnInterval, Time, Vector
 from rayforce.network.websocket import WSClient, WSServer
+from rayforce.plugins.sql import SQLQuery
 
 
 @pytest_asyncio.fixture
@@ -333,5 +334,136 @@ async def test_window_join1_ws(ws_server):
     columns = result.columns()
     assert "min_bid" in columns
     assert "max_ask" in columns
+
+    await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_sql_select_query_ws(ws_server):
+    _, port = ws_server
+    client = WSClient(host="localhost", port=port)
+    connection = await client.connect()
+
+    table = Table(
+        {
+            "id": Vector(items=[1, 2, 3], ray_type=I64),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[25, 30, 35], ray_type=I64),
+        }
+    )
+    table.save("employees")
+
+    query = SQLQuery("employees", "SELECT name, age FROM self WHERE age > 25")
+    result = await connection.execute(query)
+
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    names = [v.value for v in result["name"]]
+    assert "bob" in names
+    assert "charlie" in names
+
+    await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_sql_update_query_ws(ws_server):
+    _, port = ws_server
+    client = WSClient(host="localhost", port=port)
+    connection = await client.connect()
+
+    table = Table(
+        {
+            "id": Vector(items=[1, 2], ray_type=I64),
+            "salary": Vector(items=[50000.0, 60000.0], ray_type=F64),
+        }
+    )
+    table.save("employees")
+
+    query = SQLQuery("employees", "UPDATE self SET salary = 75000.0 WHERE id = 1")
+    result = await connection.execute(query)
+
+    assert isinstance(result, Table)
+    assert result.at_row(0)["salary"] == 75000.0
+
+    await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_sql_insert_query_ws(ws_server):
+    _, port = ws_server
+    client = WSClient(host="localhost", port=port)
+    connection = await client.connect()
+
+    table = Table(
+        {
+            "id": Vector(items=[1], ray_type=I64),
+            "name": Vector(items=["alice"], ray_type=Symbol),
+        }
+    )
+    table.save("employees")
+
+    query = SQLQuery("employees", "INSERT INTO self (id, name) VALUES (2, 'bob')")
+    result = await connection.execute(query)
+
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    assert result.at_row(1)["id"] == 2
+    assert result.at_row(1)["name"] == "bob"
+
+    await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_sql_upsert_query_ws(ws_server):
+    _, port = ws_server
+    client = WSClient(host="localhost", port=port)
+    connection = await client.connect()
+
+    table = Table(
+        {
+            "id": Vector(items=[1, 2], ray_type=I64),
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+    table.save("employees")
+
+    # Update existing row
+    query = SQLQuery(
+        "employees",
+        "INSERT INTO self (id, name) VALUES (1, 'alice_updated') ON CONFLICT (id) DO UPDATE",
+    )
+    result = await connection.execute(query)
+
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    assert result.at_row(0)["name"] == "alice_updated"
+
+    await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_sql_complex_select_ws(ws_server):
+    _, port = ws_server
+    client = WSClient(host="localhost", port=port)
+    connection = await client.connect()
+
+    table = Table(
+        {
+            "dept": Vector(items=["eng", "sales", "eng", "sales"], ray_type=Symbol),
+            "salary": Vector(items=[100000.0, 60000.0, 120000.0, 70000.0], ray_type=F64),
+        }
+    )
+    table.save("employees")
+
+    query = SQLQuery(
+        "employees",
+        "SELECT dept, AVG(salary) AS avg_salary FROM self GROUP BY dept",
+    )
+    result = await connection.execute(query)
+
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    assert "dept" in result.columns()
+    assert "avg_salary" in result.columns()
 
     await connection.close()
