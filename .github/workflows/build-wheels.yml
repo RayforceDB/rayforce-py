@@ -148,7 +148,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio pandas>=2.0.0 polars>=0.19.0 websockets pyarrow
+          pip install pytest pytest-asyncio pandas>=2.0.0 polars>=0.19.0 websockets pyarrow sqlglot
 
       - name: Remove local rayforce package to force pip installation
         run: |

@@ -39,7 +39,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install pytest pytest-cov pytest-asyncio coverage pandas>=2.0.0 polars>=0.19.0 websockets pyarrow
+          pip install pytest pytest-cov pytest-asyncio coverage pandas>=2.0.0 polars>=0.19.0 websockets pyarrow sqlglot
 
       - name: Run tests with coverage
         run: |
