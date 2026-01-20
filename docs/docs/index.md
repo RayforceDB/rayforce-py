@@ -23,7 +23,7 @@ hide:
 <polyline points="12 5 19 12 12 19"></polyline>
 </svg>
 </a>
-<a href="https://pylab.rayforcedb.com" target="_blank" class="md-button hero-demo-button">
+<a href="#" onclick="scrollToPylab(); return false;" class="md-button hero-demo-button">
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <polygon points="5 3 19 12 5 21 5 3"></polygon>
 </svg>
@@ -80,27 +80,27 @@ Try in Browser
 <div class="bento-card-content">
 <h3><strong>Performance</strong></h3>
 <p>Delivers <strong>blazingly-fast</strong> query execution through columnar storage and SIMD vectorization. Designed for analytical workloads with consistent sub-millisecond latency.</p>
-<div class="bento-performance-vertical-chart">
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Rayforce</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-rayforce"></div>
+<div class="bento-performance-chart">
+<div class="perf-bar-row">
+<span class="perf-bar-label">Rayforce</span>
+<div class="perf-bar-track">
+<div class="perf-bar-fill perf-bar-rayforce"></div>
 </div>
-<div class="perf-bar-vertical-value">1.0x</div>
+<span class="perf-bar-value">1.0x</span>
 </div>
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Polars</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-polars"></div>
+<div class="perf-bar-row">
+<span class="perf-bar-label">Polars</span>
+<div class="perf-bar-track">
+<div class="perf-bar-fill perf-bar-polars"></div>
 </div>
-<div class="perf-bar-vertical-value">2.0x</div>
+<span class="perf-bar-value">2.6x</span>
 </div>
-<div class="perf-bar-vertical">
-<div class="perf-bar-vertical-label">Pandas</div>
-<div class="perf-bar-vertical-container">
-<div class="perf-bar-vertical-fill perf-bar-vertical-pandas"></div>
+<div class="perf-bar-row">
+<span class="perf-bar-label">Pandas</span>
+<div class="perf-bar-track">
+<div class="perf-bar-fill perf-bar-pandas"></div>
 </div>
-<div class="perf-bar-vertical-value">5.34x</div>
+<span class="perf-bar-value">6.7x</span>
 </div>
 </div>
 </div>
@@ -156,6 +156,53 @@ Try in Browser
 
 </div>
 </div>
+
+<div class="pylab-section scroll-fade-in">
+<div class="pylab-content">
+<h2><strong>Rayforce-Py</strong> in your browser</h2>
+<p>No installation required. Complete Python and WASM runtime embedded directly into your browser.</p>
+<div class="pylab-container" id="pylab-container">
+<div class="pylab-placeholder" id="pylab-placeholder">
+<div class="pylab-placeholder-icon">
+<img src="assets/logo_gray.svg" alt="Rayforce" class="pylab-logo">
+</div>
+<button class="md-button md-button--primary pylab-button" onclick="loadPylab()">
+Try Now
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+function loadPylab() {
+  var container = document.getElementById('pylab-container');
+  var placeholder = document.getElementById('pylab-placeholder');
+  placeholder.innerHTML = '<div class="pylab-loading">Loading...</div>';
+  var iframe = document.createElement('iframe');
+  iframe.src = 'https://pylab.rayforcedb.com';
+  iframe.className = 'pylab-iframe';
+  iframe.allow = 'clipboard-read; clipboard-write';
+  iframe.onload = function() {
+    placeholder.style.display = 'none';
+    iframe.style.display = 'block';
+  };
+  container.appendChild(iframe);
+}
+
+function scrollToPylab() {
+  var section = document.getElementById('pylab-container');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(function() {
+      var placeholder = document.getElementById('pylab-placeholder');
+      if (placeholder && placeholder.style.display !== 'none') {
+        loadPylab();
+      }
+    }, 500);
+  }
+}
+</script>
 
 <div class="cta-section scroll-fade-in">
 <div class="cta-content">

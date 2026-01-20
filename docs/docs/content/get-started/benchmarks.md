@@ -54,10 +54,10 @@ function initAllCharts() {
     xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { textStyle: { color: theme.textColor } } },
     yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { textStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
     series: [{ name: 'Time (μs)', type: 'bar', data: [
-      { value: 623, itemStyle: { color: '#E9A320' } },
-      { value: 635, itemStyle: { color: '#1B365D' } },
-      { value: 1070, itemStyle: { color: '#718096' } },
-      { value: 3649, itemStyle: { color: '#718096' } }
+      { value: 611, itemStyle: { color: '#E9A320' } },
+      { value: 612, itemStyle: { color: '#1B365D' } },
+      { value: 1162, itemStyle: { color: '#d1d5db' } },
+      { value: 3556, itemStyle: { color: '#d1d5db' } }
     ], label: { show: true, position: 'top', textStyle: { color: theme.textColor, fontWeight: 'bold' } } }]
   });
   chartInstances['q1-chart'] = q1Chart;
@@ -72,10 +72,10 @@ function initAllCharts() {
     xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
     yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
     series: [{ name: 'Time (μs)', type: 'bar', data: [
-      { value: 1332, itemStyle: { color: '#E9A320' } },
-      { value: 1321, itemStyle: { color: '#1B365D' } },
-      { value: 6911, itemStyle: { color: '#718096' } },
-      { value: 13643, itemStyle: { color: '#718096' } }
+      { value: 1279, itemStyle: { color: '#E9A320' } },
+      { value: 1290, itemStyle: { color: '#1B365D' } },
+      { value: 6753, itemStyle: { color: '#d1d5db' } },
+      { value: 13631, itemStyle: { color: '#d1d5db' } }
     ], label: { show: true, position: 'top', color: theme.textColor } }]
   });
   chartInstances['q2-chart'] = q2Chart;
@@ -90,10 +90,10 @@ function initAllCharts() {
     xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
     yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
     series: [{ name: 'Time (μs)', type: 'bar', data: [
-      { value: 834, itemStyle: { color: '#E9A320' } },
-      { value: 841, itemStyle: { color: '#1B365D' } },
-      { value: 1250, itemStyle: { color: '#718096' } },
-      { value: 5104, itemStyle: { color: '#718096' } }
+      { value: 829, itemStyle: { color: '#E9A320' } },
+      { value: 828, itemStyle: { color: '#1B365D' } },
+      { value: 1352, itemStyle: { color: '#d1d5db' } },
+      { value: 4846, itemStyle: { color: '#d1d5db' } }
     ], label: { show: true, position: 'top', color: theme.textColor } }]
   });
   chartInstances['q3-chart'] = q3Chart;
@@ -108,10 +108,10 @@ function initAllCharts() {
     xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
     yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
     series: [{ name: 'Time (μs)', type: 'bar', data: [
-      { value: 1032, itemStyle: { color: '#E9A320' } },
-      { value: 1039, itemStyle: { color: '#1B365D' } },
-      { value: 1443, itemStyle: { color: '#718096' } },
-      { value: 6216, itemStyle: { color: '#718096' } }
+      { value: 1044, itemStyle: { color: '#E9A320' } },
+      { value: 1045, itemStyle: { color: '#1B365D' } },
+      { value: 1584, itemStyle: { color: '#d1d5db' } },
+      { value: 6216, itemStyle: { color: '#d1d5db' } }
     ], label: { show: true, position: 'top', color: theme.textColor } }]
   });
   chartInstances['q4-chart'] = q4Chart;
@@ -126,10 +126,10 @@ function initAllCharts() {
     xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
     yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
     series: [{ name: 'Time (μs)', type: 'bar', data: [
-      { value: 1035, itemStyle: { color: '#E9A320' } },
-      { value: 1042, itemStyle: { color: '#1B365D' } },
-      { value: 1363, itemStyle: { color: '#718096' } },
-      { value: 6900, itemStyle: { color: '#718096' } }
+      { value: 1049, itemStyle: { color: '#E9A320' } },
+      { value: 1043, itemStyle: { color: '#1B365D' } },
+      { value: 1549, itemStyle: { color: '#d1d5db' } },
+      { value: 6879, itemStyle: { color: '#d1d5db' } }
     ], label: { show: true, position: 'top', color: theme.textColor } }]
   });
   chartInstances['q5-chart'] = q5Chart;
@@ -144,10 +144,10 @@ function initAllCharts() {
     xAxis: { type: 'category', data: ['Rayforce-Py', 'Native Rayforce', 'Polars', 'Pandas'], axisLabel: { rotate: 0, color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } } },
     yAxis: { type: 'value', name: 'Time (μs)', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: theme.textColor }, axisLabel: { color: theme.textColor }, axisLine: { lineStyle: { color: theme.textColor } }, splitLine: { lineStyle: { color: theme.gridLineColor } } },
     series: [{ name: 'Time (μs)', type: 'bar', data: [
-      { value: 855, itemStyle: { color: '#E9A320' } },
-      { value: 853, itemStyle: { color: '#1B365D' } },
-      { value: 3237, itemStyle: { color: '#718096' } },
-      { value: 4679, itemStyle: { color: '#718096' } }
+      { value: 859, itemStyle: { color: '#E9A320' } },
+      { value: 846, itemStyle: { color: '#1B365D' } },
+      { value: 3316, itemStyle: { color: '#d1d5db' } },
+      { value: 4627, itemStyle: { color: '#d1d5db' } }
     ], label: { show: true, position: 'top', color: theme.textColor } }]
   });
   chartInstances['q6-chart'] = q6Chart;
@@ -196,10 +196,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="flex: 1;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
         <span style="font-weight: 600;">Rayforce-Py</span>
-        <span style="color: var(--gold-500); font-weight: 700;">952 μs</span>
+        <span style="color: var(--gold-500); font-weight: 700;">945 μs</span>
       </div>
       <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, #f5c542, #f5c542); height: 100%; width: 14.2%;"></div>
+        <div style="background: linear-gradient(90deg, #e9a033, #f0b85a); height: 100%; width: 14.3%;"></div>
       </div>
     </div>
     <div style="color: var(--gold-500); font-weight: 700; min-width: 60px; text-align: right;">1.00x</div>
@@ -209,10 +209,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="flex: 1;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
         <span style="font-weight: 600;">Native Rayforce</span>
-        <span style="color: var(--navy-300); font-weight: 700;">955 μs</span>
+        <span style="color: var(--navy-300); font-weight: 700;">944 μs</span>
       </div>
       <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, #f5c542, #f5c542); height: 100%; width: 14.3%;"></div>
+        <div style="background: linear-gradient(90deg, #1B365D, #2a4a7a); height: 100%; width: 14.3%;"></div>
       </div>
     </div>
     <div style="color: var(--navy-300); font-weight: 700; min-width: 60px; text-align: right;">1.00x</div>
@@ -222,33 +222,33 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="flex: 1;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
         <span style="font-weight: 600;">Polars</span>
-        <span style="color: var(--text-secondary); font-weight: 700;">2,546 μs</span>
+        <span style="color: var(--text-secondary); font-weight: 700;">2,619 μs</span>
       </div>
       <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, var(--text-secondary), var(--text-secondary)); height: 100%; width: 38.0%;"></div>
+        <div style="background: linear-gradient(90deg, #d1d5db, #e5e7eb); height: 100%; width: 39.5%;"></div>
       </div>
     </div>
-    <div style="color: var(--text-secondary); font-weight: 700; min-width: 60px; text-align: right;">2.48x</div>
+    <div style="color: var(--text-secondary); font-weight: 700; min-width: 60px; text-align: right;">2.61x</div>
   </div>
 
   <div style="display: flex; align-items: center; gap: 1rem;">
     <div style="flex: 1;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
         <span style="font-weight: 600;">Pandas</span>
-        <span style="color: var(--text-secondary); font-weight: 700;">6,699 μs</span>
+        <span style="color: var(--text-secondary); font-weight: 700;">6,626 μs</span>
       </div>
       <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, var(--text-secondary), var(--text-tertiary)); height: 100%; width: 100%;"></div>
+        <div style="background: linear-gradient(90deg, #d1d5db, #e5e7eb); height: 100%; width: 100%;"></div>
       </div>
     </div>
-    <div style="color: var(--text-secondary); font-weight: 700; min-width: 60px; text-align: right;">6.73x</div>
+    <div style="color: var(--text-secondary); font-weight: 700; min-width: 60px; text-align: right;">6.70x</div>
   </div>
 </div>
 
 
 <div class="benchmark-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
   <div style="background: linear-gradient(135deg, rgba(233, 163, 32, 0.1) 0%, rgba(233, 163, 32, 0.05) 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(233, 163, 32, 0.2);">
-    <div style="font-size: 2.5rem; font-weight: 800; color: var(--gold-500); margin-bottom: 0.5rem;">~2.5x</div>
+    <div style="font-size: 2.5rem; font-weight: 800; color: var(--gold-500); margin-bottom: 0.5rem;">~2.6x</div>
     <div style="color: var(--text-secondary); font-size: 0.8rem;">Faster than Polars</div>
   </div>
   <div style="background: linear-gradient(135deg, rgba(233, 163, 32, 0.1) 0%, rgba(233, 163, 32, 0.05) 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(233, 163, 32, 0.2);">
@@ -277,10 +277,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 | Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
 |----------------|-----------|------------|-----------|-----------|
-| **Rayforce-Py** | **623** | 1.02x | **5.86x** | **1.72x** |
-| Native Rayforce | 635 | 1.00x | 5.75x | 1.68x |
-| Polars | 1,070 | 1.68x | 3.41x | 1.00x |
-| Pandas | 3,649 | 5.75x | 1.00x | 0.29x |
+| **Rayforce-Py** | **611** | 1.00x | **5.82x** | **1.90x** |
+| Native Rayforce | 612 | 1.00x | 5.81x | 1.90x |
+| Polars | 1,162 | 1.90x | 3.06x | 1.00x |
+| Pandas | 3,556 | 5.81x | 1.00x | 0.33x |
 
 ---
 
@@ -290,13 +290,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 | Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
 |----------------|-----------|------------|-----------|-----------|
-| **Rayforce-Py** | **1,332** | 0.99x | **10.24x** | **5.19x** |
-| Native Rayforce | 1,321 | 1.00x | 10.33x | 5.23x |
-| Polars | 6,911 | 5.23x | 1.97x | 1.00x |
-| Pandas | 13,643 | 10.33x | 1.00x | 0.51x |
+| **Rayforce-Py** | **1,279** | 0.99x | **10.65x** | **5.28x** |
+| Native Rayforce | 1,290 | 1.00x | 10.57x | 5.23x |
+| Polars | 6,753 | 5.23x | 2.02x | 1.00x |
+| Pandas | 13,631 | 10.57x | 1.00x | 0.50x |
 
 !!! tip "Performance Insight"
-    Multi-column group by operations show the largest performance advantage, with Rayforce-Py being **10.24x faster** than Pandas and **5.19x faster** than Polars.
+    Multi-column group by operations show the largest performance advantage, with Rayforce-Py being **10.65x faster** than Pandas and **5.28x faster** than Polars.
 
 ---
 
@@ -306,10 +306,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 | Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
 |----------------|-----------|------------|-----------|-----------|
-| **Rayforce-Py** | **834** | 1.01x | **6.12x** | **1.50x** |
-| Native Rayforce | 841 | 1.00x | 6.07x | 1.49x |
-| Polars | 1,250 | 1.49x | 4.08x | 1.00x |
-| Pandas | 5,104 | 6.07x | 1.00x | 0.24x |
+| **Rayforce-Py** | **829** | 1.00x | **5.85x** | **1.63x** |
+| Native Rayforce | 828 | 1.00x | 5.85x | 1.63x |
+| Polars | 1,352 | 1.63x | 3.58x | 1.00x |
+| Pandas | 4,846 | 5.85x | 1.00x | 0.28x |
 
 ---
 
@@ -319,10 +319,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 | Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
 |----------------|-----------|------------|-----------|-----------|
-| **Rayforce-Py** | **1,032** | 1.01x | **6.02x** | **1.40x** |
-| Native Rayforce | 1,039 | 1.00x | 5.98x | 1.39x |
-| Polars | 1,443 | 1.39x | 4.31x | 1.00x |
-| Pandas | 6,216 | 5.98x | 1.00x | 0.23x |
+| **Rayforce-Py** | **1,044** | 1.00x | **5.96x** | **1.52x** |
+| Native Rayforce | 1,045 | 1.00x | 5.95x | 1.52x |
+| Polars | 1,584 | 1.52x | 3.92x | 1.00x |
+| Pandas | 6,216 | 5.95x | 1.00x | 0.25x |
 
 ---
 
@@ -332,13 +332,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 | Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
 |----------------|-----------|------------|-----------|-----------|
-| **Rayforce-Py** | **1,035** | 1.01x | **6.67x** | **1.32x** |
-| Native Rayforce | 1,042 | 1.00x | 6.62x | 1.31x |
-| Polars | 1,363 | 1.31x | 5.06x | 1.00x |
-| Pandas | 6,900 | 6.62x | 1.00x | 0.20x |
+| **Rayforce-Py** | **1,049** | 1.01x | **6.55x** | **1.48x** |
+| Native Rayforce | 1,043 | 1.00x | 6.60x | 1.49x |
+| Polars | 1,549 | 1.49x | 4.44x | 1.00x |
+| Pandas | 6,879 | 6.60x | 1.00x | 0.23x |
 
 !!! success "Best Performance"
-    Q5 shows Rayforce-Py performing **6.67x faster** than Pandas and **1.32x faster** than Polars, demonstrating excellent performance on multiple aggregations.
+    Q5 shows Rayforce-Py performing **6.55x faster** than Pandas and **1.48x faster** than Polars, demonstrating excellent performance on multiple aggregations.
 
 ---
 
@@ -348,25 +348,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 | Implementation | Time (μs) | vs Native | vs Pandas | vs Polars |
 |----------------|-----------|------------|-----------|-----------|
-| **Rayforce-Py** | **855** | 1.00x | **5.47x** | **3.79x** |
-| Native Rayforce | 853 | 1.00x | 5.49x | 3.79x |
-| Polars | 3,237 | 3.79x | 1.45x | 1.00x |
-| Pandas | 4,679 | 5.49x | 1.00x | 0.69x |
+| **Rayforce-Py** | **859** | 1.02x | **5.39x** | **3.86x** |
+| Native Rayforce | 846 | 1.00x | 5.47x | 3.92x |
+| Polars | 3,316 | 3.92x | 1.40x | 1.00x |
+| Pandas | 4,627 | 5.47x | 1.00x | 0.72x |
 
 ---
 
 | Query | Rayforce-Py vs Native | Rayforce-Py vs Pandas | Rayforce-Py vs Polars |
 |-------|----------------------|----------------------|----------------------|
-| Q1 | 1.02x | **5.86x** | **1.72x** |
-| Q2 | 0.99x | **10.24x** | **5.19x** |
-| Q3 | 1.01x | **6.12x** | **1.50x** |
-| Q4 | 1.01x | **6.02x** | **1.40x** |
-| Q5 | 1.01x | **6.67x** | **1.32x** |
-| Q6 | 1.00x | **5.47x** | **3.79x** |
-| **Average** | **1.00x** | **6.73x** | **2.48x** |
+| Q1 | 1.00x | **5.82x** | **1.90x** |
+| Q2 | 0.99x | **10.65x** | **5.28x** |
+| Q3 | 1.00x | **5.85x** | **1.63x** |
+| Q4 | 1.00x | **5.96x** | **1.52x** |
+| Q5 | 1.01x | **6.55x** | **1.48x** |
+| Q6 | 1.02x | **5.39x** | **3.86x** |
+| **Average** | **1.00x** | **6.70x** | **2.61x** |
 
 !!! note "Performance Analysis"
-    Rayforce-Py adds almost **no overhead** compared to native Rayforce, demonstrating the efficiency of the Python bindings. On average, Rayforce-Py is **6.73x faster** than Pandas and **2.48x faster** than Polars, making it an excellent choice for high-performance data processing.
+    Rayforce-Py adds almost **no overhead** compared to native Rayforce, demonstrating the efficiency of the Python bindings. On average, Rayforce-Py is **6.70x faster** than Pandas and **2.61x faster** than Polars, making it an excellent choice for high-performance data processing.
 
     Note: The slight performance advantage shown by Rayforce-Py over native Rayforce is due to measurement methodology differences. Native Rayforce benchmarks include memory deallocation overhead, while Rayforce-Py measurements exclude it. In practice, the performance difference is negligible and within measurement noise, demonstrating that the Python bindings introduce virtually no overhead.
 

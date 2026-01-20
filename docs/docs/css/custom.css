@@ -2144,7 +2144,77 @@ img.hero-logo.dark-only,
 
 
 
-/* Vertical performance chart */
+/* Horizontal performance chart */
+.bento-performance-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+}
+
+.perf-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.perf-bar-label {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    width: 50px;
+    flex-shrink: 0;
+}
+
+.perf-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.perf-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+}
+
+.perf-bar-rayforce {
+    width: 14.9%;
+    background: linear-gradient(90deg, #e9a033 0%, #f0b85a 100%);
+}
+
+.perf-bar-polars {
+    width: 38.8%;
+    background: linear-gradient(90deg, #d1d5db 0%, #e5e7eb 100%);
+}
+
+.perf-bar-pandas {
+    width: 100%;
+    background: linear-gradient(90deg, #d1d5db 0%, #e5e7eb 100%);
+}
+
+.perf-bar-value {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #e9a033;
+    width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Light mode for horizontal chart */
+[data-md-color-scheme="default"] .perf-bar-label {
+    color: #04233b;
+}
+
+[data-md-color-scheme="default"] .perf-bar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Vertical performance chart (legacy) */
 .bento-performance-vertical-chart {
     display: flex;
     justify-content: space-around;
@@ -2192,12 +2262,12 @@ img.hero-logo.dark-only,
 }
 
 .perf-bar-vertical-rayforce {
-    height: 18.7%;
+    height: 14.9%;
     background: linear-gradient(180deg, #e9a033 0%, #f0b85a 100%);
 }
 
 .perf-bar-vertical-polars {
-    height: 37.5%;
+    height: 38.8%;
     background: linear-gradient(180deg, rgb(4, 99, 167) 0%, rgba(3, 144, 238, 0.964) 50%);
 }
 
@@ -2920,6 +2990,171 @@ img.hero-logo.dark-only,
     .code-block pre {
         font-size: 0.8rem;
         padding: 1rem;
+    }
+}
+
+/* ==================== */
+/* PYLAB SECTION        */
+/* ==================== */
+
+.pylab-section {
+    padding: 3rem 0;
+    text-align: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%);
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+}
+
+.pylab-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(233, 160, 51, 0.1), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 20%, rgba(4, 35, 59, 0.08), transparent);
+    pointer-events: none;
+}
+
+.pylab-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(27, 54, 93, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(27, 54, 93, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
+
+[data-md-color-scheme="slate"] .pylab-section {
+    background: linear-gradient(135deg, #021828 0%, #04233b 50%, #021828 100%);
+}
+
+[data-md-color-scheme="slate"] .pylab-section::before {
+    background:
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(233, 160, 51, 0.1), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 20%, rgba(10, 58, 92, 0.5), transparent);
+}
+
+[data-md-color-scheme="slate"] .pylab-section::after {
+    background-image:
+        linear-gradient(rgba(233, 163, 32, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(233, 163, 32, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+.pylab-content {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.pylab-content h2,
+.pylab-content p {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pylab-content h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #04233b;
+}
+
+.pylab-content h2 strong {
+    color: #e9a033;
+}
+
+.pylab-content p {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+[data-md-color-scheme="slate"] .pylab-content h2 {
+    color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .pylab-content p {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.pylab-container {
+    width: 100%;
+    height: 780px;
+    border-radius: 0;
+    overflow: hidden;
+    background: #1a1a2e;
+    border-top: 1px solid rgba(233, 160, 51, 0.2);
+    border-bottom: 1px solid rgba(233, 160, 51, 0.2);
+    position: relative;
+    z-index: 2;
+}
+
+.pylab-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.pylab-placeholder-icon {
+    color: rgba(233, 160, 51, 0.6);
+}
+
+.pylab-logo {
+    width: 120px;
+    height: auto;
+    filter: grayscale(100%) brightness(0.7);
+    opacity: 0.5;
+}
+
+.pylab-button {
+    font-size: 1rem;
+    padding: 0.75rem 2rem;
+}
+
+.pylab-loading {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+}
+
+.pylab-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .pylab-container {
+        height: 585px;
+    }
+
+    .pylab-content h2 {
+        font-size: 1.4rem;
+    }
+
+    .pylab-content {
+        padding: 0 1rem;
     }
 }
 
