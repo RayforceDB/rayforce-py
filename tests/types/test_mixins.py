@@ -19,10 +19,15 @@ class TestArithmeticMixin:
         result = v * 2
         assert result.to_python() == [2, 4, 6]
 
-    def test_vector_divide(self):
-        v = t.Vector(ray_type=t.I64, items=[10, 20, 30])
+    def test_vector_fdivide(self):
+        v = t.Vector(ray_type=t.I64, items=[5, 10, 15])
         result = v / 2
-        assert result.to_python() == [5, 10, 15]
+        assert result.to_python() == [t.F64(2.5), t.F64(5), t.F64(7.5)]
+
+    def test_vector_truedivide(self):
+        v = t.Vector(ray_type=t.I64, items=[5, 10, 15])
+        result = v // 2
+        assert result.to_python() == [2, 5, 7]
 
     def test_scalar_add(self):
         s1 = t.I64(10)

@@ -108,8 +108,11 @@ class OperatorMixin:
     def __mul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, self, other)
 
-    def __truediv__(self, other) -> Expression:
+    def __floordiv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, self, other)
+
+    def __truediv__(self, other) -> Expression:
+        return Expression(Operation.DIV_INT, self, other)
 
     def __mod__(self, other) -> Expression:
         return Expression(Operation.MODULO, self, other)
@@ -141,8 +144,11 @@ class OperatorMixin:
     def __rmul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, other, self)
 
-    def __rtruediv__(self, other) -> Expression:
+    def __rfloordiv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, other, self)
+
+    def __rtruediv__(self, other) -> Expression:
+        return Expression(Operation.DIV_INT, other, self)
 
 
 class Expression(AggregationMixin, OperatorMixin):

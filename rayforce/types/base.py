@@ -125,11 +125,17 @@ class _AriphmeticMixin:
     def __rmul__(self, other) -> t.Any:
         return _eval_operation("MULTIPLY", other, self)
 
-    def __truediv__(self, other) -> t.Any:
+    def __floordiv__(self, other) -> t.Any:
         return _eval_operation("DIVIDE", self, other)
 
-    def __rtruediv__(self, other) -> t.Any:
+    def __rfloordiv__(self, other) -> t.Any:
         return _eval_operation("DIVIDE", other, self)
+
+    def __truediv__(self, other) -> t.Any:
+        return _eval_operation("DIV_INT", self, other)
+
+    def __rtruediv__(self, other) -> t.Any:
+        return _eval_operation("DIV_INT", other, self)
 
     def __mod__(self, other) -> t.Any:
         return _eval_operation("MODULO", self, other)
