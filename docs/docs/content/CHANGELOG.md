@@ -6,6 +6,15 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`0.5.7`**
+
+### Bug Fixes
+
+- Fix boolean operator `is_` performed over lists within table aggregations
+
+2026-02-10 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.7/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.7)**
+
+
 ## **`0.5.6`**
 
 ### Bug Fixes
