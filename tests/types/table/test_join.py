@@ -1,5 +1,11 @@
 from rayforce import F64, I64, Column, Symbol, Table, TableColumnInterval, Vector
 from rayforce.types.scalars import Time
+from tests.helpers.assertions import (
+    assert_column_values,
+    assert_contains_columns,
+    assert_row,
+    assert_table_shape,
+)
 
 
 def test_inner_join():
@@ -29,41 +35,19 @@ def test_inner_join():
 
     result = trades.inner_join(quotes, "Sym").execute()
 
-    # Verify result is a table
     assert isinstance(result, Table)
+    assert_contains_columns(result, ["Sym", "Ts", "Price", "Bid", "Ask"])
+    assert_table_shape(result, rows=4, cols=5)
 
-    # Should have all columns from both tables
-    columns = result.columns()
-    assert len(columns) == 5
-    assert "Sym" in columns
-    assert "Ts" in columns
-    assert "Price" in columns
-    assert "Bid" in columns
-    assert "Ask" in columns
-
-    # Should have 4 rows (2 AAPL trades + 2 GOOGL trades)
-    values = result.values()
-    assert len(values) == 5  # 5 columns
-    assert len(values[0]) == 4  # 4 rows
-
-    # Verify AAPL trades are matched with AAPL quote (Bid=50, Ask=75)
-    # Verify GOOGL trades are matched with GOOGL quote (Bid=100, Ask=150)
-    cols = list(result.columns())
-    sym_col = values[cols.index("Sym")]
-    bid_col = values[cols.index("Bid")]
-    ask_col = values[cols.index("Ask")]
-
-    for i in range(len(sym_col)):
-        sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
-        bid_val = bid_col[i].value if hasattr(bid_col[i], "value") else bid_col[i]
-        ask_val = ask_col[i].value if hasattr(ask_col[i], "value") else ask_col[i]
-
-        if sym_val == "AAPL":
-            assert bid_val == 50
-            assert ask_val == 75
-        elif sym_val == "GOOGL":
-            assert bid_val == 100
-            assert ask_val == 150
+    # Verify each row: AAPL -> Bid=50/Ask=75, GOOGL -> Bid=100/Ask=150
+    for i in range(len(result)):
+        row = result.at_row(i)
+        if row["Sym"] == "AAPL":
+            assert row["Bid"] == 50
+            assert row["Ask"] == 75
+        elif row["Sym"] == "GOOGL":
+            assert row["Bid"] == 100
+            assert row["Ask"] == 150
 
 
 def test_left_join():
@@ -92,46 +76,23 @@ def test_left_join():
 
     result = trades.left_join(quotes, "Sym").execute()
 
-    # Verify result is a table
     assert isinstance(result, Table)
-
-    # Should have all columns from both tables
-    columns = result.columns()
-    assert len(columns) == 5
-    assert "Sym" in columns
-    assert "Ts" in columns
-    assert "Price" in columns
-    assert "Bid" in columns
-    assert "Ask" in columns
-
-    values = result.values()
-    # Should have 3 rows (all trades, including unmatched MSFT)
-    assert len(values) == 5
-    assert len(values[0]) == 3
-
-    cols = list(result.columns())
-    sym_col = values[cols.index("Sym")]
-    bid_col = values[cols.index("Bid")]
-    ask_col = values[cols.index("Ask")]
+    assert_contains_columns(result, ["Sym", "Ts", "Price", "Bid", "Ask"])
+    assert_table_shape(result, rows=3, cols=5)
 
     seen_syms = set()
-    for i in range(len(sym_col)):
-        sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
-        seen_syms.add(sym_val)
-
-        bid_val = bid_col[i].value if hasattr(bid_col[i], "value") else bid_col[i]
-        ask_val = ask_col[i].value if hasattr(ask_col[i], "value") else ask_col[i]
-
-        if sym_val == "AAPL":
-            assert bid_val == 50
-            assert ask_val == 75
-        elif sym_val == "GOOGL":
-            assert bid_val == 100
-            assert ask_val == 150
-        elif sym_val == "MSFT":
-            # For unmatched right-side rows we only assert that the left key exists
-            # (exact null representation of Bid/Ask is runtime-specific)
-            assert sym_val == "MSFT"
+    for i in range(len(result)):
+        row = result.at_row(i)
+        seen_syms.add(row["Sym"])
+        if row["Sym"] == "AAPL":
+            assert row["Bid"] == 50
+            assert row["Ask"] == 75
+        elif row["Sym"] == "GOOGL":
+            assert row["Bid"] == 100
+            assert row["Ask"] == 150
+        elif row["Sym"] == "MSFT":
+            # Unmatched right-side: left key exists (null representation is runtime-specific)
+            assert row["Sym"] == "MSFT"
 
     assert seen_syms == {"AAPL", "GOOGL", "MSFT"}
 
@@ -176,57 +137,31 @@ def test_asof_join():
 
     result = trades.asof_join(quotes, on=["Sym", "Ts"]).execute()
     assert isinstance(result, Table)
+    assert_contains_columns(result, ["Sym", "Ts", "Price", "Bid", "Ask"])
+    assert_table_shape(result, rows=4, cols=5)
 
-    columns = result.columns()
-    assert len(columns) == 5
-    assert "Sym" in columns
-    assert "Ts" in columns
-    assert "Price" in columns
-    assert "Bid" in columns
-    assert "Ask" in columns
-
-    values = result.values()
-    assert len(values) == 5  # 5 columns
-    assert len(values[0]) == 4  # 4 rows
-
-    cols = list(result.columns())
-    sym_col = values[cols.index("Sym")]
-    ts_col = values[cols.index("Ts")]
-    price_col = values[cols.index("Price")]
-    bid_col = values[cols.index("Bid")]
-    ask_col = values[cols.index("Ask")]
-
-    for i in range(len(sym_col)):
-        sym_val = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
-        trade_time = str(ts_col[i])
-        price_val = price_col[i].value if hasattr(price_col[i], "value") else price_col[i]
-        bid_val = bid_col[i].value if hasattr(bid_col[i], "value") else bid_col[i]
-        ask_val = ask_col[i].value if hasattr(ask_col[i], "value") else ask_col[i]
-
-        if sym_val == "AAPL" and trade_time == "09:00:00.100":
-            # Should match quote at 50ms (Bid=45, Ask=70)
-            assert price_val == 100
-            assert bid_val == 45, f"Expected bid=45 for AAPL at 100ms, got {bid_val}"
-            assert ask_val == 70, f"Expected ask=70 for AAPL at 100ms, got {ask_val}"
-        elif sym_val == "AAPL" and trade_time == "09:00:00.200":
-            # Should match quote at 150ms (Bid=55, Ask=80)
-            assert price_val == 200
-            assert bid_val == 55, f"Expected bid=55 for AAPL at 200ms, got {bid_val}"
-            assert ask_val == 80, f"Expected ask=80 for AAPL at 200ms, got {ask_val}"
-        elif sym_val == "GOOGL" and trade_time == "09:00:00.150":
-            # Should match quote at 100ms (Bid=95, Ask=120)
-            assert price_val == 300
-            assert bid_val == 95, f"Expected bid=95 for GOOGL at 150ms, got {bid_val}"
-            assert ask_val == 120, f"Expected ask=120 for GOOGL at 150ms, got {ask_val}"
-        elif sym_val == "GOOGL" and trade_time == "09:00:00.250":
-            # Should match quote at 200ms (Bid=105, Ask=130)
-            assert price_val == 400
-            assert bid_val == 105, f"Expected bid=105 for GOOGL at 250ms, got {bid_val}"
-            assert ask_val == 130, f"Expected ask=130 for GOOGL at 250ms, got {ask_val}"
+    for i in range(len(result)):
+        row = result.at_row(i)
+        ts = str(row["Ts"])
+        if row["Sym"] == "AAPL" and ts == "09:00:00.100":
+            assert row["Price"] == 100
+            assert row["Bid"] == 45
+            assert row["Ask"] == 70
+        elif row["Sym"] == "AAPL" and ts == "09:00:00.200":
+            assert row["Price"] == 200
+            assert row["Bid"] == 55
+            assert row["Ask"] == 80
+        elif row["Sym"] == "GOOGL" and ts == "09:00:00.150":
+            assert row["Price"] == 300
+            assert row["Bid"] == 95
+            assert row["Ask"] == 120
+        elif row["Sym"] == "GOOGL" and ts == "09:00:00.250":
+            assert row["Price"] == 400
+            assert row["Bid"] == 105
+            assert row["Ask"] == 130
 
 
 def test_window_join():
-    # Create trades table
     trades = Table(
         {
             "sym": Vector(items=["AAPL", "GOOG"], ray_type=Symbol),
@@ -241,10 +176,6 @@ def test_window_join():
         },
     )
 
-    # Create quotes within and outside the window
-    # For trade at 100ms with window ±10ms (90ms to 110ms):
-    # AAPL quotes: 90ms (bid=99), 95ms (bid=100), 105ms (bid=101), 110ms (bid=102)
-    # GOOG quotes: 90ms (bid=199), 95ms (bid=200), 105ms (bid=201), 110ms (bid=202)
     quotes = Table(
         {
             "sym": Vector(
@@ -282,7 +213,6 @@ def test_window_join():
         column=Column("time"),
     )
 
-    # Use window_join (wj)
     result = trades.window_join(
         on=["sym", "time"],
         interval=interval,
@@ -291,37 +221,18 @@ def test_window_join():
         max_ask=Column("ask").max(),
     ).execute()
 
-    # Verify result structure
     assert isinstance(result, Table)
-    columns = result.columns()
-    assert "min_bid" in columns
-    assert "max_ask" in columns
+    assert_contains_columns(result, ["min_bid", "max_ask"])
+    assert_table_shape(result, rows=2, cols=len(result.columns()))
 
-    values = result.values()
-    assert len(values[0]) == 2  # 2 trades
-
-    cols = list(result.columns())
-    min_bid_idx = cols.index("min_bid")
-    max_ask_idx = cols.index("max_ask")
-    sym_idx = cols.index("sym")
-
-    min_bid_col = values[min_bid_idx]
-    max_ask_col = values[max_ask_idx]
-    sym_col = values[sym_idx]
-
-    for i in range(2):
-        sym = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
-        min_bid = min_bid_col[i].value if hasattr(min_bid_col[i], "value") else min_bid_col[i]
-        max_ask = max_ask_col[i].value if hasattr(max_ask_col[i], "value") else max_ask_col[i]
-
-        if sym == "AAPL":
-            # Verify window captures quotes and aggregates correctly
-            assert min_bid == 99.0, f"Expected min_bid=99.0 for AAPL, got {min_bid}"
-            assert max_ask == 112.0, f"Expected max_ask=112.0 for AAPL, got {max_ask}"
-        elif sym == "GOOG":
-            # Verify window captures quotes and aggregates correctly
-            assert min_bid == 199.0, f"Expected min_bid=199.0 for GOOG, got {min_bid}"
-            assert max_ask == 212.0, f"Expected max_ask=212.0 for GOOG, got {max_ask}"
+    for i in range(len(result)):
+        row = result.at_row(i)
+        if row["sym"] == "AAPL":
+            assert row["min_bid"] == 99.0
+            assert row["max_ask"] == 112.0
+        elif row["sym"] == "GOOG":
+            assert row["min_bid"] == 199.0
+            assert row["max_ask"] == 212.0
 
 
 def test_window_join1():
@@ -349,21 +260,21 @@ def test_window_join1():
             ),
             "time": Vector(
                 items=[
-                    Time("09:00:00.095"),  # 95ms - within window of AAPL trade at 100ms
-                    Time("09:00:00.105"),  # 105ms - within window of AAPL trade at 100ms
-                    Time("09:00:00.295"),  # 295ms - within window of AAPL trade at 300ms
-                    Time("09:00:00.145"),  # 145ms - within window of GOOG trade at 150ms
-                    Time("09:00:00.155"),  # 155ms - within window of GOOG trade at 150ms
-                    Time("09:00:00.345"),  # 345ms - within window of GOOG trade at 350ms
+                    Time("09:00:00.095"),  # within window of AAPL trade at 100ms
+                    Time("09:00:00.105"),  # within window of AAPL trade at 100ms
+                    Time("09:00:00.295"),  # within window of AAPL trade at 300ms
+                    Time("09:00:00.145"),  # within window of GOOG trade at 150ms
+                    Time("09:00:00.155"),  # within window of GOOG trade at 150ms
+                    Time("09:00:00.345"),  # within window of GOOG trade at 350ms
                 ],
                 ray_type=Time,
             ),
             "bid": Vector(
-                items=[100.0, 101.0, 102.0, 200.0, 201.0, 202.0],  # bid prices
+                items=[100.0, 101.0, 102.0, 200.0, 201.0, 202.0],
                 ray_type=F64,
             ),
             "ask": Vector(
-                items=[110.0, 111.0, 112.0, 210.0, 211.0, 212.0],  # ask prices
+                items=[110.0, 111.0, 112.0, 210.0, 211.0, 212.0],
                 ray_type=F64,
             ),
         },
@@ -385,61 +296,192 @@ def test_window_join1():
     ).execute()
 
     assert isinstance(result, Table)
-    columns = result.columns()
-    assert len(columns) == 5
-    assert "sym" in columns
-    assert "time" in columns
-    assert "price" in columns
-    assert "min_bid" in columns
-    assert "max_ask" in columns
+    assert_contains_columns(result, ["sym", "time", "price", "min_bid", "max_ask"])
+    assert_table_shape(result, rows=4, cols=5)
 
-    values = result.values()
-    assert len(values[0]) == 4  # 4 trades
+    for i in range(len(result)):
+        row = result.at_row(i)
+        sym = row["sym"]
+        trade_time = str(row["time"])
 
-    cols = list(result.columns())
-    sym_idx = cols.index("sym")
-    time_idx = cols.index("time")
-    price_idx = cols.index("price")
-    min_bid_idx = cols.index("min_bid")
-    max_ask_idx = cols.index("max_ask")
+        # AAPL at 100ms: window [90ms,110ms] -> quotes at 95ms,105ms -> min_bid=100, max_ask=111
+        if sym == "AAPL" and trade_time == "09:00:00.100":
+            assert row["price"] == 150.0
+            assert row["min_bid"] == 100.0
+            assert row["max_ask"] == 111.0
+        # AAPL at 300ms: window [290ms,310ms] -> quote at 295ms -> min_bid=102, max_ask=112
+        elif sym == "AAPL" and trade_time == "09:00:00.300":
+            assert row["price"] == 151.0
+            assert row["min_bid"] == 102.0
+            assert row["max_ask"] == 112.0
+        # GOOG at 150ms: window [140ms,160ms] -> quotes at 145ms,155ms -> min_bid=200, max_ask=211
+        elif sym == "GOOG" and trade_time == "09:00:00.150":
+            assert row["price"] == 200.0
+            assert row["min_bid"] == 200.0
+            assert row["max_ask"] == 211.0
+        # GOOG at 350ms: window [340ms,360ms] -> quote at 345ms -> min_bid=202, max_ask=212
+        elif sym == "GOOG" and trade_time == "09:00:00.350":
+            assert row["price"] == 202.0
+            assert row["min_bid"] == 202.0
+            assert row["max_ask"] == 212.0
 
-    sym_col = values[sym_idx]
-    time_col = values[time_idx]
-    price_col = values[price_idx]
-    min_bid_col = values[min_bid_idx]
-    max_ask_col = values[max_ask_idx]
 
-    for i in range(4):
-        sym = sym_col[i].value if hasattr(sym_col[i], "value") else str(sym_col[i])
-        trade_time = time_col[i]
-        price = price_col[i].value if hasattr(price_col[i], "value") else price_col[i]
-        min_bid = min_bid_col[i].value if hasattr(min_bid_col[i], "value") else min_bid_col[i]
-        max_ask = max_ask_col[i].value if hasattr(max_ask_col[i], "value") else max_ask_col[i]
+def test_inner_join_on_multiple_columns():
+    """Inner join matching on a composite key (two columns)."""
+    left = Table(
+        {
+            "dept": Vector(items=["eng", "eng", "hr"], ray_type=Symbol),
+            "level": Vector(items=["senior", "junior", "senior"], ray_type=Symbol),
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        },
+    )
+    right = Table(
+        {
+            "dept": Vector(items=["eng", "hr"], ray_type=Symbol),
+            "level": Vector(items=["senior", "senior"], ray_type=Symbol),
+            "budget": Vector(items=[200000, 150000], ray_type=I64),
+        },
+    )
 
-        # AAPL trade at 100ms: window [90ms, 110ms] captures quotes at 95ms and 105ms
-        # min_bid should be 100.0, max_ask should be 111.0
-        if sym == "AAPL" and str(trade_time) == "09:00:00.100":
-            assert price == 150.0
-            assert min_bid == 100.0, f"Expected min_bid=100.0 for AAPL at 100ms, got {min_bid}"
-            assert max_ask == 111.0, f"Expected max_ask=111.0 for AAPL at 100ms, got {max_ask}"
+    result = left.inner_join(right, on=["dept", "level"]).execute()
 
-        # AAPL trade at 300ms: window [290ms, 310ms] captures only quote at 295ms
-        # min_bid should be 102.0, max_ask should be 112.0
-        elif sym == "AAPL" and str(trade_time) == "09:00:00.300":
-            assert price == 151.0
-            assert min_bid == 102.0, f"Expected min_bid=102.0 for AAPL at 300ms, got {min_bid}"
-            assert max_ask == 112.0, f"Expected max_ask=112.0 for AAPL at 300ms, got {max_ask}"
+    assert_table_shape(result, rows=2, cols=4)
+    assert_contains_columns(result, ["dept", "level", "name", "budget"])
+    assert_column_values(result, "name", ["alice", "charlie"])
+    assert_column_values(result, "budget", [200000, 150000])
 
-        # GOOG trade at 150ms: window [140ms, 160ms] captures quotes at 145ms and 155ms
-        # min_bid should be 200.0, max_ask should be 211.0
-        elif sym == "GOOG" and str(trade_time) == "09:00:00.150":
-            assert price == 200.0
-            assert min_bid == 200.0, f"Expected min_bid=200.0 for GOOG at 150ms, got {min_bid}"
-            assert max_ask == 211.0, f"Expected max_ask=211.0 for GOOG at 150ms, got {max_ask}"
 
-        # GOOG trade at 350ms: window [340ms, 360ms] captures only quote at 345ms
-        # min_bid should be 202.0, max_ask should be 212.0
-        elif sym == "GOOG" and str(trade_time) == "09:00:00.350":
-            assert price == 202.0
-            assert min_bid == 202.0, f"Expected min_bid=202.0 for GOOG at 350ms, got {min_bid}"
-            assert max_ask == 212.0, f"Expected max_ask=212.0 for GOOG at 350ms, got {max_ask}"
+def test_inner_join_with_duplicate_keys():
+    """Inner join where the left table has duplicate key values.
+
+    The join should use the first matching right-side row for each left-side row.
+    """
+    left = Table(
+        {
+            "key": Vector(items=["a", "a", "b"], ray_type=Symbol),
+            "val1": Vector(items=[1, 2, 3], ray_type=I64),
+        },
+    )
+    right = Table(
+        {
+            "key": Vector(items=["a", "b"], ray_type=Symbol),
+            "val2": Vector(items=[10, 30], ray_type=I64),
+        },
+    )
+
+    result = left.inner_join(right, "key").execute()
+
+    assert_table_shape(result, rows=3, cols=3)
+    assert_column_values(result, "key", ["a", "a", "b"])
+    assert_column_values(result, "val1", [1, 2, 3])
+    assert_column_values(result, "val2", [10, 10, 30])
+
+
+def test_left_join_with_duplicate_keys():
+    """Left join where the right table has duplicate keys; first match is used."""
+    left = Table(
+        {
+            "key": Vector(items=["a", "b", "c"], ray_type=Symbol),
+            "val1": Vector(items=[1, 2, 3], ray_type=I64),
+        },
+    )
+    right = Table(
+        {
+            "key": Vector(items=["a", "a", "b"], ray_type=Symbol),
+            "val2": Vector(items=[10, 20, 30], ray_type=I64),
+        },
+    )
+
+    result = left.left_join(right, "key").execute()
+
+    assert_table_shape(result, rows=3, cols=3)
+    assert_column_values(result, "key", ["a", "b", "c"])
+    assert_column_values(result, "val1", [1, 2, 3])
+    # 'a' matches first right-side row (val2=10), 'c' has no match (null)
+    row_a = result.at_row(0)
+    assert row_a["val2"] == 10
+    row_b = result.at_row(1)
+    assert row_b["val2"] == 30
+    row_c = result.at_row(2)
+    assert row_c["val2"] == None  # noqa: E711  (Rayforce Null == None is True)
+
+
+def test_asof_join_with_no_matching_quotes():
+    """ASOF join where all trades occur before any quotes — nulls returned."""
+    trades = Table(
+        {
+            "Sym": Vector(items=["AAPL", "GOOGL"], ray_type=Symbol),
+            "Ts": Vector(
+                items=[Time("08:00:00.000"), Time("08:00:00.000")],
+                ray_type=Time,
+            ),
+            "Price": Vector(items=[100, 200], ray_type=I64),
+        },
+    )
+    quotes = Table(
+        {
+            "Sym": Vector(items=["AAPL", "GOOGL"], ray_type=Symbol),
+            "Ts": Vector(
+                items=[Time("09:00:00.000"), Time("09:00:00.000")],
+                ray_type=Time,
+            ),
+            "Bid": Vector(items=[50, 100], ray_type=I64),
+            "Ask": Vector(items=[75, 150], ray_type=I64),
+        },
+    )
+
+    result = trades.asof_join(quotes, on=["Sym", "Ts"]).execute()
+
+    assert_table_shape(result, rows=2, cols=5)
+    assert_contains_columns(result, ["Sym", "Ts", "Price", "Bid", "Ask"])
+
+    for i in range(len(result)):
+        row = result.at_row(i)
+        assert row["Bid"] == None  # noqa: E711
+        assert row["Ask"] == None  # noqa: E711
+
+
+def test_window_join_at_exact_boundary():
+    """Window join where quotes fall exactly on the window boundary limits."""
+    trades = Table(
+        {
+            "sym": Vector(items=["AAPL"], ray_type=Symbol),
+            "time": Vector(items=[Time("09:00:00.100")], ray_type=Time),
+            "price": Vector(items=[150.0], ray_type=F64),
+        },
+    )
+    quotes = Table(
+        {
+            "sym": Vector(items=["AAPL", "AAPL", "AAPL"], ray_type=Symbol),
+            "time": Vector(
+                items=[
+                    Time("09:00:00.090"),  # exactly at lower bound (100ms - 10ms)
+                    Time("09:00:00.100"),  # exactly at center
+                    Time("09:00:00.110"),  # exactly at upper bound (100ms + 10ms)
+                ],
+                ray_type=Time,
+            ),
+            "bid": Vector(items=[98.0, 100.0, 102.0], ray_type=F64),
+            "ask": Vector(items=[108.0, 110.0, 112.0], ray_type=F64),
+        },
+    )
+
+    interval = TableColumnInterval(
+        lower=-10,
+        upper=10,
+        table=trades,
+        column=Column("time"),
+    )
+
+    result = trades.window_join(
+        on=["sym", "time"],
+        interval=interval,
+        join_with=[quotes],
+        min_bid=Column("bid").min(),
+        max_ask=Column("ask").max(),
+    ).execute()
+
+    assert_table_shape(result, rows=1, cols=len(result.columns()))
+    row = result.at_row(0)
+    assert row["min_bid"] == 98.0
+    assert row["max_ask"] == 112.0

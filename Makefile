@@ -78,8 +78,7 @@ test:
 	python3 -m pytest -x -vv tests/
 
 test-cov:
-	python3 -m pytest -x -vv --cov=rayforce --cov-report=term-missing --cov-report=html tests/
-	python3 -m pytest -x -vv --cov=rayforce --cov-report=term-missing tests/
+	python3 -m pytest -m "" -x -vv --durations=20 --cov=rayforce --cov-report=term-missing --cov-report=html tests/
 
 lint:
 	python3 -m ruff format tests/ rayforce/ benchmark/

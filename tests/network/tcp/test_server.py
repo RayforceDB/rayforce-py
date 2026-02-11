@@ -7,6 +7,8 @@ import pytest
 from rayforce import errors
 from rayforce.network.tcp.server import TCPServer
 
+pytestmark = pytest.mark.network
+
 
 @pytest.fixture
 def server():
@@ -47,14 +49,15 @@ def test_listen_closes_on_exception(mock_close, mock_runtime_run, mock_ipc_liste
     assert server._listener_id is None
 
 
+@pytest.mark.parametrize("exc_cls", [RuntimeError, KeyboardInterrupt])
 @patch("rayforce.network.tcp.server.FFI.ipc_listen")
 @patch("rayforce.network.tcp.server.FFI.runtime_run")
 @patch("rayforce.network.tcp.server.FFI.ipc_close_listener")
-def test_listen_closes_on_keyboard_interrupt(mock_close, mock_runtime_run, mock_ipc_listen, server):
+def test_listen_closes_on_interrupt(mock_close, mock_runtime_run, mock_ipc_listen, server, exc_cls):
     mock_ipc_listen.return_value = 123
-    mock_runtime_run.side_effect = KeyboardInterrupt()
+    mock_runtime_run.side_effect = exc_cls("Test error") if exc_cls is RuntimeError else exc_cls()
 
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(exc_cls):
         server.listen()
 
     mock_ipc_listen.assert_called_once_with(5000)

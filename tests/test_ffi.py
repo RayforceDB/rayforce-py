@@ -3,8 +3,10 @@ import threading
 import pytest
 
 from rayforce import _rayforce_c as r
-from rayforce.errors import RayforceThreadError
+from rayforce.errors import RayforceError, RayforceLengthError, RayforceThreadError
 from rayforce.ffi import FFI
+
+pytestmark = pytest.mark.ffi
 
 
 @pytest.mark.parametrize(
@@ -26,12 +28,10 @@ from rayforce.ffi import FFI
     ],
 )
 def test_init_functions(func, success_arg, fail_arg):
-    # Success case
     result = func(success_arg)
     assert isinstance(result, r.RayObject)
 
-    # Failure case
-    with pytest.raises(Exception):
+    with pytest.raises((TypeError, RuntimeError, RayforceError)):
         func(fail_arg)
 
 
@@ -49,14 +49,11 @@ def test_init_functions(func, success_arg, fail_arg):
     ],
 )
 def test_read_functions(init_func, read_func, value):
-    # Success case
     obj = init_func(value)
-    result = read_func(obj)
-    assert result == value
+    assert read_func(obj) == value
 
-    # Failure case
     wrong_obj = FFI.init_i32(42) if init_func != FFI.init_i32 else FFI.init_i64(42)
-    with pytest.raises(Exception):
+    with pytest.raises((RuntimeError, RayforceError)):
         read_func(wrong_obj)
 
 
@@ -70,26 +67,21 @@ def test_read_functions(init_func, read_func, value):
     ],
 )
 def test_read_complex_functions(init_func, read_func, value):
-    # Success case
     obj = init_func(value)
-    result = read_func(obj)
-    assert result is not None
+    assert read_func(obj) is not None
 
-    # Failure case - wrong type
     wrong_obj = FFI.init_i32(42)
-    with pytest.raises(Exception):
+    with pytest.raises((RuntimeError, RayforceError)):
         read_func(wrong_obj)
 
 
 def test_init_vector():
-    # Success case
     vec = FFI.init_vector(r.TYPE_I64, 5)
     assert isinstance(vec, r.RayObject)
     assert FFI.get_obj_length(vec) == 5
 
 
 def test_init_list():
-    # Success case
     lst = FFI.init_list([])
     assert isinstance(lst, r.RayObject)
     assert FFI.get_obj_length(lst) == 0
@@ -99,13 +91,11 @@ def test_init_dict():
     keys = FFI.init_vector(r.TYPE_SYMBOL, 2)
     values = FFI.init_list([FFI.init_i32(1), FFI.init_i32(2)])
 
-    # Success case
     dct = FFI.init_dict(keys, values)
     assert isinstance(dct, r.RayObject)
 
-    # Failure case - mismatched lengths
     keys2 = FFI.init_vector(r.TYPE_SYMBOL, 1)
-    with pytest.raises(Exception):
+    with pytest.raises(RayforceLengthError):
         FFI.init_dict(keys2, values)
 
 
@@ -115,40 +105,32 @@ def test_init_table():
     col2_vals = FFI.init_vector(r.TYPE_I64, 2)
     values = FFI.init_list([col1_vals, col2_vals])
 
-    # Success case
     table = FFI.init_table(columns, values)
     assert isinstance(table, r.RayObject)
 
-    # Failure case - mismatched lengths
     columns2 = FFI.init_vector(r.TYPE_SYMBOL, 1)
-    with pytest.raises(Exception):
+    with pytest.raises(RayforceLengthError):
         FFI.init_table(columns2, values)
 
 
 def test_push_obj():
-    # Success case
     lst = FFI.init_list([FFI.init_i32(42)])
     FFI.push_obj(lst, FFI.init_i64(33))
     assert FFI.get_obj_length(lst) == 2
 
 
 def test_insert_obj():
-    # Success case
     vec = FFI.init_vector(r.TYPE_I64, 3)
-    val = FFI.init_i64(42)
-    FFI.insert_obj(vec, 1, val)
+    FFI.insert_obj(vec, 1, FFI.init_i64(42))
     assert FFI.get_obj_length(vec) == 3
 
 
 def test_at_idx():
-    # Success case
     vec = FFI.init_vector(r.TYPE_I64, 3)
-    result = FFI.at_idx(vec, 0)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.at_idx(vec, 0), r.RayObject)
 
 
 def test_get_obj_length():
-    # Success case
     vec = FFI.init_vector(r.TYPE_I64, 5)
     assert FFI.get_obj_length(vec) == 5
 
@@ -159,10 +141,8 @@ def test_get_table_keys():
     col2_vals = FFI.init_vector(r.TYPE_I64, 2)
     values = FFI.init_list([col1_vals, col2_vals])
 
-    # Success case
     table = FFI.init_table(columns, values)
-    keys = FFI.get_table_keys(table)
-    assert isinstance(keys, r.RayObject)
+    assert isinstance(FFI.get_table_keys(table), r.RayObject)
 
 
 def test_get_table_values():
@@ -171,21 +151,16 @@ def test_get_table_values():
     col2_vals = FFI.init_vector(r.TYPE_I64, 2)
     values = FFI.init_list([col1_vals, col2_vals])
 
-    # Success case
     table = FFI.init_table(columns, values)
-    vals = FFI.get_table_values(table)
-    assert isinstance(vals, r.RayObject)
+    assert isinstance(FFI.get_table_values(table), r.RayObject)
 
 
 def test_dict_get():
     keys = FFI.init_vector(r.TYPE_SYMBOL, 1)
     values = FFI.init_list([FFI.init_i32(42)])
     dct = FFI.init_dict(keys, values)
-    key = FFI.init_symbol("test")
 
-    # Success case
-    result = FFI.dict_get(dct, key)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.dict_get(dct, FFI.init_symbol("test")), r.RayObject)
 
 
 def test_get_dict_keys():
@@ -193,9 +168,7 @@ def test_get_dict_keys():
     values = FFI.init_list([FFI.init_i32(42)])
     dct = FFI.init_dict(keys, values)
 
-    # Success case
-    result = FFI.get_dict_keys(dct)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.get_dict_keys(dct), r.RayObject)
 
 
 def test_get_dict_values():
@@ -203,114 +176,86 @@ def test_get_dict_values():
     values = FFI.init_list([FFI.init_i32(42)])
     dct = FFI.init_dict(keys, values)
 
-    # Success case
-    result = FFI.get_dict_values(dct)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.get_dict_values(dct), r.RayObject)
 
 
 def test_eval_str():
-    # Success case
     expr = FFI.init_string("1")
-    result = FFI.eval_str(expr)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.eval_str(expr), r.RayObject)
 
-    # Failure case - invalid expression
     invalid_expr = FFI.init_string("invalid_expr_!!!")
-    with pytest.raises(Exception):
+    with pytest.raises((RuntimeError, RayforceError)):
         FFI.eval_str(invalid_expr)
 
 
 def test_eval_obj():
-    # Success case
     obj = FFI.init_i32(42)
-    result = FFI.eval_obj(obj)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.eval_obj(obj), r.RayObject)
 
 
 def test_quote():
-    # Success case
     obj = FFI.init_i32(42)
-    result = FFI.quote(obj)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.quote(obj), r.RayObject)
 
-    # Failure case - invalid object
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         FFI.quote(None)
 
 
 def test_rc_obj():
-    # Success case
     obj = FFI.init_i32(42)
     rc = FFI.rc_obj(obj)
     assert isinstance(rc, int)
     assert rc >= 0
 
-    # Failure case - invalid object
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         FFI.rc_obj(None)
 
 
 def test_binary_set():
-    # Success case
     name = FFI.init_symbol("test_var")
     value = FFI.init_i32(42)
     FFI.binary_set(name, value)
 
-    # Failure case - invalid name
-    with pytest.raises(Exception):
+    with pytest.raises((RuntimeError, RayforceError)):
         FFI.binary_set(FFI.init_i32(42), value)
 
 
 def test_env_get_internal_fn_by_name():
-    # Success case
     result = FFI.env_get_internal_fn_by_name("+")
     assert result is None or isinstance(result, r.RayObject)
 
-    # Failure case - invalid function name
     with pytest.raises(RuntimeError):
         FFI.env_get_internal_fn_by_name("ssssss")
 
 
 def test_env_get_internal_name_by_fn():
-    # Success case - get function first
     func = FFI.env_get_internal_fn_by_name("+")
     assert FFI.env_get_internal_name_by_fn(func) == "+"
-
-    # Failure case - invalid function
     assert FFI.env_get_internal_name_by_fn(FFI.init_i32(222222)) == "@fn"
 
 
 def test_set_obj_attrs():
-    # Success case
     obj = FFI.init_i32(42)
     FFI.set_obj_attrs(obj, 0)
 
 
 def test_hopen():
-    # Success case
     path = FFI.init_string("/dev/null")
-    result = FFI.hopen(path)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(FFI.hopen(path), r.RayObject)
 
-    # Failure case - invalid path
-    invalid_path = FFI.init_i32(42)
-    with pytest.raises(Exception):
-        FFI.hopen(invalid_path)
+    with pytest.raises((TypeError, RuntimeError, RayforceError)):
+        FFI.hopen(FFI.init_i32(42))
 
 
 def test_hclose():
-    # Success case
     handle = FFI.hopen(FFI.init_string("/dev/null"))
     FFI.hclose(handle)
 
 
 def test_write():
-    # Success case
     handle = FFI.hopen(FFI.init_string("/dev/null"))
-    data = FFI.init_string("test")
-    FFI.write(handle, data)
+    FFI.write(handle, FFI.init_string("test"))
     FFI.hclose(handle)
-    # No exception means success
 
 
 def test_thread_safety():
@@ -341,3 +286,103 @@ def test_thread_safety():
         exception_message
         == "runtime: cannot be called from threads other than the initialization thread"
     )
+
+
+# ---------------------------------------------------------------------------
+# Object lifecycle / garbage collection behavior
+# ---------------------------------------------------------------------------
+
+
+def test_object_lifecycle_rc_after_create():
+    """Verify that newly created objects have a valid reference count."""
+    obj = FFI.init_i64(100)
+    rc = FFI.rc_obj(obj)
+    assert isinstance(rc, int)
+    assert rc >= 0
+
+
+def test_object_lifecycle_multiple_references():
+    """Verify reference count behavior when the same ptr is stored in a list."""
+    obj = FFI.init_i64(42)
+    rc_before = FFI.rc_obj(obj)
+
+    lst = FFI.init_list([obj, obj])
+    rc_after = FFI.rc_obj(obj)
+
+    # The ref count should not have decreased after creating a list holding the obj.
+    assert rc_after >= rc_before
+    assert FFI.get_obj_length(lst) == 2
+
+
+def test_object_lifecycle_vector_elements():
+    """Verify objects inside a vector remain accessible after creation."""
+    vec = FFI.init_vector(r.TYPE_I64, [10, 20, 30])
+    for i in range(3):
+        elem = FFI.at_idx(vec, i)
+        assert isinstance(elem, r.RayObject)
+        val = FFI.read_i64(elem)
+        assert val == [10, 20, 30][i]
+
+
+def test_object_lifecycle_nested_containers():
+    """Verify that nested containers (list-in-list) remain valid."""
+    inner = FFI.init_list([FFI.init_i32(1), FFI.init_i32(2)])
+    outer = FFI.init_list([inner])
+    assert FFI.get_obj_length(outer) == 1
+
+    retrieved_inner = FFI.at_idx(outer, 0)
+    assert FFI.get_obj_length(retrieved_inner) == 2
+
+
+def test_object_lifecycle_overwrite_variable():
+    """Verify that overwriting a variable via binary_set does not corrupt state."""
+    name = FFI.init_symbol("_test_lifecycle_var")
+    FFI.binary_set(name, FFI.init_i64(1))
+    FFI.binary_set(name, FFI.init_i64(2))
+
+    # The second value should be the active one; no crash or corruption.
+    result = FFI.eval_str(FFI.init_string("_test_lifecycle_var"))
+    assert isinstance(result, r.RayObject)
+    assert FFI.read_i64(result) == 2
+
+
+# ---------------------------------------------------------------------------
+# Large vector stress test
+# ---------------------------------------------------------------------------
+
+
+def test_large_vector_stress():
+    """Create a large vector and verify length and boundary element access."""
+    size = 100_000
+    vec = FFI.init_vector(r.TYPE_I64, size)
+    assert FFI.get_obj_length(vec) == size
+
+    # Access first and last elements (should not segfault).
+    first = FFI.at_idx(vec, 0)
+    last = FFI.at_idx(vec, size - 1)
+    assert isinstance(first, r.RayObject)
+    assert isinstance(last, r.RayObject)
+
+
+def test_large_vector_with_values():
+    """Create a large vector from a Python list and verify values at boundaries."""
+    size = 50_000
+    items = list(range(size))
+    vec = FFI.init_vector(r.TYPE_I64, items)
+    assert FFI.get_obj_length(vec) == size
+
+    assert FFI.read_i64(FFI.at_idx(vec, 0)) == 0
+    assert FFI.read_i64(FFI.at_idx(vec, size - 1)) == size - 1
+
+
+def test_large_list_stress():
+    """Create a list with many elements via repeated push_obj."""
+    lst = FFI.init_list([])
+    count = 1_000
+    for i in range(count):
+        FFI.push_obj(lst, FFI.init_i64(i))
+    assert FFI.get_obj_length(lst) == count
+
+    # Spot-check first and last.
+    assert FFI.read_i64(FFI.at_idx(lst, 0)) == 0
+    assert FFI.read_i64(FFI.at_idx(lst, count - 1)) == count - 1

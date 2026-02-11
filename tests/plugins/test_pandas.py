@@ -5,6 +5,13 @@ import pytest
 from rayforce.plugins.pandas import from_pandas
 from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp
 from rayforce.types.null import Null
+from tests.helpers.assertions import (
+    assert_column_values,
+    assert_contains_columns,
+    assert_table_shape,
+)
+
+pytestmark = pytest.mark.plugin
 
 
 @pytest.fixture
@@ -34,20 +41,21 @@ def test_from_pandas_basic_types(pandas):
 
     table = from_pandas(df)
 
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 9
-
-    # Check column names
-    columns = [str(col) for col in table.columns()]
-    assert "bool_col" in columns
-    assert "int8_col" in columns
-    assert "int16_col" in columns
-    assert "int32_col" in columns
-    assert "int64_col" in columns
-    assert "float32_col" in columns
-    assert "float64_col" in columns
-    assert "string_col" in columns
-    assert "object_col" in columns
+    assert_table_shape(table, rows=3, cols=9)
+    assert_contains_columns(
+        table,
+        [
+            "bool_col",
+            "int8_col",
+            "int16_col",
+            "int32_col",
+            "int64_col",
+            "float32_col",
+            "float64_col",
+            "string_col",
+            "object_col",
+        ],
+    )
 
 
 def test_from_pandas_boolean_type(pandas):
@@ -55,11 +63,8 @@ def test_from_pandas_boolean_type(pandas):
     table = from_pandas(df)
 
     values = table.values()
-    assert len(values) == 1
-    bool_vector = values[0]
-
-    assert all(isinstance(v, B8) for v in bool_vector)
-    assert [v.value for v in bool_vector] == [True, False, True]
+    assert all(isinstance(v, B8) for v in values[0])
+    assert_column_values(table, "bool_col", [True, False, True])
 
 
 def test_from_pandas_integer_types(pandas):
@@ -76,24 +81,17 @@ def test_from_pandas_integer_types(pandas):
     table = from_pandas(df)
     values = table.values()
 
-    # int8 -> I16
-    assert all(isinstance(v, I16) for v in values[0])
-    assert [v.value for v in values[0]] == [1, 2, 3]
+    # Type inference checks: int8 -> I16, int16 -> I16, int32 -> I32, int64 -> I64
+    assert all(isinstance(v, I16) for v in values[0])  # int8 -> I16
+    assert all(isinstance(v, I16) for v in values[1])  # int16 -> I16
+    assert all(isinstance(v, I32) for v in values[2])  # int32 -> I32
+    assert all(isinstance(v, I64) for v in values[3])  # int64 -> I64
+    assert all(isinstance(v, I64) for v in values[4])  # plain int -> I64
 
-    # int16 -> I16
-    assert all(isinstance(v, I16) for v in values[1])
-    assert [v.value for v in values[1]] == [100, 150, 200]
-
-    # int32 -> I32
-    assert all(isinstance(v, I32) for v in values[2])
-    assert [v.value for v in values[2]] == [1000, 1500, 2000]
-
-    # int64 -> I64
-    assert all(isinstance(v, I64) for v in values[3])
-    assert [v.value for v in values[3]] == [10000, 15000, 20000]
-
-    # plain int -> I64 (default)
-    assert all(isinstance(v, I64) for v in values[4])
+    assert_column_values(table, "int8", [1, 2, 3])
+    assert_column_values(table, "int16", [100, 150, 200])
+    assert_column_values(table, "int32", [1000, 1500, 2000])
+    assert_column_values(table, "int64", [10000, 15000, 20000])
 
 
 def test_from_pandas_float_types(pandas):
@@ -111,9 +109,9 @@ def test_from_pandas_float_types(pandas):
     for vector in values:
         assert all(isinstance(v, F64) for v in vector)
 
-    assert [round(v.value, 1) for v in values[0]] == [1.5, 2.5, 3.5]
-    assert [round(v.value, 1) for v in values[1]] == [10.5, 20.5, 30.5]
-    assert [round(v.value, 1) for v in values[2]] == [5.5, 6.5, 7.5]
+    assert_column_values(table, "float32", [1.5, 2.5, 3.5])
+    assert_column_values(table, "float64", [10.5, 20.5, 30.5])
+    assert_column_values(table, "float_plain", [5.5, 6.5, 7.5])
 
 
 def test_from_pandas_string_types(pandas):
@@ -131,9 +129,9 @@ def test_from_pandas_string_types(pandas):
     for vector in values:
         assert all(isinstance(v, Symbol) for v in vector)
 
-    assert [v.value for v in values[0]] == ["a", "b", "c"]
-    assert [v.value for v in values[1]] == ["x", "y", "z"]
-    assert [v.value for v in values[2]] == ["foo", "bar", "baz"]
+    assert_column_values(table, "string_col", ["a", "b", "c"])
+    assert_column_values(table, "object_col", ["x", "y", "z"])
+    assert_column_values(table, "str_python", ["foo", "bar", "baz"])
 
 
 def test_from_pandas_datetime_types(pandas):
@@ -160,13 +158,12 @@ def test_from_pandas_datetime_types(pandas):
     table = from_pandas(df)
     values = table.values()
 
-    # Date column
+    # Type inference checks
     assert all(isinstance(v, Date) for v in values[0] if v is not None)
-    assert [v.value for v in values[0] if v is not None] == dates
-
-    # Datetime column
     assert all(isinstance(v, Timestamp) for v in values[1] if v is not None)
-    assert len(values[1]) == 3
+
+    assert_column_values(table, "date_col", dates)
+    assert_table_shape(table, rows=3, cols=2)
 
 
 def test_from_pandas_with_nulls(pandas):
@@ -182,15 +179,15 @@ def test_from_pandas_with_nulls(pandas):
     table = from_pandas(df)
     values = table.values()
 
-    int_vector = values[0]
-    assert int_vector[0].value == 1
-    assert int_vector[1] == Null
-    assert int_vector[2].value == 3
+    # Null handling for int column
+    assert values[0][0].value == 1
+    assert values[0][1] == Null
+    assert values[0][2].value == 3
 
-    float_vector = values[1]
-    assert float_vector[0].value == 1.5
-    assert float_vector[1] == Null
-    assert float_vector[2].value == 3.5
+    # Null handling for float column
+    assert values[1][0].value == 1.5
+    assert values[1][1] == Null
+    assert values[1][2].value == 3.5
 
 
 def test_from_pandas_datetime_with_nat(pandas):
@@ -205,9 +202,8 @@ def test_from_pandas_datetime_with_nat(pandas):
     table = from_pandas(df)
     values = table.values()
 
-    datetime_vector = values[0]
-    assert datetime_vector[0].value is not None
-    assert datetime_vector[2].value is not None
+    assert values[0][0].value is not None
+    assert values[0][2].value is not None
 
 
 def test_from_pandas_empty_dataframe_raises(pandas):
@@ -292,11 +288,9 @@ def test_from_pandas_mixed_types(pandas):
 
     table = from_pandas(df)
 
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 6
+    assert_table_shape(table, rows=5, cols=6)
 
     values = table.values()
-
     assert all(isinstance(v, I64) for v in values[0])  # id
     assert all(isinstance(v, Symbol) for v in values[1])  # name
     assert all(isinstance(v, I64) for v in values[2])  # age
@@ -317,15 +311,9 @@ def test_from_pandas_large_dataframe(pandas):
 
     table = from_pandas(df)
 
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 3
+    assert_table_shape(table, rows=n_rows, cols=3)
 
     values = table.values()
-    assert len(values[0]) == n_rows
-    assert len(values[1]) == n_rows
-    assert len(values[2]) == n_rows
-
-    # Check first and last values
     assert values[0][0].value == 0
     assert values[0][-1].value == n_rows - 1
 
@@ -334,10 +322,7 @@ def test_from_pandas_single_column(pandas):
     df = pandas.DataFrame({"single_col": [1, 2, 3, 4, 5]})
 
     table = from_pandas(df)
-
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 1
-    assert len(table.values()[0]) == 5
+    assert_table_shape(table, rows=5, cols=1)
 
 
 def test_from_pandas_single_row(pandas):
@@ -350,7 +335,4 @@ def test_from_pandas_single_row(pandas):
     )
 
     table = from_pandas(df)
-
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 3
-    assert len(table.values()[0]) == 1
+    assert_table_shape(table, rows=1, cols=3)

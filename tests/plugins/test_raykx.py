@@ -6,6 +6,8 @@ from rayforce import _rayforce_c as r
 from rayforce.plugins import errors
 from rayforce.plugins.raykx import KDBConnection, KDBEngine
 
+pytestmark = pytest.mark.plugin
+
 
 class TestKDBConnection:
     @pytest.fixture
@@ -87,7 +89,7 @@ class TestKDBConnection:
         with pytest.raises(errors.KDBConnectionAlreadyClosedError):
             connection.execute("test_query")
 
-    @pytest.mark.xfail  # temp: resolve issue with IPC errors in rayforce
+    @pytest.mark.xfail(reason="temp: resolve issue with IPC errors in rayforce", strict=False)
     @patch("rayforce.plugins.raykx.FFI.get_obj_type")
     @patch("rayforce.plugins.raykx.FFI.eval_obj")
     @patch("rayforce.plugins.raykx.FFI.get_error_obj")

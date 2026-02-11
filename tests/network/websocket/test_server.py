@@ -5,6 +5,8 @@ import pytest
 from rayforce import errors
 from rayforce.network.websocket import WSServer
 
+pytestmark = pytest.mark.network
+
 
 @pytest.mark.asyncio
 async def test_server_starts_and_stops(free_port: int):
@@ -16,12 +18,7 @@ async def test_server_starts_and_stops(free_port: int):
     assert len(server._connections) == 0
 
 
-def test_invalid_port():
+@pytest.mark.parametrize("port", (0, 65536, -1))
+def test_invalid_port(port):
     with pytest.raises(errors.RayforceValueError):
-        WSServer(port=0)
-
-    with pytest.raises(errors.RayforceValueError):
-        WSServer(port=65536)
-
-    with pytest.raises(errors.RayforceValueError):
-        WSServer(port=-1)
+        WSServer(port=port)

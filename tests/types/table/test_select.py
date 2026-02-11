@@ -1,4 +1,11 @@
 from rayforce import F64, I64, Column, Symbol, Table, Vector
+from tests.helpers.assertions import (
+    assert_column_values,
+    assert_columns,
+    assert_contains_columns,
+    assert_row,
+    assert_table_shape,
+)
 
 
 def test_select_with_single_where():
@@ -13,21 +20,11 @@ def test_select_with_single_where():
 
     result = table.select("id", "name", "age").where(Column("age") >= 35).execute()
 
-    columns = result.columns()
-    assert len(columns) == 3
-    assert "id" in columns
-    assert "name" in columns
-    assert "age" in columns
-
-    values = result.values()
-    assert len(values) == 3
-    assert len(values[0]) == 2
-    assert values[0][0].value == "003"
-    assert values[0][1].value == "004"
-    assert values[1][0].value == "charlie"
-    assert values[1][1].value == "dana"
-    assert values[2][0].value == 41
-    assert values[2][1].value == 38
+    assert_columns(result, ["id", "name", "age"])
+    assert_table_shape(result, rows=2, cols=3)
+    assert_column_values(result, "id", ["003", "004"])
+    assert_column_values(result, "name", ["charlie", "dana"])
+    assert_column_values(result, "age", [41, 38])
 
 
 def test_select_with_multiple_where_conditions():
@@ -48,13 +45,11 @@ def test_select_with_multiple_where_conditions():
         .execute()
     )
 
-    values = result.values()
-    assert len(values) == 4
-    assert len(values[0]) == 1
-    assert values[0][0].value == "004"
-    assert values[1][0].value == "dana"
-    assert values[2][0].value == 38
-    assert values[3][0].value == 85000
+    assert_table_shape(result, rows=1, cols=4)
+    assert_column_values(result, "id", ["004"])
+    assert_column_values(result, "name", ["dana"])
+    assert_column_values(result, "age", [38])
+    assert_column_values(result, "salary", [85000])
 
 
 def test_select_with_complex_and_or_conditions():
@@ -75,9 +70,8 @@ def test_select_with_complex_and_or_conditions():
         .execute()
     )
 
-    values = result.values()
-    assert len(values) == 2
-    assert len(values[0]) >= 0
+    assert_contains_columns(result, ["id", "name"])
+    assert len(result) >= 0
 
 
 def test_group_by_single_column():
@@ -99,47 +93,12 @@ def test_group_by_single_column():
         .execute()
     )
 
-    columns = result.columns()
-    assert len(columns) >= 4
-    assert "dept" in columns or "by" in columns
-    assert "avg_age" in columns
-    assert "total_salary" in columns
-    assert "count" in columns
+    assert_contains_columns(result, ["dept", "avg_age", "total_salary", "count"])
 
-    values = result.values()
-    assert len(values) >= 3
-
-    # Find the column indices
-    cols = list(result.columns())
-    dept_idx = cols.index("dept") if "dept" in cols else cols.index("by")
-    avg_age_idx = cols.index("avg_age")
-    total_salary_idx = cols.index("total_salary")
-    count_idx = cols.index("count")
-
-    # Expected: eng (avg_age=31.5, total_salary=220000, count=2)
-    #           marketing (avg_age=39.5, total_salary=175000, count=2)
-    #           hr (avg_age=35, total_salary=80000, count=1)
-
-    dept_col = values[dept_idx]
-    avg_age_col = values[avg_age_idx]
-    total_salary_col = values[total_salary_idx]
-    count_col = values[count_idx]
-
-    # Find eng group
-    for i in range(len(dept_col)):
-        dept_val = dept_col[i].value if hasattr(dept_col[i], "value") else str(dept_col[i])
-        if dept_val == "eng":
-            assert abs(avg_age_col[i].value - 31.5) < 0.01
-            assert total_salary_col[i].value == 220000
-            assert count_col[i].value == 2
-        elif dept_val == "marketing":
-            assert abs(avg_age_col[i].value - 39.5) < 0.01
-            assert total_salary_col[i].value == 175000
-            assert count_col[i].value == 2
-        elif dept_val == "hr":
-            assert avg_age_col[i].value == 35
-            assert total_salary_col[i].value == 80000
-            assert count_col[i].value == 1
+    rows = {result.at_row(i)["dept"]: i for i in range(len(result))}
+    assert_row(result, rows["eng"], {"total_salary": 220000, "count": 2, "avg_age": 31.5})
+    assert_row(result, rows["marketing"], {"total_salary": 175000, "count": 2, "avg_age": 39.5})
+    assert_row(result, rows["hr"], {"total_salary": 80000, "count": 1, "avg_age": 35})
 
 
 def test_group_by_multiple_columns():
@@ -163,46 +122,15 @@ def test_group_by_multiple_columns():
         .execute()
     )
 
-    columns = result.columns()
-    assert len(columns) >= 4
-    values = result.values()
-    assert len(values) >= 2
+    assert_contains_columns(result, ["dept", "level", "total_salary", "avg_salary"])
 
-    # Expected groups:
-    # eng/senior: total=290000 (150000+140000), avg=145000
-    # eng/junior: total=100000, avg=100000
-    # marketing/senior: total=120000, avg=120000
-    # marketing/junior: total=90000, avg=90000
-
-    cols = list(result.columns())
-    dept_idx = cols.index("dept") if "dept" in cols else cols.index("by")
-    level_idx = (
-        cols.index("level") if "level" in cols else (cols.index("by") + 1 if "by" in cols else 0)
+    rows = {(result.at_row(i)["dept"], result.at_row(i)["level"]): i for i in range(len(result))}
+    assert_row(result, rows[("eng", "senior")], {"total_salary": 290000, "avg_salary": 145000})
+    assert_row(result, rows[("eng", "junior")], {"total_salary": 100000, "avg_salary": 100000})
+    assert_row(
+        result, rows[("marketing", "senior")], {"total_salary": 120000, "avg_salary": 120000}
     )
-    total_salary_idx = cols.index("total_salary")
-    avg_salary_idx = cols.index("avg_salary")
-
-    dept_col = values[dept_idx]
-    level_col = values[level_idx]
-    total_salary_col = values[total_salary_idx]
-    avg_salary_col = values[avg_salary_idx]
-
-    for i in range(len(dept_col)):
-        dept_val = dept_col[i].value if hasattr(dept_col[i], "value") else str(dept_col[i])
-        level_val = level_col[i].value if hasattr(level_col[i], "value") else str(level_col[i])
-
-        if dept_val == "eng" and level_val == "senior":
-            assert total_salary_col[i].value == 290000
-            assert avg_salary_col[i].value == 145000
-        elif dept_val == "eng" and level_val == "junior":
-            assert total_salary_col[i].value == 100000
-            assert avg_salary_col[i].value == 100000
-        elif dept_val == "marketing" and level_val == "senior":
-            assert total_salary_col[i].value == 120000
-            assert avg_salary_col[i].value == 120000
-        elif dept_val == "marketing" and level_val == "junior":
-            assert total_salary_col[i].value == 90000
-            assert avg_salary_col[i].value == 90000
+    assert_row(result, rows[("marketing", "junior")], {"total_salary": 90000, "avg_salary": 90000})
 
 
 def test_group_by_with_filtered_aggregation():
@@ -227,41 +155,11 @@ def test_group_by_with_filtered_aggregation():
         .execute()
     )
 
-    columns = result.columns()
-    assert "total" in columns
-    assert "active_total" in columns
-    assert "count" in columns
+    assert_contains_columns(result, ["category", "total", "active_total", "count"])
 
-    values = result.values()
-    assert len(values) >= 3
-
-    # Expected:
-    # Category A: total=600 (100+200+300), active_total=100 (only first is active), count=3
-    # Category B: total=400 (150+250), active_total=400 (both active), count=2
-
-    cols = list(result.columns())
-    category_idx = cols.index("category") if "category" in cols else cols.index("by")
-    total_idx = cols.index("total")
-    active_total_idx = cols.index("active_total")
-    count_idx = cols.index("count")
-
-    category_col = values[category_idx]
-    total_col = values[total_idx]
-    active_total_col = values[active_total_idx]
-    count_col = values[count_idx]
-
-    for i in range(len(category_col)):
-        cat_val = (
-            category_col[i].value if hasattr(category_col[i], "value") else str(category_col[i])
-        )
-        if cat_val == "A":
-            assert total_col[i].value == 600
-            assert active_total_col[i].value == 100
-            assert count_col[i].value == 3
-        elif cat_val == "B":
-            assert total_col[i].value == 400
-            assert active_total_col[i].value == 400
-            assert count_col[i].value == 2
+    rows = {result.at_row(i)["category"]: i for i in range(len(result))}
+    assert_row(result, rows["A"], {"total": 600, "active_total": 100, "count": 3})
+    assert_row(result, rows["B"], {"total": 400, "active_total": 400, "count": 2})
 
 
 def test_complex_select_with_computed_columns():
@@ -283,14 +181,8 @@ def test_complex_select_with_computed_columns():
         .execute()
     )
 
-    columns = result.columns()
-    assert "id" in columns
-    assert "total" in columns
-    assert "discounted" in columns
-
-    values = result.values()
-    assert len(values) == 3
-    assert len(values[0]) == 2
+    assert_contains_columns(result, ["id", "total", "discounted"])
+    assert_table_shape(result, rows=2, cols=3)
 
 
 def test_select_with_isin_operator():
@@ -303,67 +195,108 @@ def test_select_with_isin_operator():
         },
     )
 
+    # Filter by dept in ["eng", "marketing"]
     result = (
         table.select("id", "name", "dept", "age")
         .where(Column("dept").isin(["eng", "marketing"]))
         .execute()
     )
 
-    columns = result.columns()
-    assert len(columns) == 4
-    assert "id" in columns
-    assert "name" in columns
-    assert "dept" in columns
-    assert "age" in columns
+    assert_columns(result, ["id", "name", "dept", "age"])
+    assert_table_shape(result, rows=4, cols=4)
+    assert_column_values(result, "name", ["alice", "bob", "charlie", "eli"])
 
-    values = result.values()
-    assert len(values) == 4
-    assert len(values[0]) == 4
-
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    dept_idx = cols.index("dept")
-
-    name_col = values[name_idx]
-    dept_col = values[dept_idx]
-
-    returned_depts = [dept_col[i].value for i in range(len(dept_col))]
-    assert all(dept in ["eng", "marketing"] for dept in returned_depts)
-    assert len(returned_depts) == 4
-
-    returned_names = [name_col[i].value for i in range(len(name_col))]
-    assert "alice" in returned_names
-    assert "bob" in returned_names
-    assert "charlie" in returned_names
-    assert "eli" in returned_names
-    assert "dana" not in returned_names
-
+    # Filter by age in [29, 41, 45]
     result_int = table.select("id", "name", "age").where(Column("age").isin([29, 41, 45])).execute()
 
-    columns_int = result_int.columns()
-    assert len(columns_int) == 3
-    assert "id" in columns_int
-    assert "name" in columns_int
-    assert "age" in columns_int
+    assert_columns(result_int, ["id", "name", "age"])
+    assert_table_shape(result_int, rows=3, cols=3)
+    assert_column_values(result_int, "name", ["alice", "charlie", "eli"])
+    assert_column_values(result_int, "age", [29, 41, 45])
 
-    values_int = result_int.values()
-    assert len(values_int) == 3
-    assert len(values_int[0]) == 3
 
-    cols_int = list(result_int.columns())
-    name_idx_int = cols_int.index("name")
-    age_idx_int = cols_int.index("age")
+def test_select_with_no_matching_rows():
+    """SELECT that produces an empty result set."""
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        },
+    )
 
-    name_col_int = values_int[name_idx_int]
-    age_col_int = values_int[age_idx_int]
+    result = table.select("id", "age").where(Column("age") > 100).execute()
 
-    returned_ages = [age_col_int[i].value for i in range(len(age_col_int))]
-    assert all(age in [29, 41, 45] for age in returned_ages)
-    assert len(returned_ages) == 3
+    assert_columns(result, ["id", "age"])
+    assert_table_shape(result, rows=0, cols=2)
 
-    returned_names_int = [name_col_int[i].value for i in range(len(name_col_int))]
-    assert "alice" in returned_names_int  # age 29
-    assert "charlie" in returned_names_int  # age 41
-    assert "eli" in returned_names_int  # age 45
-    assert "bob" not in returned_names_int  # age 34
-    assert "dana" not in returned_names_int  # age 38
+
+def test_group_by_single_row_per_group():
+    """GROUP BY where every group contains exactly one row."""
+    table = Table(
+        {
+            "dept": Vector(items=["eng", "marketing", "hr"], ray_type=Symbol),
+            "salary": Vector(items=[100000, 90000, 80000], ray_type=I64),
+        },
+    )
+
+    result = (
+        table.select(
+            total_salary=Column("salary").sum(),
+            count=Column("salary").count(),
+        )
+        .by("dept")
+        .execute()
+    )
+
+    assert_contains_columns(result, ["dept", "total_salary", "count"])
+
+    rows = {result.at_row(i)["dept"]: i for i in range(len(result))}
+    assert_row(result, rows["eng"], {"total_salary": 100000, "count": 1})
+    assert_row(result, rows["marketing"], {"total_salary": 90000, "count": 1})
+    assert_row(result, rows["hr"], {"total_salary": 80000, "count": 1})
+
+
+def test_complex_nested_boolean_expressions():
+    """SELECT with deeply nested AND/OR boolean conditions."""
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003", "004", "005"], ray_type=Symbol),
+            "age": Vector(items=[25, 30, 35, 40, 45], ray_type=I64),
+            "dept": Vector(items=["eng", "hr", "eng", "hr", "eng"], ray_type=Symbol),
+            "salary": Vector(items=[80000, 90000, 100000, 110000, 120000], ray_type=I64),
+        },
+    )
+
+    # (age > 30 AND dept == "eng") OR (salary >= 110000)
+    result = (
+        table.select("id", "age", "dept", "salary")
+        .where(((Column("age") > 30) & (Column("dept") == "eng")) | (Column("salary") >= 110000))
+        .execute()
+    )
+
+    assert_table_shape(result, rows=3, cols=4)
+    assert_column_values(result, "id", ["003", "004", "005"])
+    assert_column_values(result, "age", [35, 40, 45])
+
+
+def test_select_distinct():
+    """DISTINCT operation on a column."""
+    table = Table(
+        {
+            "dept": Vector(
+                items=["eng", "eng", "marketing", "marketing", "eng"],
+                ray_type=Symbol,
+            ),
+            "salary": Vector(items=[100, 100, 200, 100, 200], ray_type=I64),
+        },
+    )
+
+    result_dept = table.select(_vals=Column("dept").distinct()).execute()
+    dept_vals = result_dept.at_column("_vals")
+    assert len(dept_vals) == 2
+    assert set(v.value for v in dept_vals) == {"eng", "marketing"}
+
+    result_salary = table.select(_vals=Column("salary").distinct()).execute()
+    salary_vals = result_salary.at_column("_vals")
+    assert len(salary_vals) == 2
+    assert set(v.value for v in salary_vals) == {100, 200}

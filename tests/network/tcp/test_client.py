@@ -8,27 +8,37 @@ from rayforce import String, errors
 from rayforce import _rayforce_c as r
 from rayforce.network.tcp.client import TCPClient
 
+pytestmark = pytest.mark.network
+
 
 @pytest.fixture
 def mock_handle():
-    handle = MagicMock(spec=r.RayObject)
-    return handle
+    return MagicMock(spec=r.RayObject)
 
 
-@patch("rayforce.network.tcp.client.FFI.get_obj_type")
-@patch("rayforce.network.tcp.client.FFI.hopen")
-def test_execute_success(mock_hopen, mock_get_obj_type, mock_handle):
+def _obj_type_for(handle):
+    """Return a side_effect callable that maps *handle* to TYPE_I64, else TYPE_C8."""
+
+    def _side_effect(obj):
+        return r.TYPE_I64 if obj == handle else r.TYPE_C8
+
+    return _side_effect
+
+
+def _make_client(mock_handle):
+    """Create a TCPClient with mocked hopen and get_obj_type."""
+    with (
+        patch(
+            "rayforce.network.tcp.client.FFI.get_obj_type", side_effect=_obj_type_for(mock_handle)
+        ),
+        patch("rayforce.network.tcp.client.FFI.hopen", return_value=mock_handle),
+    ):
+        return TCPClient(host="localhost", port=5000)
+
+
+def test_execute_success(mock_handle):
+    client = _make_client(mock_handle)
     mock_result = MagicMock(spec=r.RayObject)
-
-    def get_obj_type_side_effect(obj):
-        if obj == mock_handle:
-            return r.TYPE_I64
-        return r.TYPE_C8
-
-    mock_get_obj_type.side_effect = get_obj_type_side_effect
-    mock_hopen.return_value = mock_handle
-
-    client = TCPClient(host="localhost", port=5000)
 
     with (
         patch("rayforce.network.tcp.client.FFI.write", return_value=mock_result) as mock_write,
@@ -40,55 +50,33 @@ def test_execute_success(mock_hopen, mock_get_obj_type, mock_handle):
         mock_convert.assert_called_once()
 
 
-@patch("rayforce.network.tcp.client.FFI.get_obj_type")
-@patch("rayforce.network.tcp.client.FFI.hopen")
-def test_execute_closed(mock_hopen, mock_get_obj_type, mock_handle):
-    def get_obj_type_side_effect(obj):
-        if obj == mock_handle:
-            return r.TYPE_I64
-        return r.TYPE_C8
-
-    mock_get_obj_type.side_effect = get_obj_type_side_effect
-    mock_hopen.return_value = mock_handle
-
-    client = TCPClient(host="localhost", port=5000)
+def test_execute_closed(mock_handle):
+    client = _make_client(mock_handle)
     client._alive = False
 
     with pytest.raises(errors.RayforceTCPError, match="Cannot write to closed connection"):
         client.execute(String("test_query"))
 
 
-@patch("rayforce.network.tcp.client.FFI.get_obj_type")
-@patch("rayforce.network.tcp.client.FFI.hopen")
-@patch("rayforce.network.tcp.client.FFI.hclose")
-def test_close(mock_hclose, mock_hopen, mock_get_obj_type, mock_handle):
-    def get_obj_type_side_effect(obj):
-        if obj == mock_handle:
-            return r.TYPE_I64
-        return r.TYPE_C8
+def test_close(mock_handle):
+    with (
+        patch(
+            "rayforce.network.tcp.client.FFI.get_obj_type", side_effect=_obj_type_for(mock_handle)
+        ),
+        patch("rayforce.network.tcp.client.FFI.hopen", return_value=mock_handle),
+        patch("rayforce.network.tcp.client.FFI.hclose") as mock_hclose,
+    ):
+        client = TCPClient(host="localhost", port=5000)
+        client.close()
 
-    mock_get_obj_type.side_effect = get_obj_type_side_effect
-    mock_hopen.return_value = mock_handle
-
-    client = TCPClient(host="localhost", port=5000)
-    client.close()
-
-    assert client._alive is False
-    mock_hclose.assert_called_once_with(mock_handle)
+        assert client._alive is False
+        mock_hclose.assert_called_once_with(mock_handle)
 
 
-@patch("rayforce.network.tcp.client.FFI.get_obj_type")
-@patch("rayforce.network.tcp.client.FFI.hopen")
-def test_context_manager(mock_hopen, mock_get_obj_type, mock_handle):
-    def get_obj_type_side_effect(obj):
-        if obj == mock_handle:
-            return r.TYPE_I64
-        return r.TYPE_C8
-
-    mock_get_obj_type.side_effect = get_obj_type_side_effect
-    mock_hopen.return_value = mock_handle
+def test_context_manager(mock_handle):
+    client = _make_client(mock_handle)
 
     with patch.object(TCPClient, "close") as mock_close:
-        with TCPClient(host="localhost", port=5000) as client:
+        with client:
             assert client is not None
         mock_close.assert_called_once()

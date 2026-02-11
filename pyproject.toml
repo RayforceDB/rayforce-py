@@ -32,13 +32,20 @@ polars = ["polars>=0.19.0"]
 parquet = ["pyarrow>=10.0.0"]
 all = ["pandas>=2.0.0", "polars>=0.19.0", "pyarrow>=10.0.0"]
 dev = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-timeout>=2.2.0",
     "coverage>=7.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+]
+test-plugins = [
     "pandas>=2.0.0",
     "polars>=0.19.0",
+    "pyarrow>=10.0.0",
+    "websockets>=12.0",
+    "sqlglot>=20.0.0",
 ]
 
 [tool.cibuildwheel]
@@ -152,6 +159,27 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "network: marks tests that require a running rayforce server or network I/O",
+    "plugin: marks tests that require optional dependencies (pandas, polars, pyarrow, etc.)",
+    "ffi: marks tests that exercise the C FFI layer directly",
+    "benchmark: marks benchmark tests (deselect with '-m \"not benchmark\"')",
+]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "-m", "not benchmark",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:importlib.*",
+]
+xfail_strict = true
+
 [tool.coverage.run]
 source = ["rayforce"]
 omit = [
@@ -181,6 +209,7 @@ exclude_lines = [
 precision = 2
 show_missing = true
 skip_covered = false
+fail_under = 80
 
 [tool.coverage.html]
 directory = "htmlcov"

@@ -12,13 +12,8 @@ from rayforce.utils.conversion import python_to_ray, ray_to_python
 
 
 def test_python_to_ray_bool():
-    result = python_to_ray(True)
-    assert isinstance(result, r.RayObject)
-    assert t.B8(ptr=result).value == True
-
-    result = python_to_ray(False)
-    assert isinstance(result, r.RayObject)
-    assert t.B8(ptr=result).value == False
+    assert t.B8(ptr=python_to_ray(True)).value is True
+    assert t.B8(ptr=python_to_ray(False)).value is False
 
 
 def test_python_to_ray_int():
@@ -93,19 +88,16 @@ def test_python_to_ray_none():
 
 def test_python_to_ray_rayobject_wrapper():
     i16_obj = t.I16(42)
-    result = python_to_ray(i16_obj)
-    assert result == i16_obj.ptr
+    assert python_to_ray(i16_obj) == i16_obj.ptr
 
 
 def test_python_to_ray_operation():
-    result = python_to_ray(Operation.ADD)
-    assert isinstance(result, r.RayObject)
+    assert isinstance(python_to_ray(Operation.ADD), r.RayObject)
 
 
 def test_python_to_ray_rayobject_direct():
     i16_obj = t.I16(42)
-    result = python_to_ray(i16_obj.ptr)
-    assert result == i16_obj.ptr
+    assert python_to_ray(i16_obj.ptr) == i16_obj.ptr
 
 
 def test_python_to_ray_unsupported():
@@ -114,15 +106,13 @@ def test_python_to_ray_unsupported():
 
 
 def test_ray_to_python_scalar():
-    i16_obj = t.I16(42)
-    result = ray_to_python(i16_obj.ptr)
+    result = ray_to_python(t.I16(42).ptr)
     assert isinstance(result, t.I16)
     assert result.value == 42
 
 
 def test_ray_to_python_container():
-    list_obj = t.List([1, 2, 3])
-    result = ray_to_python(list_obj.ptr)
+    result = ray_to_python(t.List([1, 2, 3]).ptr)
     assert isinstance(result, t.List)
 
 

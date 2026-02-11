@@ -6,6 +6,13 @@ import pytest
 from rayforce.plugins.polars import from_polars
 from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp
 from rayforce.types.null import Null
+from tests.helpers.assertions import (
+    assert_column_values,
+    assert_contains_columns,
+    assert_table_shape,
+)
+
+pytestmark = pytest.mark.plugin
 
 
 @pytest.fixture
@@ -47,19 +54,11 @@ def test_from_polars_basic_types(polars):
 
     table = from_polars(df)
 
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 8
-
-    # Check column names
-    columns = [str(col) for col in table.columns()]
-    assert "bool_col" in columns
-    assert "i8_col" in columns
-    assert "i16_col" in columns
-    assert "i32_col" in columns
-    assert "i64_col" in columns
-    assert "f32_col" in columns
-    assert "f64_col" in columns
-    assert "str_col" in columns
+    assert_table_shape(table, rows=3, cols=8)
+    assert_contains_columns(
+        table,
+        ["bool_col", "i8_col", "i16_col", "i32_col", "i64_col", "f32_col", "f64_col", "str_col"],
+    )
 
 
 def test_from_polars_boolean_type(polars):
@@ -67,12 +66,8 @@ def test_from_polars_boolean_type(polars):
     table = from_polars(df)
 
     values = table.values()
-    assert len(values) == 1
-    bool_vector = values[0]
-
-    # Check that values are B8 type
-    assert all(isinstance(v, B8) for v in bool_vector)
-    assert [v.value for v in bool_vector] == [True, False, True]
+    assert all(isinstance(v, B8) for v in values[0])
+    assert_column_values(table, "bool_col", [True, False, True])
 
 
 def test_from_polars_integer_types(polars):
@@ -94,21 +89,16 @@ def test_from_polars_integer_types(polars):
     table = from_polars(df)
     values = table.values()
 
-    # i8 -> I16
-    assert all(isinstance(v, I16) for v in values[0])
-    assert [v.value for v in values[0]] == [1, 2, 3]
+    # Type inference checks: i8 -> I16, i16 -> I16, i32 -> I32, i64 -> I64
+    assert all(isinstance(v, I16) for v in values[0])  # i8 -> I16
+    assert all(isinstance(v, I16) for v in values[1])  # i16 -> I16
+    assert all(isinstance(v, I32) for v in values[2])  # i32 -> I32
+    assert all(isinstance(v, I64) for v in values[3])  # i64 -> I64
 
-    # i16 -> I16
-    assert all(isinstance(v, I16) for v in values[1])
-    assert [v.value for v in values[1]] == [100, 200, 300]
-
-    # i32 -> I32
-    assert all(isinstance(v, I32) for v in values[2])
-    assert [v.value for v in values[2]] == [1000, 2000, 3000]
-
-    # i64 -> I64
-    assert all(isinstance(v, I64) for v in values[3])
-    assert [v.value for v in values[3]] == [10000, 20000, 30000]
+    assert_column_values(table, "i8", [1, 2, 3])
+    assert_column_values(table, "i16", [100, 200, 300])
+    assert_column_values(table, "i32", [1000, 2000, 3000])
+    assert_column_values(table, "i64", [10000, 20000, 30000])
 
 
 def test_from_polars_float_types(polars):
@@ -129,15 +119,11 @@ def test_from_polars_float_types(polars):
     for vector in values:
         assert all(isinstance(v, F64) for v in vector)
 
-    assert [round(v.value, 1) for v in values[0]] == [1.5, 2.5, 3.5]
-    assert [round(v.value, 1) for v in values[1]] == [10.5, 20.5, 30.5]
+    assert_column_values(table, "f32", [1.5, 2.5, 3.5])
+    assert_column_values(table, "f64", [10.5, 20.5, 30.5])
 
 
 def test_from_polars_string_types(polars):
-    """Test string type conversions."""
-    from rayforce.plugins.polars import from_polars
-    from rayforce.types import Symbol
-
     df = polars.DataFrame(
         {
             "str_col": ["a", "b", "c"],
@@ -155,8 +141,8 @@ def test_from_polars_string_types(polars):
     for vector in values:
         assert all(isinstance(v, Symbol) for v in vector)
 
-    assert [v.value for v in values[0]] == ["a", "b", "c"]
-    assert [v.value for v in values[1]] == ["x", "y", "z"]
+    assert_column_values(table, "str_col", ["a", "b", "c"])
+    assert_column_values(table, "string_col", ["x", "y", "z"])
 
 
 def test_from_polars_datetime_types(polars):
@@ -181,13 +167,12 @@ def test_from_polars_datetime_types(polars):
     table = from_polars(df)
     values = table.values()
 
-    # Date column
+    # Type inference checks
     assert all(isinstance(v, Date) for v in values[0] if v is not None)
-    assert [v.value for v in values[0] if v is not None] == dates
-
-    # Datetime column
     assert all(isinstance(v, Timestamp) for v in values[1] if v is not None)
-    assert len(values[1]) == 3
+
+    assert_column_values(table, "date_col", dates)
+    assert_table_shape(table, rows=3, cols=2)
 
 
 def test_from_polars_with_nulls(polars):
@@ -203,16 +188,15 @@ def test_from_polars_with_nulls(polars):
     table = from_polars(df)
     values = table.values()
 
-    # Check that nulls are handled (polars already converts to None)
-    int_vector = values[0]
-    assert int_vector[0].value == 1
-    assert int_vector[1] == Null
-    assert int_vector[2].value == 3
+    # Null handling for int column
+    assert values[0][0].value == 1
+    assert values[0][1] == Null
+    assert values[0][2].value == 3
 
-    float_vector = values[1]
-    assert float_vector[0].value == 1.5
-    assert float_vector[1] == Null
-    assert float_vector[2].value == 3.5
+    # Null handling for float column
+    assert values[1][0].value == 1.5
+    assert values[1][1] == Null
+    assert values[1][2].value == 3.5
 
 
 def test_from_polars_empty_dataframe_raises(polars):
@@ -327,11 +311,9 @@ def test_from_polars_mixed_types(polars):
 
     table = from_polars(df)
 
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 6
+    assert_table_shape(table, rows=5, cols=6)
 
     values = table.values()
-
     assert all(isinstance(v, I64) for v in values[0])  # id
     assert all(isinstance(v, Symbol) for v in values[1])  # name
     assert all(isinstance(v, I64) for v in values[2])  # age
@@ -352,14 +334,9 @@ def test_from_polars_large_dataframe(polars):
 
     table = from_polars(df)
 
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 3
+    assert_table_shape(table, rows=n_rows, cols=3)
 
     values = table.values()
-    assert len(values[0]) == n_rows
-    assert len(values[1]) == n_rows
-    assert len(values[2]) == n_rows
-
     assert values[0][0].value == 0
     assert values[0][-1].value == n_rows - 1
 
@@ -368,10 +345,7 @@ def test_from_polars_single_column(polars):
     df = polars.DataFrame({"single_col": [1, 2, 3, 4, 5]})
 
     table = from_polars(df)
-
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 1
-    assert len(table.values()[0]) == 5
+    assert_table_shape(table, rows=5, cols=1)
 
 
 def test_from_polars_single_row(polars):
@@ -384,10 +358,7 @@ def test_from_polars_single_row(polars):
     )
 
     table = from_polars(df)
-
-    assert isinstance(table, Table)
-    assert len(table.columns()) == 3
-    assert len(table.values()[0]) == 1
+    assert_table_shape(table, rows=1, cols=3)
 
 
 def test_from_polars_string_fallback(polars):

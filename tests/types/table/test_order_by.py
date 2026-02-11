@@ -1,187 +1,110 @@
 import pytest
 
-from rayforce import I64, Column, Symbol, Table, Vector
+from rayforce import F64, I64, Column, Symbol, Table, Vector
+from tests.helpers.assertions import (
+    assert_column_sorted,
+    assert_column_values,
+    assert_columns,
+    assert_contains_columns,
+    assert_table_shape,
+)
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])
-def test_order_by_desc(is_inplace):
-    table = Table(
-        {
-            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
-            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
-            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
-        },
-    )
+def test_order_by_desc(is_inplace, make_table):
+    data = {
+        "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+        "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+        "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+    }
 
     if is_inplace:
-        result = table.order_by(Column("age"), desc=True).execute()
+        result = Table(data).order_by(Column("age"), desc=True).execute()
     else:
-        table.save("test_order_desc")
-        result = Table("test_order_desc").order_by(Column("age"), desc=True).execute()
+        name, _ = make_table(data)
+        result = Table(name).order_by(Column("age"), desc=True).execute()
 
-    assert isinstance(result, Table)
-    values = result.values()
-
-    # Verify desc order: 41 > 38 > 34 > 29
-    assert values[2][0].value == 41
-    assert values[2][1].value == 38
-    assert values[2][2].value == 34
-    assert values[2][3].value == 29
-
-    # Verify all ages are present (no data loss)
-    ages = [values[2][i].value for i in range(4)]
-    assert set(ages) == {29, 34, 38, 41}
-
-    # Verify other columns are reordered correctly with age
-    # Row with age=41 should have id="003", name="charlie"
-    age_41_idx = ages.index(41)
-    assert values[0][age_41_idx].value == "003"
-    assert values[1][age_41_idx].value == "charlie"
+    assert_column_values(result, "age", [41, 38, 34, 29])
+    assert_column_sorted(result, "age", desc=True)
+    assert_column_values(result, "id", ["003", "004", "002", "001"])
+    assert_column_values(result, "name", ["charlie", "dana", "bob", "alice"])
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])
-def test_order_by_asc(is_inplace):
-    table = Table(
-        {
-            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
-            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
-            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
-        },
-    )
+def test_order_by_asc(is_inplace, make_table):
+    data = {
+        "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+        "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+        "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+    }
 
     if is_inplace:
-        result = table.order_by(Column("age")).execute()
+        result = Table(data).order_by(Column("age")).execute()
     else:
-        table.save("test_order_asc")
-        result = Table("test_order_asc").order_by(Column("age")).execute()
+        name, _ = make_table(data)
+        result = Table(name).order_by(Column("age")).execute()
 
-    assert isinstance(result, Table)
-    values = result.values()
-
-    # Verify ascending order: 29 < 34 < 38 < 41
-    assert values[2][0].value == 29  # First row should be lowest age
-    assert values[2][1].value == 34
-    assert values[2][2].value == 38
-    assert values[2][3].value == 41  # Last row should be highest age
-
-    # Verify all ages are present (no data loss)
-    ages = [values[2][i].value for i in range(4)]
-    assert set(ages) == {29, 34, 38, 41}
-
-    # Verify other columns are reordered correctly with age
-    # Row with age=29 should have id="001", name="alice"
-    age_29_idx = ages.index(29)
-    assert values[0][age_29_idx].value == "001"
-    assert values[1][age_29_idx].value == "alice"
+    assert_column_values(result, "age", [29, 34, 38, 41])
+    assert_column_sorted(result, "age")
+    assert_column_values(result, "id", ["001", "002", "004", "003"])
+    assert_column_values(result, "name", ["alice", "bob", "dana", "charlie"])
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])
-def test_order_by_multiple_columns(is_inplace):
+def test_order_by_multiple_columns(is_inplace, make_table):
     """Test ordering by multiple columns."""
-    table = Table(
-        {
-            "dept": Vector(items=["eng", "eng", "marketing", "marketing"], ray_type=Symbol),
-            "salary": Vector(items=[100000, 120000, 90000, 110000], ray_type=I64),
-            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
-        },
-    )
+    data = {
+        "dept": Vector(items=["eng", "eng", "marketing", "marketing"], ray_type=Symbol),
+        "salary": Vector(items=[100000, 120000, 90000, 110000], ray_type=I64),
+        "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+    }
 
     if is_inplace:
-        result = table.order_by(Column("dept"), Column("salary")).execute()
+        result = Table(data).order_by(Column("dept"), Column("salary")).execute()
     else:
-        table.save("test_order_multi")
-        result = Table("test_order_multi").order_by(Column("dept"), Column("salary")).execute()
+        name, _ = make_table(data)
+        result = Table(name).order_by(Column("dept"), Column("salary")).execute()
 
-    assert isinstance(result, Table)
-    values = result.values()
-
-    # Verify ordering: first by dept (asc), then by salary (asc)
-    # Expected order:
-    # 1. eng, 100000 (alice)
-    # 2. eng, 120000 (bob)
-    # 3. marketing, 90000 (charlie)
-    # 4. marketing, 110000 (dana)
-
-    assert values[0][0].value == "eng"
-    assert values[1][0].value == 100000
-    assert values[2][0].value == "alice"
-
-    assert values[0][1].value == "eng"
-    assert values[1][1].value == 120000
-    assert values[2][1].value == "bob"
-
-    assert values[0][2].value == "marketing"
-    assert values[1][2].value == 90000
-    assert values[2][2].value == "charlie"
-
-    assert values[0][3].value == "marketing"
-    assert values[1][3].value == 110000
-    assert values[2][3].value == "dana"
+    assert_column_values(result, "dept", ["eng", "eng", "marketing", "marketing"])
+    assert_column_values(result, "salary", [100000, 120000, 90000, 110000])
+    assert_column_values(result, "name", ["alice", "bob", "charlie", "dana"])
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])
-def test_order_by_string_column(is_inplace):
+def test_order_by_string_column(is_inplace, make_table):
     """Test ordering by string column."""
-    table = Table(
-        {
-            "id": Vector(items=["003", "001", "004", "002"], ray_type=Symbol),
-            "name": Vector(items=["charlie", "alice", "dana", "bob"], ray_type=Symbol),
-        },
-    )
+    data = {
+        "id": Vector(items=["003", "001", "004", "002"], ray_type=Symbol),
+        "name": Vector(items=["charlie", "alice", "dana", "bob"], ray_type=Symbol),
+    }
 
     if is_inplace:
-        result = table.order_by(Column("name")).execute()
+        result = Table(data).order_by(Column("name")).execute()
     else:
-        table.save("test_order_string")
-        result = Table("test_order_string").order_by(Column("name")).execute()
+        name, _ = make_table(data)
+        result = Table(name).order_by(Column("name")).execute()
 
-    assert isinstance(result, Table)
-    values = result.values()
-
-    # Verify alphabetical order: alice < bob < charlie < dana
-    assert values[1][0].value == "alice"
-    assert values[1][1].value == "bob"
-    assert values[1][2].value == "charlie"
-    assert values[1][3].value == "dana"
-
-    # Verify ids are reordered correctly with names
-    assert values[0][0].value == "001"  # alice's id
-    assert values[0][1].value == "002"  # bob's id
-    assert values[0][2].value == "003"  # charlie's id
-    assert values[0][3].value == "004"  # dana's id
+    assert_column_values(result, "name", ["alice", "bob", "charlie", "dana"])
+    assert_column_values(result, "id", ["001", "002", "003", "004"])
 
 
 @pytest.mark.parametrize("is_inplace", [True, False])
-def test_order_by_preserves_all_rows(is_inplace):
+def test_order_by_preserves_all_rows(is_inplace, make_table):
     """Test that ordering preserves all rows and columns."""
-    table = Table(
-        {
-            "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
-            "value": Vector(items=[3, 1, 2], ray_type=I64),
-        },
-    )
+    data = {
+        "id": Vector(items=["001", "002", "003"], ray_type=Symbol),
+        "value": Vector(items=[3, 1, 2], ray_type=I64),
+    }
 
     if is_inplace:
-        result = table.order_by(Column("value")).execute()
+        result = Table(data).order_by(Column("value")).execute()
     else:
-        table.save("test_order_preserve")
-        result = Table("test_order_preserve").order_by(Column("value")).execute()
+        name, _ = make_table(data)
+        result = Table(name).order_by(Column("value")).execute()
 
-    assert isinstance(result, Table)
-
-    # Verify table structure preserved
-    columns = result.columns()
-    assert len(columns) == 2
-    assert "id" in columns
-    assert "value" in columns
-
-    # Verify all rows present
-    values = result.values()
-    assert len(values[0]) == 3  # Still 3 rows
-
-    # Verify all values present (just reordered)
-    all_values = [values[1][i].value for i in range(3)]
-    assert set(all_values) == {1, 2, 3}
+    assert_table_shape(result, rows=3, cols=2)
+    assert_contains_columns(result, ["id", "value"])
+    assert_column_values(result, "value", [1, 2, 3])
 
 
 def test_order_by_chained_with_select():
@@ -196,18 +119,8 @@ def test_order_by_chained_with_select():
 
     result = table.select("name", "age").order_by("age").execute()
 
-    assert isinstance(result, Table)
-    columns = result.columns()
-    assert len(columns) == 2
-    assert "name" in columns
-    assert "age" in columns
-    assert "id" not in columns
-
-    values = result.values()
-    # Should be ordered by age: 25, 28, 30
-    assert values[1][0].value == 25
-    assert values[1][1].value == 28
-    assert values[1][2].value == 30
+    assert_columns(result, ["name", "age"])
+    assert_column_values(result, "age", [25, 28, 30])
 
 
 def test_order_by_chained_with_where():
@@ -221,10 +134,85 @@ def test_order_by_chained_with_where():
 
     result = table.where(Column("age") > 26).order_by("age").execute()
 
-    assert isinstance(result, Table)
-    values = result.values()
-    # Should have 3 rows (age > 26), ordered: 28, 30, 35
-    assert len(values[0]) == 3
-    assert values[1][0].value == 28
-    assert values[1][1].value == 30
-    assert values[1][2].value == 35
+    assert_table_shape(result, rows=3, cols=2)
+    assert_column_values(result, "age", [28, 30, 35])
+
+
+def test_order_by_with_null_values():
+    """ORDER BY on a column that contains NULL values; NULLs sort to the end."""
+    left = Table(
+        {
+            "key": Vector(items=["a", "b", "c"], ray_type=Symbol),
+            "val": Vector(items=[30, 10, 20], ray_type=I64),
+        },
+    )
+    right = Table(
+        {
+            "key": Vector(items=["a", "b"], ray_type=Symbol),
+            "score": Vector(items=[5, 3], ray_type=I64),
+        },
+    )
+    joined = left.left_join(right, "key").execute()
+
+    result = joined.order_by(Column("score")).execute()
+
+    assert_table_shape(result, rows=3, cols=3)
+    # Nulls sort to the end in ascending order
+    row_last = result.at_row(2)
+    assert row_last["score"] == None  # noqa: E711  (Rayforce Null == None is True)
+    assert row_last["key"] == "c"
+    # Non-null rows are sorted ascending
+    assert result.at_row(0)["score"] == 3
+    assert result.at_row(1)["score"] == 5
+
+
+def test_order_by_multiple_columns_desc():
+    """ORDER BY multiple columns with desc=True sorts all columns descending."""
+    table = Table(
+        {
+            "dept": Vector(items=["eng", "eng", "marketing", "marketing"], ray_type=Symbol),
+            "salary": Vector(items=[120000, 100000, 90000, 110000], ray_type=I64),
+            "name": Vector(items=["bob", "alice", "charlie", "dana"], ray_type=Symbol),
+        },
+    )
+
+    result = table.order_by(Column("dept"), Column("salary"), desc=True).execute()
+
+    assert_table_shape(result, rows=4, cols=3)
+    # Descending: marketing before eng, higher salary first within dept
+    assert_column_values(result, "dept", ["marketing", "marketing", "eng", "eng"])
+    assert_column_values(result, "salary", [110000, 90000, 120000, 100000])
+
+
+def test_order_by_stability():
+    """ORDER BY preserves original relative order for rows with equal sort keys."""
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "score": Vector(items=[10, 20, 10, 20], ray_type=I64),
+        },
+    )
+
+    result = table.order_by(Column("score")).execute()
+
+    assert_table_shape(result, rows=4, cols=2)
+    assert_column_sorted(result, "score")
+    # Within score=10 group, original order (alice, charlie) is preserved
+    assert_column_values(result, "name", ["alice", "charlie", "bob", "dana"])
+    assert_column_values(result, "score", [10, 10, 20, 20])
+
+
+def test_order_by_float_column():
+    """ORDER BY on an F64 column."""
+    table = Table(
+        {
+            "id": Vector(items=["001", "002", "003", "004"], ray_type=Symbol),
+            "price": Vector(items=[3.14, 1.59, 2.65, 0.99], ray_type=F64),
+        },
+    )
+
+    result = table.order_by(Column("price")).execute()
+
+    assert_column_sorted(result, "price")
+    assert_column_values(result, "id", ["004", "002", "003", "001"])
+    assert_column_values(result, "price", [0.99, 1.59, 2.65, 3.14])

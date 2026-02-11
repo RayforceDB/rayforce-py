@@ -39,11 +39,11 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install pytest pytest-cov pytest-asyncio coverage pandas>=2.0.0 polars>=0.19.0 websockets pyarrow sqlglot
+          pip install -e ".[dev,test-plugins]"
 
       - name: Run tests with coverage
         run: |
-          python -m pytest -x -vv --cov=rayforce --cov-report=term-missing --cov-report=xml --cov-report=html tests/
+          python -m pytest -m "" -x -vv --durations=20 --cov=rayforce --cov-report=term-missing --cov-report=xml --cov-report=html tests/
 
       - name: Coverage Report
         run: |

@@ -1,4 +1,9 @@
 from rayforce import B8, I64, Column, List, Symbol, Table, Vector
+from tests.helpers.assertions import (
+    assert_column_set,
+    assert_column_values,
+    assert_table_shape,
+)
 
 
 def test_is_true_filters_true_rows():
@@ -11,15 +16,8 @@ def test_is_true_filters_true_rows():
 
     result = table.select("name").where(Column("active").is_(True)).execute()
 
-    values = result.values()
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    names = [values[name_idx][i].value for i in range(len(values[name_idx]))]
-
-    assert len(names) == 2
-    assert "alice" in names
-    assert "charlie" in names
-    assert "bob" not in names
+    assert_table_shape(result, rows=2, cols=1)
+    assert_column_set(result, "name", {"alice", "charlie"})
 
 
 def test_is_true_filters_true_rows_list():
@@ -32,15 +30,8 @@ def test_is_true_filters_true_rows_list():
 
     result = table.select("name").where(Column("active").is_(True)).execute()
 
-    values = result.values()
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    names = [values[name_idx][i].value for i in range(len(values[name_idx]))]
-
-    assert len(names) == 2
-    assert "alice" in names
-    assert "charlie" in names
-    assert "bob" not in names
+    assert_table_shape(result, rows=2, cols=1)
+    assert_column_set(result, "name", {"alice", "charlie"})
 
 
 def test_is_false_filters_false_rows_list():
@@ -53,13 +44,8 @@ def test_is_false_filters_false_rows_list():
 
     result = table.select("name").where(Column("active").is_(False)).execute()
 
-    values = result.values()
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    names = [values[name_idx][i].value for i in range(len(values[name_idx]))]
-
-    assert len(names) == 1
-    assert "bob" in names
+    assert_table_shape(result, rows=1, cols=1)
+    assert_column_values(result, "name", ["bob"])
 
 
 def test_is_false_filters_false_rows():
@@ -72,13 +58,8 @@ def test_is_false_filters_false_rows():
 
     result = table.select("name").where(Column("active").is_(False)).execute()
 
-    values = result.values()
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    names = [values[name_idx][i].value for i in range(len(values[name_idx]))]
-
-    assert len(names) == 1
-    assert "bob" in names
+    assert_table_shape(result, rows=1, cols=1)
+    assert_column_values(result, "name", ["bob"])
 
 
 def test_is_true_with_all_true():
@@ -91,8 +72,7 @@ def test_is_true_with_all_true():
 
     result = table.select("id").where(Column("flag").is_(True)).execute()
 
-    values = result.values()
-    assert len(values[0]) == 3
+    assert_table_shape(result, rows=3, cols=1)
 
 
 def test_is_false_with_all_false():
@@ -105,8 +85,7 @@ def test_is_false_with_all_false():
 
     result = table.select("id").where(Column("flag").is_(False)).execute()
 
-    values = result.values()
-    assert len(values[0]) == 3
+    assert_table_shape(result, rows=3, cols=1)
 
 
 def test_is_combined_with_other_conditions():
@@ -122,14 +101,8 @@ def test_is_combined_with_other_conditions():
         table.select("name").where(Column("active").is_(True)).where(Column("age") >= 35).execute()
     )
 
-    values = result.values()
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    names = [values[name_idx][i].value for i in range(len(values[name_idx]))]
-
-    assert len(names) == 2
-    assert "charlie" in names
-    assert "dana" in names
+    assert_table_shape(result, rows=2, cols=1)
+    assert_column_set(result, "name", {"charlie", "dana"})
 
 
 def test_is_with_group_by():
@@ -149,18 +122,9 @@ def test_is_with_group_by():
         .execute()
     )
 
-    values = result.values()
-    cols = list(result.columns())
-    dept_idx = cols.index("dept") if "dept" in cols else cols.index("by")
-    total_idx = cols.index("active_total")
-
-    for i in range(len(values[dept_idx])):
-        dept = values[dept_idx][i].value
-        total = values[total_idx][i].value
-        if dept == "eng":
-            assert total == 100
-        elif dept == "hr":
-            assert total == 400
+    rows = {result.at_row(i)["dept"]: result.at_row(i) for i in range(len(result))}
+    assert rows["eng"]["active_total"] == 100
+    assert rows["hr"]["active_total"] == 400
 
 
 def test_is_on_expression():
@@ -173,11 +137,5 @@ def test_is_on_expression():
 
     result = table.select("name").where((Column("score") > 60).is_(True)).execute()
 
-    values = result.values()
-    cols = list(result.columns())
-    name_idx = cols.index("name")
-    names = [values[name_idx][i].value for i in range(len(values[name_idx]))]
-
-    assert len(names) == 2
-    assert "alice" in names
-    assert "charlie" in names
+    assert_table_shape(result, rows=2, cols=1)
+    assert_column_set(result, "name", {"alice", "charlie"})

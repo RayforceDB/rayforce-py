@@ -148,7 +148,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio pandas>=2.0.0 polars>=0.19.0 websockets pyarrow sqlglot
+          pip install pytest pytest-asyncio pytest-timeout websockets pandas>=2.0.0 polars>=0.19.0 pyarrow sqlglot
 
       - name: Remove local rayforce package to force pip installation
         run: |
@@ -172,7 +172,7 @@ jobs:
           fi
           echo "Installing wheel: $WHEEL_FILE"
           pip install "$WHEEL_FILE" --force-reinstall --no-deps
-          python -m pytest -x -vv tests/
+          python -m pytest -m "" -x -vv --durations=20 tests/
 
   publish:
     name: Publish to PyPI
