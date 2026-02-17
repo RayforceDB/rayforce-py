@@ -20,6 +20,7 @@ from rayforce.types import (
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
+from rayforce.types.scalars.temporal.timestamp import tz_offset_nanos
 
 if t.TYPE_CHECKING:
     import datetime as dt
@@ -204,11 +205,7 @@ class Column(AggregationMixin, OperatorMixin):
         return Expression(Operation.MAP, self, condition)
 
     def shift_tz(self, tz: dt.tzinfo) -> Expression:
-        offset = tz.utcoffset(None)
-        if offset is None:
-            raise errors.RayforceValueError("Cannot determine UTC offset from provided tzinfo")
-        offset_nanos = int(offset.total_seconds()) * 1_000_000_000
-        return Expression(Operation.ADD, self, offset_nanos)
+        return Expression(Operation.ADD, self, tz_offset_nanos(tz))
 
 
 class TableInitMixin:

@@ -1,4 +1,5 @@
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -97,3 +98,39 @@ def test_timestamp_different_tz_offsets_same_instant():
     r2 = t.Timestamp(ts2)
     assert r1.to_millis() == r2.to_millis()
     assert r1.value == r2.value
+
+
+def test_shift_tz_positive_offset():
+    """shift_tz with +5h returns a new Timestamp shifted forward."""
+    ts = t.Timestamp(dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC))
+
+    result = ts.shift_tz(dt.timezone(dt.timedelta(hours=5)))
+
+    assert result.value == dt.datetime(2025, 6, 15, 17, 0, 0, tzinfo=dt.UTC)
+
+
+def test_shift_tz_negative_offset():
+    """shift_tz with -5h returns a new Timestamp shifted backward."""
+    ts = t.Timestamp(dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC))
+
+    result = ts.shift_tz(dt.timezone(dt.timedelta(hours=-5)))
+
+    assert result.value == dt.datetime(2025, 6, 15, 7, 0, 0, tzinfo=dt.UTC)
+
+
+def test_shift_tz_does_not_mutate_original():
+    """shift_tz returns a new Timestamp; the original is unchanged."""
+    ts = t.Timestamp(dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC))
+
+    ts.shift_tz(dt.timezone(dt.timedelta(hours=5)))
+
+    assert ts.value == dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC)
+
+
+def test_shift_tz_with_zoneinfo():
+    """shift_tz works with zoneinfo.ZoneInfo."""
+    ts = t.Timestamp(dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC))
+
+    result = ts.shift_tz(ZoneInfo("Etc/GMT-5"))  # Etc/GMT-5 = UTC+5
+
+    assert result.value == dt.datetime(2025, 6, 15, 17, 0, 0, tzinfo=dt.UTC)
