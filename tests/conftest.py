@@ -15,7 +15,6 @@ import pytest
 from rayforce import I64, Symbol, Table, Vector
 from rayforce.utils.evaluation import eval_str
 
-
 # ---------------------------------------------------------------------------
 # Table cleanup helpers
 # ---------------------------------------------------------------------------

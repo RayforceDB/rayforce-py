@@ -1,4 +1,7 @@
-from rayforce import F64, I64, Column, Symbol, Table, Vector
+import datetime as dt
+from zoneinfo import ZoneInfo
+
+from rayforce import F64, I64, Column, Symbol, Table, Timestamp, Vector
 from tests.helpers.assertions import (
     assert_column_values,
     assert_columns,
@@ -300,3 +303,123 @@ def test_select_distinct():
     salary_vals = result_salary.at_column("_vals")
     assert len(salary_vals) == 2
     assert set(v.value for v in salary_vals) == {100, 200}
+
+
+def test_shift_tz_positive_offset():
+    """shift_tz with +5h offset shifts timestamps forward by 5 hours."""
+    table = Table(
+        {
+            "name": Vector(["alice", "bob"]),
+            "ts": Vector(
+                [
+                    dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC),
+                    dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC),
+                ]
+            ),
+            "score": Vector([100, 200]),
+        }
+    )
+    tz = dt.timezone(dt.timedelta(hours=5))
+
+    result = table.select("name", "score", ts=Column("ts").shift_tz(tz)).execute()
+
+    assert_columns(result, ["name", "score", "ts"])
+    assert_table_shape(result, rows=2, cols=3)
+    assert_column_values(result, "name", ["alice", "bob"])
+    assert_column_values(result, "score", [100, 200])
+
+    ts_col = result["ts"]
+    assert ts_col[0].value == dt.datetime(2025, 6, 15, 17, 0, 0, tzinfo=dt.UTC)
+    assert ts_col[1].value == dt.datetime(2025, 6, 15, 23, 0, 0, tzinfo=dt.UTC)
+
+
+def test_shift_tz_negative_offset():
+    """shift_tz with -5h offset shifts timestamps backward by 5 hours."""
+    table = Table(
+        {
+            "name": Vector(["alice", "bob"]),
+            "ts": Vector(
+                [
+                    dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC),
+                    dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC),
+                ]
+            ),
+            "score": Vector([100, 200]),
+        }
+    )
+    tz = dt.timezone(dt.timedelta(hours=-5))
+
+    result = table.select("name", "score", ts=Column("ts").shift_tz(tz)).execute()
+
+    ts_col = result["ts"]
+    assert ts_col[0].value == dt.datetime(2025, 6, 15, 7, 0, 0, tzinfo=dt.UTC)
+    assert ts_col[1].value == dt.datetime(2025, 6, 15, 13, 0, 0, tzinfo=dt.UTC)
+
+
+def test_shift_tz_preserves_non_timestamp_columns():
+    """shift_tz on a timestamp column does not affect other columns."""
+    table = Table(
+        {
+            "name": Vector(["alice", "bob"]),
+            "ts": Vector(
+                [
+                    dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC),
+                    dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC),
+                ]
+            ),
+            "score": Vector([100, 200]),
+        }
+    )
+    tz = dt.timezone(dt.timedelta(hours=3))
+
+    result = table.select("name", "score", ts=Column("ts").shift_tz(tz)).execute()
+
+    assert_column_values(result, "name", ["alice", "bob"])
+    assert_column_values(result, "score", [100, 200])
+
+
+def test_shift_tz_with_zoneinfo():
+    """shift_tz works with zoneinfo.ZoneInfo fixed-offset timezone."""
+    table = Table(
+        {
+            "name": Vector(["alice", "bob"]),
+            "ts": Vector(
+                [
+                    dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC),
+                    dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC),
+                ]
+            ),
+            "score": Vector([100, 200]),
+        }
+    )
+    tz = ZoneInfo("Etc/GMT-5")  # Etc/GMT-5 = UTC+5
+
+    result = table.select(ts=Column("ts").shift_tz(tz)).execute()
+
+    ts_col = result["ts"]
+    assert ts_col[0].value == dt.datetime(2025, 6, 15, 17, 0, 0, tzinfo=dt.UTC)
+    assert ts_col[1].value == dt.datetime(2025, 6, 15, 23, 0, 0, tzinfo=dt.UTC)
+
+
+def test_shift_tz_original_table_unchanged():
+    """shift_tz select produces a new table; original data is not mutated."""
+    table = Table(
+        {
+            "name": Vector(["alice", "bob"]),
+            "ts": Vector(
+                [
+                    dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC),
+                    dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC),
+                ]
+            ),
+            "score": Vector([100, 200]),
+        }
+    )
+    tz = dt.timezone(dt.timedelta(hours=5))
+
+    table.select(ts=Column("ts").shift_tz(tz)).execute()
+
+    # Original should still have UTC values
+    ts_col = table["ts"]
+    assert ts_col[0].value == dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC)
+    assert ts_col[1].value == dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC)

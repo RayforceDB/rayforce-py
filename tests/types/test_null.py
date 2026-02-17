@@ -1,6 +1,6 @@
 import pytest
 
-from rayforce import FFI, Dict, I64, List, Vector, eval_obj
+from rayforce import FFI, I64, Dict, List, Vector, eval_obj
 from rayforce import _rayforce_c as r
 from rayforce.types import Null, Table
 from rayforce.types.operators import Operation

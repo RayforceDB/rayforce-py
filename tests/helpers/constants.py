@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from rayforce.types import Dict, List, Table, Vector
 from rayforce.types.scalars import (
     B8,
     C8,
@@ -17,7 +18,6 @@ from rayforce.types.scalars import (
     Time,
     Timestamp,
 )
-from rayforce.types import Dict, List, Table, Vector
 
 ALL_NUMERIC_TYPES = [I16, I32, I64, F64, U8]
 ALL_TEMPORAL_TYPES = [Date, Time, Timestamp]

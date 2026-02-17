@@ -22,6 +22,8 @@ from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
 
 if t.TYPE_CHECKING:
+    import datetime as dt
+
     from rayforce.types.fn import Fn
 
 
@@ -200,6 +202,13 @@ class Column(AggregationMixin, OperatorMixin):
 
     def where(self, condition: Expression) -> Expression:
         return Expression(Operation.MAP, self, condition)
+
+    def shift_tz(self, tz: dt.tzinfo) -> Expression:
+        offset = tz.utcoffset(None)
+        if offset is None:
+            raise errors.RayforceValueError("Cannot determine UTC offset from provided tzinfo")
+        offset_nanos = int(offset.total_seconds()) * 1_000_000_000
+        return Expression(Operation.ADD, self, offset_nanos)
 
 
 class TableInitMixin:
