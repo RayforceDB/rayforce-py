@@ -5,12 +5,24 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.5.11`**
+
+### New Features
+
+- **`Timestamp.shift_tz()` method**: Shift a `Timestamp` value by a timezone offset. Accepts any `datetime.tzinfo` (including `datetime.timezone` and `zoneinfo.ZoneInfo`).
+
+- **`Column.shift_tz()` for queries**: Shift an entire column of timestamps by a timezone offset within `select()` expressions.
+
+2026-02-19 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.11/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.11)**
+
+
 ## **`0.5.10`**
 
 ### Bug Fixes
 - Various bugfixes to the database operations
 
 2026-02-11 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.5.10/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.5.10)**
+
 
 ## **`0.5.9`**
 

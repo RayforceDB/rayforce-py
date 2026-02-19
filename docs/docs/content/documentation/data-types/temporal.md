@@ -78,3 +78,36 @@ Timestamp(datetime.datetime(2025, 5, 10, 14, 30, 45, tzinfo=datetime.timezone.ut
 >>> timestamp
 datetime.datetime(2025, 5, 10, 14, 30, 45, tzinfo=datetime.timezone.utc)
 ```
+
+### Shift Timezone
+
+The `shift_tz()` method shifts a `Timestamp` by a timezone offset, returning a new `Timestamp`. The original value is not mutated. It accepts any `datetime.tzinfo`, including `datetime.timezone` and `zoneinfo.ZoneInfo`.
+
+```python
+>>> import datetime as dt
+>>> from zoneinfo import ZoneInfo
+>>> from rayforce import Timestamp
+
+>>> ts = Timestamp(dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC))
+
+>>> ts.shift_tz(dt.timezone(dt.timedelta(hours=5)))
+Timestamp(datetime.datetime(2025, 6, 15, 17, 0, 0, tzinfo=datetime.timezone.utc))
+
+>>> ts.shift_tz(dt.timezone(dt.timedelta(hours=-5)))
+Timestamp(datetime.datetime(2025, 6, 15, 7, 0, 0, tzinfo=datetime.timezone.utc))
+
+>>> ts.shift_tz(ZoneInfo("Etc/GMT-5"))  # Etc/GMT-5 = UTC+5
+Timestamp(datetime.datetime(2025, 6, 15, 17, 0, 0, tzinfo=datetime.timezone.utc))
+```
+
+`shift_tz` is also available on `Column` for use in queries, allowing you to shift an entire column of timestamps:
+
+```python
+>>> import datetime as dt
+>>> from rayforce import Table, Column
+
+>>> result = table.select(
+        "id",
+        local_time=Column("created_at").shift_tz(dt.timezone(dt.timedelta(hours=3))),
+    ).execute()
+```
