@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from rayforce import errors
@@ -852,3 +853,233 @@ def test_tail_with_n_greater_than_total_rows():
     assert len(result) == 5
     # Tail wraps cyclically from the end
     assert_column_values(result, "id", ["002", "003", "001", "002", "003"])
+
+
+# --- Table.to_dict() ---
+
+
+class TestTableToDict:
+    def test_basic(self):
+        table = Table(
+            {
+                "id": Vector([1, 2, 3], ray_type=I64),
+                "score": Vector([95.5, 87.3, 92.1], ray_type=F64),
+            }
+        )
+        d = table.to_dict()
+        assert d == {"id": [1, 2, 3], "score": [95.5, 87.3, 92.1]}
+
+    def test_with_symbols(self):
+        table = Table(
+            {
+                "name": Vector(["alice", "bob"], ray_type=Symbol),
+                "age": Vector([25, 30], ray_type=I64),
+            }
+        )
+        d = table.to_dict()
+        assert d == {"name": ["alice", "bob"], "age": [25, 30]}
+
+    def test_single_column(self):
+        table = Table({"x": Vector([10, 20, 30], ray_type=I64)})
+        d = table.to_dict()
+        assert d == {"x": [10, 20, 30]}
+
+    def test_single_row(self):
+        table = Table(
+            {
+                "a": Vector([1], ray_type=I64),
+                "b": Vector([2.0], ray_type=F64),
+            }
+        )
+        d = table.to_dict()
+        assert d == {"a": [1], "b": [2.0]}
+
+
+# --- Table.to_numpy() ---
+
+
+class TestTableToNumpy:
+    def test_numeric_columns(self):
+        table = Table(
+            {
+                "a": Vector([1, 2, 3], ray_type=I64),
+                "b": Vector([4.0, 5.0, 6.0], ray_type=F64),
+            }
+        )
+        arr = table.to_numpy()
+        assert arr.shape == (3, 2)
+        assert arr.dtype == np.float64
+        np.testing.assert_array_equal(arr[:, 0], [1, 2, 3])
+        np.testing.assert_array_equal(arr[:, 1], [4.0, 5.0, 6.0])
+
+    def test_single_column(self):
+        table = Table({"x": Vector([10, 20, 30], ray_type=I64)})
+        arr = table.to_numpy()
+        assert arr.shape == (3, 1)
+        np.testing.assert_array_equal(arr[:, 0], [10, 20, 30])
+
+    def test_single_row(self):
+        table = Table(
+            {
+                "a": Vector([1], ray_type=I64),
+                "b": Vector([2], ray_type=I64),
+            }
+        )
+        arr = table.to_numpy()
+        assert arr.shape == (1, 2)
+
+    def test_mixed_types_coerced(self):
+        table = Table(
+            {
+                "name": Vector(["alice", "bob"], ray_type=Symbol),
+                "age": Vector([25, 30], ray_type=I64),
+            }
+        )
+        arr = table.to_numpy()
+        assert arr.shape == (2, 2)
+        # Mixed types coerce to string dtype
+        assert arr[0, 0] == "alice"
+        assert arr[0, 1] == "25"
+
+    def test_all_same_int_type(self):
+        table = Table(
+            {
+                "x": Vector([1, 2], ray_type=I64),
+                "y": Vector([3, 4], ray_type=I64),
+                "z": Vector([5, 6], ray_type=I64),
+            }
+        )
+        arr = table.to_numpy()
+        assert arr.dtype == np.int64
+        assert arr.shape == (2, 3)
+        np.testing.assert_array_equal(arr, [[1, 3, 5], [2, 4, 6]])
+
+
+class TestTableFromDict:
+    def test_from_numpy_arrays(self):
+        table = Table.from_dict(
+            {
+                "id": np.array([1, 2, 3], dtype=np.int64),
+                "score": np.array([95.5, 87.3, 92.1], dtype=np.float64),
+            }
+        )
+        assert_contains_columns(table, ["id", "score"])
+        assert_column_values(table, "id", [1, 2, 3])
+
+    def test_from_python_lists(self):
+        table = Table.from_dict(
+            {
+                "name": ["alice", "bob", "charlie"],
+                "age": [25, 30, 35],
+            }
+        )
+        assert_contains_columns(table, ["name", "age"])
+        assert_column_values(table, "name", ["alice", "bob", "charlie"])
+
+    def test_from_vectors(self):
+        table = Table.from_dict(
+            {
+                "x": Vector([10, 20, 30], ray_type=I64),
+                "y": Vector([1.0, 2.0, 3.0], ray_type=F64),
+            }
+        )
+        assert_contains_columns(table, ["x", "y"])
+        assert_column_values(table, "x", [10, 20, 30])
+
+    def test_mixed_sources(self):
+        table = Table.from_dict(
+            {
+                "np_col": np.array([1, 2, 3], dtype=np.int64),
+                "list_col": [10, 20, 30],
+                "vec_col": Vector([100, 200, 300], ray_type=I64),
+            }
+        )
+        assert_contains_columns(table, ["np_col", "list_col", "vec_col"])
+        assert_column_values(table, "np_col", [1, 2, 3])
+        assert_column_values(table, "list_col", [10, 20, 30])
+        assert_column_values(table, "vec_col", [100, 200, 300])
+
+    def test_from_numpy_string_array(self):
+        table = Table.from_dict(
+            {
+                "name": np.array(["alice", "bob", "charlie"]),
+                "age": np.array([25, 30, 35], dtype=np.int64),
+            }
+        )
+        assert_contains_columns(table, ["name", "age"])
+        assert_column_values(table, "name", ["alice", "bob", "charlie"])
+        assert_column_values(table, "age", [25, 30, 35])
+
+    def test_roundtrip_to_dict(self):
+        original = {
+            "a": np.array([1, 2, 3], dtype=np.int64),
+            "b": np.array([4.0, 5.0, 6.0], dtype=np.float64),
+        }
+        table = Table.from_dict(original)
+        result = table.to_dict()
+        assert result["a"] == [1, 2, 3]
+        np.testing.assert_array_almost_equal(result["b"], [4.0, 5.0, 6.0])
+
+    def test_roundtrip_to_numpy(self):
+        original = {
+            "a": np.array([1, 2, 3], dtype=np.int64),
+            "b": np.array([4, 5, 6], dtype=np.int64),
+        }
+        table = Table.from_dict(original)
+        arr = table.to_numpy()
+        assert arr.shape == (3, 2)
+        np.testing.assert_array_equal(arr[:, 0], [1, 2, 3])
+        np.testing.assert_array_equal(arr[:, 1], [4, 5, 6])
+
+    def test_single_column(self):
+        table = Table.from_dict({"x": np.array([10, 20], dtype=np.int64)})
+        assert_contains_columns(table, ["x"])
+        assert_column_values(table, "x", [10, 20])
+
+    def test_large_numpy(self):
+        n = 1_000_000
+        table = Table.from_dict(
+            {
+                "a": np.arange(n, dtype=np.int64),
+                "b": np.arange(n, dtype=np.float64),
+            }
+        )
+        assert len(table) == n
+        d = table.to_dict()
+        assert d["a"][0] == 0
+        assert d["a"][-1] == n - 1
+
+
+class TestTableConversionLarge:
+    """Performance tests with 20M+ row tables."""
+
+    N = 20_000_000
+
+    def test_to_dict_20m(self):
+        table = Table.from_dict(
+            {
+                "a": np.arange(self.N, dtype=np.int64),
+                "b": np.arange(self.N, dtype=np.float64),
+            }
+        )
+        d = table.to_dict()
+        assert len(d["a"]) == self.N
+        assert len(d["b"]) == self.N
+        assert d["a"][0] == 0
+        assert d["a"][-1] == self.N - 1
+        assert d["b"][0] == 0.0
+        assert d["b"][-1] == float(self.N - 1)
+
+    def test_to_numpy_20m(self):
+        table = Table.from_dict(
+            {
+                "a": np.arange(self.N, dtype=np.int64),
+                "b": np.arange(self.N, dtype=np.float64),
+            }
+        )
+        arr = table.to_numpy()
+        assert arr.shape == (self.N, 2)
+        assert arr[0, 0] == 0
+        assert arr[-1, 0] == self.N - 1
+        assert arr[0, 1] == 0.0
+        assert arr[-1, 1] == float(self.N - 1)

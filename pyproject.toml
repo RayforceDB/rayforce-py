@@ -10,6 +10,7 @@ readme = "README.md"
 authors = [{name = "Karim"}]
 license = {text = "MIT"}
 requires-python = ">=3.11"
+dependencies = ["numpy>=2.0.0"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

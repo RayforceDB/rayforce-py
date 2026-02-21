@@ -5,6 +5,31 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.6.0`**
+
+### New Features
+
+- **`Vector.from_numpy()` classmethod**: Create vectors from NumPy arrays via bulk memory copy. Supports numeric types (`int16`, `int32`, `int64`, `float64`, `uint8`, `bool`), string arrays, and temporal types (`datetime64` → `Timestamp`/`Date`, `timedelta64` → `Time`). Handles epoch adjustment between NumPy (1970-01-01) and Rayforce (2000-01-01) automatically.
+
+- **`Vector.to_numpy()` method**: Export vector data to a NumPy array via bulk memory copy.
+
+- **`Vector.to_list()` method**: Export vector data to a Python list via bulk memory copy from the underlying C buffer.
+
+- **`Table.from_dict()` classmethod**: Create tables from a dictionary of NumPy arrays, Python lists, or Vectors.
+
+- **`Table.to_dict()` method**: Export table data to a Python dictionary of lists via bulk memory copy.
+
+- **`Table.to_numpy()` method**: Export table data to a 2D NumPy array via bulk memory copy.
+
+- **`select("*", col=value)` fix**: Using `"*"` with computed columns in `select()` now correctly preserves all existing columns
+
+### Dependencies
+
+- NumPy (`>=2.0.0`) is now a required dependency.
+
+2026-02-21 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.0)**
+
+
 ## **`0.5.11`**
 
 ### New Features

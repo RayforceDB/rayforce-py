@@ -4,6 +4,8 @@ from collections.abc import Iterable
 from functools import wraps
 import typing as t
 
+import numpy as np
+
 from rayforce import _rayforce_c as r
 from rayforce import errors, utils
 from rayforce.ffi import FFI
@@ -238,6 +240,24 @@ class TableInitMixin:
     @classmethod
     def from_ptr(cls, ptr: r.RayObject) -> t.Self:
         return cls(ptr)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, t.Any]) -> t.Self:
+        import numpy as np
+
+        columns: dict[str, Vector] = {}
+        for name, values in data.items():
+            if isinstance(values, Vector):
+                columns[name] = values
+            elif isinstance(values, np.ndarray):
+                columns[name] = Vector.from_numpy(values)
+            elif isinstance(values, list):
+                columns[name] = Vector(items=values)
+            else:
+                raise errors.RayforceInitError(
+                    f"Column '{name}': expected Vector, numpy array, or list, got {type(values).__name__}"
+                )
+        return cls(columns)
 
     @classmethod
     def from_csv(cls, column_types: list[RayObject], path: str) -> t.Self:
@@ -487,6 +507,21 @@ class TableValueAccessorMixin:
                 select_args[col] = Column(col)
 
         return t.cast("Table", self).select(**select_args).execute()
+
+    @DestructiveOperationHandler()
+    def to_dict(self) -> dict[str, list]:
+        vals = self.values()
+        return {
+            name: vals[i].to_list()
+            for i, name in enumerate(
+                [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+            )
+        }
+
+    @DestructiveOperationHandler()
+    def to_numpy(self) -> t.Any:
+        vals = self.values()
+        return np.column_stack([vals[i].to_numpy() for i in range(len(vals))])
 
 
 class TableReprMixin:

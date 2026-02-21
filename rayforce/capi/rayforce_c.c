@@ -159,6 +159,8 @@ static PyMethodDef rayforce_methods[] = {
      METH_VARARGS,
      "Create a new vector object from PyArrow Array (zero-copy Arrow buffer "
      "access)"},
+    {"init_vector_from_raw_buffer", raypy_init_vector_from_raw_buffer,
+     METH_VARARGS, "Create a new vector from raw buffer via bulk memcpy"},
     {"read_i16", raypy_read_i16, METH_VARARGS, "Read i16 value from object"},
     {"read_i32", raypy_read_i32, METH_VARARGS, "Read i32 value from object"},
     {"read_i64", raypy_read_i64, METH_VARARGS, "Read i64 value from object"},
@@ -222,6 +224,8 @@ static PyMethodDef rayforce_methods[] = {
      "Deserialize binary format to RayObject"},
     {"read_u8_vector", raypy_read_u8_vector, METH_VARARGS,
      "Read U8 vector as bytes"},
+    {"read_vector_raw", raypy_read_vector_raw, METH_VARARGS,
+     "Read numeric vector as raw bytes buffer"},
 
     {NULL, NULL, 0, NULL}};
 

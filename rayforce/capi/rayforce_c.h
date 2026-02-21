@@ -117,6 +117,7 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args);
 PyObject *raypy_init_dict(PyObject *self, PyObject *args);
 PyObject *raypy_init_vector(PyObject *self, PyObject *args);
 PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args);
+PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args);
 PyObject *raypy_read_i16(PyObject *self, PyObject *args);
 PyObject *raypy_read_i32(PyObject *self, PyObject *args);
 PyObject *raypy_read_i64(PyObject *self, PyObject *args);
@@ -164,5 +165,6 @@ PyObject *raypy_runtime_run(PyObject *self, PyObject *args);
 PyObject *raypy_ser_obj(PyObject *self, PyObject *args);
 PyObject *raypy_de_obj(PyObject *self, PyObject *args);
 PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args);
+PyObject *raypy_read_vector_raw(PyObject *self, PyObject *args);
 
 #endif

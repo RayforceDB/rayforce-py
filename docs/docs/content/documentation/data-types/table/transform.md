@@ -2,6 +2,35 @@
 
 Rayforce-Py provides methods to transform [:octicons-table-24: Tables](overview.md) by modifying their structure.
 
+## Create from NumPy / Lists
+
+Use `Table.from_dict()` to create a table from a dictionary of Vectors, NumPy arrays or Python lists:
+
+```python
+>>> import numpy as np
+>>> from rayforce import Table, Vector, I64, F64
+
+>>> table = Table.from_dict({
+    "id": np.array([1, 2, 3], dtype=np.int64),
+    "score": np.array([95.5, 87.3, 92.1], dtype=np.float64),
+})
+>>> table
+Table(columns=['id', 'score'])
+
+>>> Table.from_dict({
+    "name": ["alice", "bob", "charlie"],
+    "age": [25, 30, 35],
+})
+Table(columns=['name', 'age'])
+
+>>> Table.from_dict({
+    "np_col": np.arange(3, dtype=np.int64),
+    "vec_col": Vector([10, 20, 30], ray_type=I64),
+    "list_col": [1.0, 2.0, 3.0],
+})
+Table(columns=['np_col', 'vec_col', 'list_col'])
+```
+
 ## Add Columns
 
 Use `select("*", col=value)` to add new columns to a table while keeping all existing ones. The `"*"` selects all current columns, and keyword arguments append new ones:
@@ -113,3 +142,43 @@ Common type conversions include:
 >>> table.cast("price", I64)  # Truncates to 99, 149, 299
 Table(columns=['price'])
 ```
+
+## Export to Python and NumPy
+
+### `to_dict()`
+
+Returns a dictionary mapping column names to Python lists. Uses bulk memory copy for numeric columns.
+
+```python
+>>> from rayforce import Table, Vector, I64, F64, Symbol
+
+>>> table = Table({
+    "name": Vector(["alice", "bob", "charlie"], ray_type=Symbol),
+    "age": Vector([25, 30, 35], ray_type=I64),
+    "score": Vector([95.5, 87.3, 92.1], ray_type=F64),
+})
+
+>>> table.to_dict()
+{'name': ['alice', 'bob', 'charlie'], 'age': [25, 30, 35], 'score': [95.5, 87.3, 92.1]}
+```
+
+### `to_numpy()`
+
+Returns a 2D NumPy array (rows x columns), similar to `pandas.DataFrame.values`. Uses bulk memory copy for numeric columns.
+
+```python
+>>> import numpy as np
+
+>>> table = Table({
+    "age": Vector([25, 30, 35], ray_type=I64),
+    "score": Vector([95.5, 87.3, 92.1], ray_type=F64),
+})
+
+>>> table.to_numpy()
+array([[25. , 95.5],
+       [30. , 87.3],
+       [35. , 92.1]])
+```
+
+!!! note ""
+    When all columns are numeric, the result has a numeric dtype. When mixed with non-numeric columns (e.g. Symbol), NumPy will coerce all values to a common type (typically string).

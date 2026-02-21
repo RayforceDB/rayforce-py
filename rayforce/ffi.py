@@ -144,6 +144,11 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def init_vector_from_raw_buffer(type_code: int, length: int, buffer: t.Any) -> r.RayObject:
+        return r.init_vector_from_raw_buffer(type_code, length, buffer)
+
+    @staticmethod
+    @errors.error_handler
     def init_list(item: list[t.Any]) -> r.RayObject:
         return r.init_list(item)
 
@@ -319,6 +324,11 @@ class FFI:
     def read_u8_vector(obj: r.RayObject) -> bytes:
         """Read U8 vector as Python bytes."""
         return r.read_u8_vector(obj)
+
+    @staticmethod
+    @errors.error_handler
+    def read_vector_raw(obj: r.RayObject) -> bytes:
+        return r.read_vector_raw(obj)
 
     @staticmethod
     @errors.error_handler

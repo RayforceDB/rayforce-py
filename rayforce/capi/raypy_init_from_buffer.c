@@ -168,6 +168,116 @@ PyObject *raypy_init_vector_from_buffer(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
+// Bulk memcpy from raw buffer (numpy arrays, bytes, etc.)
+PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  int type_code;
+  Py_ssize_t length;
+  PyObject *buffer_obj;
+
+  if (!PyArg_ParseTuple(args, "inO", &type_code, &length, &buffer_obj))
+    return NULL;
+
+  if (length < 0) {
+    PyErr_SetString(PyExc_ValueError, "length must be non-negative");
+    return NULL;
+  }
+
+  if (length == 0) {
+    int vector_type_code = type_code < 0 ? -type_code : type_code;
+    obj_p ray_obj = vector(vector_type_code, 0);
+    if (ray_obj == NULL) {
+      PyErr_SetString(PyExc_RuntimeError, "Failed to create empty vector");
+      return NULL;
+    }
+    return raypy_wrap_ray_object(ray_obj);
+  }
+
+  Py_buffer buffer_view;
+  if (PyObject_GetBuffer(buffer_obj, &buffer_view, PyBUF_SIMPLE) < 0) {
+    return NULL;
+  }
+
+  int vector_type_code = type_code < 0 ? -type_code : type_code;
+  size_t element_size;
+
+  switch (vector_type_code) {
+  case TYPE_B8:
+  case TYPE_U8:
+    element_size = 1;
+    break;
+  case TYPE_I16:
+    element_size = 2;
+    break;
+  case TYPE_I32:
+  case TYPE_DATE:
+  case TYPE_TIME:
+    element_size = 4;
+    break;
+  case TYPE_I64:
+  case TYPE_F64:
+  case TYPE_TIMESTAMP:
+    element_size = 8;
+    break;
+  default:
+    PyBuffer_Release(&buffer_view);
+    PyErr_SetString(PyExc_ValueError,
+                    "Unsupported type code for raw buffer init");
+    return NULL;
+  }
+
+  size_t expected_size = (size_t)length * element_size;
+  if ((size_t)buffer_view.len < expected_size) {
+    PyBuffer_Release(&buffer_view);
+    PyErr_SetString(PyExc_ValueError, "Buffer too small for given length");
+    return NULL;
+  }
+
+  obj_p ray_obj = vector(vector_type_code, (u64_t)length);
+  if (ray_obj == NULL) {
+    PyBuffer_Release(&buffer_view);
+    PyErr_SetString(PyExc_RuntimeError, "Failed to create vector");
+    return NULL;
+  }
+
+  void *dst_data = NULL;
+  switch (vector_type_code) {
+  case TYPE_B8:
+    dst_data = AS_B8(ray_obj);
+    break;
+  case TYPE_U8:
+    dst_data = AS_U8(ray_obj);
+    break;
+  case TYPE_I16:
+    dst_data = AS_I16(ray_obj);
+    break;
+  case TYPE_I32:
+  case TYPE_DATE:
+  case TYPE_TIME:
+    dst_data = AS_I32(ray_obj);
+    break;
+  case TYPE_I64:
+  case TYPE_TIMESTAMP:
+    dst_data = AS_I64(ray_obj);
+    break;
+  case TYPE_F64:
+    dst_data = AS_F64(ray_obj);
+    break;
+  default:
+    drop_obj(ray_obj);
+    PyBuffer_Release(&buffer_view);
+    PyErr_SetString(PyExc_ValueError, "Unsupported type code for bulk copy");
+    return NULL;
+  }
+
+  memcpy(dst_data, buffer_view.buf, expected_size);
+
+  PyBuffer_Release(&buffer_view);
+  return raypy_wrap_ray_object(ray_obj);
+}
+
 // Zero-copy API for Arrow buffers
 PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
   (void)self;
