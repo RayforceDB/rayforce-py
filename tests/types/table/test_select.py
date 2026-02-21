@@ -423,3 +423,51 @@ def test_shift_tz_original_table_unchanged():
     ts_col = table["ts"]
     assert ts_col[0].value == dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC)
     assert ts_col[1].value == dt.datetime(2025, 6, 15, 18, 0, 0, tzinfo=dt.UTC)
+
+
+def test_select_star_with_new_vector_column():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "id": Vector(items=[1, 2, 3], ray_type=I64),
+        }
+    )
+    age = Vector(items=[20, 42, 93], ray_type=I64)
+
+    result = table.select("*", age=age).execute()
+
+    assert_columns(result, ["name", "id", "age"])
+    assert_table_shape(result, rows=3, cols=3)
+    assert_column_values(result, "name", ["alice", "bob", "charlie"])
+    assert_column_values(result, "id", [1, 2, 3])
+    assert_column_values(result, "age", [20, 42, 93])
+
+
+def test_select_star_with_replaced_column():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "score": Vector(items=[10, 20], ray_type=I64),
+        }
+    )
+    new_scores = Vector(items=[99, 100], ray_type=I64)
+
+    result = table.select("*", score=new_scores).execute()
+
+    assert_columns(result, ["name", "score"])
+    assert_table_shape(result, rows=2, cols=2)
+    assert_column_values(result, "score", [99, 100])
+
+
+def test_select_star_with_expression():
+    table = Table(
+        {
+            "price": Vector(items=[10, 20, 30], ray_type=I64),
+            "qty": Vector(items=[2, 3, 1], ray_type=I64),
+        }
+    )
+
+    result = table.select("*", total=Column("price") * Column("qty")).execute()
+
+    assert_columns(result, ["price", "qty", "total"])
+    assert_column_values(result, "total", [20, 60, 30])

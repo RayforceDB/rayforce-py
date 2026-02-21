@@ -2,6 +2,38 @@
 
 Rayforce-Py provides methods to transform [:octicons-table-24: Tables](overview.md) by modifying their structure.
 
+## Add Columns
+
+Use `select("*", col=value)` to add new columns to a table while keeping all existing ones. The `"*"` selects all current columns, and keyword arguments append new ones:
+
+```python
+>>> from rayforce import Table, Vector, Column, I64, Symbol
+
+>>> table = Table({
+    "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+    "id": Vector(items=[1, 2, 3], ray_type=I64),
+})
+
+>>> age = Vector(items=[20, 42, 93], ray_type=I64)
+>>> table.select("*", age=age).execute()
+Table(columns=['name', 'id', 'age'])
+```
+
+You can also add computed columns using expressions:
+
+```python
+>>> table.select("*", id_doubled=Column("id") * 2).execute()
+Table(columns=['name', 'id', 'id_doubled'])
+```
+
+If the keyword argument matches an existing column name, it replaces that column:
+
+```python
+>>> new_ids = Vector(items=[10, 20, 30], ray_type=I64)
+>>> table.select("*", id=new_ids).execute()
+Table(columns=['name', 'id'])
+```
+
 ## Drop Columns
 
 The `drop()` method removes one or more columns from a table:

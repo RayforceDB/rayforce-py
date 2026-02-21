@@ -758,7 +758,13 @@ class SelectQuery(IPCQueryMixin):
         attributes = {}
         if self._select_cols:
             cols, computed = self._select_cols
-            attributes = {col: col for col in cols if col != "*"}
+            if "*" in cols and computed:
+                current_cols = [
+                    c.value if hasattr(c, "value") else str(c) for c in self.table.columns()
+                ]
+                attributes = {col: col for col in current_cols if col not in computed}
+            else:
+                attributes = {col: col for col in cols if col != "*"}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
