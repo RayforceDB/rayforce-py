@@ -8,7 +8,6 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PYPROJECT="${PROJECT_ROOT}/pyproject.toml"
 SETUP_PY="${PROJECT_ROOT}/setup.py"
 INIT_PY="${PROJECT_ROOT}/rayforce/__init__.py"
-CHANGELOG="${PROJECT_ROOT}/docs/docs/content/CHANGELOG.md"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -78,81 +77,6 @@ ok "rayforce/__init__.py"
 
 echo ""
 
-# --- Changelog ---
-CHANGELOG_ENTRY=""
-
-read -r -p "$(echo -e "${CYAN}${BOLD}::${NC} Open editor for changelog? [Y/n] ")" EDIT_CHANGELOG
-EDIT_CHANGELOG=${EDIT_CHANGELOG:-y}
-
-if [[ "$EDIT_CHANGELOG" =~ ^[Yy]$ ]]; then
-  TMPFILE=$(mktemp /tmp/rayforce-changelog-XXXXXX.md)
-
-  cat > "$TMPFILE" << 'TEMPLATE'
-### Bug Fixes
-
--
-
-### New Features
-
--
-
-### Breaking Changes
-
--
-TEMPLATE
-
-  # Open editor
-  ${EDITOR:-vim} "$TMPFILE"
-
-  # Read back content, strip sections where the only bullet is a bare "-"
-  CHANGELOG_ENTRY=$(awk '
-    BEGIN { buf=""; header="" }
-    /^### / {
-      if (header != "" && buf !~ /^[[:space:]]*-[[:space:]]*$/) {
-        printf "%s\n%s", header, buf
-      }
-      header = $0 "\n"
-      buf = ""
-      next
-    }
-    { buf = buf $0 "\n" }
-    END {
-      if (header != "" && buf !~ /^[[:space:]]*-[[:space:]]*$/) {
-        printf "%s\n%s", header, buf
-      }
-    }
-  ' "$TMPFILE" | sed '/^$/N;/^\n$/d')
-
-  rm -f "$TMPFILE"
-
-  if [ -z "$CHANGELOG_ENTRY" ]; then
-    warn "Changelog entry is empty, skipping changelog update"
-  fi
-fi
-
-if [ -n "$CHANGELOG_ENTRY" ]; then
-  TODAY=$(date +%Y-%m-%d)
-
-  # Build the full changelog block
-  NEW_BLOCK="
-## **\`${VERSION}\`**
-
-${CHANGELOG_ENTRY}
-
-${TODAY} | **[🔗 PyPI](https://pypi.org/project/rayforce-py/${VERSION}/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/${VERSION})**
-
-"
-
-  # Insert after line 8 (after the Zulip note block + blank line)
-  HEADER=$(head -n 8 "$CHANGELOG")
-  BODY=$(tail -n +9 "$CHANGELOG")
-
-  printf '%s\n%s%s\n' "$HEADER" "$NEW_BLOCK" "$BODY" > "$CHANGELOG"
-
-  ok "CHANGELOG.md"
-  echo ""
-fi
-
 # --- Summary ---
 info "Changes to be committed:"
 echo ""
@@ -169,7 +93,7 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
 fi
 
 # --- Git commit & tag ---
-git add "$PYPROJECT" "$SETUP_PY" "$INIT_PY" "$CHANGELOG"
+git add "$PYPROJECT" "$SETUP_PY" "$INIT_PY"
 git commit -m "release: ${VERSION}"
 git tag "$VERSION"
 
