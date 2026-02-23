@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import struct
 import typing as t
+import uuid
 
 import numpy as np
 
@@ -22,6 +23,7 @@ from rayforce.types.base import (
 )
 from rayforce.types.containers.list import List
 from rayforce.types.operators import Operation
+from rayforce.types.scalars.numeric.unsigned import U8
 from rayforce.types.scalars.other.symbol import Symbol
 
 _RAW_FORMATS: dict[int, tuple[str, int]] = {
@@ -43,9 +45,19 @@ _NUMPY_TO_RAY: dict[str, int] = {
     "int64": r.TYPE_I64,
     "float64": r.TYPE_F64,
 }
+# Auto-widen numpy dtypes that have no direct rayforce equivalent
+_NUMPY_WIDEN: dict[str, str] = {
+    "float16": "float64",
+    "float32": "float64",
+    "int8": "int16",
+    "uint16": "int32",
+    "uint32": "int64",
+}
 # Epoch offset: rayforce uses 2000-01-01, numpy uses 1970-01-01
 _EPOCH_OFFSET_DAYS = 10_957  # (2000-01-01 - 1970-01-01).days
 _EPOCH_OFFSET_NS = _EPOCH_OFFSET_DAYS * 86_400 * 1_000_000_000
+_I32_NULL = np.int32(np.iinfo(np.int32).min)  # -2147483648
+_I64_NULL = np.int64(np.iinfo(np.int64).min)  # iNaT
 
 _NUMPY_DTYPES: dict[int, t.Any] = {
     r.TYPE_U8: np.uint8,
@@ -117,6 +129,13 @@ class Vector(
         if idx < 0 or idx >= len(self):
             raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
+        # The C-level at_idx returns B8 scalars for U8 vector elements
+        # because both are 1-byte types and the value loses precision (bool).
+        # Read the correct byte value directly from the raw buffer instead.
+        if FFI.get_obj_type(self.ptr) == r.TYPE_U8:
+            raw = FFI.read_vector_raw(self.ptr)
+            return U8(raw[idx])
+
         return utils.ray_to_python(FFI.at_idx(self.ptr, idx))
 
     def __setitem__(self, idx: int, value: t.Any) -> None:
@@ -125,7 +144,25 @@ class Vector(
         if not 0 <= idx < len(self):
             raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
-        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=utils.python_to_ray(value))
+        # Coerce plain Python values to the vector's element type so that
+        # insert_obj receives a scalar whose type matches the vector.
+        # Without this, e.g. inserting an int (I64) into an I16 vector
+        # corrupts the vector type at the C level.
+        from rayforce.types.null import Null
+        from rayforce.types.registry import TypeRegistry
+
+        vec_type = FFI.get_obj_type(self.ptr)
+        scalar_class = TypeRegistry.get(-vec_type)
+        if (
+            scalar_class is not None
+            and scalar_class is not Null
+            and not isinstance(value, RayObject)
+        ):
+            ptr = scalar_class(value).ptr  # type: ignore[call-arg]
+        else:
+            ptr = utils.python_to_ray(value)
+
+        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=ptr)
 
     def __iter__(self) -> t.Iterator[t.Any]:
         for i in range(len(self)):
@@ -145,10 +182,29 @@ class Vector(
             return np.array(self.to_list())
         raw = np.frombuffer(FFI.read_vector_raw(self.ptr), dtype=dtype)
         if type_code == r.TYPE_TIMESTAMP:
+            null_mask = raw == _I64_NULL
+            if null_mask.any():
+                adjusted = raw.copy()
+                adjusted[null_mask] = 0
+                result = (adjusted + _EPOCH_OFFSET_NS).view("datetime64[ns]").copy()
+                result[null_mask] = np.datetime64("NaT")
+                return result
             return (raw + _EPOCH_OFFSET_NS).view("datetime64[ns]")
         if type_code == r.TYPE_DATE:
+            null_mask = raw == _I32_NULL
+            if null_mask.any():
+                safe = raw.astype(np.int64)
+                safe[null_mask] = 0
+                result = (safe + _EPOCH_OFFSET_DAYS).astype("datetime64[D]")
+                result[null_mask] = np.datetime64("NaT")
+                return result
             return (raw.astype(np.int64) + _EPOCH_OFFSET_DAYS).astype("datetime64[D]")
         if type_code == r.TYPE_TIME:
+            null_mask = raw == _I32_NULL
+            if null_mask.any():
+                result = raw.astype("timedelta64[ms]").copy()
+                result[null_mask] = np.timedelta64("NaT")
+                return result
             return raw.astype("timedelta64[ms]")
         return raw
 
@@ -157,25 +213,44 @@ class Vector(
         if not isinstance(arr, np.ndarray):
             raise errors.RayforceInitError("from_numpy requires a numpy ndarray")
 
+        if arr.ndim != 1:
+            raise errors.RayforceInitError(
+                f"from_numpy requires a 1-D array, got {arr.ndim}-D array with shape {arr.shape}"
+            )
+
         arr = np.ascontiguousarray(arr)
 
-        if ray_type is not None:
+        if ray_type is not None and arr.dtype.kind not in ("M", "m"):
             type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
             return cls(ptr=FFI.init_vector_from_raw_buffer(type_code, len(arr), arr.data))
 
         if (maybe_code := _NUMPY_TO_RAY.get(arr.dtype.name)) is not None:
             return cls(ptr=FFI.init_vector_from_raw_buffer(maybe_code, len(arr), arr.data))
 
+        # Auto-widen common dtypes (float32 → float64, int8 → int16)
+        if (widen_to := _NUMPY_WIDEN.get(arr.dtype.name)) is not None:
+            arr = arr.astype(widen_to)
+            code = _NUMPY_TO_RAY[widen_to]
+            return cls(ptr=FFI.init_vector_from_raw_buffer(code, len(arr), arr.data))
+
         # datetime64 -> Timestamp or Date
         if arr.dtype.kind == "M":
             resolution = np.datetime_data(arr.dtype)[0]
             if resolution == "D":
-                int_arr = (arr.view(np.int64) - _EPOCH_OFFSET_DAYS).astype(np.int32)
+                raw_i64 = arr.view(np.int64)
+                nat_mask = raw_i64 == _I64_NULL
+                int_arr = (raw_i64 - _EPOCH_OFFSET_DAYS).astype(np.int32)
+                if nat_mask.any():
+                    int_arr[nat_mask] = _I32_NULL
                 return cls(
                     ptr=FFI.init_vector_from_raw_buffer(r.TYPE_DATE, len(int_arr), int_arr.data)
                 )
             # Any other resolution -> convert to ns -> Timestamp
-            ns_arr = arr.astype("datetime64[ns]").view(np.int64) - _EPOCH_OFFSET_NS
+            ns_view = arr.astype("datetime64[ns]").view(np.int64)
+            nat_mask = ns_view == _I64_NULL
+            ns_arr = ns_view.copy()
+            ns_arr[~nat_mask] -= _EPOCH_OFFSET_NS
+            # NaT positions keep int64 min (= rayforce null sentinel)
             return cls(
                 ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIMESTAMP, len(ns_arr), ns_arr.data)
             )
@@ -183,12 +258,24 @@ class Vector(
         # timedelta64 -> Time (milliseconds since midnight)
         if arr.dtype.kind == "m":
             arr_ms = arr.astype("timedelta64[ms]")
-            int_arr = arr_ms.view(np.int64).astype(np.int32)
+            raw_i64 = arr_ms.view(np.int64)
+            nat_mask = raw_i64 == _I64_NULL
+            int_arr = raw_i64.astype(np.int32)
+            if nat_mask.any():
+                int_arr[nat_mask] = _I32_NULL
             return cls(ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIME, len(int_arr), int_arr.data))
 
         # String/object arrays
         if arr.dtype.kind in ("U", "S", "O"):
-            return cls(items=arr.tolist(), ray_type=Symbol)
+            items = arr.tolist()
+            if arr.dtype.kind == "S":
+                items = [x.decode() if isinstance(x, bytes) else x for x in items]
+            # Detect UUID objects in object arrays → GUID vector
+            if arr.dtype.kind == "O" and items and isinstance(items[0], uuid.UUID):
+                from rayforce.types.scalars.other.guid import GUID
+
+                return cls(items=items, ray_type=GUID)
+            return cls(items=items, ray_type=Symbol)
 
         raise errors.RayforceInitError(
             f"Cannot infer ray_type from numpy dtype '{arr.dtype.name}'. "

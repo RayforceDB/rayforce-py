@@ -16,13 +16,23 @@ All notable changes to Rayforce-Py will be documented in this file.
     - **Slicing**: `table[1:3]`, `table[:5]`, `table[-2:]` — row slicing backed by the C-level `TAKE` operation.
     - **Index list**: `table[[0, 2, 5]]` — select specific rows by position.
 
+- **`Vector.from_numpy()` auto-widening**: Unsupported numpy dtypes are now automatically widened to the nearest supported type: `float32`/`float16` → `F64`, `int8` → `I16`, `uint16` → `I32`, `uint32` → `I64`.
+
+- **`Vector.from_numpy()` bytes and UUID support**: Byte string arrays (`dtype='S'`) are automatically decoded to Symbol vectors. Object arrays of `uuid.UUID` values are detected and converted to GUID vectors.
+
+- **NaT preservation**: `NaT` (Not-a-Time) values in numpy `datetime64` and `timedelta64` arrays now survive round-trips through `Vector.from_numpy()` and `Vector.to_numpy()`.
+
 ### Bug Fixes
 
 - **`Table.to_numpy()` with Timestamp columns**: Fixed `DTypePromotionError` when calling `to_numpy()` on tables containing a mix of incompatible column types (e.g., integers, strings, and timestamps). Mixed-type tables now gracefully fall back to `object` dtype.
 
 - **Filtering F64 by distinct** - fixed
 
-2026-02-23 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.1)**
+- **`Vector.__getitem__` for U8 vectors**: Fixed U8 vector elements being returned as `B8(True/False)` instead of `U8(value)`. Both types are 1-byte, causing the C-level `at_idx` to misinterpret the type.
+
+- **`Vector.from_numpy()` with explicit `ray_type` for temporal arrays**: Fixed `ValueError: cannot include dtype 'M' in a buffer` when passing `ray_type=Timestamp`, `ray_type=Date`, or `ray_type=Time` with datetime64/timedelta64 arrays.
+
+2026-03-03 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.1)**
 
 
 ## **`0.6.0`**
