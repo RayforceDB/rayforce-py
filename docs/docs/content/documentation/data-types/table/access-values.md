@@ -35,7 +35,47 @@ Vector([I64(29), I64(34), I64(41)])
 
 ```python
 >>> table[["id", "name"]]
-Table(columns=['id', 'name'])
+Table[Symbol('id'), Symbol('name')]
+```
+
+**Single row by index** - returns a [:material-code-braces: Dict](../dict.md):
+
+```python
+>>> table[0]
+Dict({'id': '001', 'name': 'alice', 'age': 29})
+
+>>> table[-1]  # last row
+Dict({'id': '003', 'name': 'charlie', 'age': 41})
+```
+
+**Row slicing** - returns a new [:octicons-table-24: Table](overview.md). Uses the C-level `TAKE` operation:
+
+```python
+>>> table[1:3]   # rows at index 1 and 2
+>>> table[:2]    # first 2 rows
+>>> table[-2:]   # last 2 rows
+>>> table[2:]    # from index 2 to end
+```
+
+**Filter by expression** - returns a new [:octicons-table-24: Table](overview.md) with matching rows:
+
+```python
+>>> from rayforce import Column
+
+>>> table[Column("age") > 35]
+```
+
+Expressions can be combined with `&` (and) and `|` (or):
+
+```python
+>>> table[(Column("age") > 30) & (Column("name") == "charlie")]
+>>> table[(Column("age") < 30) | (Column("age") > 40)]
+```
+
+**Select rows by index list** - returns a new [:octicons-table-24: Table](overview.md):
+
+```python
+>>> table[[0, 2]]  # rows at index 0 and 2
 ```
 
 ## Access a Specific Column

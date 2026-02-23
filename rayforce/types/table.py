@@ -403,13 +403,70 @@ class TableValueAccessorMixin:
         ).value
 
     @DestructiveOperationHandler()
-    def __getitem__(self, key: str | list[str]) -> Vector | List | Table:
+    def __getitem__(
+        self,
+        key: str | int | slice | list | Expression | Column,
+    ) -> Vector | List | Table | Dict:
         if isinstance(key, str):
             return self.at_column(key)
+
+        if isinstance(key, Expression):
+            return t.cast("Table", self).select("*").where(key).execute()
+
+        if isinstance(key, int):
+            return self.at_row(key)
+
+        if isinstance(key, slice):
+            if key.step is not None:
+                raise errors.RayforceIndexError("Slice step is not supported")
+
+            start, stop = key.start, key.stop
+
+            # table[-n:] → tail
+            if start is not None and start < 0 and stop is None:
+                return t.cast("Table", self).take(start)
+
+            # table[:n] → head
+            if start in (None, 0) and stop is not None and stop > 0:
+                return t.cast("Table", self).take(stop)
+
+            # table[a:b] → take with offset
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = len(self)
+            if start < 0 or stop < 0:
+                length = len(self)
+                if start < 0:
+                    start = max(length + start, 0)
+                if stop < 0:
+                    stop = max(length + stop, 0)
+
+            return t.cast("Table", self).take(max(stop - start, 0), offset=start)
+
+        # List indexing: list[str] → column select, list[int] → row select
         if isinstance(key, list):
-            return t.cast("Table", self).select(*key).execute()
-        raise errors.RayforceConversionError(
-            f"Key must be a string or list of strings, got {type(key).__name__}"
+            if not key:
+                raise errors.RayforceIndexError("Cannot index with an empty list")
+            if isinstance(key[0], str):
+                return t.cast("Table", self).select(*key).execute()
+            if isinstance(key[0], int):
+                col_names = self.columns()
+                col_values = self.values()
+                new_data: dict[str, Vector] = {}
+                for i, name_sym in enumerate(col_names):
+                    name = name_sym.value if hasattr(name_sym, "value") else str(name_sym)
+                    new_data[name] = utils.eval_obj(
+                        List([Operation.AT, col_values[i], Vector(items=key, ray_type=I64)])
+                    )
+                return Table(new_data)
+            raise errors.RayforceTypeError(
+                f"List index elements must be str or int, got {type(key[0]).__name__}"
+            )
+
+        raise errors.RayforceTypeError(
+            f"Invalid index type: {type(key).__name__}. "
+            f"Use str, int, slice, list, Expression, Column, or boolean Vector."
         )
 
     @DestructiveOperationHandler()

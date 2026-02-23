@@ -5,6 +5,20 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.6.1`**
+
+### New Features
+
+- **Fancy indexing for Tables**: `Table.__getitem__` now supports multiple indexing modes beyond column access:
+
+    - **Expression filter**: `table[Column("age") > 35]` — filter rows by condition. Supports `&` (and) and `|` (or) for combining expressions.
+    - **Integer row access**: `table[0]`, `table[-1]` — access a single row by index, returns a Dict.
+    - **Slicing**: `table[1:3]`, `table[:5]`, `table[-2:]` — row slicing backed by the C-level `TAKE` operation.
+    - **Index list**: `table[[0, 2, 5]]` — select specific rows by position.
+
+2026-02-23 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.1)**
+
+
 ## **`0.6.0`**
 
 ### New Features

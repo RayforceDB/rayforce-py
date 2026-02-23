@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from rayforce import errors
-from rayforce.types import Dict, Table, Vector
+from rayforce.types import Column, Dict, Expression, Table, Vector
 from rayforce.types.scalars import B8, F64, I64, Date, Symbol, Time, Timestamp
 from tests.helpers.assertions import (
     assert_column_values,
@@ -460,6 +460,322 @@ def test_getitem_multiple_columns():
     assert Symbol("id") in columns
     assert Symbol("name") in columns
     assert Symbol("age") not in columns
+
+
+def test_getitem_expression_filter():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+        }
+    )
+
+    result = table[Column("age") > 35]
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    assert_column_values(result, "name", ["charlie", "dana"])
+    assert_column_values(result, "age", [41, 38])
+
+
+def test_getitem_expression_equals():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "dept": Vector(items=["eng", "sales", "eng"], ray_type=Symbol),
+        }
+    )
+
+    result = table[Column("dept") == "eng"]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["alice", "charlie"])
+
+
+def test_getitem_expression_or():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+        }
+    )
+
+    result = table[(Column("age") < 30) | (Column("age") > 40)]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["alice", "charlie"])
+
+
+def test_getitem_combined_expression():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+            "dept": Vector(items=["eng", "sales", "eng", "sales"], ray_type=Symbol),
+        }
+    )
+
+    result = table[(Column("age") > 30) & (Column("dept") == "eng")]
+    assert isinstance(result, Table)
+    assert len(result) == 1
+    assert_column_values(result, "name", ["charlie"])
+
+
+def test_getitem_expression_no_match():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        }
+    )
+
+    result = table[Column("age") > 100]
+    assert isinstance(result, Table)
+    assert len(result) == 0
+
+
+def test_getitem_expression_all_match():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+            "age": Vector(items=[29, 34], ray_type=I64),
+        }
+    )
+
+    result = table[Column("age") > 0]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["alice", "bob"])
+
+
+def test_getitem_int_row():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41], ray_type=I64),
+        }
+    )
+
+    first = table[0]
+    assert isinstance(first, Dict)
+    assert first["name"] == "alice"
+    assert first["age"] == 29
+
+    middle = table[1]
+    assert middle["name"] == "bob"
+
+    last = table[-1]
+    assert isinstance(last, Dict)
+    assert last["name"] == "charlie"
+    assert last["age"] == 41
+
+
+def test_getitem_int_row_second_to_last():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    assert table[-2]["name"] == "bob"
+
+
+def test_getitem_slice_start_stop():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38, 25], ray_type=I64),
+        }
+    )
+
+    result = table[1:3]
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    assert_column_values(result, "name", ["bob", "charlie"])
+    assert_column_values(result, "age", [34, 41])
+
+
+def test_getitem_slice_head():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+        }
+    )
+
+    result = table[:2]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["alice", "bob"])
+
+    result = table[:0]
+    assert len(result) == 0
+
+
+def test_getitem_slice_tail():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+        }
+    )
+
+    result = table[-2:]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["dana", "eve"])
+
+    result = table[-1:]
+    assert len(result) == 1
+    assert_column_values(result, "name", ["eve"])
+
+
+def test_getitem_slice_full():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    result = table[:]
+    assert len(result) == 3
+    assert_column_values(result, "name", ["alice", "bob", "charlie"])
+
+
+def test_getitem_slice_from_offset_to_end():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+        }
+    )
+
+    result = table[2:]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["charlie", "dana"])
+
+
+def test_getitem_slice_negative_stop():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana", "eve"], ray_type=Symbol),
+        }
+    )
+
+    # table[1:-1] → middle three
+    result = table[1:-1]
+    assert len(result) == 3
+    assert_column_values(result, "name", ["bob", "charlie", "dana"])
+
+
+def test_getitem_slice_beyond_length():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+
+    # take pads when n > length, matching C-level TAKE semantics
+    result = table[:100]
+    assert len(result) >= 2
+
+
+def test_getitem_slice_empty_range():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    result = table[2:1]
+    assert len(result) == 0
+
+
+def test_getitem_slice_step_raises():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceIndexError, match="step"):
+        table[::2]
+
+
+def test_getitem_int_list():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie", "dana"], ray_type=Symbol),
+            "age": Vector(items=[29, 34, 41, 38], ray_type=I64),
+        }
+    )
+
+    result = table[[0, 2]]
+    assert isinstance(result, Table)
+    assert len(result) == 2
+    assert_column_values(result, "name", ["alice", "charlie"])
+    assert_column_values(result, "age", [29, 41])
+
+
+def test_getitem_int_list_single():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    result = table[[1]]
+    assert isinstance(result, Table)
+    assert len(result) == 1
+    assert_column_values(result, "name", ["bob"])
+
+
+def test_getitem_int_list_reversed_order():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    result = table[[2, 0]]
+    assert len(result) == 2
+    assert_column_values(result, "name", ["charlie", "alice"])
+
+
+def test_getitem_int_list_with_duplicates():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob", "charlie"], ray_type=Symbol),
+        }
+    )
+
+    result = table[[0, 0, 2]]
+    assert len(result) == 3
+    assert_column_values(result, "name", ["alice", "alice", "charlie"])
+
+
+def test_getitem_empty_list_raises():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceIndexError, match="empty"):
+        table[[]]
+
+
+def test_getitem_list_wrong_type_raises():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceTypeError, match="str or int"):
+        table[[3.14]]
+
+
+def test_getitem_invalid_type_raises():
+    table = Table(
+        {
+            "name": Vector(items=["alice", "bob"], ray_type=Symbol),
+        }
+    )
+
+    with pytest.raises(errors.RayforceTypeError, match="Invalid index type"):
+        table[3.14]
 
 
 def test_head():
