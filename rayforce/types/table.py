@@ -578,7 +578,18 @@ class TableValueAccessorMixin:
     @DestructiveOperationHandler()
     def to_numpy(self) -> t.Any:
         vals = self.values()
-        return np.column_stack([vals[i].to_numpy() for i in range(len(vals))])
+        arrays = [vals[i].to_numpy() for i in range(len(vals))]
+        try:
+            return np.column_stack(arrays)
+        except (np.exceptions.DTypePromotionError, TypeError):
+            return np.column_stack(
+                [
+                    a.astype("datetime64[ms]").astype(object)
+                    if a.dtype.kind == "M"
+                    else a.astype(object)
+                    for a in arrays
+                ]
+            )
 
 
 class TableReprMixin:

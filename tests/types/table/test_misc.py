@@ -1257,6 +1257,56 @@ class TestTableToNumpy:
         assert arr[0, 0] == "alice"
         assert arr[0, 1] == "25"
 
+    def test_with_timestamp_column(self):
+        from datetime import datetime
+
+        table = Table.from_dict(
+            {
+                "id": Vector([1, 2, 3], ray_type=I64),
+                "name": Vector(["Alice", "Bob", "Carol"], ray_type=Symbol),
+            }
+        )
+        birthdays = Vector(
+            [datetime(2001, 1, 1), datetime(2002, 2, 2), datetime(2003, 3, 3)],
+            ray_type=Timestamp,
+        )
+        table = table.select("*", birthday=birthdays).execute()
+        arr = table.to_numpy()
+        assert arr.shape == (3, 3)
+        assert arr.dtype == object
+        assert arr[0, 2] == datetime(2001, 1, 1)
+        assert arr[2, 2] == datetime(2003, 3, 3)
+        assert isinstance(arr[0, 2], datetime)
+
+    def test_with_all_temporal_columns(self):
+        from datetime import date, datetime, time, timedelta
+
+        table = Table.from_dict(
+            {
+                "id": Vector([1, 2], ray_type=I64),
+                "dt": Vector([date(2001, 1, 1), date(2002, 2, 2)], ray_type=Date),
+                "tm": Vector([time(9, 0), time(10, 30)], ray_type=Time),
+                "ts": Vector(
+                    [datetime(2001, 1, 1, 9, 0), datetime(2002, 2, 2, 10, 30)],
+                    ray_type=Timestamp,
+                ),
+            }
+        )
+        arr = table.to_numpy()
+        assert arr.shape == (2, 4)
+        assert arr.dtype == object
+
+        # Date → datetime (datetime64[D].astype(object) produces datetime)
+        assert arr[0, 1] == datetime(2001, 1, 1)
+
+        # Time → timedelta
+        assert isinstance(arr[0, 2], timedelta)
+        assert arr[0, 2] == timedelta(hours=9)
+
+        # Timestamp → datetime
+        assert isinstance(arr[0, 3], datetime)
+        assert arr[0, 3] == datetime(2001, 1, 1, 9, 0)
+
     def test_all_same_int_type(self):
         table = Table(
             {

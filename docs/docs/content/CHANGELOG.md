@@ -16,6 +16,12 @@ All notable changes to Rayforce-Py will be documented in this file.
     - **Slicing**: `table[1:3]`, `table[:5]`, `table[-2:]` — row slicing backed by the C-level `TAKE` operation.
     - **Index list**: `table[[0, 2, 5]]` — select specific rows by position.
 
+### Bug Fixes
+
+- **`Table.to_numpy()` with Timestamp columns**: Fixed `DTypePromotionError` when calling `to_numpy()` on tables containing a mix of incompatible column types (e.g., integers, strings, and timestamps). Mixed-type tables now gracefully fall back to `object` dtype.
+
+- **Filtering F64 by distinct** - fixed
+
 2026-02-23 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.1)**
 
 
