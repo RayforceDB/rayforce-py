@@ -1,6 +1,9 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+# Ensure MSYS2/MinGW and Git for Windows are on PATH
+$env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;C:\Program Files\Git\cmd;$env:PATH"
+
 $EXEC_DIR = Get-Location
 $RAYFORCE_GITHUB = if ($env:RAYFORCE_GITHUB) { $env:RAYFORCE_GITHUB } else { "https://github.com/RayforceDB/rayforce.git" }
 
