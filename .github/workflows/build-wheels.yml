@@ -17,6 +17,9 @@ jobs:
           - os: macos-14
             platform: macos
             arch: arm64
+          - os: windows-2022
+            platform: windows
+            arch: x86_64
 
     runs-on: ${{ matrix.os }}
     env:
@@ -48,7 +51,22 @@ jobs:
           restore-keys: |
             cibw-${{ runner.os }}-${{ matrix.platform }}-${{ matrix.arch }}-
 
-      - name: Build wheels
+      - name: Build wheels (Linux)
+        if: matrix.platform == 'linux'
+        env:
+          CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux_*"
+          CIBW_ARCHS: "auto64"
+          CIBW_BEFORE_BUILD: "bash {project}/scripts/prepare_build.sh"
+          CIBW_TEST_SKIP: "*"
+          CIBW_ENVIRONMENT: "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"
+          CIBW_CACHE_PATH: ".cibw"
+          CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64:latest"
+          CIBW_BEFORE_ALL_LINUX: "yum install -y git gcc clang gcc-c++ make"
+        run: cibuildwheel --platform linux --archs x86_64 --output-dir wheelhouse
+
+      - name: Build wheels (macOS)
+        if: matrix.platform == 'macos'
         env:
           CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux_*"
@@ -58,15 +76,23 @@ jobs:
           CIBW_ENVIRONMENT: "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"
           CIBW_MACOS_ENVIRONMENT: "MACOSX_DEPLOYMENT_TARGET=11.0"
           CIBW_CACHE_PATH: ".cibw"
-          CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64:latest"
-          CIBW_BEFORE_ALL_LINUX: "yum install -y git gcc clang gcc-c++ make"
+        run: cibuildwheel --platform macos --archs arm64 --output-dir wheelhouse
 
-        run: |
-          if [ "${{ matrix.platform }}" = "linux" ]; then
-            cibuildwheel --platform linux --archs x86_64 --output-dir wheelhouse
-          else
-            cibuildwheel --platform macos --archs arm64 --output-dir wheelhouse
-          fi
+      - name: Build wheels (Windows)
+        if: matrix.platform == 'windows'
+        env:
+          CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux_*"
+          CIBW_ARCHS: "auto64"
+          CIBW_BEFORE_ALL_WINDOWS: >-
+            C:\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-clang mingw-w64-x86_64-lld make"
+          CIBW_BEFORE_BUILD_WINDOWS: "powershell -ExecutionPolicy Bypass -File {project}/scripts/prepare_build_windows.ps1"
+          CIBW_TEST_SKIP: "*"
+          CIBW_ENVIRONMENT_WINDOWS: >-
+            RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git
+            PATH="C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;$PATH"
+          CIBW_CACHE_PATH: ".cibw"
+        run: cibuildwheel --platform windows --archs AMD64 --output-dir wheelhouse
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
@@ -113,6 +139,22 @@ jobs:
             python-version: '3.14'
             platform: macos
             arch: arm64
+          - os: windows-2022
+            python-version: '3.11'
+            platform: windows
+            arch: x86_64
+          - os: windows-2022
+            python-version: '3.12'
+            platform: windows
+            arch: x86_64
+          - os: windows-2022
+            python-version: '3.13'
+            platform: windows
+            arch: x86_64
+          - os: windows-2022
+            python-version: '3.14'
+            platform: windows
+            arch: x86_64
 
     runs-on: ${{ matrix.os }}
 
@@ -122,7 +164,7 @@ jobs:
         with:
           submodules: false
 
-      - name: Verify AVX2 support (required for rayforce)
+      - name: Verify AVX2 support (Linux)
         if: runner.os == 'Linux'
         run: |
           echo "Checking CPU features..."
@@ -132,6 +174,15 @@ jobs:
             echo "::error::This runner does not support AVX2 instructions required by rayforce"
             exit 1
           fi
+
+      - name: Verify AVX2 support (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $cpu = Get-CimInstance Win32_Processor
+          Write-Host "CPU: $($cpu.Name)"
+          # GitHub Actions Windows runners use modern Xeon/EPYC CPUs with AVX2
+          Write-Host "AVX2 support assumed on GitHub Actions Windows runners"
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -150,18 +201,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-asyncio pytest-timeout websockets pandas>=2.0.0 polars>=0.19.0 pyarrow sqlglot
 
-      - name: Remove local rayforce package to force pip installation
+      - name: Remove local rayforce package (Unix)
+        if: runner.os != 'Windows'
         run: |
-          # Remove local rayforce directory to ensure we test against installed wheel
           rm -rf rayforce/__pycache__
-          rm -rf rayforce/*.so rayforce/*.dylib rayforce/*.dll
+          rm -rf rayforce/*.so rayforce/*.dylib rayforce/*.dll rayforce/*.pyd
           rm -rf rayforce/plugins/*.so rayforce/plugins/*.dylib rayforce/plugins/*.dll
-          # Move rayforce directory out of Python path temporarily
           if [ -d "rayforce" ]; then
             mv rayforce rayforce.local
           fi
 
-      - name: Install and test wheel
+      - name: Remove local rayforce package (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          if (Test-Path "rayforce\__pycache__") { Remove-Item -Recurse -Force "rayforce\__pycache__" }
+          Get-ChildItem -Path "rayforce" -Include "*.so","*.dylib","*.dll","*.pyd" -ErrorAction SilentlyContinue | Remove-Item -Force
+          Get-ChildItem -Path "rayforce\plugins" -Include "*.so","*.dylib","*.dll" -ErrorAction SilentlyContinue | Remove-Item -Force
+          if (Test-Path "rayforce") { Rename-Item "rayforce" "rayforce.local" }
+
+      - name: Install and test wheel (Unix)
+        if: runner.os != 'Windows'
         run: |
           PYVER=$(echo '${{ matrix.python-version }}' | tr -d '.')
           WHEEL_FILE=$(find wheels -name "*cp${PYVER}*.whl" | head -1)
@@ -172,6 +232,21 @@ jobs:
           fi
           echo "Installing wheel: $WHEEL_FILE"
           pip install "$WHEEL_FILE" --force-reinstall --no-deps
+          python -m pytest -m "" -x -vv --durations=20 tests/
+
+      - name: Install and test wheel (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $pyver = '${{ matrix.python-version }}' -replace '\.',''
+          $wheel = Get-ChildItem -Path wheels -Filter "*cp${pyver}*win_amd64*.whl" | Select-Object -First 1
+          if (-not $wheel) {
+            Write-Error "No wheel file found for Python ${{ matrix.python-version }}"
+            Get-ChildItem -Path wheels -Filter "*.whl"
+            exit 1
+          }
+          Write-Host "Installing wheel: $($wheel.FullName)"
+          pip install $wheel.FullName --force-reinstall --no-deps
           python -m pytest -m "" -x -vv --durations=20 tests/
 
   publish:

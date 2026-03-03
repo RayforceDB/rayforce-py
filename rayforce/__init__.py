@@ -3,6 +3,7 @@ Python bindings for RayforceDB
 """
 
 import ctypes
+import os
 from pathlib import Path
 import sys
 
@@ -19,16 +20,25 @@ elif sys.platform == "darwin":
     lib_name = "_rayforce_c.so"
     raykx_lib_name = "libraykx.dylib"
 elif sys.platform == "win32":
-    lib_name = "rayforce.dll"
+    lib_name = "_rayforce_c.pyd"
+    raykx_lib_name = "raykx.dll"
 else:
     raise ImportError(f"Platform not supported: {sys.platform}")
 
-lib_path = Path(__file__).resolve().parent / lib_name
-raykx_lib_path = Path(__file__).resolve().parent / "plugins" / raykx_lib_name
+_pkg_dir = Path(__file__).resolve().parent
+lib_path = _pkg_dir / lib_name
+raykx_lib_path = _pkg_dir / "plugins" / raykx_lib_name
 if lib_path.exists() and raykx_lib_path.exists():
     try:
-        ctypes.CDLL(str(lib_path), mode=ctypes.RTLD_GLOBAL)
-        ctypes.CDLL(str(raykx_lib_path), mode=ctypes.RTLD_GLOBAL)
+        if sys.platform == "win32":
+            # Add package dirs to DLL search path (Python 3.8+ restricts DLL loading)
+            os.add_dll_directory(str(_pkg_dir))
+            os.add_dll_directory(str(_pkg_dir / "plugins"))
+            load_mode = 0
+        else:
+            load_mode = ctypes.RTLD_GLOBAL
+        ctypes.CDLL(str(lib_path), mode=load_mode)
+        ctypes.CDLL(str(raykx_lib_path), mode=load_mode)
     except Exception as e:
         raise ImportError(f"Error loading CDLL: {e}") from e
 else:

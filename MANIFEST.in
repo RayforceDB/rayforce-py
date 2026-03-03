@@ -2,7 +2,11 @@ include README.md
 include LICENSE
 recursive-include rayforce *.so
 recursive-include rayforce *.dylib
+recursive-include rayforce *.dll
+recursive-include rayforce *.pyd
 recursive-include rayforce/plugins *.so
 recursive-include rayforce/plugins *.dylib
+recursive-include rayforce/plugins *.dll
 recursive-include rayforce *.pyi
 include rayforce/bin/rayforce
+include rayforce/bin/rayforce.exe

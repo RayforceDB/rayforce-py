@@ -12,14 +12,22 @@ setup(
     version="0.6.1",
     packages=find_packages(),
     package_data={
-        "rayforce": ["*.so", "*.dylib", "*.pyi", "bin/rayforce"],
-        "rayforce.plugins": ["*.so", "*.dylib"],
+        "rayforce": [
+            "*.so",
+            "*.dylib",
+            "*.dll",
+            "*.pyd",
+            "*.pyi",
+            "bin/rayforce",
+            "bin/rayforce.exe",
+        ],
+        "rayforce.plugins": ["*.so", "*.dylib", "*.dll"],
     },
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.11",
     description="Python bindings for RayforceDB",
-    long_description=open("README.md").read(),  # noqa: SIM115
+    long_description=open("README.md", encoding="utf-8").read(),  # noqa: SIM115
     long_description_content_type="text/markdown",
     author="FalsePublicEnemy",
     license="MIT",

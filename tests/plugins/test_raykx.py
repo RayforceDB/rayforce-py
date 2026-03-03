@@ -1,10 +1,16 @@
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from rayforce import _rayforce_c as r
 from rayforce.plugins import errors
-from rayforce.plugins.raykx import KDBConnection, KDBEngine
+
+# raykx plugin uses FFI.loadfn_from_file() at import time which requires
+# the Rayforce runtime's dynlib loader to support the platform
+raykx = pytest.importorskip("rayforce.plugins.raykx", reason="raykx plugin not available on this platform")
+KDBConnection = raykx.KDBConnection
+KDBEngine = raykx.KDBEngine
 
 pytestmark = pytest.mark.plugin
 
