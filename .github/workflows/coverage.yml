@@ -81,7 +81,7 @@ jobs:
         if: matrix.platform == 'windows'
         shell: powershell
         run: |
-          C:\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-clang mingw-w64-x86_64-lld mingw-w64-x86_64-make"
+          C:\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-clang mingw-w64-x86_64-lld make"
 
       - name: Install build dependencies
         run: |

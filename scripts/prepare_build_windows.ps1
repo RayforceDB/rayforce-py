@@ -75,21 +75,21 @@ foreach ($f in $capiFiles) {
 # --- Build Python extension ---
 Write-Host "Building Rayforce Python extension..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
-make python
+C:\msys64\usr\bin\make.exe python
 Pop-Location
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\_rayforce_c.pyd" "$EXEC_DIR\rayforce\_rayforce_c.pyd"
 
 # --- Build Raykx plugin ---
 Write-Host "Building Raykx plugin..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c\ext\raykx"
-make release
+C:\msys64\usr\bin\make.exe release
 Pop-Location
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\ext\raykx\raykx.dll" "$EXEC_DIR\rayforce\plugins\raykx.dll"
 
 # --- Build Rayforce executable ---
 Write-Host "Building Rayforce executable..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
-make release
+C:\msys64\usr\bin\make.exe release
 Pop-Location
 New-Item -ItemType Directory -Force -Path "$EXEC_DIR\rayforce\bin" | Out-Null
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\rayforce.exe" "$EXEC_DIR\rayforce\bin\rayforce.exe"
