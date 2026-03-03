@@ -75,10 +75,20 @@ foreach ($f in $capiFiles) {
 # --- Build shared library (produces rayforce.dll + rayforce.lib needed by raykx) ---
 # Override RELEASE_LDFLAGS: upstream uses MSVC-style /DEF:/IMPLIB: flags which MinGW lld doesn't understand.
 # Use MinGW-compatible --out-implib to generate the import library.
+# Append shared-win target (includes app/term.o — Windows requires all symbols resolved at link time)
 Write-Host "Building Rayforce shared library..."
+$sharedWinTarget = @"
+
+shared-win: CFLAGS = `$(RELEASE_CFLAGS)
+shared-win: LDFLAGS = -fuse-ld=lld -Wl,--out-implib,rayforce.lib
+shared-win: `$(CORE_OBJECTS) app/term.o
+	`$(CC) -shared -o `$(LIBNAME) `$(CFLAGS) `$(CORE_OBJECTS) app/term.o `$(LIBS) `$(LDFLAGS)
+"@
+Add-Content -Path "$EXEC_DIR\tmp\rayforce-c\Makefile" -Value $sharedWinTarget
+
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
-C:\msys64\usr\bin\make.exe shared "RELEASE_LDFLAGS=-fuse-ld=lld -Wl,--out-implib,rayforce.lib"
-if ($LASTEXITCODE -ne 0) { throw "make shared failed with exit code $LASTEXITCODE" }
+C:\msys64\usr\bin\make.exe shared-win
+if ($LASTEXITCODE -ne 0) { throw "make shared-win failed with exit code $LASTEXITCODE" }
 Pop-Location
 
 # --- Build Raykx plugin (depends on rayforce.lib from shared build) ---

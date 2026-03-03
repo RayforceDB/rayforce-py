@@ -12,30 +12,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            python-version: '3.11'
-            platform: linux
-          - os: ubuntu-22.04
-            python-version: '3.12'
-            platform: linux
-          - os: ubuntu-22.04
-            python-version: '3.13'
-            platform: linux
-          - os: ubuntu-22.04
-            python-version: '3.14'
-            platform: linux
-          - os: macos-14
-            python-version: '3.11'
-            platform: macos
-          - os: macos-14
-            python-version: '3.12'
-            platform: macos
-          - os: macos-14
-            python-version: '3.13'
-            platform: macos
-          - os: macos-14
-            python-version: '3.14'
-            platform: macos
+          # TODO: re-enable linux and macos after Windows support is confirmed
+          # - os: ubuntu-22.04
+          #   python-version: '3.11'
+          #   platform: linux
+          # - os: ubuntu-22.04
+          #   python-version: '3.12'
+          #   platform: linux
+          # - os: ubuntu-22.04
+          #   python-version: '3.13'
+          #   platform: linux
+          # - os: ubuntu-22.04
+          #   python-version: '3.14'
+          #   platform: linux
+          # - os: macos-14
+          #   python-version: '3.11'
+          #   platform: macos
+          # - os: macos-14
+          #   python-version: '3.12'
+          #   platform: macos
+          # - os: macos-14
+          #   python-version: '3.13'
+          #   platform: macos
+          # - os: macos-14
+          #   python-version: '3.14'
+          #   platform: macos
           - os: windows-2022
             python-version: '3.11'
             platform: windows
