@@ -97,6 +97,8 @@ Push-Location "$EXEC_DIR\tmp\rayforce-c\ext\raykx"
 C:\msys64\usr\bin\make.exe release
 if ($LASTEXITCODE -ne 0) { throw "make raykx failed with exit code $LASTEXITCODE" }
 Pop-Location
+# Copy rayforce.dll (runtime dependency of raykx.dll) and the plugin
+Copy-Item "$EXEC_DIR\tmp\rayforce-c\rayforce.dll" "$EXEC_DIR\rayforce\rayforce.dll"
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\ext\raykx\raykx.dll" "$EXEC_DIR\rayforce\plugins\raykx.dll"
 
 # --- Build Python extension ---
