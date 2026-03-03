@@ -86,7 +86,7 @@ jobs:
           CIBW_ARCHS: "auto64"
           CIBW_BEFORE_ALL_WINDOWS: >-
             C:\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-clang mingw-w64-x86_64-lld mingw-w64-x86_64-make"
-          CIBW_BEFORE_BUILD_WINDOWS: "powershell -ExecutionPolicy Bypass -File {project}\\scripts\\prepare_build_windows.ps1"
+          CIBW_BEFORE_BUILD_WINDOWS: "powershell -ExecutionPolicy Bypass -File {project}/scripts/prepare_build_windows.ps1"
           CIBW_TEST_SKIP: "*"
           CIBW_ENVIRONMENT_WINDOWS: >-
             RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git

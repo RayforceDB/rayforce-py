@@ -9,7 +9,7 @@ ifeq ($(UNAME_S),Darwin)
   RAYKX_LIB_NAME = libraykx.dylib
   RELEASE_LDFLAGS = $(shell python3 -c "import sysconfig; print(sysconfig.get_config_var('LDFLAGS') or '')")
   PYTHON_VERSION = $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-  SHARED_COMPILE_FLAGS = -lpython$(PYTHON_VERSION)
+  SHARED_COMPILE_FLAGS = -undefined dynamic_lookup
 else ifeq ($(UNAME_S),Linux)
   RAYKX_LIB_NAME = libraykx.so
   RELEASE_LDFLAGS = $$(RELEASE_LDFLAGS)

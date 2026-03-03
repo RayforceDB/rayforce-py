@@ -98,7 +98,7 @@ jobs:
         env:
           PATH: "C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;${{ env.PATH }}"
         run: |
-          powershell -ExecutionPolicy Bypass -File scripts/prepare_build_windows.ps1
+          & scripts/prepare_build_windows.ps1
 
       - name: Install test dependencies
         run: |
