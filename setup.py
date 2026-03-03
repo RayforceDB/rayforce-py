@@ -27,7 +27,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.11",
     description="Python bindings for RayforceDB",
-    long_description=open("README.md").read(),  # noqa: SIM115
+    long_description=open("README.md", encoding="utf-8").read(),  # noqa: SIM115
     long_description_content_type="text/markdown",
     author="FalsePublicEnemy",
     license="MIT",
