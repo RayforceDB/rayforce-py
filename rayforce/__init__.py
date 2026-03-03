@@ -3,6 +3,7 @@ Python bindings for RayforceDB
 """
 
 import ctypes
+import os
 from pathlib import Path
 import sys
 
@@ -24,11 +25,18 @@ elif sys.platform == "win32":
 else:
     raise ImportError(f"Platform not supported: {sys.platform}")
 
-lib_path = Path(__file__).resolve().parent / lib_name
-raykx_lib_path = Path(__file__).resolve().parent / "plugins" / raykx_lib_name
+_pkg_dir = Path(__file__).resolve().parent
+lib_path = _pkg_dir / lib_name
+raykx_lib_path = _pkg_dir / "plugins" / raykx_lib_name
 if lib_path.exists() and raykx_lib_path.exists():
     try:
-        load_mode = 0 if sys.platform == "win32" else ctypes.RTLD_GLOBAL
+        if sys.platform == "win32":
+            # Add package dirs to DLL search path (Python 3.8+ restricts DLL loading)
+            os.add_dll_directory(str(_pkg_dir))
+            os.add_dll_directory(str(_pkg_dir / "plugins"))
+            load_mode = 0
+        else:
+            load_mode = ctypes.RTLD_GLOBAL
         ctypes.CDLL(str(lib_path), mode=load_mode)
         ctypes.CDLL(str(raykx_lib_path), mode=load_mode)
     except Exception as e:
