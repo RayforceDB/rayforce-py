@@ -6,15 +6,17 @@ import sys
 
 def find_rayforce_executable():
     package_dir = Path(__file__).parent
-    bundled_executable = package_dir / "bin" / "rayforce"
+    exe_name = "rayforce.exe" if sys.platform == "win32" else "rayforce"
 
-    if bundled_executable.exists() and os.access(bundled_executable, os.X_OK):
+    bundled_executable = package_dir / "bin" / exe_name
+    if bundled_executable.exists() and (
+        sys.platform == "win32" or os.access(bundled_executable, os.X_OK)
+    ):
         return str(bundled_executable)
 
     project_root = package_dir.parent
-    dev_executable = project_root / "tmp" / "rayforce-c" / "rayforce"
-
-    if dev_executable.exists() and os.access(dev_executable, os.X_OK):
+    dev_executable = project_root / "tmp" / "rayforce-c" / exe_name
+    if dev_executable.exists() and (sys.platform == "win32" or os.access(dev_executable, os.X_OK)):
         return str(dev_executable)
 
     raise FileNotFoundError("Rayforce executable not found. Try to reinstall the library")

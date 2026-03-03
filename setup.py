@@ -12,8 +12,16 @@ setup(
     version="0.6.1",
     packages=find_packages(),
     package_data={
-        "rayforce": ["*.so", "*.dylib", "*.pyi", "bin/rayforce"],
-        "rayforce.plugins": ["*.so", "*.dylib"],
+        "rayforce": [
+            "*.so",
+            "*.dylib",
+            "*.dll",
+            "*.pyd",
+            "*.pyi",
+            "bin/rayforce",
+            "bin/rayforce.exe",
+        ],
+        "rayforce.plugins": ["*.so", "*.dylib", "*.dll"],
     },
     include_package_data=True,
     zip_safe=False,

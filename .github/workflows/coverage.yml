@@ -1,13 +1,55 @@
 name: Coverage
 
 on:
+  pull_request:
   push:
     branches: [master]
 
 jobs:
   coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
+    name: Coverage (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            python-version: '3.11'
+            platform: linux
+          - os: ubuntu-22.04
+            python-version: '3.12'
+            platform: linux
+          - os: ubuntu-22.04
+            python-version: '3.13'
+            platform: linux
+          - os: ubuntu-22.04
+            python-version: '3.14'
+            platform: linux
+          - os: macos-14
+            python-version: '3.11'
+            platform: macos
+          - os: macos-14
+            python-version: '3.12'
+            platform: macos
+          - os: macos-14
+            python-version: '3.13'
+            platform: macos
+          - os: macos-14
+            python-version: '3.14'
+            platform: macos
+          - os: windows-2022
+            python-version: '3.11'
+            platform: windows
+          - os: windows-2022
+            python-version: '3.12'
+            platform: windows
+          - os: windows-2022
+            python-version: '3.13'
+            platform: windows
+          - os: windows-2022
+            python-version: '3.14'
+            platform: windows
+
+    runs-on: ${{ matrix.os }}
 
     env:
       RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
@@ -18,24 +60,45 @@ jobs:
         with:
           submodules: false
 
-      - name: Set up Python 3.14
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - name: Install system dependencies
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq git gcc clang g++ make
+
+      - name: Install system dependencies (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          echo "Xcode CLI tools provide clang and make"
+
+      - name: Install system dependencies (Windows)
+        if: matrix.platform == 'windows'
+        shell: powershell
+        run: |
+          C:\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-clang mingw-w64-x86_64-lld mingw-w64-x86_64-make"
 
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
           pip install setuptools wheel setuptools-scm
 
-      - name: Build rayforce binaries
+      - name: Build rayforce binaries (Unix)
+        if: matrix.platform != 'windows'
         run: make app
+
+      - name: Build rayforce binaries (Windows)
+        if: matrix.platform == 'windows'
+        shell: powershell
+        env:
+          PATH: "C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;${{ env.PATH }}"
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/prepare_build_windows.ps1
 
       - name: Install test dependencies
         run: |
@@ -54,13 +117,13 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
+          flags: ${{ matrix.platform }}-py${{ matrix.python-version }}
+          name: coverage-${{ matrix.platform }}-py${{ matrix.python-version }}
           fail_ci_if_error: false
 
       - name: Upload coverage HTML report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-${{ matrix.platform }}-py${{ matrix.python-version }}
           path: htmlcov/
           retention-days: 30
