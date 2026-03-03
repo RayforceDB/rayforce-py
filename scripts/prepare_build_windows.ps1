@@ -73,15 +73,19 @@ foreach ($f in $capiFiles) {
 }
 
 # --- Build shared library (produces rayforce.dll + rayforce.lib needed by raykx) ---
+# Override RELEASE_LDFLAGS: upstream uses MSVC-style /DEF:/IMPLIB: flags which MinGW lld doesn't understand.
+# Use MinGW-compatible --out-implib to generate the import library.
 Write-Host "Building Rayforce shared library..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
-C:\msys64\usr\bin\make.exe shared
+C:\msys64\usr\bin\make.exe shared "RELEASE_LDFLAGS=-fuse-ld=lld -Wl,--out-implib,rayforce.lib"
+if ($LASTEXITCODE -ne 0) { throw "make shared failed with exit code $LASTEXITCODE" }
 Pop-Location
 
 # --- Build Raykx plugin (depends on rayforce.lib from shared build) ---
 Write-Host "Building Raykx plugin..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c\ext\raykx"
 C:\msys64\usr\bin\make.exe release
+if ($LASTEXITCODE -ne 0) { throw "make raykx failed with exit code $LASTEXITCODE" }
 Pop-Location
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\ext\raykx\raykx.dll" "$EXEC_DIR\rayforce\plugins\raykx.dll"
 
@@ -89,13 +93,15 @@ Copy-Item "$EXEC_DIR\tmp\rayforce-c\ext\raykx\raykx.dll" "$EXEC_DIR\rayforce\plu
 Write-Host "Building Rayforce Python extension..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
 C:\msys64\usr\bin\make.exe python
+if ($LASTEXITCODE -ne 0) { throw "make python failed with exit code $LASTEXITCODE" }
 Pop-Location
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\_rayforce_c.pyd" "$EXEC_DIR\rayforce\_rayforce_c.pyd"
 
 # --- Build Rayforce executable ---
 Write-Host "Building Rayforce executable..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
-C:\msys64\usr\bin\make.exe release
+C:\msys64\usr\bin\make.exe release "RELEASE_LDFLAGS=-fuse-ld=lld -Wl,--out-implib,rayforce.lib"
+if ($LASTEXITCODE -ne 0) { throw "make release failed with exit code $LASTEXITCODE" }
 Pop-Location
 New-Item -ItemType Directory -Force -Path "$EXEC_DIR\rayforce\bin" | Out-Null
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\rayforce.exe" "$EXEC_DIR\rayforce\bin\rayforce.exe"
