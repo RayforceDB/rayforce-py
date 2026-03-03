@@ -72,19 +72,25 @@ foreach ($f in $capiFiles) {
     Copy-Item "$EXEC_DIR\rayforce\capi\$f" "$EXEC_DIR\tmp\rayforce-c\core\$f"
 }
 
+# --- Build shared library (produces rayforce.dll + rayforce.lib needed by raykx) ---
+Write-Host "Building Rayforce shared library..."
+Push-Location "$EXEC_DIR\tmp\rayforce-c"
+C:\msys64\usr\bin\make.exe shared
+Pop-Location
+
+# --- Build Raykx plugin (depends on rayforce.lib from shared build) ---
+Write-Host "Building Raykx plugin..."
+Push-Location "$EXEC_DIR\tmp\rayforce-c\ext\raykx"
+C:\msys64\usr\bin\make.exe release
+Pop-Location
+Copy-Item "$EXEC_DIR\tmp\rayforce-c\ext\raykx\raykx.dll" "$EXEC_DIR\rayforce\plugins\raykx.dll"
+
 # --- Build Python extension ---
 Write-Host "Building Rayforce Python extension..."
 Push-Location "$EXEC_DIR\tmp\rayforce-c"
 C:\msys64\usr\bin\make.exe python
 Pop-Location
 Copy-Item "$EXEC_DIR\tmp\rayforce-c\_rayforce_c.pyd" "$EXEC_DIR\rayforce\_rayforce_c.pyd"
-
-# --- Build Raykx plugin ---
-Write-Host "Building Raykx plugin..."
-Push-Location "$EXEC_DIR\tmp\rayforce-c\ext\raykx"
-C:\msys64\usr\bin\make.exe release
-Pop-Location
-Copy-Item "$EXEC_DIR\tmp\rayforce-c\ext\raykx\raykx.dll" "$EXEC_DIR\rayforce\plugins\raykx.dll"
 
 # --- Build Rayforce executable ---
 Write-Host "Building Rayforce executable..."
