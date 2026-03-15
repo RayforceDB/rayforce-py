@@ -5,6 +5,15 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.6.2`**
+
+### Bug Fixes
+
+- Now library passes correct contiguous numpy arrays within `from_numpy` function
+- F64 vectors can now be used in `median` calculations
+
+2026-03-15 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.2/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.2)**
+
 ## **`0.6.1`**
 
 ### New Features
