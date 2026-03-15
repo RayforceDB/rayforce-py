@@ -45,6 +45,14 @@ _NUMPY_TO_RAY: dict[str, int] = {
     "int64": r.TYPE_I64,
     "float64": r.TYPE_F64,
 }
+_RAY_TO_NUMPY: dict[int, str] = {
+    r.TYPE_U8: "uint8",
+    r.TYPE_B8: "bool",
+    r.TYPE_I16: "int16",
+    r.TYPE_I32: "int32",
+    r.TYPE_I64: "int64",
+    r.TYPE_F64: "float64",
+}
 # Auto-widen numpy dtypes that have no direct rayforce equivalent
 _NUMPY_WIDEN: dict[str, str] = {
     "float16": "float64",
@@ -222,6 +230,9 @@ class Vector(
 
         if ray_type is not None and arr.dtype.kind not in ("M", "m"):
             type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
+            target_dtype = _RAY_TO_NUMPY.get(type_code)
+            if target_dtype is not None and arr.dtype.name != target_dtype:
+                arr = np.ascontiguousarray(arr.astype(target_dtype))
             return cls(ptr=FFI.init_vector_from_raw_buffer(type_code, len(arr), arr.data))
 
         if (maybe_code := _NUMPY_TO_RAY.get(arr.dtype.name)) is not None:

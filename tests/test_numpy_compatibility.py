@@ -1867,17 +1867,29 @@ class TestFromNumpyMultiDimensional:
 # ============================================================================
 
 
-class TestFromNumpyExplicitRayTypeMismatch:
-    """Explicit ray_type with buffer element size mismatch."""
+class TestFromNumpyExplicitRayTypeCast:
+    """Explicit ray_type with different numpy dtype casts values correctly."""
 
-    def test_float32_as_f64_raises(self):
-        """float32 (4 bytes) → F64 (8 bytes): buffer too small."""
+    def test_float32_as_f64(self):
+        """float32 → F64: values are cast, not reinterpreted."""
         arr = np.array([1.0, 2.0], dtype=np.float32)
-        with pytest.raises(ValueError, match="Buffer too small"):
-            t.Vector.from_numpy(arr, ray_type=t.F64)
+        vec = t.Vector.from_numpy(arr, ray_type=t.F64)
+        assert vec.to_list() == [1.0, 2.0]
 
-    def test_int16_as_i64_raises(self):
-        """int16 (2 bytes) → I64 (8 bytes): buffer too small."""
+    def test_int16_as_i64(self):
+        """int16 → I64: values are cast, not reinterpreted."""
         arr = np.array([1, 2], dtype=np.int16)
-        with pytest.raises(ValueError, match="Buffer too small"):
-            t.Vector.from_numpy(arr, ray_type=t.I64)
+        vec = t.Vector.from_numpy(arr, ray_type=t.I64)
+        assert vec.to_list() == [1, 2]
+
+    def test_int64_as_i16(self):
+        """int64 → I16: values are cast, not reinterpreted."""
+        arr = np.array([1, 2, 3, 4], dtype=np.int64)
+        vec = t.Vector.from_numpy(arr, ray_type=t.I16)
+        assert vec.to_list() == [1, 2, 3, 4]
+
+    def test_int64_as_i32(self):
+        """int64 → I32: values are cast, not reinterpreted."""
+        arr = np.array([1, 2, 3, 4], dtype=np.int64)
+        vec = t.Vector.from_numpy(arr, ray_type=t.I32)
+        assert vec.to_list() == [1, 2, 3, 4]
