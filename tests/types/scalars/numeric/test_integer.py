@@ -34,7 +34,7 @@ def test_i64(value, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (-32768, -32768),  # I16 MIN
+        (-32768, None),  # I16 MIN is null sentinel (0Nh)
         (32767, 32767),  # I16 MAX
     ],
 )
@@ -48,7 +48,7 @@ def test_i16_boundary_values(value, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (-2_147_483_648, -2_147_483_648),  # I32 MIN
+        (-2_147_483_648, None),  # I32 MIN is null sentinel (0Ni)
         (2_147_483_647, 2_147_483_647),  # I32 MAX
     ],
 )
@@ -62,7 +62,7 @@ def test_i32_boundary_values(value, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (-9_223_372_036_854_775_808, -9_223_372_036_854_775_808),  # I64 MIN
+        (-9_223_372_036_854_775_808, None),  # I64 MIN is null sentinel (0Nj)
         (9_223_372_036_854_775_807, 9_223_372_036_854_775_807),  # I64 MAX
     ],
 )
@@ -76,7 +76,7 @@ def test_i64_boundary_values(value, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (32768, -32768),  # MAX+1 wraps to MIN
+        (32768, None),  # MAX+1 wraps to MIN (null sentinel)
         (-32769, 32767),  # MIN-1 wraps to MAX
     ],
 )
@@ -87,7 +87,7 @@ def test_i16_overflow_wraps(value, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (2_147_483_648, -2_147_483_648),  # MAX+1 wraps to MIN
+        (2_147_483_648, None),  # MAX+1 wraps to MIN (null sentinel)
         (-2_147_483_649, 2_147_483_647),  # MIN-1 wraps to MAX
     ],
 )

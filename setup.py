@@ -21,7 +21,7 @@ setup(
     description="Python bindings for RayforceDB",
     long_description=open("README.md").read(),  # noqa: SIM115
     long_description_content_type="text/markdown",
-    author="FalsePublicEnemy",
+    author="RayforceDB",
     license="MIT",
     classifiers=[
         "Development Status :: 4 - Beta",

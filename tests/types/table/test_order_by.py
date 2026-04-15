@@ -139,7 +139,7 @@ def test_order_by_chained_with_where():
 
 
 def test_order_by_with_null_values():
-    """ORDER BY on a column that contains NULL values; NULLs sort to the end."""
+    """ORDER BY on a column that contains NULL values; NULLs sort to the beginning (0Nj = INT_MIN)."""
     left = Table(
         {
             "key": Vector(items=["a", "b", "c"], ray_type=Symbol),
@@ -157,13 +157,13 @@ def test_order_by_with_null_values():
     result = joined.order_by(Column("score")).execute()
 
     assert_table_shape(result, rows=3, cols=3)
-    # Nulls sort to the end in ascending order
-    row_last = result.at_row(2)
-    assert row_last["score"] == None  # noqa: E711  (Rayforce Null == None is True)
-    assert row_last["key"] == "c"
+    # Nulls (0Nj = INT_MIN) sort to the beginning in ascending order
+    row_first = result.at_row(0)
+    assert row_first["score"] == None  # noqa: E711  (Rayforce Null == None is True)
+    assert row_first["key"] == "c"
     # Non-null rows are sorted ascending
-    assert result.at_row(0)["score"] == 3
-    assert result.at_row(1)["score"] == 5
+    assert result.at_row(1)["score"] == 3
+    assert result.at_row(2)["score"] == 5
 
 
 def test_order_by_multiple_columns_desc():

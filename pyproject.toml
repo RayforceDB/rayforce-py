@@ -7,7 +7,7 @@ name = "rayforce_py"
 version = "0.6.2"
 description = "Python bindings for RayforceDB"
 readme = "README.md"
-authors = [{name = "Karim"}]
+authors = [{name = "RayforceDB"}]
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = ["numpy>=2.0.0"]

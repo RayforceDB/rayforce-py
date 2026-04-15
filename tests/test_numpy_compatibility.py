@@ -64,7 +64,7 @@ class TestFromNumpyInt32:
     def test_boundary_values(self):
         arr = np.array([-2147483648, 0, 2147483647], dtype=np.int32)
         v = t.Vector.from_numpy(arr)
-        assert v[0].value == -2147483648
+        assert v[0].value is None  # INT32_MIN is null sentinel (0Ni)
         assert v[1].value == 0
         assert v[2].value == 2147483647
 
@@ -82,7 +82,7 @@ class TestFromNumpyInt16:
     def test_boundary_values(self):
         arr = np.array([-32768, 0, 32767], dtype=np.int16)
         v = t.Vector.from_numpy(arr)
-        assert v[0].value == -32768
+        assert v[0].value is None  # INT16_MIN is null sentinel (0Nh)
         assert v[1].value == 0
         assert v[2].value == 32767
 
