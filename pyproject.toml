@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayforce_py"
-version = "0.6.2"
+version = "0.6.3"
 description = "Python bindings for RayforceDB"
 readme = "README.md"
 authors = [{name = "RayforceDB"}]
@@ -23,6 +23,14 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Programming Language :: C"
 ]
+
+[project.urls]
+Homepage = "https://py.rayforcedb.com"
+Documentation = "https://py.rayforcedb.com/content/get-started/overview.html"
+Repository = "https://github.com/RayforceDB/rayforce-py"
+Issues = "https://github.com/RayforceDB/rayforce-py/issues"
+Changelog = "https://py.rayforcedb.com/content/CHANGELOG.html"
+Chat = "https://rayforcedb.zulipchat.com/"
 
 [project.scripts]
 rayforce = "rayforce.cli:main"

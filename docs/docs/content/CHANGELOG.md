@@ -5,6 +5,14 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`0.6.3`**
+
+### Bug Fixes
+
+- **Integer null sentinel handling**: I16, I32, and I64 scalars now correctly recognize null sentinels (`0Nh`, `0Ni`, `0Nj`) and return `None` from `to_python()`. This fixes null comparisons in operations where unmatched rows returned raw sentinel values (e.g., `-9223372036854775808`) instead of `None`.
+
+2026-04-15 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/0.6.3/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/0.6.3)**
+
 ## **`0.6.2`**
 
 ### Bug Fixes

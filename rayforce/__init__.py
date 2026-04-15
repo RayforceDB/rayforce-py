@@ -10,7 +10,7 @@ from rayforce.ffi import FFI
 
 FFI.init_runtime()
 
-version = "0.6.2"
+version = "0.6.3"
 
 if sys.platform == "linux":
     lib_name = "_rayforce_c.so"
