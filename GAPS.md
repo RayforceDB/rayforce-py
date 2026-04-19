@@ -591,8 +591,8 @@ XPASS.
 
 ### Task L5 — GUID parser test: accept both forms
 
-- [ ] Open `tests/types/scalars/other/test_guid.py`.
-- [ ] At line 45, change the test that asserts non-hyphenated GUIDs raise,
+- [x] Open `tests/types/scalars/other/test_guid.py`.
+- [x] At line 45, change the test that asserts non-hyphenated GUIDs raise,
       to instead assert both hyphenated and non-hyphenated forms parse to
       the same 16-byte value:
       ```python
@@ -601,12 +601,12 @@ XPASS.
           b = GUID("0123456789abcdef0123456789abcdef")
           assert a.to_python() == b.to_python()
       ```
-- [ ] Remove the xfail decorator.
-- [ ] Verification:
+- [x] Remove the xfail decorator.
+- [x] Verification:
       ```
       python3 -m pytest tests/types/scalars/other/test_guid.py -v
       ```
-- [ ] Expected: all guid tests pass; no xfails remain.
+- [x] Expected: all guid tests pass; no xfails remain. (Actual: 11 passed.)
 
 ---
 

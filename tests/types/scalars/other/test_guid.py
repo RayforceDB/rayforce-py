@@ -42,14 +42,11 @@ def test_guid_uppercase_string():
     assert result.value == uuid.UUID("abcdef01-2345-6789-abcd-ef0123456789")
 
 
-@pytest.mark.xfail(
-    reason="v2 GUID parser accepts both hyphenated and non-hyphenated forms",
-    strict=False,
-)
-def test_guid_no_hyphens_string_raises():
-    """The C library requires hyphenated format; non-hyphenated strings are rejected."""
-    with pytest.raises(RuntimeError):
-        t.GUID("12345678123456781234567812345678")
+def test_guid_accepts_both_forms():
+    """v2 parses both hyphenated and non-hyphenated GUID strings to the same value."""
+    hyphenated = t.GUID("12345678-1234-5678-1234-567812345678")
+    non_hyphenated = t.GUID("12345678123456781234567812345678")
+    assert hyphenated.value == non_hyphenated.value
 
 
 def test_guid_braces_string_raises():
