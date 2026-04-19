@@ -517,25 +517,28 @@ XPASS.
 
 ### Task L2 — Wire `TYPE_F32` into numpy-roundtrip maps
 
-- [ ] Open `rayforce/types/containers/vector.py`.
-- [ ] Add entries for F32 in each of these dicts:
+- [x] Open `rayforce/types/containers/vector.py`.
+- [x] Add entries for F32 in each of these dicts:
       - `_RAW_FORMATS[r.TYPE_F32] = ("f", 4)`
       - `_NUMPY_TO_RAY["float32"] = r.TYPE_F32`
       - `_RAY_TO_NUMPY[r.TYPE_F32] = "float32"`
       - `_NUMPY_DTYPES[r.TYPE_F32] = np.float32`
-- [ ] Delete the `"float32": "float64"` entry from `_NUMPY_WIDEN` so F32
+- [x] Delete the `"float32": "float64"` entry from `_NUMPY_WIDEN` so F32
       stays narrow.
-- [ ] If `rayforce/ffi.py` still lacks `init_f32`/`read_f32` wrappers, add
+- [x] If `rayforce/ffi.py` still lacks `init_f32`/`read_f32` wrappers, add
       them (mirror `init_f64`/`read_f64`). They call into
       `r.init_vector_from_raw_buffer(r.TYPE_F32, ...)`. Most tests use the
-      vector path, so scalar F32 is optional.
-- [ ] Remove the module-level `pytestmark = pytest.mark.xfail(...)` in
+      vector path, so scalar F32 is optional. (skipped — v2 core has no
+      `ray_f32()` atom ctor; `Vector.__getitem__` instead reads raw F32
+      bytes and widens to F64 for per-element access.)
+- [x] Remove the module-level `pytestmark = pytest.mark.xfail(...)` in
       `tests/test_numpy_compatibility.py` (line 23).
-- [ ] Verification:
+- [x] Verification:
       ```
       python3 -m pytest tests/test_numpy_compatibility.py -v --no-header
       ```
-- [ ] Expected: all 75 tests pass; no XPASS/XFAIL lines.
+- [x] Expected: all 75 tests pass; no XPASS/XFAIL lines. (Actual: 211 tests
+      pass; file grew since the 75-count was written.)
 
 ---
 

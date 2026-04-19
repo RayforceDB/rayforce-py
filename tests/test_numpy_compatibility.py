@@ -17,14 +17,6 @@ import pytest
 from rayforce import errors
 from rayforce import types as t
 
-# Auto-widening semantics changed in v2 (float32 is preserved as RAY_F32 rather
-# than widened to RAY_F64); String.to_numpy / List.to_numpy not yet implemented.
-# Tracked in UPGRADE.md Phase 7 known gaps.
-pytestmark = pytest.mark.xfail(
-    reason="v2 float32/string numpy compat; see UPGRADE.md Phase 7",
-    strict=False,
-)
-
 # ============================================================================
 # 1. Vector.from_numpy — supported numeric dtypes
 # ============================================================================
@@ -382,18 +374,19 @@ class TestFromNumpyUnsupported:
         with pytest.raises(errors.RayforceInitError, match="Cannot infer ray_type"):
             t.Vector.from_numpy(arr)
 
-    def test_float32_auto_widens_to_f64(self):
-        """float32 auto-widens to float64."""
+    def test_float32_preserved_as_rayf32(self):
+        """float32 is preserved as RAY_F32 in v2 (no longer widens to F64)."""
         arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
         v = t.Vector.from_numpy(arr)
         assert len(v) == 3
+        # No RAY_F32 scalar atom in v2 — per-element access widens to F64.
         assert isinstance(v[0], t.F64)
         assert abs(v[0].value - 1.0) < 1e-6
         assert abs(v[1].value - 2.0) < 1e-6
         assert abs(v[2].value - 3.0) < 1e-6
-        # Roundtrip to numpy gives float64
+        # Roundtrip to numpy preserves float32 dtype
         result = v.to_numpy()
-        assert result.dtype == np.float64
+        assert result.dtype == np.float32
         np.testing.assert_array_almost_equal(result, [1.0, 2.0, 3.0])
 
     def test_int8_auto_widens_to_i16(self):
@@ -1603,23 +1596,24 @@ class TestNaTPreservation:
 
 
 class TestAutoWidening:
-    def test_float32_to_f64_values(self):
+    def test_float32_preserved_values(self):
         arr = np.array([1.5, -2.5, 0.0, 3.14], dtype=np.float32)
         v = t.Vector.from_numpy(arr)
+        # Per-element access widens to F64 (no RAY_F32 scalar atom in v2).
         assert isinstance(v[0], t.F64)
         assert v[0].value == np.float64(np.float32(1.5))
         assert v[1].value == np.float64(np.float32(-2.5))
         assert v[2].value == 0.0
         result = v.to_numpy()
-        assert result.dtype == np.float64
-        np.testing.assert_array_almost_equal(result, arr.astype(np.float64))
+        assert result.dtype == np.float32
+        np.testing.assert_array_almost_equal(result, arr)
 
     def test_float32_empty(self):
         arr = np.array([], dtype=np.float32)
         v = t.Vector.from_numpy(arr)
         assert len(v) == 0
         result = v.to_numpy()
-        assert result.dtype == np.float64
+        assert result.dtype == np.float32
         assert len(result) == 0
 
     def test_int8_to_i16_values(self):

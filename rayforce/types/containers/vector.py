@@ -141,12 +141,22 @@ class Vector(
         if idx < 0 or idx >= len(self):
             raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
+        vec_type = FFI.get_obj_type(self.ptr)
+
         # The C-level at_idx returns B8 scalars for U8 vector elements
         # because both are 1-byte types and the value loses precision (bool).
         # Read the correct byte value directly from the raw buffer instead.
-        if FFI.get_obj_type(self.ptr) == r.TYPE_U8:
+        if vec_type == r.TYPE_U8:
             raw = FFI.read_vector_raw(self.ptr)
             return U8(raw[idx])
+
+        # v2 has no RAY_F32 scalar atom, so collection_elem can't box F32 vec
+        # elements. Read the raw bytes and widen to F64 for per-element access.
+        if vec_type == r.TYPE_F32:
+            from rayforce.types.scalars.numeric.float import F64
+
+            raw = FFI.read_vector_raw(self.ptr)
+            return F64(struct.unpack_from("<f", raw, idx * 4)[0])
 
         return utils.ray_to_python(FFI.at_idx(self.ptr, idx))
 
@@ -372,6 +382,9 @@ class String(Scalar):
     def __iter__(self) -> t.Iterator[String]:
         for ch in self.to_python():
             yield String(ch)
+
+    def to_numpy(self) -> t.Any:
+        return np.array(list(self.to_python()))
 
 
 from rayforce.types.registry import TypeRegistry  # noqa: E402
