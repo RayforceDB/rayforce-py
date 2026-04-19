@@ -207,6 +207,10 @@ static PyMethodDef rayforce_methods[] = {
      "Read U8 vector as bytes"},
     {"read_vector_raw", raypy_read_vector_raw, METH_VARARGS,
      "Read numeric vector as raw bytes buffer"},
+    {"vec_is_null", raypy_vec_is_null, METH_VARARGS,
+     "Test whether a vector element is null via the v2 null bitmap"},
+    {"vec_set_null", raypy_vec_set_null, METH_VARARGS,
+     "Set a vector element's null bit in the v2 null bitmap"},
 
     {NULL, NULL, 0, NULL}};
 

@@ -84,6 +84,13 @@ _NUMPY_DTYPES: dict[int, t.Any] = {
 }
 
 
+def _apply_null_mask(vec: Vector, mask: t.Any) -> None:
+    if not mask.any():
+        return
+    for idx in np.flatnonzero(mask).tolist():
+        FFI.vec_set_null(vec.ptr, int(idx), is_null=True)
+
+
 class Vector(
     SortContainerMixin,
     IterableContainerMixin,
@@ -143,6 +150,11 @@ class Vector(
 
         vec_type = FFI.get_obj_type(self.ptr)
 
+        if 0 < vec_type <= r.TYPE_STR and FFI.vec_is_null(self.ptr, idx):
+            from rayforce.types.null import Null
+
+            return Null
+
         # The C-level at_idx returns B8 scalars for U8 vector elements
         # because both are 1-byte types and the value loses precision (bool).
         # Read the correct byte value directly from the raw buffer instead.
@@ -197,6 +209,16 @@ class Vector(
         fmt_char, _ = fmt_info
         return list(struct.unpack(f"<{len(self)}{fmt_char}", FFI.read_vector_raw(self.ptr)))
 
+    def _null_mask(self) -> t.Any:
+        n = len(self)
+        if n == 0:
+            return np.zeros(0, dtype=bool)
+        return np.fromiter(
+            (FFI.vec_is_null(self.ptr, i) for i in range(n)),
+            dtype=bool,
+            count=n,
+        )
+
     def to_numpy(self) -> t.Any:
         type_code = FFI.get_obj_type(self.ptr)
         dtype = _NUMPY_DTYPES.get(type_code)
@@ -204,7 +226,7 @@ class Vector(
             return np.array(self.to_list())
         raw = np.frombuffer(FFI.read_vector_raw(self.ptr), dtype=dtype)
         if type_code == r.TYPE_TIMESTAMP:
-            null_mask = raw == _I64_NULL
+            null_mask = self._null_mask()
             if null_mask.any():
                 adjusted = raw.copy()
                 adjusted[null_mask] = 0
@@ -213,7 +235,7 @@ class Vector(
                 return result
             return (raw + _EPOCH_OFFSET_NS).view("datetime64[ns]")
         if type_code == r.TYPE_DATE:
-            null_mask = raw == _I32_NULL
+            null_mask = self._null_mask()
             if null_mask.any():
                 safe = raw.astype(np.int64)
                 safe[null_mask] = 0
@@ -222,7 +244,7 @@ class Vector(
                 return result
             return (raw.astype(np.int64) + _EPOCH_OFFSET_DAYS).astype("datetime64[D]")
         if type_code == r.TYPE_TIME:
-            null_mask = raw == _I32_NULL
+            null_mask = self._null_mask()
             if null_mask.any():
                 result = raw.astype("timedelta64[ms]").copy()
                 result[null_mask] = np.timedelta64("NaT")
@@ -267,18 +289,22 @@ class Vector(
                 int_arr = (raw_i64 - _EPOCH_OFFSET_DAYS).astype(np.int32)
                 if nat_mask.any():
                     int_arr[nat_mask] = _I32_NULL
-                return cls(
+                vec = cls(
                     ptr=FFI.init_vector_from_raw_buffer(r.TYPE_DATE, len(int_arr), int_arr.data)
                 )
+                _apply_null_mask(vec, nat_mask)
+                return vec
             # Any other resolution -> convert to ns -> Timestamp
             ns_view = arr.astype("datetime64[ns]").view(np.int64)
             nat_mask = ns_view == _I64_NULL
             ns_arr = ns_view.copy()
             ns_arr[~nat_mask] -= _EPOCH_OFFSET_NS
             # NaT positions keep int64 min (= rayforce null sentinel)
-            return cls(
+            vec = cls(
                 ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIMESTAMP, len(ns_arr), ns_arr.data)
             )
+            _apply_null_mask(vec, nat_mask)
+            return vec
 
         # timedelta64 -> Time (milliseconds since midnight)
         if arr.dtype.kind == "m":
@@ -288,7 +314,9 @@ class Vector(
             int_arr = raw_i64.astype(np.int32)
             if nat_mask.any():
                 int_arr[nat_mask] = _I32_NULL
-            return cls(ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIME, len(int_arr), int_arr.data))
+            vec = cls(ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIME, len(int_arr), int_arr.data))
+            _apply_null_mask(vec, nat_mask)
+            return vec
 
         # String/object arrays
         if arr.dtype.kind in ("U", "S", "O"):

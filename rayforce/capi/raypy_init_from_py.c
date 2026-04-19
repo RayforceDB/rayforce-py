@@ -361,11 +361,17 @@ static obj_p convert_py_item_to_ray(PyObject *item, int type_code);
 /* Append a converted ray atom to the target collection.
  * For RAY_LIST / RAY_STR vectors / typed scalar vectors we choose the
  * appropriate v2 append function and reassign the target pointer (which
- * may have moved after a realloc). Returns 0 on success, -1 on error. */
+ * may have moved after a realloc). Returns 0 on success, -1 on error.
+ *
+ * When `atom` is the NULL_OBJ singleton we append a zero placeholder and
+ * then set the v2 null bitmap bit for the new index, so downstream readers
+ * that consult `ray_vec_is_null` can tell null from zero. */
 static int append_to_collection(obj_p *target_obj, obj_p atom) {
   obj_p target = *target_obj;
   if (target == NULL || atom == NULL)
     return -1;
+
+  bool is_null = RAY_IS_NULL(atom);
 
   if (target->type == RAY_LIST) {
     obj_p result = ray_list_append(target, atom);
@@ -376,12 +382,18 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
   }
 
   if (target->type == RAY_STR) {
-    if (atom->type != -RAY_STR)
-      return -1;
-    obj_p result =
-        ray_str_vec_append(target, ray_str_ptr(atom), ray_str_len(atom));
+    obj_p result;
+    if (is_null) {
+      result = ray_str_vec_append(target, "", 0);
+    } else {
+      if (atom->type != -RAY_STR)
+        return -1;
+      result = ray_str_vec_append(target, ray_str_ptr(atom), ray_str_len(atom));
+    }
     if (result == NULL || RAY_IS_ERR(result))
       return -1;
+    if (is_null)
+      ray_vec_set_null(result, result->len - 1, true);
     *target_obj = result;
     return 0;
   }
@@ -395,46 +407,62 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
     double f64;
   } scratch;
   const void *p;
-  switch (target->type) {
-  case RAY_BOOL:
-  case RAY_U8:
-    scratch.u8 = atom->u8;
-    p = &scratch.u8;
-    break;
-  case RAY_I16:
-    scratch.i16 = atom->i16;
-    p = &scratch.i16;
-    break;
-  case RAY_I32:
-  case RAY_DATE:
-  case RAY_TIME:
-    scratch.i32 = atom->i32;
-    p = &scratch.i32;
-    break;
-  case RAY_I64:
-  case RAY_TIMESTAMP:
-  case RAY_SYM:
-    scratch.i64 = atom->i64;
-    p = &scratch.i64;
-    break;
-  case RAY_F64:
-    scratch.f64 = atom->f64;
-    p = &scratch.f64;
-    break;
-  case RAY_GUID: {
-    obj_p result =
-        ray_vec_append(target, atom->obj ? ray_data(atom->obj) : NULL);
-    if (result == NULL || RAY_IS_ERR(result))
+  if (is_null) {
+    memset(&scratch, 0, sizeof(scratch));
+    p = &scratch;
+    if (target->type == RAY_GUID) {
+      static const uint8_t zero_guid[16] = {0};
+      obj_p result = ray_vec_append(target, zero_guid);
+      if (result == NULL || RAY_IS_ERR(result))
+        return -1;
+      ray_vec_set_null(result, result->len - 1, true);
+      *target_obj = result;
+      return 0;
+    }
+  } else {
+    switch (target->type) {
+    case RAY_BOOL:
+    case RAY_U8:
+      scratch.u8 = atom->u8;
+      p = &scratch.u8;
+      break;
+    case RAY_I16:
+      scratch.i16 = atom->i16;
+      p = &scratch.i16;
+      break;
+    case RAY_I32:
+    case RAY_DATE:
+    case RAY_TIME:
+      scratch.i32 = atom->i32;
+      p = &scratch.i32;
+      break;
+    case RAY_I64:
+    case RAY_TIMESTAMP:
+    case RAY_SYM:
+      scratch.i64 = atom->i64;
+      p = &scratch.i64;
+      break;
+    case RAY_F64:
+      scratch.f64 = atom->f64;
+      p = &scratch.f64;
+      break;
+    case RAY_GUID: {
+      obj_p result =
+          ray_vec_append(target, atom->obj ? ray_data(atom->obj) : NULL);
+      if (result == NULL || RAY_IS_ERR(result))
+        return -1;
+      *target_obj = result;
+      return 0;
+    }
+    default:
       return -1;
-    *target_obj = result;
-    return 0;
-  }
-  default:
-    return -1;
+    }
   }
   obj_p result = ray_vec_append(target, p);
   if (result == NULL || RAY_IS_ERR(result))
     return -1;
+  if (is_null)
+    ray_vec_set_null(result, result->len - 1, true);
   *target_obj = result;
   return 0;
 }

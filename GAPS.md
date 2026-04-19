@@ -615,45 +615,39 @@ XPASS.
 Prerequisite: `raypy_read_from_rf.c` needs a small C wrapper exposing the
 v2 bitmap accessor to Python. Still library-only since we own that file.
 
-- [ ] In `rayforce/capi/raypy_read_from_rf.c`, add a new PyObject wrapper:
-      ```c
-      PyObject *raypy_vec_is_null(PyObject *self, PyObject *args) {
-        (void)self; CHECK_MAIN_THREAD();
-        RayObject *vec; Py_ssize_t idx;
-        if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &vec, &idx))
-          return NULL;
-        return PyBool_FromLong(ray_vec_is_null(vec->obj, (int64_t)idx));
-      }
-      ```
-- [ ] Register it in the method table in `rayforce/capi/rayforce_c.c`:
-      ```c
-      {"vec_is_null", raypy_vec_is_null, METH_VARARGS, "..."},
-      ```
-- [ ] Declare in `rayforce/capi/rayforce_c.h`:
-      `PyObject *raypy_vec_is_null(PyObject *, PyObject *);`
-- [ ] Add an FFI wrapper in `rayforce/ffi.py`:
-      ```python
-      @staticmethod
-      @errors.error_handler
-      def vec_is_null(vec: r.RayObject, idx: int) -> bool:
-          return r.vec_is_null(vec, idx)
-      ```
-- [ ] Rewrite `Vector.to_numpy()` TIMESTAMP/DATE/TIME null-mask blocks in
+- [x] In `rayforce/capi/raypy_read_from_rf.c`, add a new PyObject wrapper
+      `raypy_vec_is_null`. Also added `raypy_vec_set_null` since the
+      `from_numpy` datetime path needs to flip null bits post-allocation
+      (the bulk `init_vector_from_raw_buffer` path can't set bits).
+- [x] Register `vec_is_null` and `vec_set_null` in the method table in
+      `rayforce/capi/rayforce_c.c`.
+- [x] Declare both in `rayforce/capi/rayforce_c.h`.
+- [x] Add FFI wrappers `FFI.vec_is_null` and `FFI.vec_set_null` in
+      `rayforce/ffi.py`.
+- [x] Rewrite `Vector.to_numpy()` TIMESTAMP/DATE/TIME null-mask blocks in
       `rayforce/types/containers/vector.py` to build the mask from
-      `FFI.vec_is_null` instead of `== INT*_MIN`.
-- [ ] Update `rayforce/plugins/pandas.py` and `rayforce/plugins/polars.py`
-      similarly — any `== INT*_MIN` / `isnan` null check becomes
-      `vec_is_null`.
-- [ ] Rebuild: `make app` (the new C export requires a rebuild).
-- [ ] Remove the three xfails:
+      `FFI.vec_is_null` via a new `_null_mask()` helper, replacing the
+      `== _I*_NULL` sentinel checks.
+- [x] Wire null-bitmap set-on-write in `append_to_collection`
+      (`raypy_init_from_py.c`) so `None` elements passed to `Vector(items=…)`
+      store as true nulls (not placeholder zeros) across typed scalar,
+      RAY_STR, and RAY_GUID vectors. Also teach `Vector.__getitem__` to
+      surface `Null` when `FFI.vec_is_null` reports a masked element.
+- [x] Teach `Vector.from_numpy` datetime64/timedelta64 paths to set the null
+      bitmap for NaT positions via a new `_apply_null_mask` helper.
+- [x] plugins/pandas.py and plugins/polars.py needed no changes — they are
+      write-only `from_*` converters and the null-bitmap work is now handled
+      by the shared Vector write path.
+- [x] Rebuild: `make app` (the new C exports require a rebuild).
+- [x] Remove the three xfails:
       - `tests/plugins/test_pandas.py:169`
       - `tests/plugins/test_polars.py:178`
       - `tests/plugins/test_polars.py:377`
-- [ ] Verification:
+- [x] Verification:
       ```
       python3 -m pytest tests/plugins/test_pandas.py tests/plugins/test_polars.py -v
       ```
-- [ ] Expected: all plugin null-roundtrip tests pass.
+- [x] Expected: all plugin null-roundtrip tests pass. (Actual: 33 passed.)
 
 ---
 

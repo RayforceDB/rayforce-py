@@ -152,5 +152,7 @@ PyObject *raypy_ser_obj(PyObject *self, PyObject *args);
 PyObject *raypy_de_obj(PyObject *self, PyObject *args);
 PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args);
 PyObject *raypy_read_vector_raw(PyObject *self, PyObject *args);
+PyObject *raypy_vec_is_null(PyObject *self, PyObject *args);
+PyObject *raypy_vec_set_null(PyObject *self, PyObject *args);
 
 #endif

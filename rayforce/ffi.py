@@ -302,6 +302,16 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def vec_is_null(vec: r.RayObject, idx: int) -> bool:
+        return r.vec_is_null(vec, idx)
+
+    @staticmethod
+    @errors.error_handler
+    def vec_set_null(vec: r.RayObject, idx: int, is_null: bool) -> None:
+        return r.vec_set_null(vec, idx, is_null)
+
+    @staticmethod
+    @errors.error_handler
     def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> None:
         return r.set_obj(obj, idx, value)
 

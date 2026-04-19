@@ -550,3 +550,57 @@ PyObject *raypy_rc(PyObject *self, PyObject *args) {
 
   return PyLong_FromUnsignedLong(rc_obj(ray_obj->obj));
 }
+PyObject *raypy_vec_is_null(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  Py_ssize_t idx;
+  if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &idx))
+    return NULL;
+
+  obj_p vec = ray_obj->obj;
+  if (vec == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_is_null: object is null");
+    return NULL;
+  }
+  if (!ray_is_vec(vec)) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_is_null: object is not a vector");
+    return NULL;
+  }
+  if (idx < 0 || idx >= vec->len) {
+    PyErr_Format(PyExc_IndexError,
+                 "vec_is_null: index %zd out of range (len %lld)", idx,
+                 (long long)vec->len);
+    return NULL;
+  }
+  return PyBool_FromLong(ray_vec_is_null(vec, (int64_t)idx));
+}
+PyObject *raypy_vec_set_null(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  Py_ssize_t idx;
+  int is_null;
+  if (!PyArg_ParseTuple(args, "O!np", &RayObjectType, &ray_obj, &idx, &is_null))
+    return NULL;
+
+  obj_p vec = ray_obj->obj;
+  if (vec == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_set_null: object is null");
+    return NULL;
+  }
+  if (!ray_is_vec(vec)) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_set_null: object is not a vector");
+    return NULL;
+  }
+  if (idx < 0 || idx >= vec->len) {
+    PyErr_Format(PyExc_IndexError,
+                 "vec_set_null: index %zd out of range (len %lld)", idx,
+                 (long long)vec->len);
+    return NULL;
+  }
+  ray_vec_set_null(vec, (int64_t)idx, is_null ? true : false);
+  Py_RETURN_NONE;
+}

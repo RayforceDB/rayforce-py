@@ -166,10 +166,6 @@ def test_from_pandas_datetime_types(pandas):
     assert_table_shape(table, rows=3, cols=2)
 
 
-@pytest.mark.xfail(
-    reason="v2 null handling in pandas roundtrip; see UPGRADE.md Phase 7",
-    strict=False,
-)
 def test_from_pandas_with_nulls(pandas):
     df = pandas.DataFrame(
         {
