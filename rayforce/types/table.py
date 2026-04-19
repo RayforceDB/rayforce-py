@@ -29,6 +29,9 @@ if t.TYPE_CHECKING:
     from rayforce.types.fn import Fn
 
 
+_RAY_ATTR_NAME = 0x20
+
+
 class _TableProtocol(t.Protocol):
     _ptr: r.RayObject | str
     is_reference: bool
@@ -900,7 +903,9 @@ class SelectQuery(IPCQueryMixin):
 
         if isinstance(self.table, Table):
             if self.table.is_reference:
-                query_items["from"] = Symbol(self.table._ptr).ptr
+                name_sym = FFI.init_symbol(self.table._ptr)
+                FFI.set_obj_attrs(name_sym, _RAY_ATTR_NAME)
+                query_items["from"] = name_sym
             else:
                 query_items["from"] = self.table.ptr
         else:
@@ -970,8 +975,7 @@ class UpdateQuery(IPCQueryMixin):
 
         query_items = dict(converted_attrs)
         if self.table.is_reference:
-            cloned_table = FFI.quote(self.table.ptr)
-            query_items["from"] = cloned_table
+            query_items["from"] = Symbol(self.table._ptr).ptr
         else:
             query_items["from"] = self.table.ptr
 
@@ -1050,8 +1054,15 @@ class InsertQuery(IPCQueryMixin):
         return Expression(Operation.INSERT, self.table, self.compile(ipc=True)).compile()
 
     def execute(self) -> Table:
-        new_table = FFI.insert(table=FFI.quote(self.table.ptr), data=self.compile())
+        data = self.compile()
         if self.table.is_reference:
+            tbl_arg = Symbol(self.table._ptr).ptr
+            data = List([Operation.QUOTE, data]).ptr
+        else:
+            tbl_arg = self.table.ptr
+        new_table = FFI.insert(table=tbl_arg, data=data)
+        result_type = FFI.get_obj_type(new_table)
+        if self.table.is_reference and result_type == -r.TYPE_SYMBOL:
             return Table(Symbol(ptr=new_table).value)
         return Table(new_table)
 
@@ -1135,9 +1146,15 @@ class UpsertQuery(IPCQueryMixin):
         return Expression(Operation.UPSERT, self.table, *self.compile(ipc=True)).compile()
 
     def execute(self) -> Table:
-        compiled = self.compile()
-        new_table = FFI.upsert(table=FFI.quote(self.table.ptr), keys=compiled[0], data=compiled[1])
+        keys, data = self.compile()
         if self.table.is_reference:
+            tbl_arg = Symbol(self.table._ptr).ptr
+            data = List([Operation.QUOTE, data]).ptr
+        else:
+            tbl_arg = self.table.ptr
+        new_table = FFI.upsert(table=tbl_arg, keys=keys, data=data)
+        result_type = FFI.get_obj_type(new_table)
+        if self.table.is_reference and result_type == -r.TYPE_SYMBOL:
             return Table(Symbol(ptr=new_table).value)
         return Table(new_table)
 

@@ -9,9 +9,12 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# v2 query engine order-by depends on select projection; see UPGRADE.md Phase 7.
-pytestmark = pytest.mark.xfail(
-    reason="v2 query engine order-by; see UPGRADE.md Phase 7",
+_CATEGORY_1 = pytest.mark.xfail(
+    reason="GAPS.md Category 1 — DAG compiler rejects column refs (missing RAY_ATTR_NAME); see Task L8",
+    strict=False,
+)
+_CATEGORY_9 = pytest.mark.xfail(
+    reason="GAPS.md Category 9 — null detection via null bitmap not wired through order-by / at_row",
     strict=False,
 )
 
@@ -113,6 +116,7 @@ def test_order_by_preserves_all_rows(is_inplace, make_table):
     assert_column_values(result, "value", [1, 2, 3])
 
 
+@_CATEGORY_1
 def test_order_by_chained_with_select():
     """Test that order_by can be chained with select."""
     table = Table(
@@ -129,6 +133,7 @@ def test_order_by_chained_with_select():
     assert_column_values(result, "age", [25, 28, 30])
 
 
+@_CATEGORY_1
 def test_order_by_chained_with_where():
     """Test that order_by can be chained with where."""
     table = Table(
@@ -144,6 +149,7 @@ def test_order_by_chained_with_where():
     assert_column_values(result, "age", [28, 30, 35])
 
 
+@_CATEGORY_9
 def test_order_by_with_null_values():
     """ORDER BY on a column that contains NULL values; NULLs sort to the beginning (0Nj = INT_MIN)."""
     left = Table(

@@ -656,35 +656,54 @@ v2 bitmap accessor to Python. Still library-only since we own that file.
 Largest library-only lever. Focuses on
 `rayforce/types/table.py` compile methods (lines 948, 1004, 1072).
 
-- [ ] Read `/Users/karim/rayforce2/src/ops/query.c::ray_update_fn` carefully.
-      Note the expected layout of `args[0..n]`. Confirm whether v2 takes a
-      `Dict` with `from/where/attrs` or a positional tuple `(tbl_name, expr,
-      where)`. Write it down in a `# v2-arg-shape:` comment at the top of
-      `table.py`.
-- [ ] `UpdateQuery.compile()` — match v2's shape. Concretely: when the table
-      is a reference, emit the **symbol name** (a RAY_SYM atom interned via
-      `FFI.init_symbol`), not the table's RayObject ptr. Current code at
-      line 974 passes `FFI.quote(self.table.ptr)` — replace with
-      `Symbol(self.table._ptr).ptr`.
-- [ ] `InsertQuery.compile()` — same fix. The
-      `Symbol expects type code -12, got 98` error is the telltale: v2 sees
-      a RAY_TABLE (98) where it expected -RAY_SYM (-12).
-- [ ] `UpsertQuery.compile()` — same pattern.
-- [ ] Remove the module-level xfail markers on:
-      - `tests/types/table/test_update.py:7`
-      - `tests/types/table/test_insert.py:7`
-      - `tests/types/table/test_upsert.py:7`
-      - `tests/types/table/test_order_by.py:13` (order-by uses
-        `SelectQuery.execute`, which wraps select in xasc/xdesc — also
-        needs shape alignment).
-- [ ] Verification per module:
+- [x] Read v2 `ray_update_fn` / `ray_insert_fn` / `ray_upsert_fn` in
+      `tmp/rayforce-c/src/ops/query.c` (v2 renamed them with `_fn` suffix).
+      Arg shape: all three take `(args, n)` with `args[0]` being the table
+      argument. For update, `args[0]` is a dict; `from:` is evaluated and if
+      the result is `-RAY_SYM`, it's treated as in-place (env_get). For
+      insert/upsert, `args[0]` is directly the table or a `-RAY_SYM` (no
+      `RAY_ATTR_NAME`) for in-place — and in the in-place path, `args[1..]`
+      (the row/key/data) are evaluated via `ray_eval`, so plain `RAY_LIST`
+      rows must be wrapped in `(quote ...)` to avoid being treated as a
+      function call.
+- [x] `UpdateQuery.compile()` — switched the reference `from:` to
+      `Symbol(self.table._ptr).ptr` (bare `-RAY_SYM` atom, no `ATTR_NAME`).
+      `ray_update_fn` eval's `from_expr`, the bare sym is self-evaluating,
+      then it falls into the in-place branch that env_get's the table.
+- [x] `InsertQuery.execute()` — same pattern for `tbl_arg`, plus wrap the
+      compiled row in `List([Operation.QUOTE, data]).ptr` for the reference
+      path (v2 evaluates `args[1]` in the in-place branch; without the quote
+      wrap, a plain `RAY_LIST` of values is treated as a function call). Also
+      accept both `-RAY_SYM` and `RAY_TABLE` returns (v2 returns the table
+      directly, not a symbol).
+- [x] `UpsertQuery.execute()` — identical pattern to insert. Wrap data in
+      `(quote ...)` for reference path, accept either return type.
+- [x] `SelectQuery.compile()` — for the reference path, the `from:` sym
+      needs `RAY_ATTR_NAME` (0x20) set so `ray_eval` resolves it via
+      `ray_env_get` (unlike update, `ray_select_fn` errors if eval doesn't
+      return `RAY_TABLE`). Added `_RAY_ATTR_NAME` constant and inlined the
+      symbol + attr set.
+- [x] Removed the module-level xfail markers on:
+      - `tests/types/table/test_insert.py` (all 10 tests now pass)
+      - `tests/types/table/test_upsert.py` (all 12 tests now pass)
+      - `tests/types/table/test_update.py` — replaced with per-test
+        `@_CATEGORY_1` markers on the 9 tests that still fail due to
+        WHERE-predicate / column-ref DAG-compiler limitations (L8).
+        `test_update_all_rows[True|False]` now pass unmarked.
+      - `tests/types/table/test_order_by.py` — replaced with per-test
+        markers: `_CATEGORY_1` on chained_with_select / chained_with_where,
+        `_CATEGORY_9` on with_null_values.
+- [x] Verification per module:
       ```
       python3 -m pytest tests/types/table/test_update.py -v
       python3 -m pytest tests/types/table/test_insert.py -v
       python3 -m pytest tests/types/table/test_upsert.py -v
       python3 -m pytest tests/types/table/test_order_by.py -v
       ```
-- [ ] Expected: ~25 tests move from XFAIL to PASS across these 4 modules.
+- [x] Result: 37 passed + 12 xfailed across the four modules (up from
+      24 passed + 25 failed/xfailed before). Full suite: 751 passed (no
+      new regressions; the single remaining hard fail is the pre-existing
+      Category 6 `/`-by-F64 bug).
 
 ---
 
