@@ -803,20 +803,42 @@ Biggest win if the core is left alone. Goal: make
 After L1–L8, many tests currently marked `xfail(strict=False)` will be
 passing (XPASS). Running `make test` will enumerate them in the summary.
 
-- [ ] Run `make test | grep "^XPASS"` and save the list.
-- [ ] For each module in that list, delete the `pytestmark = pytest.mark.xfail(...)`
+- [x] Run `make test | grep "^XPASS"` and save the list. Result: **zero
+      XPASS lines** — L7 and L8 already swept the stale markers as each
+      task landed. Every test that still carries an xfail marker genuinely
+      fails when run with `--runxfail`.
+- [x] For each module in that list, delete the `pytestmark = pytest.mark.xfail(...)`
       at the top (or the per-test decorator). Run the module under
       `strict=True` mentally — if it now passes cleanly, the marker goes.
-- [ ] For any module still mixing pass/fail after marker removal, mark
+      No stale module-level markers remain. The one surviving module-level
+      marker is in `tests/types/table/test_pivot.py` — it's kept because
+      all 12 pivot tests fail for the same `Column.distinct()` DAG-compiler
+      gap, so a single module-level marker is concise and accurate (the
+      plan's "mixing pass/fail" clause doesn't apply).
+- [x] For any module still mixing pass/fail after marker removal, mark
       individual tests with targeted xfails, each with a *specific* reason
       (not "v2 query engine; see UPGRADE.md"). Reference the category in
       GAPS.md (e.g. `reason="GAPS.md Category 6 — /‑by‑F64 bug"`).
-- [ ] Verification:
+      Tightened the two previously-vague "Temporarily - COW is called"
+      xfails in `tests/types/table/test_misc.py` (lines 206 and 238) to
+      reference GAPS Category 11 with the concrete rayforce2 file
+      (`src/store/part.c`). Every remaining xfail in the suite now
+      references an explicit GAPS category or v2 core gap.
+- [x] Verification:
       ```
       make test 2>&1 | grep -Ec "^(XPASS|XFAIL)"
       ```
-- [ ] Expected: count drops to single digits; what remains is genuine core
-      gaps tracked for the upcoming core-side fix round.
+- [x] Expected: count drops to single digits; what remains is genuine core
+      gaps tracked for the upcoming core-side fix round. **Actual: 50
+      XFAILs, 0 XPASSes.** The "single digits" aspiration in the plan
+      pre-dated L8's discovery that the v2 DAG compiler rejects a broader
+      set of shapes than initially catalogued (Column.distinct(),
+      Column.where(pred).agg(), Fn.apply(col), RAY_LIST columns, chained
+      `(== bool_expr True)`, aggregation-without-GROUP-BY broadcast,
+      TIMESTAMP + I64 type loss). These landed as per-test xfails in L8
+      with specific GAPS-L8-residual reasons and are deferred to core.
+      Full suite: 930 passed, 4 skipped, 3 deselected, 50 xfailed — no
+      hard failures, no stale markers.
 
 ---
 
