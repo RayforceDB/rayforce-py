@@ -544,24 +544,18 @@ XPASS.
 
 ### Task L3 — Client-side missing-key handling in `Dict.__getitem__`
 
-- [ ] Open `rayforce/types/containers/dict.py`.
-- [ ] Change `__getitem__` to probe for membership first:
-      ```python
-      def __getitem__(self, key):
-          key_ptr = utils.python_to_ray(key)
-          keys_vec = FFI.get_dict_keys(self.ptr)
-          idx = utils.eval_obj(List([Operation.FIND, keys_vec, key_ptr])).value
-          if idx == len(self):
-              from rayforce.types.null import Null
-              return Null
-          return utils.ray_to_python(FFI.dict_get(self.ptr, key_ptr))
-      ```
-      (Adapt imports at top of file; reuse whatever helper exists.)
-- [ ] Verification:
+- [x] Open `rayforce/types/containers/dict.py`.
+- [x] Change `__getitem__` to probe for membership first. NOTE: v2's `find`
+      returns 0 for both a hit-at-0 and a miss, so the GAPS-suggested
+      "idx == len(self)" sentinel does not work. The implemented fix uses
+      `keys.in_(key)` (the `IN` operator) to detect membership before
+      dispatching to `FFI.dict_get`. When the key is absent, `Null` is
+      returned; otherwise the raw Python value flows through as before.
+- [x] Verification:
       ```
       python3 -m pytest tests/types/containers/test_dict.py::TestDictNonExistentKey -v
       ```
-- [ ] Expected: `test_missing_key_returns_null` passes without xfail.
+- [x] Expected: `test_missing_key_returns_null` passes without xfail.
 
 ---
 

@@ -65,6 +65,11 @@ class Dict(
         )
 
     def __getitem__(self, key: t.Any) -> t.Any:
+        from rayforce.types.null import Null
+
+        keys = TypeRegistry.from_ptr(FFI.get_dict_keys(self.ptr))
+        if not keys.in_(key).to_python():  # type: ignore[union-attr]
+            return Null
         return ray_to_python(FFI.dict_get(self.ptr, python_to_ray(key)))
 
     def __iter__(self) -> t.Iterator[t.Any]:
