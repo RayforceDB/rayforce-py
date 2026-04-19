@@ -306,12 +306,10 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
       PyErr_SetString(PyExc_RuntimeError, "init: table column is null");
       return NULL;
     }
-    ray_retain(col);
+    /* ray_table_add_col retains col internally; caller keeps ownership via
+     * `vals`, so no explicit retain/release is needed here. */
     obj_p res = ray_table_add_col(tbl, name_id, col);
     if (res == NULL || RAY_IS_ERR(res)) {
-      if (res && RAY_IS_ERR(res))
-        ray_release(res);
-      ray_release(col);
       ray_release(tbl);
       PyErr_Format(PyExc_RuntimeError,
                    "init: failed to add column %lld to table", (long long)i);

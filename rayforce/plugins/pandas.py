@@ -29,7 +29,7 @@ def _infer_ray_type_from_pandas_dtype(dtype: t.Any) -> type[RayObject]:
         return Symbol
     if dtype_str in ("datetime64[ns]", "datetime64", "datetime", "timestamp"):
         return Timestamp
-    if dtype_str in ("date"):
+    if dtype_str == "date":
         return Date
 
     if hasattr(dtype, "kind"):

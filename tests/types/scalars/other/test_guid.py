@@ -44,9 +44,11 @@ def test_guid_uppercase_string():
 
 def test_guid_accepts_both_forms():
     """v2 parses both hyphenated and non-hyphenated GUID strings to the same value."""
+    expected = uuid.UUID("12345678-1234-5678-1234-567812345678")
     hyphenated = t.GUID("12345678-1234-5678-1234-567812345678")
     non_hyphenated = t.GUID("12345678123456781234567812345678")
-    assert hyphenated.value == non_hyphenated.value
+    assert hyphenated.value == expected
+    assert non_hyphenated.value == expected
 
 
 def test_guid_braces_string_raises():

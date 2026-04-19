@@ -181,8 +181,8 @@ class Expression(AggregationMixin, OperatorMixin):
                 [
                     Operation.MAP,
                     Operation.AT,
-                    self.operands[0].name,
-                    List([Operation.WHERE, self.operands[1].compile()]),
+                    _make_name_sym(self.operands[0].name),
+                    List([Operation.WHERE, self.operands[1].compile(ipc=ipc)]),
                 ]
             ).ptr
 
@@ -781,7 +781,7 @@ class _WindowJoin(_Join):
             if isinstance(expr, Expression):
                 agg_dict[name] = expr.compile()
             elif isinstance(expr, Column):
-                agg_dict[name] = expr.name
+                agg_dict[name] = _make_name_sym(expr.name)
             else:
                 agg_dict[name] = expr
 

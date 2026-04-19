@@ -77,6 +77,8 @@ class TestVectorTypeInference:
     def test_none_items_creates_null_vector(self):
         v = t.Vector([None, None, None])
         assert len(v) == 3
+        for i in range(3):
+            assert v[i] is t.Null
 
 
 class TestVectorNegativeIndexing:
