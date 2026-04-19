@@ -4,7 +4,6 @@ from .null import Null
 from .operators import Operation
 from .scalars import (
     B8,
-    C8,
     F64,
     GUID,
     I16,
@@ -21,7 +20,6 @@ from .table import Column, Expression, Table, TableColumnInterval
 
 __all__ = [
     "B8",
-    "C8",
     "F64",
     "GUID",
     "I16",

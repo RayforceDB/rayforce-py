@@ -31,8 +31,10 @@ PyObject *raypy_de_obj(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  if (deserialized->type == TYPE_ERR) {
-    PyErr_SetString(PyExc_RuntimeError, "serde: deserialization error");
+  if (RAY_IS_ERR(deserialized)) {
+    PyErr_Format(PyExc_RuntimeError, "serde: deserialization error: %s",
+                 ray_err_code(deserialized));
+    ray_release(deserialized);
     return NULL;
   }
 
@@ -75,6 +77,7 @@ PyObject *raypy_read_vector_raw(PyObject *self, PyObject *args) {
   case TYPE_I32:
   case TYPE_DATE:
   case TYPE_TIME:
+  case RAY_F32:
     elem_size = sizeof(i32_t);
     break;
   case TYPE_I64:

@@ -17,6 +17,7 @@ from rayforce.types.base import (
     FunctionalContainerMixin,
     IterableContainerMixin,
     RayObject,
+    Scalar,
     SearchContainerMixin,
     SetOperationContainerMixin,
     SortContainerMixin,
@@ -32,6 +33,7 @@ _RAW_FORMATS: dict[int, tuple[str, int]] = {
     r.TYPE_I16: ("h", 2),
     r.TYPE_I32: ("i", 4),
     r.TYPE_I64: ("q", 8),
+    r.TYPE_F32: ("f", 4),
     r.TYPE_F64: ("d", 8),
     r.TYPE_DATE: ("i", 4),
     r.TYPE_TIME: ("i", 4),
@@ -43,6 +45,7 @@ _NUMPY_TO_RAY: dict[str, int] = {
     "int16": r.TYPE_I16,
     "int32": r.TYPE_I32,
     "int64": r.TYPE_I64,
+    "float32": r.TYPE_F32,
     "float64": r.TYPE_F64,
 }
 _RAY_TO_NUMPY: dict[int, str] = {
@@ -51,12 +54,12 @@ _RAY_TO_NUMPY: dict[int, str] = {
     r.TYPE_I16: "int16",
     r.TYPE_I32: "int32",
     r.TYPE_I64: "int64",
+    r.TYPE_F32: "float32",
     r.TYPE_F64: "float64",
 }
 # Auto-widen numpy dtypes that have no direct rayforce equivalent
 _NUMPY_WIDEN: dict[str, str] = {
-    "float16": "float64",
-    "float32": "float64",
+    "float16": "float32",
     "int8": "int16",
     "uint16": "int32",
     "uint32": "int64",
@@ -73,6 +76,7 @@ _NUMPY_DTYPES: dict[int, t.Any] = {
     r.TYPE_I16: np.int16,
     r.TYPE_I32: np.int32,
     r.TYPE_I64: np.int64,
+    r.TYPE_F32: np.float32,
     r.TYPE_F64: np.float64,
     r.TYPE_DATE: np.int32,
     r.TYPE_TIME: np.int32,
@@ -170,7 +174,7 @@ class Vector(
         else:
             ptr = utils.python_to_ray(value)
 
-        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=ptr)
+        FFI.set_obj(obj=self.ptr, idx=FFI.init_i64(idx), value=ptr)
 
     def __iter__(self) -> t.Iterator[t.Any]:
         for i in range(len(self)):
@@ -298,30 +302,78 @@ class Vector(
         return utils.eval_obj(List([Operation.REVERSE, self.ptr]))
 
 
-class String(Vector):
-    ptr: r.RayObject
-    type_code = r.TYPE_C8
+class String(Scalar):
+    """v2 string atom (type -RAY_STR).
+
+    Stored as a single RayObject atom — SSO for ≤7 bytes, pooled otherwise.
+    Exposes len/iter/index helpers so call sites written against the old
+    C8-vector shape continue to work at the Python layer.
+    """
+
+    type_code = -r.TYPE_STR
+    ray_name = "str"
 
     def __init__(
-        self, value: str | Vector | None = None, *, ptr: r.RayObject | None = None
+        self,
+        value: str | String | Vector | None = None,
+        *,
+        ptr: r.RayObject | None = None,
     ) -> None:
-        if ptr and (_type := FFI.get_obj_type(ptr)) != self.type_code:
-            raise errors.RayforceInitError(
-                f"Expected String RayObject (type {self.type_code}), got {_type}"
-            )
+        if ptr is not None:
+            actual = FFI.get_obj_type(ptr)
+            if actual != self.type_code:
+                raise errors.RayforceInitError(
+                    f"Expected String RayObject (type {self.type_code}), got {actual}"
+                )
+            self.ptr = ptr
+            return
+
+        if isinstance(value, String):
+            self.ptr = value.ptr
+            return
 
         if isinstance(value, Vector):
-            if (_type := FFI.get_obj_type(value.ptr)) != r.TYPE_C8:
+            # Legacy compatibility: a Vector pointing at a RAY_STR atom.
+            if FFI.get_obj_type(value.ptr) != self.type_code:
                 raise errors.RayforceInitError(
-                    f"Expected Vector (type {self.type_code}), got {_type}"
+                    f"Expected Vector wrapping String (type {self.type_code}), "
+                    f"got {FFI.get_obj_type(value.ptr)}"
                 )
             self.ptr = value.ptr
+            return
 
-        elif value is not None:
-            super().__init__(ray_type=String, ptr=FFI.init_string(value))
+        if value is None:
+            raise errors.RayforceInitError("String requires 'value' or 'ptr'")
 
-        else:
-            super().__init__(ptr=ptr)
+        if not isinstance(value, str):
+            raise errors.RayforceInitError(f"String expects str, got {type(value).__name__}")
+        self.ptr = FFI.init_string(value)
+
+    def _create_from_value(self, value: t.Any) -> r.RayObject:
+        return FFI.init_string(value)
 
     def to_python(self) -> str:  # type: ignore[override]
-        return "".join(i.value for i in self)
+        return FFI.read_string(self.ptr)
+
+    def __len__(self) -> int:
+        return FFI.get_obj_length(self.ptr)
+
+    def __bool__(self) -> bool:
+        return len(self) > 0
+
+    def __getitem__(self, idx: int) -> String:
+        py = self.to_python()
+        if idx < 0:
+            idx = len(py) + idx
+        if idx < 0 or idx >= len(py):
+            raise errors.RayforceIndexError(f"String index out of range: {idx}")
+        return String(py[idx])
+
+    def __iter__(self) -> t.Iterator[String]:
+        for ch in self.to_python():
+            yield String(ch)
+
+
+from rayforce.types.registry import TypeRegistry  # noqa: E402
+
+TypeRegistry.register(-r.TYPE_STR, String)

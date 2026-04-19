@@ -60,10 +60,7 @@ class TypeRegistry:
             r.TYPE_TABLE,
             r.TYPE_LAMBDA,
         ):
-            from rayforce.types import Null, String, Vector
-
-            if type_code == r.TYPE_C8:
-                return String(ptr=ptr)
+            from rayforce.types import Null, Vector
 
             if type_code == r.TYPE_NULL:
                 return Null  # type: ignore[return-value]

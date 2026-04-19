@@ -10,19 +10,31 @@ PyObject *raypy_binary_set(PyObject *self, PyObject *args) {
                         &RayObjectType, &value))
     return NULL;
 
-  if (symbol_or_path->obj->type != -TYPE_SYMBOL &&
-      symbol_or_path->obj->type != TYPE_C8) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "binary: first argument must be a symbol or string");
-    return NULL;
+  obj_p target = symbol_or_path->obj;
+
+  if (target->type == -RAY_SYM) {
+    if (ray_env_set(target->i64, value->obj) != RAY_OK) {
+      PyErr_SetString(PyExc_RuntimeError, "binary: failed to set env binding");
+      return NULL;
+    }
+    ray_retain(value->obj);
+    return raypy_wrap_ray_object(value->obj);
   }
 
-  obj_p ray_obj = binary_set(symbol_or_path->obj, value->obj);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "binary: failed to set value");
-    return NULL;
+  if (target->type == -RAY_STR) {
+    const char *path = ray_str_ptr(target);
+    if (ray_obj_save(value->obj, path) != RAY_OK) {
+      PyErr_Format(PyExc_RuntimeError, "binary: failed to save object to '%s'",
+                   path);
+      return NULL;
+    }
+    ray_retain(value->obj);
+    return raypy_wrap_ray_object(value->obj);
   }
-  return raypy_wrap_ray_object(ray_obj);
+
+  PyErr_SetString(PyExc_RuntimeError,
+                  "binary: first argument must be a symbol or string");
+  return NULL;
 }
 PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args) {
   (void)self;
@@ -33,7 +45,7 @@ PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!l", &RayObjectType, &ray_obj, &value))
     return NULL;
 
-  ray_obj->obj->attrs = (char)value;
+  ray_obj->obj->attrs = (uint8_t)value;
   Py_RETURN_NONE;
 }
 PyObject *raypy_quote(PyObject *self, PyObject *args) {
@@ -44,10 +56,10 @@ PyObject *raypy_quote(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p ray_obj = ray_quote(item->obj);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "binary: failed to quote object");
+  if (item->obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "binary: cannot quote null object");
     return NULL;
   }
-  return raypy_wrap_ray_object(ray_obj);
+  ray_retain(item->obj);
+  return raypy_wrap_ray_object(item->obj);
 }

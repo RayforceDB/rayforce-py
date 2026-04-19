@@ -109,6 +109,11 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def read_string(obj: r.RayObject) -> str:
+        return r.read_string(obj)
+
+    @staticmethod
+    @errors.error_handler
     def read_symbol(obj: r.RayObject) -> str:
         return r.read_symbol(obj)
 
@@ -269,43 +274,8 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def loadfn_from_file(filename: str, fn_name: str, args_count: int) -> r.RayObject:
-        return r.loadfn_from_file(filename, fn_name, args_count)
-
-    @staticmethod
-    @errors.error_handler
     def get_error_obj(error_obj: r.RayObject) -> r.RayObject:
         return r.get_error_obj(error_obj)
-
-    @staticmethod
-    @errors.error_handler
-    def hopen(path: r.RayObject) -> r.RayObject:
-        return r.hopen(path)
-
-    @staticmethod
-    @errors.error_handler
-    def hclose(handle: r.RayObject) -> None:
-        return r.hclose(handle)
-
-    @staticmethod
-    @errors.error_handler
-    def write(handle: r.RayObject, data: r.RayObject) -> None:
-        return r.write(handle, data)
-
-    @staticmethod
-    @errors.error_handler
-    def ipc_listen(port: int) -> int:
-        return r.ipc_listen(port)
-
-    @staticmethod
-    @errors.error_handler
-    def ipc_close_listener(listener_id: int) -> None:
-        return r.ipc_close_listener(listener_id)
-
-    @staticmethod
-    @errors.error_handler
-    def runtime_run() -> int:
-        return r.runtime_run()
 
     @staticmethod
     @errors.error_handler

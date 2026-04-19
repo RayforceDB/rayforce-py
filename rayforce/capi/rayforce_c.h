@@ -2,41 +2,35 @@
 #define RAYFORCE_C_H
 
 #define PY_SSIZE_T_CLEAN
-#include "binary.h"
-#include "chrono.h"
-#include "cmp.h"
-#include "compose.h"
-#include "cond.h"
-#include "date.h"
-#include "dynlib.h"
-#include "env.h"
-#include "error.h"
-#include "eval.h"
-#include "format.h"
-#include "guid.h"
-#include "io.h"
-#include "ipc.h"
-#include "items.h"
-#include "iter.h"
-#include "join.h"
-#include "logic.h"
-#include "math.h"
-#include "misc.h"
-#include "ops.h"
-#include "order.h"
-#include "os.h"
-#include "proc.h"
-#include "query.h"
-#include "rayforce.h"
-#include "runtime.h"
-#include "serde.h"
-#include "string.h"
-#include "time.h"
-#include "timestamp.h"
-#include "unary.h"
-#include "update.h"
-#include "util.h"
-#include "vary.h"
+
+/* v2 public API */
+#include <rayforce.h>
+
+/* v2 internal headers (still under src/; available because we build with -Isrc)
+ */
+#include "lang/env.h" /* ray_env_get, ray_env_set, ray_env_init, ray_lang_init */
+#include "lang/eval.h" /* ray_eval, ray_at */
+/* Internal header was renamed: upstream GitHub ships it as lang/internal.h,
+ * older local trees still call it lang/eval_internal.h. Pick whichever is
+ * present so we compile against both. */
+#if defined(__has_include) && __has_include("lang/internal.h")
+#include "lang/internal.h" /* collection_elem, ray_cast_fn, ray_dict_fn, … */
+#else
+#include "lang/eval_internal.h"
+#endif
+#include "lang/format.h" /* ray_fmt */
+#include "store/serde.h" /* ray_ser, ray_de, ray_obj_save, ray_obj_load */
+#include "table/sym.h"   /* RAY_SYM_W64, RAY_SYM_ELEM */
+
+/* core/runtime.h would re-define ray_vm_t (also defined in lang/eval.h),
+ * so we forward-declare just the runtime symbols we use here. */
+typedef struct ray_runtime_s ray_runtime_t;
+ray_runtime_t *ray_runtime_create(int argc, char **argv);
+const char *ray_error_msg(void);
+
+/* v1 → v2 name shim (LAST) */
+#include "raypy_compat.h"
+
 #include <Python.h>
 #include <string.h>
 #include <unistd.h>
@@ -45,7 +39,7 @@
 extern void *memcpy(void *dest, const void *src, size_t n);
 #endif
 
-// Forward declarations
+/* Forward declarations */
 extern PyTypeObject RayObjectType;
 
 typedef struct {
@@ -83,9 +77,8 @@ obj_p raypy_init_date_from_py(PyObject *item);
 obj_p raypy_init_time_from_py(PyObject *item);
 obj_p raypy_init_timestamp_from_py(PyObject *item);
 obj_p raypy_init_dict_from_py(PyObject *item);
-obj_p raypy_init_list_from_py(PyObject *item);
 
-// Temporal utility functions
+/* Temporal utility functions */
 int is_leap_year(int year);
 long days_since_epoch(int year, int month, int day);
 int parse_iso_date(const char *str, Py_ssize_t len, int *year, int *month,
@@ -149,19 +142,12 @@ PyObject *raypy_binary_set(PyObject *self, PyObject *args);
 PyObject *raypy_env_get_internal_fn_by_name(PyObject *self, PyObject *args);
 PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args);
 PyObject *raypy_eval_obj(PyObject *self, PyObject *args);
-PyObject *raypy_loadfn(PyObject *self, PyObject *args);
 PyObject *raypy_quote(PyObject *self, PyObject *args);
 PyObject *raypy_rc(PyObject *self, PyObject *args);
 PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args);
 PyObject *raypy_update(PyObject *self, PyObject *args);
 PyObject *raypy_insert(PyObject *self, PyObject *args);
 PyObject *raypy_upsert(PyObject *self, PyObject *args);
-PyObject *raypy_hopen(PyObject *self, PyObject *args);
-PyObject *raypy_hclose(PyObject *self, PyObject *args);
-PyObject *raypy_write(PyObject *self, PyObject *args);
-PyObject *raypy_ipc_listen(PyObject *self, PyObject *args);
-PyObject *raypy_ipc_close_listener(PyObject *self, PyObject *args);
-PyObject *raypy_runtime_run(PyObject *self, PyObject *args);
 PyObject *raypy_ser_obj(PyObject *self, PyObject *args);
 PyObject *raypy_de_obj(PyObject *self, PyObject *args);
 PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args);

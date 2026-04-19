@@ -10,25 +10,19 @@ from rayforce.ffi import FFI
 
 FFI.init_runtime()
 
-version = "0.6.3"
+version = "0.7.0"
 
-if sys.platform == "linux":
+if sys.platform == "linux" or sys.platform == "darwin":
     lib_name = "_rayforce_c.so"
-    raykx_lib_name = "libraykx.so"
-elif sys.platform == "darwin":
-    lib_name = "_rayforce_c.so"
-    raykx_lib_name = "libraykx.dylib"
 elif sys.platform == "win32":
     lib_name = "rayforce.dll"
 else:
     raise ImportError(f"Platform not supported: {sys.platform}")
 
 lib_path = Path(__file__).resolve().parent / lib_name
-raykx_lib_path = Path(__file__).resolve().parent / "plugins" / raykx_lib_name
-if lib_path.exists() and raykx_lib_path.exists():
+if lib_path.exists():
     try:
         ctypes.CDLL(str(lib_path), mode=ctypes.RTLD_GLOBAL)
-        ctypes.CDLL(str(raykx_lib_path), mode=ctypes.RTLD_GLOBAL)
     except Exception as e:
         raise ImportError(f"Error loading CDLL: {e}") from e
 else:
@@ -36,7 +30,6 @@ else:
         f"""
         Unable to load library - binaries are not compiled: \n
             - {lib_path} - Compiled: {lib_path.exists()}\n
-            - {raykx_lib_path} - Compiled: {raykx_lib_path.exists()}\n
         Try to reinstall the library.
         """,
     )
@@ -57,20 +50,14 @@ from .errors import (  # noqa: E402
     RayforceParseError,
     RayforcePartedTableError,
     RayforceQueryCompilationError,
-    RayforceTCPError,
     RayforceThreadError,
     RayforceTypeError,
     RayforceTypeRegistryError,
     RayforceUserError,
     RayforceValueError,
 )
-from .network import (  # noqa: E402
-    TCPClient,
-    TCPServer,
-)
 from .types import (  # noqa: E402
     B8,
-    C8,
     F64,
     GUID,
     I16,
@@ -101,11 +88,13 @@ from .utils import (  # noqa: E402
     ray_to_python,
 )
 
-core_version = String(eval_str("(sysinfo)")["hash"]).to_python()
+try:
+    core_version = String(eval_str("(internals)")["version"]).to_python()
+except Exception:
+    core_version = "unknown"
 
 __all__ = [
     "B8",
-    "C8",
     "F64",
     "GUID",
     "I16",
@@ -136,7 +125,6 @@ __all__ = [
     "RayforceParseError",
     "RayforcePartedTableError",
     "RayforceQueryCompilationError",
-    "RayforceTCPError",
     "RayforceThreadError",
     "RayforceTypeError",
     "RayforceTypeRegistryError",
@@ -144,8 +132,6 @@ __all__ = [
     "RayforceValueError",
     "String",
     "Symbol",
-    "TCPClient",
-    "TCPServer",
     "Table",
     "TableColumnInterval",
     "Time",

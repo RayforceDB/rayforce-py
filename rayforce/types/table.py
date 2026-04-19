@@ -10,7 +10,6 @@ from rayforce import _rayforce_c as r
 from rayforce import errors, utils
 from rayforce.ffi import FFI
 from rayforce.types import (
-    C8,
     I64,
     Dict,
     List,
@@ -328,7 +327,7 @@ class TableIOMixin:
     def set_csv(self, path: str, separator: str | None = None) -> None:
         _args = [FFI.init_string(path), self.evaled_ptr]
         if separator is not None:
-            _args.append(C8(separator).ptr)
+            _args.append(String(separator).ptr)
         utils.eval_obj(List([Operation.WRITE_CSV, *_args]))
 
 
@@ -987,7 +986,8 @@ class UpdateQuery(IPCQueryMixin):
 
     def execute(self) -> Table:
         new_table = FFI.update(query=self.compile())
-        if self.table.is_reference:
+        result_type = FFI.get_obj_type(new_table)
+        if self.table.is_reference and result_type == -r.TYPE_SYMBOL:
             return Table(Symbol(ptr=new_table).value)
         return Table(new_table)
 

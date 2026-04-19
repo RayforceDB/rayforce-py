@@ -8,12 +8,20 @@ PyObject *raypy_eval_str(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p ray_obj = ray_eval_str(item->obj, NULL_OBJ);
+  if (item->obj == NULL || item->obj->type != -RAY_STR) {
+    PyErr_SetString(PyExc_RuntimeError, "eval: argument must be a string atom");
+    return NULL;
+  }
+
+  const char *src = ray_str_ptr(item->obj);
+  obj_p ray_obj = ray_eval_str(src);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "eval: failed to evaluate string expression");
     return NULL;
   }
+  /* If ray_obj is RAY_ERROR, still wrap it — the Python error_handler maps
+   * ray_error "code" → RayforceTypeError/DomainError/LengthError/etc. */
   return raypy_wrap_ray_object(ray_obj);
 }
 PyObject *raypy_eval_obj(PyObject *self, PyObject *args) {

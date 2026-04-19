@@ -32,7 +32,7 @@ SUPPORTED_TYPES = (
     r.TYPE_B8,
     r.TYPE_U8,
     r.TYPE_TIMESTAMP,
-    r.TYPE_C8,
+    r.TYPE_STR,
 )
 
 print("Warning: parquet read is in beta and may behave unexpectedly")

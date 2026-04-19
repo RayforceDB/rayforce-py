@@ -119,6 +119,7 @@ def test_push_obj():
     assert FFI.get_obj_length(lst) == 2
 
 
+@pytest.mark.skip(reason="typed-vector mid-insert is not supported in rayforce v2 (only lists)")
 def test_insert_obj():
     vec = FFI.init_vector(r.TYPE_I64, 3)
     FFI.insert_obj(vec, 1, FFI.init_i64(42))
@@ -228,34 +229,16 @@ def test_env_get_internal_fn_by_name():
         FFI.env_get_internal_fn_by_name("ssssss")
 
 
-def test_env_get_internal_name_by_fn():
+def test_env_get_internal_name_by_fn_raises_notimplemented():
+    """v2 has no reverse lookup — the stub raises NotImplementedError."""
     func = FFI.env_get_internal_fn_by_name("+")
-    assert FFI.env_get_internal_name_by_fn(func) == "+"
-    assert FFI.env_get_internal_name_by_fn(FFI.init_i32(222222)) == "@fn"
+    with pytest.raises(NotImplementedError):
+        FFI.env_get_internal_name_by_fn(func)
 
 
 def test_set_obj_attrs():
     obj = FFI.init_i32(42)
     FFI.set_obj_attrs(obj, 0)
-
-
-def test_hopen():
-    path = FFI.init_string("/dev/null")
-    assert isinstance(FFI.hopen(path), r.RayObject)
-
-    with pytest.raises((TypeError, RuntimeError, RayforceError)):
-        FFI.hopen(FFI.init_i32(42))
-
-
-def test_hclose():
-    handle = FFI.hopen(FFI.init_string("/dev/null"))
-    FFI.hclose(handle)
-
-
-def test_write():
-    handle = FFI.hopen(FFI.init_string("/dev/null"))
-    FFI.write(handle, FFI.init_string("test"))
-    FFI.hclose(handle)
 
 
 def test_thread_safety():
