@@ -58,11 +58,13 @@ class Dict(
         return FFI.get_obj_length(FFI.get_dict_keys(self.ptr))
 
     def __setitem__(self, key: t.Any, value: t.Any) -> None:
-        FFI.set_obj(
-            obj=self.ptr,
-            idx=python_to_ray(key),
-            value=python_to_ray(value),
-        )
+        new_dict = self.to_python()
+        if hasattr(key, "to_python"):
+            key = key.to_python()
+        if hasattr(value, "to_python"):
+            value = value.to_python()
+        new_dict[key] = value
+        self.ptr = self._create_from_value(new_dict)
 
     def __getitem__(self, key: t.Any) -> t.Any:
         from rayforce.types.null import Null
