@@ -5,10 +5,6 @@ from rayforce import _rayforce_c as r
 from rayforce.types.operators import Operation
 
 
-@pytest.mark.xfail(
-    reason="some v1 op names not present in v2 env; see UPGRADE.md Phase 7",
-    strict=False,
-)
 def test_all_operations_have_primitives():
     for op in Operation:
         primitive = op.primitive
@@ -26,10 +22,6 @@ def test_all_operations_have_primitives():
         )
 
 
-@pytest.mark.xfail(
-    reason="some v1 op names not present in v2 env; see UPGRADE.md Phase 7",
-    strict=False,
-)
 def test_operation_properties():
     add_op = Operation.ADD
     assert add_op.is_binary or add_op.is_unary or add_op.is_variadic

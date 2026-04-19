@@ -129,7 +129,6 @@ class Operation(enum.StrEnum):
     LIST = "list"
     TYPE = "type"
     AS = "as"
-    ENUM = "enum"
     GUID = "guid"
     NIL_Q = "nil?"
 
@@ -189,12 +188,10 @@ class Operation(enum.StrEnum):
     TIMER = "timer"
     INTERNALS = "internals"
     SYSINFO = "sysinfo"
-    LOADFN = "loadfn"
 
     # Storage
     SET_SPLAYED = "set-splayed"
     GET_SPLAYED = "get-splayed"
-    SET_PARTED = "set-parted"
     GET_PARTED = "get-parted"
 
     # Metadata
