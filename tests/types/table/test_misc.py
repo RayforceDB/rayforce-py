@@ -10,14 +10,37 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# Many tests rely on the v2 query engine (select/where/group-by projection)
-# which has open bugs tracked in UPGRADE.md Phase 7 known gaps.
-pytestmark = pytest.mark.xfail(
-    reason="v2 query engine table ops; see UPGRADE.md Phase 7",
+# Per-test xfails for residual gaps after L8 (these failures are unrelated to the
+# WHERE-predicate AST shape fix but were previously masked by the module-level
+# xfail.  Each gets a specific reason so future fixes can target them.)
+_CSV_IO = pytest.mark.xfail(
+    reason="v2 CSV reader/writer: column-type inference and serialization not yet wired up",
+    strict=False,
+)
+_PARTED_IO = pytest.mark.xfail(
+    reason="v2 splayed/parted table I/O not yet exposed via the Python wrapper",
+    strict=False,
+)
+_NEG_ROW_INDEX = pytest.mark.xfail(
+    reason="v2 (at table -1) does not wrap negative row indices; raises domain error",
+    strict=False,
+)
+_META_REPR = pytest.mark.xfail(
+    reason="v2 meta returns a _StaticRepr Vector that is not iterable from Python",
+    strict=False,
+)
+_CAST_DICT_META = pytest.mark.xfail(
+    reason="cast() depends on dtypes which depends on v2 meta — see _META_REPR",
+    strict=False,
+)
+_ERROR_MSG_SHAPE = pytest.mark.xfail(
+    reason="v2 returns an empty error message for these failures; test asserts on the "
+    "v1 message text",
     strict=False,
 )
 
 
+@_CSV_IO
 def test_table_from_csv_all_types(tmp_path):
     # Prepare a CSV file that exercises all supported scalar types
     csv_content = "\n".join(
@@ -71,6 +94,7 @@ def test_table_from_csv_all_types(tmp_path):
     assert_column_values(table, "symbol", ["foo", "bar"])
 
 
+@_CSV_IO
 def test_set_csv(tmp_path):
     table = Table(
         {
@@ -93,6 +117,7 @@ def test_set_csv(tmp_path):
     assert_column_values(loaded_table, "age", [29, 34, 41])
 
 
+@_CSV_IO
 def test_set_csv_with_custom_separator(tmp_path):
     table = Table(
         {
@@ -144,6 +169,7 @@ def test_set_splayed_and_from_splayed(tmp_path):
     assert_column_values(result, "status", ["active", "inactive", "active", "active"])
 
 
+@_PARTED_IO
 def test_set_splayed_and_from_parted(tmp_path):
     table = Table(
         {
@@ -551,6 +577,7 @@ def test_getitem_expression_all_match():
     assert_column_values(result, "name", ["alice", "bob"])
 
 
+@_NEG_ROW_INDEX
 def test_getitem_int_row():
     table = Table(
         {
@@ -573,6 +600,7 @@ def test_getitem_int_row():
     assert last["age"] == 41
 
 
+@_NEG_ROW_INDEX
 def test_getitem_int_row_second_to_last():
     table = Table(
         {
@@ -847,6 +875,7 @@ def test_describe():
     assert stats["salary"]["max"] == 80000.0
 
 
+@_META_REPR
 def test_dtypes():
     table = Table(
         {
@@ -959,6 +988,7 @@ def test_rename_unknown_column_raises():
         table.rename({"unknown": "new_name"})
 
 
+@_CAST_DICT_META
 def test_cast_i64_to_f64():
     table = Table(
         {
@@ -975,6 +1005,7 @@ def test_cast_i64_to_f64():
     assert_column_values(result, "age", [29.0, 34.0, 41.0])
 
 
+@_CAST_DICT_META
 def test_cast_f64_to_i64():
     table = Table(
         {
@@ -1007,6 +1038,7 @@ def test_cast_unknown_column_raises():
 # ---------------------------------------------------------------------------
 
 
+@_ERROR_MSG_SHAPE
 def test_concat_with_mismatched_column_names():
     """Concatenating tables with different column names raises RayforceValueError."""
     table1 = Table(
@@ -1050,6 +1082,7 @@ def test_concat_with_mismatched_column_types():
 # ---------------------------------------------------------------------------
 
 
+@_ERROR_MSG_SHAPE
 def test_at_column_with_nonexistent_column():
     """at_column with a column name that does not exist returns Null."""
     from rayforce import Null
@@ -1112,6 +1145,7 @@ def test_rename_creating_duplicate_column_names():
 # ---------------------------------------------------------------------------
 
 
+@_CAST_DICT_META
 def test_cast_with_incompatible_types():
     """Casting Symbol to I64 raises RayforceTypeError."""
     table = Table(

@@ -712,40 +712,89 @@ Largest library-only lever. Focuses on
 Biggest win if the core is left alone. Goal: make
 `Expression.compile()` emit shapes the v2 DAG lowering accepts.
 
-- [ ] Identify the exact shape v2 wants by consulting
+- [x] Identify the exact shape v2 wants by consulting
       `/Users/karim/rayforce2/src/ops/exec.c` — look for the
       "WHERE predicate not supported by DAG compiler" error site; the
       pattern it matches against above is the authoritative shape.
-      (Shortcut: grep for `"WHERE predicate"` in `src/ops/*.c` to find the
-      switch.)
-- [ ] In `rayforce/types/table.py::Expression.compile()` (line 161):
-      - Drop the `QuotedSymbol` / `(quote X)` wrapping around string
-        literals inside predicates (line 187):
-        `converted_operands.append(List([Operation.QUOTE, operand]).ptr)` →
-        `converted_operands.append(FFI.init_string(operand))`.
-      - Do not wrap columns in `(map (at) col (where …))`
-        (line 168-175) — emit the flatter form v2 expects.
-- [ ] Add a mode parameter to `compile()` — e.g.
-      `compile(context="where" | "select" | "update" | None)` — so different
-      clauses can generate different shapes where they need to.
-- [ ] Remove xfail markers from:
-      - `tests/types/table/test_select.py:17`
-      - `tests/types/table/test_is.py:12`
-      - `tests/types/table/test_join.py:13`
-      - `tests/types/table/test_pivot.py:8`
-      - `tests/types/table/test_misc.py:15`
-      - `tests/types/test_fn.py:11`
-      - `tests/plugins/test_sql.py:14`
-- [ ] Iterate: fix one predicate shape at a time, rerun the relevant
-      module, commit, repeat.
-- [ ] Verification (will grow greener each iteration):
+      (Found in `src/ops/query.c::compile_expr_dag` line 321; the
+      authoritative requirements are: list-call heads must be
+      `-RAY_SYM` atoms naming a registered builtin; column references
+      must be `-RAY_SYM` with `RAY_ATTR_NAME` set so `ray_scan(g, name)`
+      resolves them; string literals must be `RAY_STR` atoms — the
+      `(quote ...)` wrapper rayforce-py used is unrecognized.)
+- [x] In `rayforce/types/table.py::Expression.compile()` (line 161):
+      - Replaced the `Operation.primitive` head (a `RAY_BINARY` /
+        `RAY_UNARY` / `RAY_VARY` function pointer, not a `-RAY_SYM`)
+        with a name-sym built via the new `_make_name_sym(name)`
+        helper — `-RAY_SYM` carrying the operator's symbol name and
+        `RAY_ATTR_NAME` set. The DAG compiler reads `head->i64` to
+        resolve the builtin; `ray_eval` resolves the same atom via
+        `ray_env_get`, so both paths keep working.
+      - Replaced bare-`Column.name` strings (which `init_list`'s
+        autodetect promoted to `ray_sym(id)` with attrs=0, looking
+        like a const sym literal to the DAG) with `_make_name_sym`,
+        ensuring column refs are treated as `ray_scan(g, name)`.
+      - Replaced `(quote str)` wrapping for string literals with a
+        plain `String(operand).ptr` (RAY_STR atom).  Lambda heads
+        (`Fn` instances) keep flowing through unchanged — the DAG
+        compiler still rejects raw RAY_LAMBDA heads, tracked under
+        the `_FN_APPLY_TO_COLUMN` xfail.
+- [x] Added the `_make_name_sym(name)` helper next to the existing
+      `_RAY_ATTR_NAME = 0x20` constant.
+- [x] Plumbed `_make_name_sym` through the surrounding query
+      compilers so column references in dict-form queries are
+      DAG-resolvable too:
+      - `SelectQuery.compile()`: bare-string select / by columns
+        and `Column` operands now emit name-syms instead of plain
+        Python strings (which had been collapsing to const-sym
+        literals — that was why select returned the column *name*
+        instead of the column *values*).
+      - `UpdateQuery.compile()`: `Column` values in the attributes
+        dict emit name-syms.
+- [x] Simplified `Column.is_(other)` (and the `AggregationMixin`
+      version) from `(map-right == other self)` — `map-right` is
+      not a DAG builtin — to plain `(== self other)`, which is.
+- [x] Did *not* introduce a `compile()` context parameter.  The
+      shapes above are universally good (DAG accepts them, eval
+      resolves the head sym via env).  A context parameter would
+      add complexity without buying anything in the current code.
+- [x] Removed module-level xfail markers from the seven listed
+      modules and added per-test markers (with specific reasons
+      tied to GAPS categories) for the residual failures so the
+      survivors are tracked as discrete follow-ups, not as an
+      undifferentiated "Phase 7" bucket.
+- [x] Removed `_CATEGORY_1` markers from `test_update.py` (all 9
+      tests now pass strictly) and from `test_order_by.py`
+      (chained_with_select, chained_with_where now pass strictly).
+      `_CATEGORY_9` markers on `with_null_values` remain — null
+      sentinel propagation is unrelated to L8.
+- [x] Verification:
       ```
-      python3 -m pytest tests/types/table/ tests/types/test_fn.py tests/plugins/test_sql.py -v --no-header 2>&1 | tail -20
+      python3 -m pytest tests/types/table/ tests/types/test_fn.py tests/plugins/test_sql.py -q --no-header 2>&1 | tail -3
       ```
-- [ ] Expected: ~90 tests turn green as each shape incompatibility is
-      resolved. Any residual failures that reach genuine v2 DAG compiler
-      limitations get logged as open core-side items and re-marked xfail
-      with a specific reason (not the generic "Phase 7" one).
+- [x] Result: 216 passed, 49 xfailed across the L8-target modules
+      (up from 52 passed + 5 module-level xfail markers covering
+      hundreds of XPASSes).  Full suite: 930 passed, 4 skipped, 50
+      xfailed, 3 deselected — no hard failures, no regressions
+      (pre-L8 was 751 passed).
+- [x] Residual xfails landed on these specific gaps (each with its
+      own pytest marker carrying a reason):
+      - `Column.where(pred).agg()` emits `(map (at) col (where …))`
+        — `map`/`at`/`where` are not DAG builtins (test_select.py,
+        test_is.py).
+      - `Column.distinct()` — `distinct` not in `resolve_unary_dag`
+        (test_select.py, test_pivot.py).
+      - List-typed (RAY_LIST) columns can't be DAG-filtered
+        (test_is.py).
+      - Chained `(== bool_expr True)` returns 0 rows in v2 DAG —
+        boolean equality semantics differ (test_is.py).
+      - TIMESTAMP + I64 atom in DAG arithmetic returns I64 (drops
+        temporal type) — v2 core (test_select.py shift_tz tests).
+      - `Fn.apply(col)` head is a RAY_LAMBDA pointer, not the
+        inline `((fn …) …)` or env-bound `(fname …)` form the DAG
+        compiler accepts (test_fn.py).
+      - Aggregation without GROUP BY broadcasts in v2 (test_sql.py).
+      - F64/I64 `/` floors — GAPS Category 6 (test_sql.py).
 
 ---
 

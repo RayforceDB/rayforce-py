@@ -3,10 +3,12 @@ import pytest
 from rayforce import I64, Symbol, Table, Vector
 from tests.helpers.assertions import assert_contains_columns, assert_table_shape
 
-# v2 pivot operation depends on select projection which has open bugs.
-# Tracked in UPGRADE.md Phase 7 known gaps.
+# All pivot tests rely on PivotQuery.execute() running
+# Column.distinct() to enumerate pivot keys, but `distinct` is not wired
+# into the v2 DAG compiler — see GAPS Category 1.
 pytestmark = pytest.mark.xfail(
-    reason="v2 query engine pivot depends on select projection; see UPGRADE.md Phase 7",
+    reason="GAPS L8 residual: PivotQuery uses Column.distinct(), which is not wired into "
+    "the v2 DAG compiler",
     strict=False,
 )
 

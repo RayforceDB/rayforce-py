@@ -12,10 +12,18 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# v2 select/where query engine has open bugs around output-column
-# projection — tracked in UPGRADE.md Phase 7 known gaps.
-pytestmark = pytest.mark.xfail(
-    reason="v2 query engine select projection returns domain error; see UPGRADE.md Phase 7",
+# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
+_DAG_FILTER_AGG = pytest.mark.xfail(
+    reason="GAPS L8 residual: Column.where(pred).agg() emits (map (at) col (where pred)) "
+    "which the v2 DAG compiler does not lower",
+    strict=False,
+)
+_DAG_DISTINCT = pytest.mark.xfail(
+    reason="GAPS L8 residual: `distinct` is not wired into the v2 DAG compiler",
+    strict=False,
+)
+_TEMPORAL_TYPE_LOSS = pytest.mark.xfail(
+    reason="v2 core: TIMESTAMP + I64 atom in DAG arithmetic returns I64, not TIMESTAMP",
     strict=False,
 )
 
@@ -145,6 +153,7 @@ def test_group_by_multiple_columns():
     assert_row(result, rows[("marketing", "junior")], {"total_salary": 90000, "avg_salary": 90000})
 
 
+@_DAG_FILTER_AGG
 def test_group_by_with_filtered_aggregation():
     table = Table(
         {
@@ -291,6 +300,7 @@ def test_complex_nested_boolean_expressions():
     assert_column_values(result, "age", [35, 40, 45])
 
 
+@_DAG_DISTINCT
 def test_select_distinct():
     """DISTINCT operation on a column."""
     table = Table(
@@ -314,6 +324,7 @@ def test_select_distinct():
     assert set(v.value for v in salary_vals) == {100, 200}
 
 
+@_TEMPORAL_TYPE_LOSS
 def test_shift_tz_positive_offset():
     """shift_tz with +5h offset shifts timestamps forward by 5 hours."""
     table = Table(
@@ -342,6 +353,7 @@ def test_shift_tz_positive_offset():
     assert ts_col[1].value == dt.datetime(2025, 6, 15, 23, 0, 0, tzinfo=dt.UTC)
 
 
+@_TEMPORAL_TYPE_LOSS
 def test_shift_tz_negative_offset():
     """shift_tz with -5h offset shifts timestamps backward by 5 hours."""
     table = Table(
@@ -387,6 +399,7 @@ def test_shift_tz_preserves_non_timestamp_columns():
     assert_column_values(result, "score", [100, 200])
 
 
+@_TEMPORAL_TYPE_LOSS
 def test_shift_tz_with_zoneinfo():
     """shift_tz works with zoneinfo.ZoneInfo fixed-offset timezone."""
     table = Table(

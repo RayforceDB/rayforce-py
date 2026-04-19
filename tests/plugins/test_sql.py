@@ -7,15 +7,18 @@ from tests.helpers.assertions import (
     assert_contains_columns,
 )
 
-pytestmark = [
-    pytest.mark.plugin,
-    # SQL plugin translates to select/where/group-by which depend on the v2
-    # query engine. Open bugs tracked in UPGRADE.md Phase 7 known gaps.
-    pytest.mark.xfail(
-        reason="v2 query engine select/group-by; see UPGRADE.md Phase 7",
-        strict=False,
-    ),
-]
+pytestmark = pytest.mark.plugin
+
+# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
+_AGG_NO_GROUP_BROADCAST = pytest.mark.xfail(
+    reason="GAPS L8 residual: aggregation without GROUP BY broadcasts the scalar across "
+    "all input rows in v2 instead of returning a single-row result",
+    strict=False,
+)
+_F64_DIVIDE_FLOORS = pytest.mark.xfail(
+    reason="GAPS Category 6: F64/I64 division yields integer-floored result in v2 core",
+    strict=False,
+)
 
 
 @pytest.fixture
@@ -164,12 +167,14 @@ def test_group_by_avg(sqlglot, sample_table):
     assert len(result) == 2
 
 
+@_AGG_NO_GROUP_BROADCAST
 def test_min_max(sqlglot, sample_table):
     result = sample_table.sql("SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM self")
     assert_column_values(result, "min_age", [25])
     assert_column_values(result, "max_age", [35])
 
 
+@_AGG_NO_GROUP_BROADCAST
 def test_multiple_aggregations_no_group(sqlglot, sample_table):
     result = sample_table.sql(
         "SELECT COUNT(id) AS cnt, AVG(salary) AS avg_sal, MIN(age) AS min_age, MAX(age) AS max_age FROM self"
@@ -236,6 +241,7 @@ def test_arithmetic_subtraction(sqlglot, sample_table):
     assert_contains_columns(result, ["adjusted"])
 
 
+@_F64_DIVIDE_FLOORS
 def test_arithmetic_division(sqlglot, sample_table):
     result = sample_table.sql("SELECT name, salary / 12 AS monthly FROM self")
     assert_contains_columns(result, ["monthly"])

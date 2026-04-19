@@ -32,6 +32,15 @@ if t.TYPE_CHECKING:
 _RAY_ATTR_NAME = 0x20
 
 
+def _make_name_sym(name: str) -> r.RayObject:
+    """Build a `-RAY_SYM` atom with `RAY_ATTR_NAME` set so the v2 DAG
+    compiler treats it as a column / global-env name reference rather than
+    a const symbol literal."""
+    sym = FFI.init_symbol(name)
+    FFI.set_obj_attrs(sym, _RAY_ATTR_NAME)
+    return sym
+
+
 class _TableProtocol(t.Protocol):
     _ptr: r.RayObject | str
     is_reference: bool
@@ -78,7 +87,7 @@ class AggregationMixin:
         return Expression(Operation.DISTINCT, self)
 
     def is_(self, other: bool) -> Expression:
-        return Expression(Operation.MAP_RIGHT, Operation.EQUALS, other, self)
+        return Expression(Operation.EQUALS, self, other)
 
     def isin(self, values: list[t.Any] | RayObject) -> Expression:
         if isinstance(values, RayObject):
@@ -177,22 +186,30 @@ class Expression(AggregationMixin, OperatorMixin):
                 ]
             ).ptr
 
-        # Standard expression compilation
+        # Standard expression compilation. The v2 DAG compiler in
+        # `compile_expr_dag` accepts only:
+        #   * lists whose head is a `-RAY_SYM` (the builtin's name),
+        #   * column references encoded as `-RAY_SYM` with `RAY_ATTR_NAME`,
+        #   * string literals as `RAY_STR` atoms (no `(quote ...)` wrapper).
+        # We emit those shapes uniformly so the same compiled AST works in
+        # both DAG-lowered query paths (where/select compute) and the
+        # eval-level fallback (which resolves the head sym via env_get).
         converted_operands: list[t.Any] = []
         for operand in self.operands:
             if isinstance(operand, Expression):
                 converted_operands.append(operand.compile(ipc=ipc))
             elif isinstance(operand, Column):
-                converted_operands.append(operand.name)
+                converted_operands.append(_make_name_sym(operand.name))
             elif hasattr(operand, "ptr"):
                 converted_operands.append(operand)
             elif isinstance(operand, str):
-                converted_operands.append(List([Operation.QUOTE, operand]).ptr)
+                converted_operands.append(String(operand).ptr)
             else:
                 converted_operands.append(operand)
-        # Convert operation to its primitive if it's an Operation enum
-        operation_obj = (
-            self.operation.primitive if isinstance(self.operation, Operation) else self.operation
+        operation_obj: t.Any = (
+            _make_name_sym(self.operation.value)
+            if isinstance(self.operation, Operation)
+            else self.operation
         )
         return List([operation_obj, *converted_operands]).ptr
 
@@ -860,22 +877,24 @@ class SelectQuery(IPCQueryMixin):
         return self._ptr
 
     def compile(self) -> r.RayObject:
-        attributes = {}
+        attributes: dict[str, t.Any] = {}
         if self._select_cols:
             cols, computed = self._select_cols
             if "*" in cols and computed:
                 current_cols = [
                     c.value if hasattr(c, "value") else str(c) for c in self.table.columns()
                 ]
-                attributes = {col: col for col in current_cols if col not in computed}
+                attributes = {
+                    col: _make_name_sym(col) for col in current_cols if col not in computed
+                }
             else:
-                attributes = {col: col for col in cols if col != "*"}
+                attributes = {col: _make_name_sym(col) for col in cols if col != "*"}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
                     attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
-                    attributes[name] = expr.name
+                    attributes[name] = _make_name_sym(expr.name)
                 else:
                     attributes[name] = expr
 
@@ -888,13 +907,13 @@ class SelectQuery(IPCQueryMixin):
 
         if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
             cols, computed = self._by_cols
-            by_attributes = {col: col for col in cols}
+            by_attributes = {col: _make_name_sym(col) for col in cols}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
                     by_attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
-                    by_attributes[name] = expr.name
+                    by_attributes[name] = _make_name_sym(expr.name)
                 else:
                     by_attributes[name] = expr
             attributes["by"] = by_attributes
@@ -963,7 +982,7 @@ class UpdateQuery(IPCQueryMixin):
             if isinstance(value, Expression):
                 converted_attrs[key] = value.compile(ipc=ipc)
             elif isinstance(value, Column):
-                converted_attrs[key] = value.name
+                converted_attrs[key] = _make_name_sym(value.name)
             elif isinstance(value, str):
                 converted_attrs[key] = (
                     QuotedSymbol(value).ptr

@@ -7,10 +7,19 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# v2 query engine has open bugs around `is` filter projection.
-# Tracked in UPGRADE.md Phase 7 known gaps.
-pytestmark = pytest.mark.xfail(
-    reason="v2 query engine filter projection; see UPGRADE.md Phase 7",
+# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
+_DAG_LIST_COLUMN = pytest.mark.xfail(
+    reason="GAPS L8 residual: RAY_LIST columns are not handled by the v2 DAG filter path",
+    strict=False,
+)
+_DAG_FILTER_AGG = pytest.mark.xfail(
+    reason="GAPS L8 residual: Column.where(pred).agg() emits (map (at) col (where pred)) "
+    "which the v2 DAG compiler does not lower",
+    strict=False,
+)
+_BOOL_NESTED_EQ = pytest.mark.xfail(
+    reason="GAPS L8 residual: nested `(== bool_expr True)` returns 0 rows in v2 DAG; "
+    "boolean equality with a bool atom does not match boolean vector elements",
     strict=False,
 )
 
@@ -29,6 +38,7 @@ def test_is_true_filters_true_rows():
     assert_column_set(result, "name", {"alice", "charlie"})
 
 
+@_DAG_LIST_COLUMN
 def test_is_true_filters_true_rows_list():
     table = Table(
         {
@@ -43,6 +53,7 @@ def test_is_true_filters_true_rows_list():
     assert_column_set(result, "name", {"alice", "charlie"})
 
 
+@_DAG_LIST_COLUMN
 def test_is_false_filters_false_rows_list():
     table = Table(
         {
@@ -114,6 +125,7 @@ def test_is_combined_with_other_conditions():
     assert_column_set(result, "name", {"charlie", "dana"})
 
 
+@_DAG_FILTER_AGG
 def test_is_with_group_by():
     table = Table(
         {
@@ -136,6 +148,7 @@ def test_is_with_group_by():
     assert rows["hr"]["active_total"] == 400
 
 
+@_BOOL_NESTED_EQ
 def test_is_on_expression():
     table = Table(
         {

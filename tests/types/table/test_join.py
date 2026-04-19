@@ -9,9 +9,14 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# Some join tests depend on v2 select projection; see UPGRADE.md Phase 7.
-pytestmark = pytest.mark.xfail(
-    reason="v2 query engine join projection; see UPGRADE.md Phase 7",
+# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
+_LEFT_JOIN_DUP_KEYS = pytest.mark.xfail(
+    reason="v2 left-join dedup semantics differ from v1: returns one row per right-side "
+    "match instead of one row per left-side row when the join key is duplicated",
+    strict=False,
+)
+_ASOF_JOIN_NULL = pytest.mark.xfail(
+    reason="v2 asof-join returns I64(0) instead of typed null when no quote precedes the trade",
     strict=False,
 )
 
@@ -385,6 +390,7 @@ def test_inner_join_with_duplicate_keys():
     assert_column_values(result, "val2", [10, 10, 30])
 
 
+@_LEFT_JOIN_DUP_KEYS
 def test_left_join_with_duplicate_keys():
     """Left join where the right table has duplicate keys; first match is used."""
     left = Table(
@@ -414,6 +420,7 @@ def test_left_join_with_duplicate_keys():
     assert row_c["val2"] == None  # noqa: E711  (Rayforce Null == None is True)
 
 
+@_ASOF_JOIN_NULL
 def test_asof_join_with_no_matching_quotes():
     """ASOF join where all trades occur before any quotes — nulls returned."""
     trades = Table(

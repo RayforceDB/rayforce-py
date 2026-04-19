@@ -9,10 +9,6 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-_CATEGORY_1 = pytest.mark.xfail(
-    reason="GAPS.md Category 1 — DAG compiler rejects column refs (missing RAY_ATTR_NAME); see Task L8",
-    strict=False,
-)
 _CATEGORY_9 = pytest.mark.xfail(
     reason="GAPS.md Category 9 — null detection via null bitmap not wired through order-by / at_row",
     strict=False,
@@ -116,7 +112,6 @@ def test_order_by_preserves_all_rows(is_inplace, make_table):
     assert_column_values(result, "value", [1, 2, 3])
 
 
-@_CATEGORY_1
 def test_order_by_chained_with_select():
     """Test that order_by can be chained with select."""
     table = Table(
@@ -133,7 +128,6 @@ def test_order_by_chained_with_select():
     assert_column_values(result, "age", [25, 28, 30])
 
 
-@_CATEGORY_1
 def test_order_by_chained_with_where():
     """Test that order_by can be chained with where."""
     table = Table(

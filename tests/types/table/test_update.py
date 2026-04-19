@@ -3,13 +3,7 @@ import pytest
 from rayforce import B8, I64, Column, Symbol, Table, Vector
 from tests.helpers.assertions import assert_column_values, assert_table_shape
 
-_CATEGORY_1 = pytest.mark.xfail(
-    reason="GAPS.md Category 1 — DAG compiler rejects WHERE predicates / column refs (missing RAY_ATTR_NAME); see Task L8",
-    strict=False,
-)
 
-
-@_CATEGORY_1
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_update_single_row(is_inplace, make_table):
     data = {
@@ -30,7 +24,6 @@ def test_update_single_row(is_inplace, make_table):
     assert_column_values(result, "age", [100, 34, 41])
 
 
-@_CATEGORY_1
 def test_update_multiple_rows(make_table):
     name, _ = make_table(
         {
@@ -68,7 +61,6 @@ def test_update_all_rows(is_inplace, make_table):
     assert_column_values(result, "score", [0, 0, 0])
 
 
-@_CATEGORY_1
 def test_update_multiple_columns(make_table):
     name, _ = make_table(
         {
@@ -88,7 +80,6 @@ def test_update_multiple_columns(make_table):
     assert_column_values(result, "salary", [55000, 60000])
 
 
-@_CATEGORY_1
 def test_update_with_comparison_condition(make_table):
     name, _ = make_table(
         {
@@ -103,7 +94,6 @@ def test_update_with_comparison_condition(make_table):
     assert_column_values(result, "age", [25, 30, 99])
 
 
-@_CATEGORY_1
 def test_update_with_complex_condition(make_table):
     name, _ = make_table(
         {
@@ -123,7 +113,6 @@ def test_update_with_complex_condition(make_table):
     assert_column_values(result, "salary", [150000, 120000, 90000, 150000])
 
 
-@_CATEGORY_1
 def test_update_no_matching_rows(make_table):
     name, _ = make_table(
         {
@@ -142,7 +131,6 @@ def test_update_no_matching_rows(make_table):
     assert_column_values(result, "status", ["active", "active"])
 
 
-@_CATEGORY_1
 def test_update_with_column_expression():
     """UPDATE using a column expression (age = age + 1)."""
     table = Table(
@@ -159,7 +147,6 @@ def test_update_with_column_expression():
     assert_column_values(result, "id", ["001", "002", "003"])
 
 
-@_CATEGORY_1
 def test_update_all_rows_with_expression():
     """UPDATE all rows without WHERE using a column expression (salary doubled)."""
     table = Table(
