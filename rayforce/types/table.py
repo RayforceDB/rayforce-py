@@ -415,6 +415,10 @@ class TableValueAccessorMixin:
     def at_row(self, row_n: int) -> Dict:
         if not isinstance(row_n, int):
             raise errors.RayforceConversionError("Row number has to an integer")
+        if row_n < 0:
+            row_n += len(self)
+            if row_n < 0:
+                raise errors.RayforceIndexError(f"Row out of bounds: {row_n - len(self)}")
         return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
 
     @DestructiveOperationHandler()

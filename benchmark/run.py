@@ -10,6 +10,8 @@ import benchmarks
 import format as f
 import prepare
 
+import rayforce as r
+
 
 def run(n_runs=15, n_warmup=5):
     """
@@ -90,7 +92,7 @@ def run(n_runs=15, n_warmup=5):
         std_native_rayforce = (
             statistics.stdev(native_rayforce_times) if len(native_rayforce_times) > 1 else 0
         )
-
+        print(f"Rayforce version: {r.version}")
         f.print_results(
             query_name,
             median_rayforce_py,

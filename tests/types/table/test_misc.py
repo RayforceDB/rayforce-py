@@ -21,10 +21,6 @@ _PARTED_IO = pytest.mark.xfail(
     reason="v2 splayed/parted table I/O not yet exposed via the Python wrapper",
     strict=False,
 )
-_NEG_ROW_INDEX = pytest.mark.xfail(
-    reason="v2 (at table -1) does not wrap negative row indices; raises domain error",
-    strict=False,
-)
 _META_REPR = pytest.mark.xfail(
     reason="v2 meta returns a _StaticRepr Vector that is not iterable from Python",
     strict=False,
@@ -583,7 +579,6 @@ def test_getitem_expression_all_match():
     assert_column_values(result, "name", ["alice", "bob"])
 
 
-@_NEG_ROW_INDEX
 def test_getitem_int_row():
     table = Table(
         {
@@ -606,7 +601,6 @@ def test_getitem_int_row():
     assert last["age"] == 41
 
 
-@_NEG_ROW_INDEX
 def test_getitem_int_row_second_to_last():
     table = Table(
         {

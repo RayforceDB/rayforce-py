@@ -492,8 +492,8 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M5 — Negative row index Python-side wrap (§J)
 
-- [ ] Patch `at_row` (line 387) to wrap negatives per §J.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_misc.py -k getitem_int_row -v`.
+- [x] Patch `at_row` (line 387) to wrap negatives per §J.
+- [x] Verify: `python3 -m pytest tests/types/table/test_misc.py -k getitem_int_row -v`.
 
 ### Task M6 — Column.shift_tz coerces offset to TIMESTAMP (§E)
 
