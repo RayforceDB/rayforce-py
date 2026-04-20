@@ -472,11 +472,11 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M2 — SELECT distinct: Python-side uniq (§R)
 
-- [ ] In `SelectQuery.compile()` (`table.py:859`), detect if the only
+- [x] In `SelectQuery.compile()` (`table.py:859`), detect if the only
       projected expression is `Expression(Operation.DISTINCT, Column(c))`
       and route it to a plain `(distinct (at T c))` expression (not a
       select-with-projection).
-- [ ] Verify:
+- [x] Verify:
       `python3 -m pytest tests/types/table/test_select.py::test_select_distinct -v`.
 
 ### Task M3 — Column.is_(True/False) elision (§Q)

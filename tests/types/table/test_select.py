@@ -18,10 +18,6 @@ _DAG_FILTER_AGG = pytest.mark.xfail(
     "which the v2 DAG compiler does not lower",
     strict=False,
 )
-_DAG_DISTINCT = pytest.mark.xfail(
-    reason="GAPS L8 residual: `distinct` is not wired into the v2 DAG compiler",
-    strict=False,
-)
 _TEMPORAL_TYPE_LOSS = pytest.mark.xfail(
     reason="v2 core: TIMESTAMP + I64 atom in DAG arithmetic returns I64, not TIMESTAMP",
     strict=False,
@@ -300,7 +296,6 @@ def test_complex_nested_boolean_expressions():
     assert_column_values(result, "age", [35, 40, 45])
 
 
-@_DAG_DISTINCT
 def test_select_distinct():
     """DISTINCT operation on a column."""
     table = Table(

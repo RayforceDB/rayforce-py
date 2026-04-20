@@ -942,7 +942,42 @@ class SelectQuery(IPCQueryMixin):
     def ipc(self) -> r.RayObject:  # type: ignore[override]
         return Expression(Operation.SELECT, self.compile()).compile()
 
+    def _distinct_only_projection(self) -> tuple[str, str] | None:
+        """Return (result_name, col_name) if this query is just a single
+        `Expression(DISTINCT, Column(c))` projection with no where/by/order,
+        else None. The v2 DAG compiler rejects `distinct` in a SELECT
+        projection; for this shape we evaluate `(distinct (at T 'c))`
+        Python-side and materialize a single-column table."""
+        if self._where_conditions or self._order_by_cols:
+            return None
+        if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
+            return None
+        if not self._select_cols:
+            return None
+        cols, computed = self._select_cols
+        if cols or len(computed) != 1:
+            return None
+        [(result_name, expr)] = computed.items()
+        if not isinstance(expr, Expression) or expr.operation != Operation.DISTINCT:
+            return None
+        if len(expr.operands) != 1 or not isinstance(expr.operands[0], Column):
+            return None
+        return (result_name, expr.operands[0].name)
+
     def execute(self) -> Table:
+        distinct_spec = self._distinct_only_projection()
+        if distinct_spec is not None:
+            result_name, col_name = distinct_spec
+            distinct_vec = utils.eval_obj(
+                List(
+                    [
+                        Operation.DISTINCT,
+                        List([Operation.AT, self.table.ptr, QuotedSymbol(col_name)]),
+                    ]
+                )
+            )
+            return Table({result_name: distinct_vec})
+
         if self._order_by_cols:
             cols, desc = self._order_by_cols
             return utils.eval_obj(
