@@ -1208,8 +1208,10 @@ class PivotQuery:
         self.aggfunc = aggfunc
 
     def execute(self) -> Table:
-        distinct = self.table.select(_col=Column(self.columns).distinct()).execute()
-        unique_values = [v.value if hasattr(v, "value") else v for v in distinct["_col"]]
+        col_vec = self.table[self.columns]
+        unique_values = list(
+            dict.fromkeys(v.value if hasattr(v, "value") else v for v in col_vec.to_python())
+        )
         if not unique_values:
             raise errors.RayforceValueError(f"No values in pivot column '{self.columns}'")
 

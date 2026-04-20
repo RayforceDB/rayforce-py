@@ -1,16 +1,5 @@
-import pytest
-
 from rayforce import I64, Symbol, Table, Vector
 from tests.helpers.assertions import assert_contains_columns, assert_table_shape
-
-# All pivot tests rely on PivotQuery.execute() running
-# Column.distinct() to enumerate pivot keys, but `distinct` is not wired
-# into the v2 DAG compiler — see GAPS Category 1.
-pytestmark = pytest.mark.xfail(
-    reason="GAPS L8 residual: PivotQuery uses Column.distinct(), which is not wired into "
-    "the v2 DAG compiler",
-    strict=False,
-)
 
 
 def _get_pivot_values(result, index_col: str) -> dict:
