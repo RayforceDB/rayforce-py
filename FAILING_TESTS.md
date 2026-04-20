@@ -503,8 +503,8 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M7 — Fix dtypes / cast via `.to_python()` first (§C)
 
-- [ ] Rewrite `TableInitMixin.dtypes` per §C.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_misc.py -k "dtypes or cast" -v`.
+- [x] Rewrite `TableInitMixin.dtypes` per §C.
+- [x] Verify: `python3 -m pytest tests/types/table/test_misc.py -k "dtypes or cast" -v`.
 
 ### Task M8 — Column.where emits `(filter mask col)` shape (§H)
 

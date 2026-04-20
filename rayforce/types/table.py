@@ -570,15 +570,19 @@ class TableValueAccessorMixin:
 
     @property
     def dtypes(self) -> dict[str, str]:
-        meta = utils.eval_obj(
-            List([Operation.AS, [Operation.QUOTE, "DICT"], [Operation.META, self.evaled_ptr]])
-        )
-        names, types = meta["name"], meta["type"]
-
-        return {
-            (n.value if hasattr(n, "value") else str(n)): t.value if hasattr(t, "value") else str(t)
-            for n, t in zip(names, types, strict=True)
-        }
+        # v2 `meta table` returns a summary dict ({'type': 'TABLE', 'len': N}),
+        # not a per-column breakdown. Derive column types directly from each
+        # column's type code via the scalar TypeRegistry entry.
+        cols = self.columns()
+        vals = self.values()
+        result: dict[str, str] = {}
+        for col_sym, vec in zip(cols, vals, strict=True):
+            name = col_sym.value if hasattr(col_sym, "value") else str(col_sym)
+            tc = FFI.get_obj_type(vec.ptr)
+            scalar_cls = TypeRegistry.get(-tc if tc > 0 else tc)
+            ray_name = getattr(scalar_cls, "ray_name", None) if scalar_cls else None
+            result[name] = ray_name.upper() if ray_name else str(tc)
+        return result
 
     @DestructiveOperationHandler()
     def drop(self, *cols: str) -> Table:
@@ -614,18 +618,22 @@ class TableValueAccessorMixin:
                 f"Invalid target type: {to_type}. Must be a Rayforce type like I64, F64, Symbol."
             )
 
-        select_args: dict[str, Expression | Column] = {}
+        # v2's DAG SELECT rejects `(as 'type col)` as a projected expression,
+        # so cast the target column Python-side and rebuild the table via
+        # FFI.init_table directly.
+        target_sym = QuotedSymbol(to_type.ray_name.lower())
+        new_vecs: list[RayObject] = []
         for col in current_cols:
+            vec = utils.eval_obj(List([Operation.AT, self.evaled_ptr, QuotedSymbol(col)]))
             if col == column:
-                select_args[col] = Expression(
-                    Operation.AS,
-                    QuotedSymbol(to_type.ray_name.lower()),
-                    Column(col),
-                )
-            else:
-                select_args[col] = Column(col)
+                vec = utils.eval_obj(List([Operation.AS, target_sym, vec]))
+            new_vecs.append(vec)
 
-        return t.cast("Table", self).select(**select_args).execute()
+        tbl_ptr = FFI.init_table(
+            columns=Vector(items=current_cols, ray_type=Symbol).ptr,
+            values=List([v.ptr for v in new_vecs]).ptr,
+        )
+        return Table(tbl_ptr)
 
     @DestructiveOperationHandler()
     def to_dict(self) -> dict[str, list]:

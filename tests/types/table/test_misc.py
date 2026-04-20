@@ -875,7 +875,6 @@ def test_describe():
     assert stats["salary"]["max"] == 80000.0
 
 
-@_META_REPR
 def test_dtypes():
     table = Table(
         {
@@ -988,7 +987,6 @@ def test_rename_unknown_column_raises():
         table.rename({"unknown": "new_name"})
 
 
-@_CAST_DICT_META
 def test_cast_i64_to_f64():
     table = Table(
         {
@@ -1005,7 +1003,6 @@ def test_cast_i64_to_f64():
     assert_column_values(result, "age", [29.0, 34.0, 41.0])
 
 
-@_CAST_DICT_META
 def test_cast_f64_to_i64():
     table = Table(
         {
@@ -1145,7 +1142,6 @@ def test_rename_creating_duplicate_column_names():
 # ---------------------------------------------------------------------------
 
 
-@_CAST_DICT_META
 def test_cast_with_incompatible_types():
     """Casting Symbol to I64 raises RayforceTypeError."""
     table = Table(
