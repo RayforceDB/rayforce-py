@@ -221,6 +221,13 @@ class Expression(AggregationMixin, OperatorMixin):
         return utils.eval_obj(self.compile())
 
 
+class _ShiftTzExpression(Expression):
+    """Marker subclass for `Column.shift_tz`. The DAG lowers TIMESTAMP+I64
+    to I64 and doesn't accept `(as 'timestamp …)` as a projection, so the
+    result carries the shift but loses the temporal tag. `SelectQuery.execute`
+    recovers it by casting the column Python-side after the select runs."""
+
+
 class Column(AggregationMixin, OperatorMixin):
     def __init__(self, name: str, table: Table | None = None):
         self.name = name
@@ -230,7 +237,11 @@ class Column(AggregationMixin, OperatorMixin):
         return Expression(Operation.MAP, self, condition)
 
     def shift_tz(self, tz: dt.tzinfo) -> Expression:
-        return Expression(Operation.ADD, self, tz_offset_nanos(tz))
+        # v2's DAG `promote_type` demotes TIMESTAMP+I64 to I64. The DAG's
+        # `as` projection only handles fixed-width numerics (not TIMESTAMP),
+        # so we mark the expression and recover the temporal tag after the
+        # select runs — see `SelectQuery.execute`.
+        return _ShiftTzExpression(Operation.ADD, self, tz_offset_nanos(tz))
 
 
 def _coerce_column(col: t.Any) -> t.Any:
@@ -996,6 +1007,15 @@ class SelectQuery(IPCQueryMixin):
             return None
         return (result_name, expr.operands[0].name)
 
+    def _shift_tz_column_names(self) -> list[str]:
+        """Names of computed columns that used `Column.shift_tz`. The v2 DAG
+        demotes TIMESTAMP+I64 arithmetic to I64, so after the select completes
+        we cast these columns back to TIMESTAMP Python-side."""
+        if not self._select_cols:
+            return []
+        _, computed = self._select_cols
+        return [name for name, expr in computed.items() if isinstance(expr, _ShiftTzExpression)]
+
     def execute(self) -> Table:
         distinct_spec = self._distinct_only_projection()
         if distinct_spec is not None:
@@ -1012,7 +1032,7 @@ class SelectQuery(IPCQueryMixin):
 
         if self._order_by_cols:
             cols, desc = self._order_by_cols
-            return utils.eval_obj(
+            result = utils.eval_obj(
                 List(
                     [
                         Operation.XDESC if desc else Operation.XASC,
@@ -1021,8 +1041,35 @@ class SelectQuery(IPCQueryMixin):
                     ]
                 )
             )
+        else:
+            result = utils.eval_obj(List([Operation.SELECT, self.compile()]))
 
-        return utils.eval_obj(List([Operation.SELECT, self.compile()]))
+        shift_tz_names = self._shift_tz_column_names()
+        if shift_tz_names and isinstance(result, Table):
+            as_sym = QuotedSymbol("timestamp")
+            col_names = [c.value if hasattr(c, "value") else str(c) for c in result.columns()]
+            cast_targets = set(shift_tz_names)
+            new_cols = [
+                utils.eval_obj(
+                    List(
+                        [
+                            Operation.AS,
+                            as_sym,
+                            List([Operation.AT, result.evaled_ptr, QuotedSymbol(name)]),
+                        ]
+                    )
+                )
+                if name in cast_targets
+                else result[name]
+                for name in col_names
+            ]
+            result = Table(
+                FFI.init_table(
+                    columns=Vector(items=col_names, ray_type=Symbol).ptr,
+                    values=List(new_cols).ptr,
+                )
+            )
+        return result
 
 
 class UpdateQuery(IPCQueryMixin):

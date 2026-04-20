@@ -497,9 +497,9 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M6 — Column.shift_tz coerces offset to TIMESTAMP (§E)
 
-- [ ] Patch `Column.shift_tz` (line 228) to wrap `tz_offset_nanos(tz)`
+- [x] Patch `Column.shift_tz` (line 228) to wrap `tz_offset_nanos(tz)`
       in a `Timestamp` atom.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_select.py -k shift_tz -v`.
+- [x] Verify: `python3 -m pytest tests/types/table/test_select.py -k shift_tz -v`.
 
 ### Task M7 — Fix dtypes / cast via `.to_python()` first (§C)
 

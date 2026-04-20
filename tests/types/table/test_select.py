@@ -18,10 +18,6 @@ _DAG_FILTER_AGG = pytest.mark.xfail(
     "which the v2 DAG compiler does not lower",
     strict=False,
 )
-_TEMPORAL_TYPE_LOSS = pytest.mark.xfail(
-    reason="v2 core: TIMESTAMP + I64 atom in DAG arithmetic returns I64, not TIMESTAMP",
-    strict=False,
-)
 
 
 def test_select_with_single_where():
@@ -319,7 +315,6 @@ def test_select_distinct():
     assert set(v.value for v in salary_vals) == {100, 200}
 
 
-@_TEMPORAL_TYPE_LOSS
 def test_shift_tz_positive_offset():
     """shift_tz with +5h offset shifts timestamps forward by 5 hours."""
     table = Table(
@@ -348,7 +343,6 @@ def test_shift_tz_positive_offset():
     assert ts_col[1].value == dt.datetime(2025, 6, 15, 23, 0, 0, tzinfo=dt.UTC)
 
 
-@_TEMPORAL_TYPE_LOSS
 def test_shift_tz_negative_offset():
     """shift_tz with -5h offset shifts timestamps backward by 5 hours."""
     table = Table(
@@ -394,7 +388,6 @@ def test_shift_tz_preserves_non_timestamp_columns():
     assert_column_values(result, "score", [100, 200])
 
 
-@_TEMPORAL_TYPE_LOSS
 def test_shift_tz_with_zoneinfo():
     """shift_tz works with zoneinfo.ZoneInfo fixed-offset timezone."""
     table = Table(
