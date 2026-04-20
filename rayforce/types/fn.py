@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import itertools
 import typing as t
 
 from rayforce import _rayforce_c as r
 from rayforce import errors, utils
+from rayforce.ffi import FFI
 from rayforce.types import Dict, List
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
@@ -12,6 +14,9 @@ from rayforce.utils import evaluation
 
 if t.TYPE_CHECKING:
     from rayforce.types.table import Expression
+
+
+_fn_bind_counter = itertools.count(1)
 
 
 class Fn(RayObject):
@@ -32,10 +37,26 @@ class Fn(RayObject):
     def from_ptr(cls, ptr: r.RayObject) -> Fn:
         return cls(ptr=ptr)
 
-    def apply(self, *args: t.Any) -> Expression:
-        from rayforce.types.table import Expression
+    def _bind_to_env(self) -> str:
+        # v2's DAG compiler (`compile_expr_dag` in src/ops/query.c) only
+        # accepts two lambda-call shapes: a literal `((fn [...] body) args)`
+        # in head position, or a named reference `(fname args)` where fname
+        # is globally env-bound to a RAY_LAMBDA with a single-expression body.
+        # A raw RAY_LAMBDA pointer in the head is rejected. We bind the
+        # lambda into the global env under a unique generated name so the
+        # named-reference branch triggers and β-reduces it.
+        name = getattr(self, "_bound_name", None)
+        if name is None:
+            name = f"__pyfn_{next(_fn_bind_counter):x}"
+            FFI.binary_set(FFI.init_symbol(name), self.ptr)
+            self._bound_name = name
+        return name
 
-        return Expression(self, *args)
+    def apply(self, *args: t.Any) -> Expression:
+        from rayforce.types.table import Expression, _make_name_sym
+
+        head = _make_name_sym(self._bind_to_env())
+        return Expression(head, *args)
 
     def to_python(self) -> str:
         return str(self)

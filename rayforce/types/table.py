@@ -170,7 +170,7 @@ class OperatorMixin:
 
 
 class Expression(AggregationMixin, OperatorMixin):
-    def __init__(self, operation: Operation | Fn, *operands: t.Any) -> None:
+    def __init__(self, operation: Operation | Fn | r.RayObject, *operands: t.Any) -> None:
         self.operation = operation
         self.operands = operands
 

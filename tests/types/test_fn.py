@@ -7,14 +7,26 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# Per-test xfails for residual gaps after L8.  Fn.apply(col) emits
-# `(<RAY_LAMBDA-ptr> col)` — the v2 DAG compiler only inlines
-# `((fn [args] body) ...)` (literal) or `(fname args)` (named, env-bound)
-# lambdas, neither of which matches.  Tracked as a follow-up to L8.
-_FN_APPLY_TO_COLUMN = pytest.mark.xfail(
-    reason="GAPS L8 residual: Fn.apply(col) head is a RAY_LAMBDA pointer; v2 DAG "
-    "compiler only handles literal `((fn ...) ...)` or env-bound `(fname args)` "
-    "lambda invocation shapes",
+# §F (FAILING_TESTS M9) extended only to the SQL plugin — the Table.select
+# path still broadcasts no-GROUP-BY aggregations across all input rows.
+_AGG_BROADCASTS = pytest.mark.xfail(
+    reason="FAILING_TESTS §F: Table.select broadcasts no-GROUP-BY aggregations; "
+    "Table-level .take(1) collapse is out of M10 scope",
+    strict=False,
+)
+
+# §L: v2's `/` on I64÷I64 promotes to F64 instead of truncating. Core-side fix
+# tracked as FAILING_TESTS §L (listed as "No — core").
+_INT_DIV_PROMOTED_TO_FLOAT = pytest.mark.xfail(
+    reason="FAILING_TESTS §L (core): v2 `/` on I64 operands returns F64, not truncated I64",
+    strict=False,
+)
+
+# Recursive `self` calls inside a lambda body cannot be β-reduced at DAG
+# compile time — the DAG's named-lambda inliner has no binding for `self`.
+_RECURSIVE_SELF_IN_DAG = pytest.mark.xfail(
+    reason="v2 DAG β-reduction doesn't bind `self` in lambda bodies; recursive "
+    "lambdas work in direct-eval but not when applied to a column in SELECT",
     strict=False,
 )
 
@@ -41,7 +53,6 @@ def test_fn_fibonacci_direct_call():
     assert fib(4) == 5
 
 
-@_FN_APPLY_TO_COLUMN
 def test_fn_apply_to_column():
     table = Table(
         {
@@ -57,7 +68,7 @@ def test_fn_apply_to_column():
     assert_column_values(result, "squared_value", [4, 9, 16])
 
 
-@_FN_APPLY_TO_COLUMN
+@_AGG_BROADCASTS
 def test_fn_apply_with_aggregation():
     table = Table(
         {
@@ -79,7 +90,6 @@ def test_fn_apply_with_aggregation():
     assert_column_values(result, "max_of_squares", [25])
 
 
-@_FN_APPLY_TO_COLUMN
 def test_fn_apply_with_group_by():
     table = Table(
         {
@@ -102,7 +112,7 @@ def test_fn_apply_with_group_by():
     assert dict(zip(categories, sums, strict=True)) == {"A": 13, "B": 41}
 
 
-@_FN_APPLY_TO_COLUMN
+@_INT_DIV_PROMOTED_TO_FLOAT
 def test_fn_normalize_with_multiple_args():
     table = Table(
         {
@@ -122,7 +132,7 @@ def test_fn_normalize_with_multiple_args():
     assert_column_values(result, "normalized", [0, 0, 1])
 
 
-@_FN_APPLY_TO_COLUMN
+@_RECURSIVE_SELF_IN_DAG
 def test_fn_fibonacci_with_aggregation():
     table = Table(
         {
@@ -146,7 +156,6 @@ def test_fn_fibonacci_with_aggregation():
     assert_table_shape(result, rows=2, cols=4)
 
 
-@_FN_APPLY_TO_COLUMN
 def test_fn_complex_expression():
     table = Table(
         {
@@ -166,7 +175,6 @@ def test_fn_complex_expression():
     assert_column_values(result, "sum_of_squares", [13, 25, 41])
 
 
-@_FN_APPLY_TO_COLUMN
 def test_fn_conditional_lambda():
     table = Table(
         {
@@ -181,7 +189,6 @@ def test_fn_conditional_lambda():
     assert_column_values(result, "abs_value", [5, 0, 5, 10])
 
 
-@_FN_APPLY_TO_COLUMN
 def test_fn_with_where_clause():
     table = Table(
         {

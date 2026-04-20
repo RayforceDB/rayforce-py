@@ -523,9 +523,9 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M10 — Fn.apply: bind lambda into env, emit `(name args)` (§B)
 
-- [ ] Modify `Fn.apply` and possibly `Expression.compile` head-handling
+- [x] Modify `Fn.apply` and possibly `Expression.compile` head-handling
       per §B.
-- [ ] Verify: `python3 -m pytest tests/types/test_fn.py -v`.
+- [x] Verify: `python3 -m pytest tests/types/test_fn.py -v`.
 
 ### Task M11 — CSV reader/writer pyext wrappers (§D)
 
