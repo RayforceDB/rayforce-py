@@ -87,6 +87,10 @@ class AggregationMixin:
         return Expression(Operation.DISTINCT, self)
 
     def is_(self, other: bool) -> Expression:
+        if isinstance(self, Expression) and other is True:
+            return self
+        if isinstance(self, Expression) and other is False:
+            return Expression(Operation.NOT, self)
         return Expression(Operation.EQUALS, self, other)
 
     def isin(self, values: list[t.Any] | RayObject) -> Expression:

@@ -17,11 +17,6 @@ _DAG_FILTER_AGG = pytest.mark.xfail(
     "which the v2 DAG compiler does not lower",
     strict=False,
 )
-_BOOL_NESTED_EQ = pytest.mark.xfail(
-    reason="GAPS L8 residual: nested `(== bool_expr True)` returns 0 rows in v2 DAG; "
-    "boolean equality with a bool atom does not match boolean vector elements",
-    strict=False,
-)
 
 
 def test_is_true_filters_true_rows():
@@ -148,7 +143,6 @@ def test_is_with_group_by():
     assert rows["hr"]["active_total"] == 400
 
 
-@_BOOL_NESTED_EQ
 def test_is_on_expression():
     table = Table(
         {

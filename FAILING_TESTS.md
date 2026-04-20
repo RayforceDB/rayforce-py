@@ -481,8 +481,8 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M3 — Column.is_(True/False) elision (§Q)
 
-- [ ] Patch `Column.is_` and `Expression.is_` (if present) per §Q.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_is.py::test_is_on_expression -v`.
+- [x] Patch `Column.is_` and `Expression.is_` (if present) per §Q.
+- [x] Verify: `python3 -m pytest tests/types/table/test_is.py::test_is_on_expression -v`.
 
 ### Task M4 — Table.__init__ coerces list columns to typed vectors (§G)
 
