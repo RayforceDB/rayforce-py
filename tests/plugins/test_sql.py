@@ -10,11 +10,6 @@ from tests.helpers.assertions import (
 pytestmark = pytest.mark.plugin
 
 # Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
-_AGG_NO_GROUP_BROADCAST = pytest.mark.xfail(
-    reason="GAPS L8 residual: aggregation without GROUP BY broadcasts the scalar across "
-    "all input rows in v2 instead of returning a single-row result",
-    strict=False,
-)
 _F64_DIVIDE_FLOORS = pytest.mark.xfail(
     reason="GAPS Category 6: F64/I64 division yields integer-floored result in v2 core",
     strict=False,
@@ -167,14 +162,12 @@ def test_group_by_avg(sqlglot, sample_table):
     assert len(result) == 2
 
 
-@_AGG_NO_GROUP_BROADCAST
 def test_min_max(sqlglot, sample_table):
     result = sample_table.sql("SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM self")
     assert_column_values(result, "min_age", [25])
     assert_column_values(result, "max_age", [35])
 
 
-@_AGG_NO_GROUP_BROADCAST
 def test_multiple_aggregations_no_group(sqlglot, sample_table):
     result = sample_table.sql(
         "SELECT COUNT(id) AS cnt, AVG(salary) AS avg_sal, MIN(age) AS min_age, MAX(age) AS max_age FROM self"

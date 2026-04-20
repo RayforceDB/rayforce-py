@@ -48,6 +48,8 @@ FUNC_MAP = {
     "DISTINCT": "distinct",
 }
 
+_AGGREGATION_FUNCS = frozenset({"COUNT", "SUM", "AVG", "MIN", "MAX", "FIRST", "LAST", "MEDIAN"})
+
 
 class ExprType(Enum):
     COLUMN = "column"
@@ -97,6 +99,19 @@ class ParsedUpsert:
 
 
 ParsedQuery = ParsedSelect | ParsedUpdate | ParsedInsert | ParsedUpsert
+
+
+def _is_aggregation_only_select(parsed: ParsedSelect) -> bool:
+    if parsed.group_by:
+        return False
+    if not parsed.columns:
+        return False
+    for _, expr in parsed.columns:
+        if expr.type != ExprType.FUNCTION:
+            return False
+        if expr.value.upper() not in _AGGREGATION_FUNCS:
+            return False
+    return True
 
 
 class SQLParser:
@@ -374,7 +389,15 @@ class SQLCompiler:
             desc = any(is_desc for _, is_desc in parsed.order_by)
             query = query.order_by(*[col for col, _ in _order], desc=desc)
 
-        return query.execute()
+        result = query.execute()
+
+        # v2 DAG's element-wise SELECT broadcasts scalar aggregations across
+        # all input rows. If every projected column is an aggregation and
+        # there's no GROUP BY, collapse to a single row Python-side.
+        if _is_aggregation_only_select(parsed):
+            result = result.take(1)
+
+        return result
 
     def _compile_update(self, parsed: ParsedUpdate, table: Table) -> Table:
         update_kwargs: dict[str, t.Any] = {

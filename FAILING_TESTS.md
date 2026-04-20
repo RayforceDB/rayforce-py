@@ -516,10 +516,10 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M9 — Aggregation broadcast: `.take(1)` in SQL plugin (§F)
 
-- [ ] In the SQL plugin layer, if the SELECT projection contains only
+- [x] In the SQL plugin layer, if the SELECT projection contains only
       aggregation calls and there's no GROUP BY, wrap the result with
       `.take(1)` (or detect before compile and emit a dict instead).
-- [ ] Verify: `python3 -m pytest tests/plugins/test_sql.py -v`.
+- [x] Verify: `python3 -m pytest tests/plugins/test_sql.py -v`.
 
 ### Task M10 — Fn.apply: bind lambda into env, emit `(name args)` (§B)
 
