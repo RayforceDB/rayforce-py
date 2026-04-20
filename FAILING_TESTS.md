@@ -486,9 +486,9 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M4 — Table.__init__ coerces list columns to typed vectors (§G)
 
-- [ ] In `TableInitMixin.__init__` (line 236) add `_coerce_column`
+- [x] In `TableInitMixin.__init__` (line 236) add `_coerce_column`
       helper as in §G and apply to every value of `ptr.values()`.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_is.py -v`.
+- [x] Verify: `python3 -m pytest tests/types/table/test_is.py -v`.
 
 ### Task M5 — Negative row index Python-side wrap (§J)
 

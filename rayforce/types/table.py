@@ -233,16 +233,40 @@ class Column(AggregationMixin, OperatorMixin):
         return Expression(Operation.ADD, self, tz_offset_nanos(tz))
 
 
+def _coerce_column(col: t.Any) -> t.Any:
+    """Unify homogeneous Python lists and rayforce `List` columns into a
+    typed `Vector`. RAY_LIST columns are not accepted by the v2 DAG filter
+    path, so passing `[True, False, True]` or `List([True, False, True])`
+    as a table column must be pre-promoted to a RAY_B8 vector."""
+    if isinstance(col, list) and col:
+        if all(isinstance(x, bool) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_B8)
+        if all(isinstance(x, int) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_I64)
+        if all(isinstance(x, float) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_F64)
+        if all(isinstance(x, str) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_SYMBOL)
+    if isinstance(col, List) and len(col) > 0:
+        first_type = FFI.get_obj_type(col[0].ptr)
+        if first_type < 0 and all(
+            FFI.get_obj_type(col[i].ptr) == first_type for i in range(1, len(col))
+        ):
+            return Vector(items=list(col), ray_type=first_type)
+    return col
+
+
 class TableInitMixin:
     _ptr: r.RayObject | str
     type_code: int
 
     def __init__(self, ptr: r.RayObject | str | dict[str, Vector]) -> None:
         if isinstance(ptr, dict):
+            coerced = {name: _coerce_column(val) for name, val in ptr.items()}
             self._ptr, self.is_reference = (
                 FFI.init_table(
-                    columns=Vector(items=ptr.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
-                    values=List(ptr.values()).ptr,
+                    columns=Vector(items=coerced.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
+                    values=List(coerced.values()).ptr,
                 ),
                 False,
             )

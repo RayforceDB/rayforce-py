@@ -8,10 +8,6 @@ from tests.helpers.assertions import (
 )
 
 # Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
-_DAG_LIST_COLUMN = pytest.mark.xfail(
-    reason="GAPS L8 residual: RAY_LIST columns are not handled by the v2 DAG filter path",
-    strict=False,
-)
 _DAG_FILTER_AGG = pytest.mark.xfail(
     reason="GAPS L8 residual: Column.where(pred).agg() emits (map (at) col (where pred)) "
     "which the v2 DAG compiler does not lower",
@@ -33,7 +29,6 @@ def test_is_true_filters_true_rows():
     assert_column_set(result, "name", {"alice", "charlie"})
 
 
-@_DAG_LIST_COLUMN
 def test_is_true_filters_true_rows_list():
     table = Table(
         {
@@ -48,7 +43,6 @@ def test_is_true_filters_true_rows_list():
     assert_column_set(result, "name", {"alice", "charlie"})
 
 
-@_DAG_LIST_COLUMN
 def test_is_false_filters_false_rows_list():
     table = Table(
         {
