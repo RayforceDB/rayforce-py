@@ -1,17 +1,8 @@
-import pytest
-
 from rayforce import B8, I64, Column, List, Symbol, Table, Vector
 from tests.helpers.assertions import (
     assert_column_set,
     assert_column_values,
     assert_table_shape,
-)
-
-# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
-_DAG_FILTER_AGG = pytest.mark.xfail(
-    reason="GAPS L8 residual: Column.where(pred).agg() emits (map (at) col (where pred)) "
-    "which the v2 DAG compiler does not lower",
-    strict=False,
 )
 
 
@@ -114,7 +105,6 @@ def test_is_combined_with_other_conditions():
     assert_column_set(result, "name", {"charlie", "dana"})
 
 
-@_DAG_FILTER_AGG
 def test_is_with_group_by():
     table = Table(
         {

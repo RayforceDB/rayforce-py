@@ -1,8 +1,6 @@
 import datetime as dt
 from zoneinfo import ZoneInfo
 
-import pytest
-
 from rayforce import F64, I64, Column, Symbol, Table, Timestamp, Vector
 from tests.helpers.assertions import (
     assert_column_values,
@@ -10,13 +8,6 @@ from tests.helpers.assertions import (
     assert_contains_columns,
     assert_row,
     assert_table_shape,
-)
-
-# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
-_DAG_FILTER_AGG = pytest.mark.xfail(
-    reason="GAPS L8 residual: Column.where(pred).agg() emits (map (at) col (where pred)) "
-    "which the v2 DAG compiler does not lower",
-    strict=False,
 )
 
 
@@ -145,7 +136,6 @@ def test_group_by_multiple_columns():
     assert_row(result, rows[("marketing", "junior")], {"total_salary": 90000, "avg_salary": 90000})
 
 
-@_DAG_FILTER_AGG
 def test_group_by_with_filtered_aggregation():
     table = Table(
         {

@@ -175,20 +175,23 @@ class Expression(AggregationMixin, OperatorMixin):
         self.operands = operands
 
     def compile(self, *, ipc: bool = False) -> r.RayObject:
+        # `(sum (filter col mask))` isn't DAG-lowerable — `filter` isn't
+        # wired into `compile_expr_dag`'s binary-op table, so the select
+        # errors out. Rewrite to `(sum (if mask col 0))`, which the DAG
+        # compiles to OP_SUM(OP_IF(mask, col, 0)) — a per-element masked
+        # sum matching the filter-then-sum semantics.
         if (
-            self.operation == Operation.MAP
-            and len(self.operands) == 2
-            and isinstance(self.operands[0], Column)
-            and isinstance(self.operands[1], Expression)
+            self.operation == Operation.SUM
+            and len(self.operands) == 1
+            and isinstance(self.operands[0], Expression)
+            and self.operands[0].operation == Operation.FILTER
+            and len(self.operands[0].operands) == 2
         ):
-            return List(
-                [
-                    Operation.MAP,
-                    Operation.AT,
-                    _make_name_sym(self.operands[0].name),
-                    List([Operation.WHERE, self.operands[1].compile(ipc=ipc)]),
-                ]
-            ).ptr
+            col, mask = self.operands[0].operands
+            return Expression(
+                Operation.SUM,
+                Expression(Operation.IF, mask, col, 0),
+            ).compile(ipc=ipc)
 
         # Standard expression compilation. The v2 DAG compiler in
         # `compile_expr_dag` accepts only:
@@ -234,7 +237,7 @@ class Column(AggregationMixin, OperatorMixin):
         self.table = table
 
     def where(self, condition: Expression) -> Expression:
-        return Expression(Operation.MAP, self, condition)
+        return Expression(Operation.FILTER, self, condition)
 
     def shift_tz(self, tz: dt.tzinfo) -> Expression:
         # v2's DAG `promote_type` demotes TIMESTAMP+I64 to I64. The DAG's

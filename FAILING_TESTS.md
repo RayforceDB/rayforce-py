@@ -508,11 +508,11 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M8 — Column.where emits `(filter mask col)` shape (§H)
 
-- [ ] Change `Column.where` to return
+- [x] Change `Column.where` to return
       `Expression(Operation.FILTER, condition, self)`.
-- [ ] Audit call sites — anything that previously matched `MAP/AT/WHERE`
+- [x] Audit call sites — anything that previously matched `MAP/AT/WHERE`
       in `Expression.compile` should be updated or removed.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_is.py tests/types/table/test_select.py -v`.
+- [x] Verify: `python3 -m pytest tests/types/table/test_is.py tests/types/table/test_select.py -v`.
 
 ### Task M9 — Aggregation broadcast: `.take(1)` in SQL plugin (§F)
 
