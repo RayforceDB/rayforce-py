@@ -234,6 +234,16 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def read_csv(schema: r.RayObject | None, path: r.RayObject) -> r.RayObject:
+        return r.read_csv(schema, path)
+
+    @staticmethod
+    @errors.error_handler
+    def write_csv(table: r.RayObject, path: r.RayObject) -> r.RayObject:
+        return r.write_csv(table, path)
+
+    @staticmethod
+    @errors.error_handler
     def eval_str(obj: r.RayObject) -> r.RayObject:
         return r.eval_str(obj)
 

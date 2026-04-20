@@ -13,10 +13,6 @@ from tests.helpers.assertions import (
 # Per-test xfails for residual gaps after L8 (these failures are unrelated to the
 # WHERE-predicate AST shape fix but were previously masked by the module-level
 # xfail.  Each gets a specific reason so future fixes can target them.)
-_CSV_IO = pytest.mark.xfail(
-    reason="v2 CSV reader/writer: column-type inference and serialization not yet wired up",
-    strict=False,
-)
 _PARTED_IO = pytest.mark.xfail(
     reason="v2 splayed/parted table I/O not yet exposed via the Python wrapper",
     strict=False,
@@ -36,7 +32,6 @@ _ERROR_MSG_SHAPE = pytest.mark.xfail(
 )
 
 
-@_CSV_IO
 def test_table_from_csv_all_types(tmp_path):
     # Prepare a CSV file that exercises all supported scalar types
     csv_content = "\n".join(
@@ -90,7 +85,6 @@ def test_table_from_csv_all_types(tmp_path):
     assert_column_values(table, "symbol", ["foo", "bar"])
 
 
-@_CSV_IO
 def test_set_csv(tmp_path):
     table = Table(
         {
@@ -113,7 +107,6 @@ def test_set_csv(tmp_path):
     assert_column_values(loaded_table, "age", [29, 34, 41])
 
 
-@_CSV_IO
 def test_set_csv_with_custom_separator(tmp_path):
     table = Table(
         {

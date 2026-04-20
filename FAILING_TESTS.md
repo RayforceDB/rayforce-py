@@ -529,10 +529,10 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M11 — CSV reader/writer pyext wrappers (§D)
 
-- [ ] Add `raypy_read_csv` / `raypy_write_csv` wrappers; register in
+- [x] Add `raypy_read_csv` / `raypy_write_csv` wrappers; register in
       method table; expose via `Table.from_csv` / `Table.to_csv`.
-- [ ] Rebuild (`make app`).
-- [ ] Verify: `python3 -m pytest tests/types/table/test_misc.py -k csv -v`.
+- [x] Rebuild (`make app`).
+- [x] Verify: `python3 -m pytest tests/types/table/test_misc.py -k csv -v`.
 
 ### Task M12 — Splayed/parted Python I/O wrappers (§M)
 

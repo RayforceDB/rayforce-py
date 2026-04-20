@@ -148,6 +148,8 @@ PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args);
 PyObject *raypy_update(PyObject *self, PyObject *args);
 PyObject *raypy_insert(PyObject *self, PyObject *args);
 PyObject *raypy_upsert(PyObject *self, PyObject *args);
+PyObject *raypy_read_csv(PyObject *self, PyObject *args);
+PyObject *raypy_write_csv(PyObject *self, PyObject *args);
 PyObject *raypy_ser_obj(PyObject *self, PyObject *args);
 PyObject *raypy_de_obj(PyObject *self, PyObject *args);
 PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args);

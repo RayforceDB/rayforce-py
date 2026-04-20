@@ -322,15 +322,9 @@ class TableInitMixin:
 
     @classmethod
     def from_csv(cls, column_types: list[RayObject], path: str) -> t.Self:
-        return utils.eval_obj(
-            List(
-                [
-                    Operation.READ_CSV,
-                    Vector([c.ray_name for c in column_types], ray_type=Symbol),
-                    String(path),
-                ]
-            )
-        )
+        schema = Vector([c.ray_name.upper() for c in column_types], ray_type=Symbol).ptr
+        result = FFI.read_csv(schema, FFI.init_string(path))
+        return cls(result)
 
     @property
     def ptr(self) -> r.RayObject:
@@ -387,10 +381,12 @@ class TableIOMixin:
         utils.eval_obj(List([Operation.SET_SPLAYED, *_args]))
 
     def set_csv(self, path: str, separator: str | None = None) -> None:
-        _args = [FFI.init_string(path), self.evaled_ptr]
-        if separator is not None:
-            _args.append(String(separator).ptr)
-        utils.eval_obj(List([Operation.WRITE_CSV, *_args]))
+        FFI.write_csv(self.evaled_ptr, FFI.init_string(path))
+        if separator is not None and separator != ",":
+            with open(path) as fh:
+                content = fh.read()
+            with open(path, "w") as fh:
+                fh.write(content.replace(",", separator))
 
 
 class DestructiveOperationHandler:
