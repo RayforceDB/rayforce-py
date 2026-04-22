@@ -544,11 +544,18 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M13 — Order-by null handling via vec_is_null (§P)
 
-- [ ] Requires GAPS L6 to be done first (`FFI.vec_is_null`).
-- [ ] In `SelectQuery.execute` (line 951), when `self._order_by_cols` is
+- [x] Requires GAPS L6 to be done first (`FFI.vec_is_null`).
+- [x] In `SelectQuery.execute` (line 951), when `self._order_by_cols` is
       set, pre-compute a null mask per order key and splice nulls to
       the end (asc) or start (desc) Python-side.
-- [ ] Verify:
+      NOTE: the v2 core already places nulls correctly on order-by
+      (asc → nulls first, desc → nulls last), so no splicing was
+      needed. The actual failure was in `at_row`: `(at t i)` loses the
+      per-column null bitmap, so a null I64 cell came back as `I64(0)`.
+      Fix landed in `Table.at_row`: after the core `(at t i)` call,
+      consult `FFI.vec_is_null(col_ptr, i)` per column and overwrite the
+      masked cell with `Null` in the returned dict.
+- [x] Verify:
       `python3 -m pytest tests/types/table/test_order_by.py::test_order_by_with_null_values -v`.
 
 ### Task M14 — Error-text tests → error-code assertions (§I)

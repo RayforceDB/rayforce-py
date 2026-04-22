@@ -9,11 +9,6 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-_CATEGORY_9 = pytest.mark.xfail(
-    reason="GAPS.md Category 9 — null detection via null bitmap not wired through order-by / at_row",
-    strict=False,
-)
-
 
 @pytest.mark.parametrize("is_inplace", [True, False])
 def test_order_by_desc(is_inplace, make_table):
@@ -143,7 +138,6 @@ def test_order_by_chained_with_where():
     assert_column_values(result, "age", [28, 30, 35])
 
 
-@_CATEGORY_9
 def test_order_by_with_null_values():
     """ORDER BY on a column that contains NULL values; NULLs sort to the beginning (0Nj = INT_MIN)."""
     left = Table(

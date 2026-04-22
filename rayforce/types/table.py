@@ -14,6 +14,7 @@ from rayforce.types import (
     I64,
     Dict,
     List,
+    Null,
     QuotedSymbol,
     String,
     Symbol,
@@ -506,7 +507,14 @@ class TableValueAccessorMixin:
             row_n += len(self)
             if row_n < 0:
                 raise errors.RayforceIndexError(f"Row out of bounds: {row_n - len(self)}")
-        return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
+        result = utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
+        col_names = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        for col_name in col_names:
+            col_vec = self[col_name]
+            col_ptr = col_vec.ptr if hasattr(col_vec, "ptr") else col_vec
+            if FFI.vec_is_null(col_ptr, row_n):
+                result[col_name] = Null
+        return result
 
     @DestructiveOperationHandler()
     def take(self, n: int, offset: int = 0) -> Table:
