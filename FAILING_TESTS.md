@@ -565,8 +565,8 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M15 — left-join dedup: update expectation (§N)
 
-- [ ] Update `test_left_join_with_duplicate_keys` to match v2 semantics.
-- [ ] Verify.
+- [x] Update `test_left_join_with_duplicate_keys` to match v2 semantics.
+- [x] Verify.
 
 ### Task M16 — Sweep stale xfail markers (final hygiene)
 

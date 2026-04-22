@@ -10,11 +10,6 @@ from tests.helpers.assertions import (
 )
 
 # Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
-_LEFT_JOIN_DUP_KEYS = pytest.mark.xfail(
-    reason="v2 left-join dedup semantics differ from v1: returns one row per right-side "
-    "match instead of one row per left-side row when the join key is duplicated",
-    strict=False,
-)
 _ASOF_JOIN_NULL = pytest.mark.xfail(
     reason="v2 asof-join returns I64(0) instead of typed null when no quote precedes the trade",
     strict=False,
@@ -390,9 +385,10 @@ def test_inner_join_with_duplicate_keys():
     assert_column_values(result, "val2", [10, 10, 30])
 
 
-@_LEFT_JOIN_DUP_KEYS
 def test_left_join_with_duplicate_keys():
-    """Left join where the right table has duplicate keys; first match is used."""
+    """Left join where the right table has duplicate keys; v2 emits one row
+    per right-side match (SQL-standard semantics), not one row per left-side
+    row."""
     left = Table(
         {
             "key": Vector(items=["a", "b", "c"], ray_type=Symbol),
@@ -408,16 +404,31 @@ def test_left_join_with_duplicate_keys():
 
     result = left.left_join(right, "key").execute()
 
-    assert_table_shape(result, rows=3, cols=3)
-    assert_column_values(result, "key", ["a", "b", "c"])
-    assert_column_values(result, "val1", [1, 2, 3])
-    # 'a' matches first right-side row (val2=10), 'c' has no match (null)
-    row_a = result.at_row(0)
-    assert row_a["val2"] == 10
-    row_b = result.at_row(1)
-    assert row_b["val2"] == 30
-    row_c = result.at_row(2)
-    assert row_c["val2"] == None  # noqa: E711  (Rayforce Null == None is True)
+    # 'a' produces two rows (both right-side matches), 'b' produces one, and
+    # 'c' produces one null row → 4 rows total.
+    assert_table_shape(result, rows=4, cols=3)
+
+    rows_by_key: dict[str, list[dict]] = {}
+    for i in range(len(result)):
+        row = result.at_row(i)
+        rows_by_key.setdefault(row["key"], []).append(row)
+
+    assert set(rows_by_key) == {"a", "b", "c"}
+
+    a_rows = rows_by_key["a"]
+    assert len(a_rows) == 2
+    assert {r["val1"] for r in a_rows} == {1}
+    assert {r["val2"] for r in a_rows} == {10, 20}
+
+    b_rows = rows_by_key["b"]
+    assert len(b_rows) == 1
+    assert b_rows[0]["val1"] == 2
+    assert b_rows[0]["val2"] == 30
+
+    c_rows = rows_by_key["c"]
+    assert len(c_rows) == 1
+    assert c_rows[0]["val1"] == 3
+    assert c_rows[0]["val2"] == None  # noqa: E711  (Rayforce Null == None is True)
 
 
 @_ASOF_JOIN_NULL
