@@ -21,11 +21,6 @@ _CAST_DICT_META = pytest.mark.xfail(
     reason="cast() depends on dtypes which depends on v2 meta — see _META_REPR",
     strict=False,
 )
-_ERROR_MSG_SHAPE = pytest.mark.xfail(
-    reason="v2 returns an empty error message for these failures; test asserts on the "
-    "v1 message text",
-    strict=False,
-)
 
 
 def test_table_from_csv_all_types(tmp_path):
@@ -1023,9 +1018,13 @@ def test_cast_unknown_column_raises():
 # ---------------------------------------------------------------------------
 
 
-@_ERROR_MSG_SHAPE
 def test_concat_with_mismatched_column_names():
-    """Concatenating tables with different column names raises RayforceValueError."""
+    """Concatenating tables with different column names raises a domain error.
+
+    v1 raised ``RayforceValueError`` with a "column mismatch" message; v2 uses
+    packed error codes and the readable message is out-of-band, so the test
+    asserts on the error class/code rather than the text.
+    """
     table1 = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
@@ -1039,8 +1038,9 @@ def test_concat_with_mismatched_column_names():
         }
     )
 
-    with pytest.raises(errors.RayforceValueError):
+    with pytest.raises(errors.RayforceDomainError) as exc:
         table1.concat(table2)
+    assert "'code': 'domain'" in str(exc.value)
 
 
 def test_concat_with_mismatched_column_types():
@@ -1067,11 +1067,13 @@ def test_concat_with_mismatched_column_types():
 # ---------------------------------------------------------------------------
 
 
-@_ERROR_MSG_SHAPE
 def test_at_column_with_nonexistent_column():
-    """at_column with a column name that does not exist returns Null."""
-    from rayforce import Null
+    """at_column with a column name that does not exist raises a domain error.
 
+    v1 returned ``Null`` for a missing column; v2 treats a missing column as a
+    domain error from ``(at t 'name)``. The test asserts on the error class/code
+    rather than the (currently empty) v2 message text.
+    """
     table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
@@ -1079,8 +1081,9 @@ def test_at_column_with_nonexistent_column():
         }
     )
 
-    result = table.at_column("nonexistent")
-    assert result == Null
+    with pytest.raises(errors.RayforceDomainError) as exc:
+        table.at_column("nonexistent")
+    assert "'code': 'domain'" in str(exc.value)
 
 
 # ---------------------------------------------------------------------------

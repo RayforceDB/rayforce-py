@@ -560,8 +560,8 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M14 — Error-text tests → error-code assertions (§I)
 
-- [ ] Update 2 tests in `test_misc.py` per §I.
-- [ ] Verify those tests.
+- [x] Update 2 tests in `test_misc.py` per §I.
+- [x] Verify those tests.
 
 ### Task M15 — left-join dedup: update expectation (§N)
 
