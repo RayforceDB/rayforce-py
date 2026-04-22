@@ -73,7 +73,10 @@ class Fn(RayObject):
         return f"Fn(args: {meta['args'].to_python()}; body: {meta['body'].to_python()})"
 
     def __call__(self, *args: t.Any) -> t.Any:
-        return utils.eval_obj(self.apply(*args).compile())
+        # Direct eval uses the literal `((fn …) args)` shape, which v2's
+        # evaluator accepts — so `__call__` bypasses `apply`'s env-binding
+        # and avoids leaking a `__pyfn_*` global on every direct call.
+        return utils.eval_obj(List([self, *args]))
 
 
 TypeRegistry.register(r.TYPE_LAMBDA, Fn)

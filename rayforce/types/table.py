@@ -48,7 +48,8 @@ def _is_date_dir(name: str) -> bool:
 def _is_int_dir(name: str) -> bool:
     if not name:
         return False
-    return name.lstrip("-").isdigit() and name != "-"
+    body = name[1:] if name[0] == "-" else name
+    return body.isdigit()
 
 
 def _collect_part_dirs(root: str) -> list[str]:
@@ -461,10 +462,15 @@ class TableIOMixin:
     def set_csv(self, path: str, separator: str | None = None) -> None:
         FFI.write_csv(self.evaled_ptr, FFI.init_string(path))
         if separator is not None and separator != ",":
-            with open(path) as fh:
-                content = fh.read()
-            with open(path, "w") as fh:
-                fh.write(content.replace(",", separator))
+            # Re-emit via the stdlib csv module so embedded commas inside
+            # quoted fields survive the delimiter change. A naive
+            # str.replace(",", sep) corrupts any comma-bearing values.
+            import csv
+
+            with open(path, newline="") as fh:
+                rows = list(csv.reader(fh))
+            with open(path, "w", newline="") as fh:
+                csv.writer(fh, delimiter=separator).writerows(rows)
 
 
 class DestructiveOperationHandler:
@@ -503,15 +509,22 @@ class TableValueAccessorMixin:
     def at_row(self, row_n: int) -> Dict:
         if not isinstance(row_n, int):
             raise errors.RayforceConversionError("Row number has to an integer")
+        original = row_n
         if row_n < 0:
             row_n += len(self)
-            if row_n < 0:
-                raise errors.RayforceIndexError(f"Row out of bounds: {row_n - len(self)}")
+        if row_n < 0 or row_n >= len(self):
+            raise errors.RayforceIndexError(f"Row out of bounds: {original}")
         result = utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
+        # `(at t i)` loses per-column null-bitmap info; consult it per column
+        # and overwrite nulled cells with `Null`. Skip non-vector columns
+        # (e.g. heterogeneous `List` columns) — `vec_is_null` only accepts
+        # typed vectors.
         col_names = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
-        for col_name in col_names:
-            col_vec = self[col_name]
+        col_vectors = self.values()
+        for col_name, col_vec in zip(col_names, col_vectors, strict=True):
             col_ptr = col_vec.ptr if hasattr(col_vec, "ptr") else col_vec
+            if FFI.get_obj_type(col_ptr) <= 0:
+                continue
             if FFI.vec_is_null(col_ptr, row_n):
                 result[col_name] = Null
         return result
