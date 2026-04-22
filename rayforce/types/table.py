@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from functools import wraps
+import os
 import typing as t
 
 import numpy as np
@@ -30,6 +31,51 @@ if t.TYPE_CHECKING:
 
 
 _RAY_ATTR_NAME = 0x20
+
+
+def _is_date_dir(name: str) -> bool:
+    if len(name) != 10 or name[4] != "." or name[7] != ".":
+        return False
+    digits = name[:4] + name[5:7] + name[8:]
+    if not digits.isdigit():
+        return False
+    month = int(name[5:7])
+    day = int(name[8:])
+    return 1 <= month <= 12 and 1 <= day <= 31
+
+
+def _is_int_dir(name: str) -> bool:
+    if not name:
+        return False
+    return name.lstrip("-").isdigit() and name != "-"
+
+
+def _collect_part_dirs(root: str) -> list[str]:
+    if not os.path.isdir(root):
+        return []
+    out = []
+    for entry in sorted(os.listdir(root)):
+        if entry.startswith(".") or entry == "sym":
+            continue
+        if not os.path.isdir(os.path.join(root, entry)):
+            continue
+        if not all(c.isdigit() or c == "." for c in entry):
+            continue
+        out.append(entry)
+    return out
+
+
+def _infer_part_column(part_dirs: list[str]) -> tuple[str, list[t.Any], type]:
+    import datetime as _dt
+
+    from rayforce.types.scalars.temporal.date import Date
+
+    if all(_is_date_dir(d) for d in part_dirs):
+        values = [_dt.date(int(d[:4]), int(d[5:7]), int(d[8:])) for d in part_dirs]
+        return "date", values, Date
+    if all(_is_int_dir(d) for d in part_dirs):
+        return "part", [int(d) for d in part_dirs], I64
+    return "part", list(part_dirs), Symbol
 
 
 def _make_name_sym(name: str) -> r.RayObject:
@@ -340,21 +386,50 @@ class TableInitMixin:
 
     @classmethod
     def from_splayed(cls, path: str, symfile: str | None = None) -> Table:
-        _args = [FFI.init_string(path)]
-        if symfile is not None:
-            _args.append(FFI.init_string(symfile))
-        _tbl = utils.eval_obj(List([Operation.GET_SPLAYED, *_args]))
+        sym_ptr = FFI.init_string(symfile) if symfile is not None else None
+        _tbl_ptr = FFI.get_splayed(FFI.init_string(path), sym_ptr)
+        _tbl = utils.ray_to_python(_tbl_ptr)
         _tbl.is_parted = True
         return _tbl
 
     @classmethod
     def from_parted(cls, path: str, name: str) -> Table:
-        _args = [FFI.init_string(path)]
-        if name is not None:
-            _args.append(QuotedSymbol(name).ptr)
-        _tbl = utils.eval_obj(List([Operation.GET_PARTED, *_args]))
-        _tbl.is_parted = True
-        return _tbl
+        part_dirs = _collect_part_dirs(path)
+        if not part_dirs:
+            _tbl_ptr = FFI.get_parted(FFI.init_string(path), QuotedSymbol(name).ptr)
+            _tbl = utils.ray_to_python(_tbl_ptr)
+            _tbl.is_parted = True
+            return _tbl
+
+        part_col_name, part_values, part_ray_type = _infer_part_column(part_dirs)
+        sym_path = os.path.join(path, "sym")
+        has_sym = os.path.exists(sym_path)
+
+        root = path.rstrip("/")
+        parts: list[Table] = []
+        for part_dir, part_value in zip(part_dirs, part_values, strict=True):
+            splayed = f"{root}/{part_dir}/{name}/"
+            part_tbl = cls.from_splayed(splayed, sym_path if has_sym else None)
+            part_tbl.is_parted = False
+            nrows = len(part_tbl)
+            part_col = Vector(items=[part_value] * nrows, ray_type=part_ray_type)
+            cols = part_tbl.columns().to_python()
+            col_names = [part_col_name] + [c.value if hasattr(c, "value") else str(c) for c in cols]
+            col_values = [part_col] + [
+                part_tbl[c.value if hasattr(c, "value") else str(c)] for c in cols
+            ]
+            parts.append(
+                Table(
+                    FFI.init_table(
+                        columns=Vector(items=col_names, ray_type=Symbol).ptr,
+                        values=List(col_values).ptr,
+                    )
+                )
+            )
+
+        result = parts[0].concat(*parts[1:]) if len(parts) > 1 else parts[0]
+        result.is_parted = True
+        return result
 
 
 class TableIOMixin:
@@ -375,10 +450,12 @@ class TableIOMixin:
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
     def set_splayed(self, path: str, symlink: str | None = None) -> None:
-        _args = [FFI.init_string(path), self.evaled_ptr]
-        if symlink is not None:
-            _args.append(FFI.init_string(symlink))
-        utils.eval_obj(List([Operation.SET_SPLAYED, *_args]))
+        os.makedirs(path, exist_ok=True)
+        sym_ptr = FFI.init_string(symlink) if symlink is not None else None
+        FFI.set_splayed(FFI.init_string(path), self.evaled_ptr, sym_ptr)
+
+    def to_splayed(self, path: str, symlink: str | None = None) -> None:
+        self.set_splayed(path, symlink)
 
     def set_csv(self, path: str, separator: str | None = None) -> None:
         FFI.write_csv(self.evaled_ptr, FFI.init_string(path))

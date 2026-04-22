@@ -13,10 +13,6 @@ from tests.helpers.assertions import (
 # Per-test xfails for residual gaps after L8 (these failures are unrelated to the
 # WHERE-predicate AST shape fix but were previously masked by the module-level
 # xfail.  Each gets a specific reason so future fixes can target them.)
-_PARTED_IO = pytest.mark.xfail(
-    reason="v2 splayed/parted table I/O not yet exposed via the Python wrapper",
-    strict=False,
-)
 _META_REPR = pytest.mark.xfail(
     reason="v2 meta returns a _StaticRepr Vector that is not iterable from Python",
     strict=False,
@@ -158,7 +154,6 @@ def test_set_splayed_and_from_splayed(tmp_path):
     assert_column_values(result, "status", ["active", "inactive", "active", "active"])
 
 
-@_PARTED_IO
 def test_set_splayed_and_from_parted(tmp_path):
     table = Table(
         {
@@ -185,7 +180,7 @@ def test_set_splayed_and_from_parted(tmp_path):
     assert isinstance(loaded_table, Table)
 
     result = loaded_table.select("*").execute()
-    assert_contains_columns(result, ["Date", "category", "amount", "status"])
+    assert_contains_columns(result, ["date", "category", "amount", "status"])
     assert_table_shape(result, rows=12, cols=4)
     assert_column_values(result, "category", ["A", "B", "C", "D"] * 3)
     assert_column_values(result, "amount", [100, 200, 150, 250] * 3)

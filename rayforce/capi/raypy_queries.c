@@ -116,3 +116,94 @@ PyObject *raypy_write_csv(PyObject *self, PyObject *args) {
   }
   return raypy_wrap_ray_object(ray_obj);
 }
+
+/* (set-splayed dir table [sym_path]) — forward to ray_set_splayed_fn. If
+ * sym_arg is None, the core picks a default sym path; otherwise it must be a
+ * STR RayObject. */
+PyObject *raypy_set_splayed(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *dir_obj;
+  RayObject *table_obj;
+  PyObject *sym_arg;
+
+  if (!PyArg_ParseTuple(args, "O!O!O", &RayObjectType, &dir_obj, &RayObjectType,
+                        &table_obj, &sym_arg))
+    return NULL;
+
+  obj_p ray_obj;
+  if (sym_arg == Py_None) {
+    obj_p call_args[2] = {dir_obj->obj, table_obj->obj};
+    ray_obj = ray_set_splayed_fn(call_args, 2);
+  } else {
+    if (!PyObject_TypeCheck(sym_arg, &RayObjectType)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "set_splayed: sym_path must be None or RayObject");
+      return NULL;
+    }
+    obj_p call_args[3] = {dir_obj->obj, table_obj->obj,
+                          ((RayObject *)sym_arg)->obj};
+    ray_obj = ray_set_splayed_fn(call_args, 3);
+  }
+
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "set_splayed: failed to save table");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+
+/* (get-splayed dir [sym_path]) — forward to ray_get_splayed_fn. */
+PyObject *raypy_get_splayed(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *dir_obj;
+  PyObject *sym_arg;
+
+  if (!PyArg_ParseTuple(args, "O!O", &RayObjectType, &dir_obj, &sym_arg))
+    return NULL;
+
+  obj_p ray_obj;
+  if (sym_arg == Py_None) {
+    obj_p call_args[1] = {dir_obj->obj};
+    ray_obj = ray_get_splayed_fn(call_args, 1);
+  } else {
+    if (!PyObject_TypeCheck(sym_arg, &RayObjectType)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "get_splayed: sym_path must be None or RayObject");
+      return NULL;
+    }
+    obj_p call_args[2] = {dir_obj->obj, ((RayObject *)sym_arg)->obj};
+    ray_obj = ray_get_splayed_fn(call_args, 2);
+  }
+
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "get_splayed: failed to load table");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}
+
+/* (get-parted root name) — forward to ray_get_parted_fn. `name` must be a
+ * SYM RayObject (quoted symbol atom). */
+PyObject *raypy_get_parted(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *root_obj;
+  RayObject *name_obj;
+
+  if (!PyArg_ParseTuple(args, "O!O!", &RayObjectType, &root_obj, &RayObjectType,
+                        &name_obj))
+    return NULL;
+
+  obj_p call_args[2] = {root_obj->obj, name_obj->obj};
+  obj_p ray_obj = ray_get_parted_fn(call_args, 2);
+  if (ray_obj == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "get_parted: failed to load table");
+    return NULL;
+  }
+  return raypy_wrap_ray_object(ray_obj);
+}

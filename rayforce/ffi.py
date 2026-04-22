@@ -244,6 +244,23 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def set_splayed(
+        dir_: r.RayObject, table: r.RayObject, sym_path: r.RayObject | None
+    ) -> r.RayObject:
+        return r.set_splayed(dir_, table, sym_path)
+
+    @staticmethod
+    @errors.error_handler
+    def get_splayed(dir_: r.RayObject, sym_path: r.RayObject | None) -> r.RayObject:
+        return r.get_splayed(dir_, sym_path)
+
+    @staticmethod
+    @errors.error_handler
+    def get_parted(root: r.RayObject, name: r.RayObject) -> r.RayObject:
+        return r.get_parted(root, name)
+
+    @staticmethod
+    @errors.error_handler
     def eval_str(obj: r.RayObject) -> r.RayObject:
         return r.eval_str(obj)
 

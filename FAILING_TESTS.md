@@ -536,11 +536,11 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M12 — Splayed/parted Python I/O wrappers (§M)
 
-- [ ] Add `raypy_set_splayed` / `raypy_get_splayed` / `raypy_get_parted`
+- [x] Add `raypy_set_splayed` / `raypy_get_splayed` / `raypy_get_parted`
       pyext wrappers.
-- [ ] Rebuild, expose via `Table.to_splayed` / `Table.from_splayed` /
+- [x] Rebuild, expose via `Table.to_splayed` / `Table.from_splayed` /
       `Table.from_parted`.
-- [ ] Verify: `python3 -m pytest tests/types/table/test_misc.py -k splayed -v`.
+- [x] Verify: `python3 -m pytest tests/types/table/test_misc.py -k splayed -v`.
 
 ### Task M13 — Order-by null handling via vec_is_null (§P)
 
