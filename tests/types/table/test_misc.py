@@ -10,18 +10,6 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# Per-test xfails for residual gaps after L8 (these failures are unrelated to the
-# WHERE-predicate AST shape fix but were previously masked by the module-level
-# xfail.  Each gets a specific reason so future fixes can target them.)
-_META_REPR = pytest.mark.xfail(
-    reason="v2 meta returns a _StaticRepr Vector that is not iterable from Python",
-    strict=False,
-)
-_CAST_DICT_META = pytest.mark.xfail(
-    reason="cast() depends on dtypes which depends on v2 meta — see _META_REPR",
-    strict=False,
-)
-
 
 def test_table_from_csv_all_types(tmp_path):
     # Prepare a CSV file that exercises all supported scalar types

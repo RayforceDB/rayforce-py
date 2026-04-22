@@ -570,10 +570,17 @@ and ends with a verification command. Tasks are ordered by
 
 ### Task M16 — Sweep stale xfail markers (final hygiene)
 
-- [ ] After M1–M15, run `make test | grep XPASS`. For any, remove the
+- [x] After M1–M15, run `make test | grep XPASS`. For any, remove the
       xfail marker. For modules that go clean, remove any lingering
       module-level `pytestmark = pytest.mark.xfail(...)`.
-- [ ] Commit.
+      NOTE: no XPASS entries found — M1–M15 already removed xfail markers
+      on the paths they fixed. Cleaned up two unused xfail mark constants
+      in `tests/types/table/test_misc.py` (`_META_REPR`, `_CAST_DICT_META`)
+      that were defined but never applied after M7 (`dtypes` / `cast` fix).
+      Final state: 972 passed, 8 xfailed (6 core-side K/L/O + 2 library
+      scope-deferred — test_fn_apply_with_aggregation §F and
+      test_fn_fibonacci_with_aggregation).
+- [x] Commit.
 
 ### Tasks deferred to core round (do NOT attempt now)
 
