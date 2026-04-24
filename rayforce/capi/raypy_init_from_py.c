@@ -402,6 +402,7 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
     int16_t i16;
     int32_t i32;
     int64_t i64;
+    float f32;
     double f64;
   } scratch;
   const void *p;
@@ -439,6 +440,11 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
     case RAY_SYM:
       scratch.i64 = atom->i64;
       p = &scratch.i64;
+      break;
+    case RAY_F32:
+      /* v2 has no F32 atom — narrow from an F64 atom. */
+      scratch.f32 = (float)atom->f64;
+      p = &scratch.f32;
       break;
     case RAY_F64:
       scratch.f64 = atom->f64;
@@ -962,6 +968,9 @@ static obj_p convert_py_item_to_ray(PyObject *item, int type_code) {
     } else if (abs_type_code == TYPE_I64) {
       return raypy_init_i64_from_py(item);
     } else if (abs_type_code == TYPE_F64) {
+      return raypy_init_f64_from_py(item);
+    } else if (abs_type_code == RAY_F32) {
+      /* v2 has no F32 atom — produce an F64; the append path narrows it. */
       return raypy_init_f64_from_py(item);
     } else if (abs_type_code == TYPE_B8) {
       return raypy_init_b8_from_py(item);

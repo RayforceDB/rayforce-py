@@ -56,14 +56,20 @@ def _collect_part_dirs(root: str) -> list[str]:
     if not os.path.isdir(root):
         return []
     out = []
-    for entry in sorted(os.listdir(root)):
+    for entry in os.listdir(root):
         if entry.startswith(".") or entry == "sym":
             continue
         if not os.path.isdir(os.path.join(root, entry)):
             continue
-        if not all(c.isdigit() or c == "." for c in entry):
+        if not (_is_date_dir(entry) or _is_int_dir(entry)):
             continue
         out.append(entry)
+    # Sort numerically when all entries are ints (so "2" precedes "10");
+    # date strings (YYYY.MM.DD) already sort correctly lexically.
+    if out and all(_is_int_dir(d) for d in out):
+        out.sort(key=int)
+    else:
+        out.sort()
     return out
 
 
@@ -508,7 +514,7 @@ class TableValueAccessorMixin:
     @DestructiveOperationHandler()
     def at_row(self, row_n: int) -> Dict:
         if not isinstance(row_n, int):
-            raise errors.RayforceConversionError("Row number has to an integer")
+            raise errors.RayforceConversionError("Row number has to be an integer")
         original = row_n
         if row_n < 0:
             row_n += len(self)
@@ -1131,7 +1137,7 @@ class SelectQuery(IPCQueryMixin):
                 List(
                     [
                         Operation.DISTINCT,
-                        List([Operation.AT, self.table.ptr, QuotedSymbol(col_name)]),
+                        List([Operation.AT, self.table.evaled_ptr, QuotedSymbol(col_name)]),
                     ]
                 )
             )

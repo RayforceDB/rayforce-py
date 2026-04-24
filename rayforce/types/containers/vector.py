@@ -134,6 +134,12 @@ class Vector(
         self, value: t.Sequence[t.Any], ray_type: type[RayObject] | int
     ) -> r.RayObject:
         type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
+        # v2 has no RAY_F32 atom ctor, so the items → raypy_init_vector path
+        # can't convert Python floats to F32 element-by-element. Route F32
+        # through the numpy raw-buffer path instead.
+        if type_code == r.TYPE_F32:
+            arr = np.asarray(list(value), dtype=np.float32)
+            return FFI.init_vector_from_raw_buffer(type_code, len(arr), arr.data)
         return FFI.init_vector(type_code, list(value))
 
     def to_python(self) -> list:

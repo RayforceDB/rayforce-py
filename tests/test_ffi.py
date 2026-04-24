@@ -119,11 +119,14 @@ def test_push_obj():
     assert FFI.get_obj_length(lst) == 2
 
 
-@pytest.mark.skip(reason="typed-vector mid-insert is not supported in rayforce v2 (only lists)")
 def test_insert_obj():
     vec = FFI.init_vector(r.TYPE_I64, 3)
     FFI.insert_obj(vec, 1, FFI.init_i64(42))
-    assert FFI.get_obj_length(vec) == 3
+    assert FFI.get_obj_length(vec) == 4
+
+    lst = FFI.init_list([FFI.init_i32(1), FFI.init_i32(2)])
+    FFI.insert_obj(lst, 1, FFI.init_i64(99))
+    assert FFI.get_obj_length(lst) == 3
 
 
 def test_at_idx():

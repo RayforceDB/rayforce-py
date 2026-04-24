@@ -5,6 +5,7 @@ typedef union {
   int16_t i16;
   int32_t i32;
   int64_t i64;
+  float f32;
   double f64;
 } scalar_scratch_t;
 
@@ -37,6 +38,11 @@ static const void *atom_scalar_ptr(obj_p atom, int8_t vec_type,
     scratch->i64 = atom->i64;
     *out_size = 8;
     return &scratch->i64;
+  case RAY_F32:
+    /* v2 has no F32 atom — narrow from an F64 atom. */
+    scratch->f32 = (float)atom->f64;
+    *out_size = 4;
+    return &scratch->f32;
   case RAY_F64:
     scratch->f64 = atom->f64;
     *out_size = 8;
@@ -58,9 +64,8 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
     return NULL;
 
   obj_p target = ray_obj->obj;
-  if (target == NULL || target->type != RAY_LIST) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "iter: insert is only supported on lists in v2");
+  if (target == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "iter: cannot insert into null object");
     return NULL;
   }
 
@@ -70,47 +75,48 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  /* Build a new list of length old_len+1 with item spliced at index. */
-  obj_p new_list = ray_list_new(old_len + 1);
-  if (new_list == NULL || RAY_IS_ERR(new_list)) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "iter: failed to allocate new list for insert");
-    if (new_list)
-      ray_release(new_list);
+  if (target->type == RAY_LIST) {
+    obj_p result = ray_list_insert_at(target, (int64_t)index, item->obj);
+    if (result == NULL || RAY_IS_ERR(result)) {
+      PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert into list");
+      return NULL;
+    }
+    ray_obj->obj = result;
+    Py_RETURN_NONE;
+  }
+
+  if (target->type == RAY_STR) {
+    if (item->obj == NULL || item->obj->type != -RAY_STR) {
+      PyErr_SetString(PyExc_TypeError,
+                      "iter: RAY_STR vector requires a string atom");
+      return NULL;
+    }
+    obj_p result = ray_str_vec_insert_at(target, (int64_t)index,
+                                         ray_str_ptr(item->obj),
+                                         ray_str_len(item->obj));
+    if (result == NULL || RAY_IS_ERR(result)) {
+      PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert string");
+      return NULL;
+    }
+    ray_obj->obj = result;
+    Py_RETURN_NONE;
+  }
+
+  /* Typed scalar vector — extract raw scalar from atom and insert. */
+  scalar_scratch_t scratch;
+  size_t esz = 0;
+  const void *p = atom_scalar_ptr(item->obj, target->type, &scratch, &esz);
+  if (p == NULL) {
+    PyErr_SetString(PyExc_TypeError,
+                    "iter: unsupported element type for typed vector");
     return NULL;
   }
-
-  ray_t **src = (ray_t **)ray_data(target);
-  for (int64_t i = 0; i < (int64_t)index; ++i) {
-    obj_p next = ray_list_append(new_list, src[i]);
-    if (next == NULL || RAY_IS_ERR(next)) {
-      ray_release(new_list);
-      PyErr_SetString(PyExc_RuntimeError, "iter: list append failed");
-      return NULL;
-    }
-    new_list = next;
+  obj_p result = ray_vec_insert_at(target, (int64_t)index, p);
+  if (result == NULL || RAY_IS_ERR(result)) {
+    PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert scalar");
+    return NULL;
   }
-  {
-    obj_p next = ray_list_append(new_list, item->obj);
-    if (next == NULL || RAY_IS_ERR(next)) {
-      ray_release(new_list);
-      PyErr_SetString(PyExc_RuntimeError, "iter: list append failed");
-      return NULL;
-    }
-    new_list = next;
-  }
-  for (int64_t i = (int64_t)index; i < old_len; ++i) {
-    obj_p next = ray_list_append(new_list, src[i]);
-    if (next == NULL || RAY_IS_ERR(next)) {
-      ray_release(new_list);
-      PyErr_SetString(PyExc_RuntimeError, "iter: list append failed");
-      return NULL;
-    }
-    new_list = next;
-  }
-
-  ray_release(target);
-  ray_obj->obj = new_list;
+  ray_obj->obj = result;
   Py_RETURN_NONE;
 }
 PyObject *raypy_push_obj(PyObject *self, PyObject *args) {

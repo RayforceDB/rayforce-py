@@ -1,18 +1,9 @@
-import pytest
-
 from rayforce import F64, I64, Column, Symbol, Table, TableColumnInterval, Vector
 from rayforce.types.scalars import Time
 from tests.helpers.assertions import (
     assert_column_values,
     assert_contains_columns,
-    assert_row,
     assert_table_shape,
-)
-
-# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
-_ASOF_JOIN_NULL = pytest.mark.xfail(
-    reason="v2 asof-join returns I64(0) instead of typed null when no quote precedes the trade",
-    strict=False,
 )
 
 
@@ -431,7 +422,6 @@ def test_left_join_with_duplicate_keys():
     assert c_rows[0]["val2"] == None  # noqa: E711  (Rayforce Null == None is True)
 
 
-@_ASOF_JOIN_NULL
 def test_asof_join_with_no_matching_quotes():
     """ASOF join where all trades occur before any quotes — nulls returned."""
     trades = Table(
