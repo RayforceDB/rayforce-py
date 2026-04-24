@@ -140,10 +140,6 @@ class Operation(enum.StrEnum):
     # I/O
     READ = "read"
     WRITE = "write"
-    READ_CSV = "read-csv"
-    WRITE_CSV = "write-csv"
-    HOPEN = "hopen"
-    HCLOSE = "hclose"
     SHOW = "show"
     FORMAT = "format"
     PRINT = "print"
@@ -178,16 +174,9 @@ class Operation(enum.StrEnum):
     CONCAT = "concat"
 
     # System
-    SYSTEM = "system"
-    OS_GET_VAR = "os-get-var"
-    OS_SET_VAR = "os-set-var"
     EXIT = "exit"
-    GC = "gc"
-    MEMSTAT = "memstat"
     TIMEIT = "timeit"
     TIMER = "timer"
-    INTERNALS = "internals"
-    SYSINFO = "sysinfo"
 
     # Storage
     SET_SPLAYED = "set-splayed"

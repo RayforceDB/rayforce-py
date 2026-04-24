@@ -304,6 +304,23 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     }
     ray_obj->len = length;
 
+    if (null_bitmap_py != NULL && null_bitmap_py != Py_None) {
+      Py_buffer null_bitmap_view;
+      if (PyObject_GetBuffer(null_bitmap_py, &null_bitmap_view, PyBUF_SIMPLE) ==
+          0) {
+        const unsigned char *null_bitmap =
+            (const unsigned char *)null_bitmap_view.buf;
+        for (Py_ssize_t i = 0; i < length; i++) {
+          size_t byte_idx = (size_t)i / 8;
+          size_t bit_idx = (size_t)i % 8;
+          if (!(null_bitmap[byte_idx] & (1u << bit_idx))) {
+            ray_vec_set_null(ray_obj, i, true);
+          }
+        }
+        PyBuffer_Release(&null_bitmap_view);
+      }
+    }
+
     PyBuffer_Release(&offsets_buffer_view);
     PyBuffer_Release(&data_buffer_view);
     if (null_bitmap_py != NULL)
@@ -389,6 +406,23 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
           Py_DECREF(null_bitmap_py);
         PyErr_SetString(PyExc_RuntimeError, "Failed to append string");
         return NULL;
+      }
+    }
+
+    if (null_bitmap_py != NULL && null_bitmap_py != Py_None) {
+      Py_buffer null_bitmap_view;
+      if (PyObject_GetBuffer(null_bitmap_py, &null_bitmap_view, PyBUF_SIMPLE) ==
+          0) {
+        const unsigned char *null_bitmap =
+            (const unsigned char *)null_bitmap_view.buf;
+        for (Py_ssize_t i = 0; i < length; i++) {
+          size_t byte_idx = (size_t)i / 8;
+          size_t bit_idx = (size_t)i % 8;
+          if (!(null_bitmap[byte_idx] & (1u << bit_idx))) {
+            ray_vec_set_null(ray_obj, i, true);
+          }
+        }
+        PyBuffer_Release(&null_bitmap_view);
       }
     }
 
@@ -489,6 +523,18 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     memcpy(ray_data(ray_obj), data_buffer_view.buf, expected_size);
   }
   ray_obj->len = length;
+
+  if (has_nulls) {
+    const unsigned char *null_bitmap =
+        (const unsigned char *)null_bitmap_view.buf;
+    for (Py_ssize_t i = 0; i < length; i++) {
+      size_t byte_idx = (size_t)i / 8;
+      size_t bit_idx = (size_t)i % 8;
+      if (!(null_bitmap[byte_idx] & (1u << bit_idx))) {
+        ray_vec_set_null(ray_obj, i, true);
+      }
+    }
+  }
 
   PyBuffer_Release(&data_buffer_view);
   if (has_nulls)

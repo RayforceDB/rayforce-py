@@ -386,7 +386,12 @@ class SQLCompiler:
             query = query.by(*_by)
 
         if _order := parsed.order_by:
-            desc = any(is_desc for _, is_desc in parsed.order_by)
+            directions = {is_desc for _, is_desc in _order}
+            if len(directions) > 1:
+                raise NotImplementedError(
+                    "ORDER BY with mixed ASC/DESC directions is not supported"
+                )
+            desc = directions.pop()
             query = query.order_by(*[col for col, _ in _order], desc=desc)
 
         result = query.execute()
@@ -546,7 +551,12 @@ class SQLIPCCompiler(SQLCompiler):
             query = query.by(*_by)
 
         if _order := parsed.order_by:
-            desc = any(is_desc for _, is_desc in _order)
+            directions = {is_desc for _, is_desc in _order}
+            if len(directions) > 1:
+                raise NotImplementedError(
+                    "ORDER BY with mixed ASC/DESC directions is not supported"
+                )
+            desc = directions.pop()
             query = query.order_by(*[col for col, _ in _order], desc=desc)
 
         return query

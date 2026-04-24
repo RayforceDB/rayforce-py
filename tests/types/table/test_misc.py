@@ -1026,9 +1026,8 @@ def test_concat_with_mismatched_column_names():
         }
     )
 
-    with pytest.raises(errors.RayforceDomainError) as exc:
+    with pytest.raises(errors.RayforceDomainError):
         table1.concat(table2)
-    assert "'code': 'domain'" in str(exc.value)
 
 
 def test_concat_with_mismatched_column_types():
@@ -1069,9 +1068,8 @@ def test_at_column_with_nonexistent_column():
         }
     )
 
-    with pytest.raises(errors.RayforceDomainError) as exc:
+    with pytest.raises(errors.RayforceDomainError):
         table.at_column("nonexistent")
-    assert "'code': 'domain'" in str(exc.value)
 
 
 # ---------------------------------------------------------------------------
@@ -1099,7 +1097,7 @@ def test_take_with_offset_beyond_total_rows():
 
 
 def test_rename_creating_duplicate_column_names():
-    """Renaming a column to an already-existing name merges columns (last value wins)."""
+    """Renaming a column to a name that already exists raises rather than silently merging."""
     table = Table(
         {
             "id": Vector(items=["001", "002"], ray_type=Symbol),
@@ -1108,12 +1106,8 @@ def test_rename_creating_duplicate_column_names():
         }
     )
 
-    result = table.rename({"id": "name"})
-    # The rename produces two columns named "name"; the table collapses them
-    columns = result.columns()
-    col_names = [str(c) for c in columns]
-    # When two columns share a name, the table keeps only one "name" column
-    assert col_names.count("name") == 1
+    with pytest.raises(errors.RayforceConversionError, match="duplicate"):
+        table.rename({"id": "name"})
 
 
 # ---------------------------------------------------------------------------

@@ -164,6 +164,7 @@ def test_group_by_avg(sqlglot, sample_table):
 
 def test_min_max(sqlglot, sample_table):
     result = sample_table.sql("SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM self")
+    assert len(result) == 1
     assert_column_values(result, "min_age", [25])
     assert_column_values(result, "max_age", [35])
 
@@ -172,7 +173,11 @@ def test_multiple_aggregations_no_group(sqlglot, sample_table):
     result = sample_table.sql(
         "SELECT COUNT(id) AS cnt, AVG(salary) AS avg_sal, MIN(age) AS min_age, MAX(age) AS max_age FROM self"
     )
+    assert len(result) == 1
     assert_column_values(result, "cnt", [5])
+    assert_column_values(result, "avg_sal", [60000.0])
+    assert_column_values(result, "min_age", [25])
+    assert_column_values(result, "max_age", [35])
 
 
 def test_combined_where_and_group(sqlglot, sample_table):

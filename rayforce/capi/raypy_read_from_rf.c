@@ -265,7 +265,7 @@ PyObject *raypy_table_values(PyObject *self, PyObject *args) {
       return NULL;
     }
     vals = ray_list_append(vals, col);
-    if (vals == NULL) {
+    if (vals == NULL || RAY_IS_ERR(vals)) {
       PyErr_SetString(PyExc_RuntimeError, "read: failed to append column");
       return NULL;
     }

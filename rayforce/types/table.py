@@ -553,7 +553,7 @@ class TableValueAccessorMixin:
             List([Operation.COUNT, [Operation.AT, [Operation.VALUE, self.evaled_ptr], 0]])
         )
         cols = utils.eval_obj(List([Operation.COUNT, [Operation.KEY, self.evaled_ptr]]))
-        return (rows, cols)
+        return (rows.value, cols.value)
 
     @DestructiveOperationHandler()
     def __len__(self) -> int:
@@ -698,11 +698,14 @@ class TableValueAccessorMixin:
         if unknown:
             raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
 
-        select_args = {}
-        for col in current_cols:
-            new_name = mapping.get(col, col)
-            select_args[new_name] = Column(col)
+        resulting_names = [mapping.get(col, col) for col in current_cols]
+        collisions = {n for n in resulting_names if resulting_names.count(n) > 1}
+        if collisions:
+            raise errors.RayforceConversionError(
+                f"Rename would produce duplicate column names: {', '.join(sorted(collisions))}"
+            )
 
+        select_args = {mapping.get(col, col): Column(col) for col in current_cols}
         return t.cast("Table", self).select(**select_args).execute()
 
     def cast(self, column: str, to_type: type) -> Table:
@@ -735,11 +738,10 @@ class TableValueAccessorMixin:
     @DestructiveOperationHandler()
     def to_dict(self) -> dict[str, list]:
         vals = self.values()
+        col_names = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
         return {
-            name: vals[i].to_list()
-            for i, name in enumerate(
-                [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
-            )
+            name: vals[i].to_list() if hasattr(vals[i], "to_list") else list(vals[i])
+            for i, name in enumerate(col_names)
         }
 
     @DestructiveOperationHandler()
