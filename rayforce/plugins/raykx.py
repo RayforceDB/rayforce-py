@@ -12,7 +12,7 @@ from rayforce.plugins import errors
 if sys.platform == "darwin":
     raykx_lib_name = "libraykx.dylib"
 elif sys.platform == "win32":
-    raykx_lib_name = "libraykx.dll"
+    raykx_lib_name = "raykx.dll"
 else:
     raykx_lib_name = "libraykx.so"
 

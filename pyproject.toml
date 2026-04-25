@@ -81,6 +81,11 @@ before-all = [
     "yum install -y clang llvm",
 ]
 
+[tool.cibuildwheel.windows]
+before-all = "C:\\msys64\\usr\\bin\\bash -lc \"pacman -S --noconfirm mingw-w64-x86_64-clang mingw-w64-x86_64-lld make\""
+before-build = "powershell -ExecutionPolicy Bypass -File {project}/scripts/prepare_build_windows.ps1"
+environment = { PATH = "C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;$PATH", RAYFORCE_GITHUB = "https://github.com/RayforceDB/rayforce.git" }
+
 [tool.ruff]
 show-fixes = true
 target-version = "py314"

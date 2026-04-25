@@ -39,7 +39,9 @@
 #include "vary.h"
 #include <Python.h>
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #ifndef memcpy
 extern void *memcpy(void *dest, const void *src, size_t n);
