@@ -161,34 +161,28 @@ Audit and fix any direct pointer arithmetic on `ray_t*` payloads bypassing
 Standardize the `ray_vec_append`/`ray_list_append` reassign-and-release
 pattern.
 
-- [ ] Add to `rayforce/capi/raypy_compat.h`:
-      ```c
-      #define RAY_APPEND_REASSIGN(vec, elem) do { \
-          ray_t *_old = (vec); \
-          (vec) = ray_vec_append((vec), (elem)); \
-          if ((vec) != _old) ray_release(_old); \
-      } while (0)
-
-      #define RAY_LIST_APPEND_REASSIGN(lst, obj) do { \
-          ray_t *_old = (lst); \
-          (lst) = ray_list_append((lst), (obj)); \
-          if ((lst) != _old) ray_release(_old); \
-      } while (0)
-      ```
-- [ ] Migrate every call site in `rayforce/capi/raypy_init_from_py.c`,
-      `raypy_init_from_buffer.c`, `raypy_iter.c`, `raypy_queries.c`.
-      Use this grep to find them:
-      `grep -nE 'ray_(vec|list)_append' rayforce/capi/*.c`
-- [ ] Add `tests/test_append_safety.py`:
-  - [ ] Construct a small vector (capacity < 16), append 1024 elements,
-        assert final length and `rc_obj` of the original head.
-  - [ ] Same for List.
-- [ ] Verify: `pytest tests/test_append_safety.py -q` → green.
-- [ ] Verify: `make app && pytest -q` → no regressions.
-- [ ] Verify: `grep -nE 'ray_(vec|list)_append\(' rayforce/capi/*.c | grep -v REASSIGN | grep -v compat.h`
-      returns only call sites that intentionally do not reassign (document
-      each in a comment).
-- [ ] Commit: `feat: RAY_APPEND_REASSIGN macro standardizes vec/list append (POST_M16 P5)`
+- [x] Add to `rayforce/capi/raypy_compat.h`:
+      `RAY_APPEND_REASSIGN(vec, elem)` and `RAY_LIST_APPEND_REASSIGN(lst, obj)`.
+      Note: the original spec released the old pointer when it differed
+      from the new one, but v2 `ray_vec_append`/`ray_list_append` already
+      free the old block internally via `ray_cow` + `ray_scratch_realloc`.
+      Releasing a second time would be use-after-free, so the macros only
+      reassign — the safety they enforce is "callers cannot forget to
+      reassign".
+- [x] Migrate every call site in `rayforce/capi/raypy_init_from_py.c`,
+      `raypy_iter.c`, `raypy_read_from_rf.c`. (`raypy_init_from_buffer.c`
+      uses `ray_str_vec_append` only — different signature, out of scope.
+      `raypy_queries.c` has no calls.)
+- [x] Add `tests/test_append_safety.py`:
+  - [x] Construct a small vector (capacity < 16), append 1024 elements,
+        assert final length and `rc_obj` (Python wrapper holds the realloc-
+        final pointer; rc must be 1).
+  - [x] Same for List.
+- [x] Verify: `pytest tests/test_append_safety.py -q` → green.
+- [x] Verify: `make app && pytest -q` → no regressions.
+- [x] Verify: `grep -nE 'ray_(vec|list)_append\(' rayforce/capi/*.c | grep -v REASSIGN | grep -v compat.h`
+      returns no output — all call sites are wrapped.
+- [x] Commit: `feat: RAY_APPEND_REASSIGN macro standardizes vec/list append (POST_M16 P5)`
 
 ---
 

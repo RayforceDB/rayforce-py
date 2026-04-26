@@ -264,7 +264,7 @@ PyObject *raypy_table_values(PyObject *self, PyObject *args) {
       PyErr_SetString(PyExc_RuntimeError, "read: table column missing");
       return NULL;
     }
-    vals = ray_list_append(vals, col);
+    RAY_LIST_APPEND_REASSIGN(vals, col);
     if (vals == NULL || RAY_IS_ERR(vals)) {
       PyErr_SetString(PyExc_RuntimeError, "read: failed to append column");
       return NULL;
@@ -436,14 +436,14 @@ static obj_p build_err_dict(const char *code, const char *msg) {
     ray_release(msg_atom);
     return vals;
   }
-  vals = ray_list_append(vals, code_atom);
+  RAY_LIST_APPEND_REASSIGN(vals, code_atom);
   ray_release(code_atom);
   if (vals == NULL || RAY_IS_ERR(vals)) {
     ray_release(keys);
     ray_release(msg_atom);
     return vals;
   }
-  vals = ray_list_append(vals, msg_atom);
+  RAY_LIST_APPEND_REASSIGN(vals, msg_atom);
   ray_release(msg_atom);
   if (vals == NULL || RAY_IS_ERR(vals)) {
     ray_release(keys);

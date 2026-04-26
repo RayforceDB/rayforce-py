@@ -372,10 +372,10 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
   bool is_null = RAY_IS_NULL(atom);
 
   if (target->type == RAY_LIST) {
-    obj_p result = ray_list_append(target, atom);
-    if (result == NULL || RAY_IS_ERR(result))
+    RAY_LIST_APPEND_REASSIGN(target, atom);
+    if (target == NULL || RAY_IS_ERR(target))
       return -1;
-    *target_obj = result;
+    *target_obj = target;
     return 0;
   }
 
@@ -411,11 +411,11 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
     p = &scratch;
     if (target->type == RAY_GUID) {
       static const uint8_t zero_guid[16] = {0};
-      obj_p result = ray_vec_append(target, zero_guid);
-      if (result == NULL || RAY_IS_ERR(result))
+      RAY_APPEND_REASSIGN(target, zero_guid);
+      if (target == NULL || RAY_IS_ERR(target))
         return -1;
-      ray_vec_set_null(result, result->len - 1, true);
-      *target_obj = result;
+      ray_vec_set_null(target, target->len - 1, true);
+      *target_obj = target;
       return 0;
     }
   } else {
@@ -451,23 +451,23 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
       p = &scratch.f64;
       break;
     case RAY_GUID: {
-      obj_p result =
-          ray_vec_append(target, atom->obj ? ray_data(atom->obj) : NULL);
-      if (result == NULL || RAY_IS_ERR(result))
+      const void *guid_payload = atom->obj ? ray_data(atom->obj) : NULL;
+      RAY_APPEND_REASSIGN(target, guid_payload);
+      if (target == NULL || RAY_IS_ERR(target))
         return -1;
-      *target_obj = result;
+      *target_obj = target;
       return 0;
     }
     default:
       return -1;
     }
   }
-  obj_p result = ray_vec_append(target, p);
-  if (result == NULL || RAY_IS_ERR(result))
+  RAY_APPEND_REASSIGN(target, p);
+  if (target == NULL || RAY_IS_ERR(target))
     return -1;
   if (is_null)
-    ray_vec_set_null(result, result->len - 1, true);
-  *target_obj = result;
+    ray_vec_set_null(target, target->len - 1, true);
+  *target_obj = target;
   return 0;
 }
 
@@ -560,7 +560,7 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
       /* Fill with NULL atoms so the list has actual elements, not just cap. */
       if (ray_obj != NULL && !RAY_IS_ERR(ray_obj) && length > 0) {
         for (Py_ssize_t i = 0; i < length; i++) {
-          ray_obj = ray_list_append(ray_obj, RAY_NULL_OBJ);
+          RAY_LIST_APPEND_REASSIGN(ray_obj, RAY_NULL_OBJ);
           if (ray_obj == NULL || RAY_IS_ERR(ray_obj))
             break;
         }

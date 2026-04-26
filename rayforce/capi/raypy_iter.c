@@ -91,9 +91,8 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
                       "iter: RAY_STR vector requires a string atom");
       return NULL;
     }
-    obj_p result = ray_str_vec_insert_at(target, (int64_t)index,
-                                         ray_str_ptr(item->obj),
-                                         ray_str_len(item->obj));
+    obj_p result = ray_str_vec_insert_at(
+        target, (int64_t)index, ray_str_ptr(item->obj), ray_str_len(item->obj));
     if (result == NULL || RAY_IS_ERR(result)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert string");
       return NULL;
@@ -137,12 +136,12 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
   }
 
   if (target->type == RAY_LIST) {
-    obj_p result = ray_list_append(target, item->obj);
-    if (result == NULL || RAY_IS_ERR(result)) {
+    RAY_LIST_APPEND_REASSIGN(target, item->obj);
+    if (target == NULL || RAY_IS_ERR(target)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to push object");
       return NULL;
     }
-    ray_obj->obj = result;
+    ray_obj->obj = target;
     Py_RETURN_NONE;
   }
 
@@ -171,12 +170,12 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
                     "iter: unsupported element type for typed vector");
     return NULL;
   }
-  obj_p result = ray_vec_append(target, p);
-  if (result == NULL || RAY_IS_ERR(result)) {
+  RAY_APPEND_REASSIGN(target, p);
+  if (target == NULL || RAY_IS_ERR(target)) {
     PyErr_SetString(PyExc_RuntimeError, "iter: failed to push scalar");
     return NULL;
   }
-  ray_obj->obj = result;
+  ray_obj->obj = target;
   Py_RETURN_NONE;
 }
 PyObject *raypy_set_obj(PyObject *self, PyObject *args) {

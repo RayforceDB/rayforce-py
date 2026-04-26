@@ -115,6 +115,23 @@ static inline ray_t *clone_obj(ray_t *v) {
 #define AS_LIST(v) ((ray_t **)ray_data(v))
 #define AS_SYMBOL(v) ((int64_t *)ray_data(v))
 
+/* ---- vector / list append reassign helpers ----
+ * v2's ray_vec_append / ray_list_append apply COW (releases old if shared)
+ * and may realloc-grow (ray_scratch_realloc frees the old block). The
+ * returned pointer is the only valid handle. Forgetting to reassign leaves
+ * a dangling pointer; releasing the old separately is use-after-free.
+ *
+ * These macros standardize the reassignment so call sites cannot forget. */
+#define RAY_APPEND_REASSIGN(vec, elem)                                         \
+  do {                                                                         \
+    (vec) = ray_vec_append((vec), (elem));                                     \
+  } while (0)
+
+#define RAY_LIST_APPEND_REASSIGN(lst, obj)                                     \
+  do {                                                                         \
+    (lst) = ray_list_append((lst), (obj));                                     \
+  } while (0)
+
 /* ---- NULL singleton ---- */
 #define NULL_OBJ RAY_NULL_OBJ
 
