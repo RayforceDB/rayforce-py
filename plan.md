@@ -223,29 +223,29 @@ Adds `F32` so users can construct/round-trip 32-bit floats directly.
 
 One-shot tool for users with persisted v1 data.
 
-- [ ] Create `rayforce/migrate.py` with:
-  - [ ] `_V1_TO_V2_TYPE_MAP: dict[int, int]` covering shifted codes
+- [x] Create `rayforce/migrate.py` with:
+  - [x] `_V1_TO_V2_TYPE_MAP: dict[int, int]` covering shifted codes
         (6→12, 10→7, 7→8, 8→9, 9→10) and removed codes (12→13 for C8→STR).
-  - [ ] `transcode_v1_blob(data: bytes) -> bytes` — parse the v1 serialized
+  - [x] `transcode_v1_blob(data: bytes) -> bytes` — parse the v1 serialized
         header, walk the type-tag stream, remap each tag, re-emit.
-  - [ ] `transcode_splayed_dir(src: Path, dst: Path) -> None` — walk
+  - [x] `transcode_splayed_dir(src: Path, dst: Path) -> None` — walk
         column files, transcode each. Symlink/copy non-data files.
-  - [ ] `transcode_parted_dir(src: Path, dst: Path) -> None` — same for
+  - [x] `transcode_parted_dir(src: Path, dst: Path) -> None` — same for
         parted layout (per-partition subdirectory traversal).
-  - [ ] `__main__` entrypoint: `python -m rayforce.migrate <src> <dst>`
+  - [x] `__main__` entrypoint: `python -m rayforce.migrate <src> <dst>`
         with subcommands `blob|splayed|parted`.
-- [ ] Create `tests/fixtures/v1_blobs/` containing **small, hand-crafted**
+- [x] Create `tests/fixtures/v1_blobs/` containing **small, hand-crafted**
       binary fixtures (one per scalar type). Document how each was generated.
-- [ ] Create `tests/test_migrate.py`:
-  - [ ] `transcode_v1_blob` roundtrip: known v1 blob → transcode →
+- [x] Create `tests/test_migrate.py`:
+  - [x] `transcode_v1_blob` roundtrip: known v1 blob → transcode →
         `de_obj` (v2) → matches expected Python value.
-  - [ ] `transcode_splayed_dir` end-to-end: build a v1 splayed dir
+  - [x] `transcode_splayed_dir` end-to-end: build a v1 splayed dir
         (use checked-in fixture), transcode, `Table.from_splayed`
         on the result, verify column data.
-  - [ ] CLI smoke: subprocess `python -m rayforce.migrate ...`.
-- [ ] Verify: `pytest tests/test_migrate.py -q` → all green.
-- [ ] Verify: `pytest -q` → no regressions.
-- [ ] Commit: `feat: rayforce.migrate transcodes v1 type codes to v2 (POST_M16 P7)`
+  - [x] CLI smoke: subprocess `python -m rayforce.migrate ...`.
+- [x] Verify: `pytest tests/test_migrate.py -q` → all green.
+- [x] Verify: `pytest -q` → no regressions.
+- [x] Commit: `feat: rayforce.migrate transcodes v1 type codes to v2 (POST_M16 P7)`
 
 ---
 
