@@ -9,9 +9,9 @@ from tests.helpers.assertions import (
 
 pytestmark = pytest.mark.plugin
 
-# Per-test xfails for residual gaps after L8 (WHERE-predicate AST shape fix).
+# Per-test xfails for residual gaps tracked upstream in CORE_FIXES.md.
 _F64_DIVIDE_FLOORS = pytest.mark.xfail(
-    reason="GAPS Category 6: F64/I64 division yields integer-floored result in v2 core",
+    reason="CORE_FIXES.md §1 — F64/I64 division yields integer-floored result in v2 core",
     strict=False,
 )
 

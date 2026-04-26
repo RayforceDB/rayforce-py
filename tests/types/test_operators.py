@@ -56,7 +56,7 @@ def test_operation_multiply_scalars():
 
 
 @pytest.mark.xfail(
-    reason="GAPS.md Category 6 — v2 ray_div_fn floors F64/F64 to int; upstream fix in src/ops/arith.c",
+    reason="CORE_FIXES.md §1 — v2 ray_div_fn floors F64/F64 to int; upstream fix in rayforce2/src/ops/arith.c",
     strict=False,
 )
 def test_operation_divide_scalars():

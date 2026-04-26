@@ -171,9 +171,9 @@ def test_set_splayed_and_from_parted(tmp_path):
 
 
 @pytest.mark.xfail(
-    reason="GAPS.md Category 11 — parted/splayed COW: v2 ray_cow clones on write, so "
+    reason="CORE_FIXES.md §4 — parted/splayed COW: v2 ray_cow clones on write, so "
     "destructive ops on loaded parted tables do not raise; needs non-COW mutation "
-    "entrypoint in rayforce2 src/store/part.c",
+    "entrypoint in rayforce2/src/store/part.c",
     strict=False,
 )
 def test_splayed_table_destructive_operations_raise_error(tmp_path):
@@ -206,9 +206,9 @@ def test_splayed_table_destructive_operations_raise_error(tmp_path):
 
 
 @pytest.mark.xfail(
-    reason="GAPS.md Category 11 — parted/splayed COW: v2 ray_cow clones on write, so "
+    reason="CORE_FIXES.md §4 — parted/splayed COW: v2 ray_cow clones on write, so "
     "destructive ops on loaded parted tables do not raise; needs non-COW mutation "
-    "entrypoint in rayforce2 src/store/part.c",
+    "entrypoint in rayforce2/src/store/part.c",
     strict=False,
 )
 def test_parted_table_destructive_operations_raise_error(tmp_path):

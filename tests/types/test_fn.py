@@ -7,18 +7,19 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# §L: v2's `/` on I64÷I64 promotes to F64 instead of truncating. Core-side fix
-# tracked as FAILING_TESTS §L (listed as "No — core").
+# v2's `/` on I64÷I64 promotes to F64 instead of truncating. Tracked upstream
+# in CORE_FIXES.md §1.
 _INT_DIV_PROMOTED_TO_FLOAT = pytest.mark.xfail(
-    reason="FAILING_TESTS §L (core): v2 `/` on I64 operands returns F64, not truncated I64",
+    reason="CORE_FIXES.md §1 — v2 `/` on I64 operands returns F64, not truncated I64",
     strict=False,
 )
 
 # Recursive `self` calls inside a lambda body cannot be β-reduced at DAG
 # compile time — the DAG's named-lambda inliner has no binding for `self`.
 _RECURSIVE_SELF_IN_DAG = pytest.mark.xfail(
-    reason="v2 DAG β-reduction doesn't bind `self` in lambda bodies; recursive "
-    "lambdas work in direct-eval but not when applied to a column in SELECT",
+    reason="CORE_FIXES.md §2 — v2 DAG β-reduction doesn't bind `self` in lambda "
+    "bodies; recursive lambdas work in direct-eval but not when applied to a "
+    "column in SELECT",
     strict=False,
 )
 
