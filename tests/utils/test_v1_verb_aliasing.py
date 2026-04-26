@@ -5,7 +5,6 @@ import pytest
 from rayforce import errors
 from rayforce.utils.evaluation import _V1_VERB_ALIASES, _rewrite_v1_verbs, eval_str
 
-
 # Verbs that work nullary in v2 — safe to call directly without arguments.
 _NULLARY_VERBS = ("gc", "memstat", "internals", "sysinfo")
 

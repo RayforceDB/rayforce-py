@@ -18,7 +18,6 @@ from rayforce import _rayforce_c as r
 from rayforce import types as t
 from rayforce.ffi import FFI
 
-
 N_APPENDS = 1024
 
 
