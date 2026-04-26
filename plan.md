@@ -86,20 +86,20 @@ Adds backward compat for raw `eval_str` callers using v1 verb names
 (`hopen`, `hclose`, `read-csv`, `write-csv`, `os-get-var`, `os-set-var`,
 `system`, `gc`, `memstat`, `internals`, `sysinfo`).
 
-- [ ] In `rayforce/utils/evaluation.py`, add module-level dict
+- [x] In `rayforce/utils/evaluation.py`, add module-level dict
       `_V1_VERB_ALIASES` mapping each v1 name to its v2 namespaced form.
-- [ ] In `eval_str`, before passing to FFI, run a token-aware rewrite that
+- [x] In `eval_str`, before passing to FFI, run a token-aware rewrite that
       replaces the verb only when it appears in head position
       (i.e., immediately after `(` and followed by whitespace or `)`).
       Use `re.sub` with a precompiled pattern; do NOT do a blind text
       replace (would corrupt string literals).
-- [ ] Add `tests/utils/test_v1_verb_aliasing.py` with one parametrized test
+- [x] Add `tests/utils/test_v1_verb_aliasing.py` with one parametrized test
       per alias: `eval_str` with v1 verb produces same result as v2 form.
       Cover negative cases: verb appearing inside a string literal must
       NOT be rewritten.
-- [ ] Verify: `pytest tests/utils/test_v1_verb_aliasing.py -q` → all green.
-- [ ] Verify: `pytest -q` → no regressions.
-- [ ] Commit: `feat: eval_str aliases v1 system verb names to v2 namespaces (POST_M16 P2)`
+- [x] Verify: `pytest tests/utils/test_v1_verb_aliasing.py -q` → all green.
+- [x] Verify: `pytest -q` → no regressions.
+- [x] Commit: `feat: eval_str aliases v1 system verb names to v2 namespaces (POST_M16 P2)`
 
 ---
 
