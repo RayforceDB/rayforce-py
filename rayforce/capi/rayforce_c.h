@@ -144,6 +144,7 @@ PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args);
 PyObject *raypy_eval_obj(PyObject *self, PyObject *args);
 PyObject *raypy_quote(PyObject *self, PyObject *args);
 PyObject *raypy_rc(PyObject *self, PyObject *args);
+PyObject *raypy_obj_addr(PyObject *self, PyObject *args);
 PyObject *raypy_set_obj_attrs(PyObject *self, PyObject *args);
 PyObject *raypy_update(PyObject *self, PyObject *args);
 PyObject *raypy_insert(PyObject *self, PyObject *args);

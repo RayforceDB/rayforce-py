@@ -550,6 +550,16 @@ PyObject *raypy_rc(PyObject *self, PyObject *args) {
 
   return PyLong_FromUnsignedLong(rc_obj(ray_obj->obj));
 }
+PyObject *raypy_obj_addr(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    return NULL;
+
+  return PyLong_FromVoidPtr((void *)ray_obj->obj);
+}
 PyObject *raypy_vec_is_null(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();

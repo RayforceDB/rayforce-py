@@ -281,6 +281,11 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def obj_addr(obj: r.RayObject) -> int:
+        return r.obj_addr(obj)
+
+    @staticmethod
+    @errors.error_handler
     def binary_set(name: r.RayObject, obj: r.RayObject) -> None:
         return r.binary_set(name, obj)
 

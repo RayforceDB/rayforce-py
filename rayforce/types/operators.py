@@ -7,6 +7,9 @@ from rayforce import errors
 from rayforce.ffi import FFI
 from rayforce.types.registry import TypeRegistry
 
+_PRIMITIVE_REVERSE_MAP: dict[int, Operation] = {}
+_PRIMITIVE_KEEPALIVE: list[r.RayObject] = []
+
 
 class Operation(enum.StrEnum):
     # Arithmetic
@@ -221,7 +224,25 @@ class Operation(enum.StrEnum):
         ):
             raise errors.RayforceInitError(f"Object is not an operation (type: {obj_type})")
 
-        return Operation(FFI.env_get_internal_name_by_fn(obj))
+        addr = FFI.obj_addr(obj)
+        op = _build_primitive_reverse_map().get(addr)
+        if op is None:
+            raise errors.RayforceTypeRegistryError(
+                f"Object pointer {addr:#x} does not map to any known Operation"
+            )
+        return op
+
+
+def _build_primitive_reverse_map() -> dict[int, Operation]:
+    if _PRIMITIVE_REVERSE_MAP:
+        return _PRIMITIVE_REVERSE_MAP
+
+    for op in Operation:
+        primitive = FFI.env_get_internal_fn_by_name(op.value)
+        _PRIMITIVE_KEEPALIVE.append(primitive)
+        _PRIMITIVE_REVERSE_MAP[FFI.obj_addr(primitive)] = op
+
+    return _PRIMITIVE_REVERSE_MAP
 
 
 TypeRegistry.register(r.TYPE_UNARY, Operation)

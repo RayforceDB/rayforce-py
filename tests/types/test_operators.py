@@ -205,12 +205,25 @@ def test_operation_add_vectors():
     assert values == [11, 22, 33]
 
 
-@pytest.mark.skip(reason="env_get_internal_name_by_fn reverse lookup not supported in rayforce v2")
 def test_operation_from_ptr_roundtrip():
     """Verify Operation.from_ptr can reconstruct the operation from its primitive."""
     for op in [Operation.ADD, Operation.SUM, Operation.NOT]:
         reconstructed = Operation.from_ptr(op.primitive)
         assert reconstructed == op
+
+
+def test_operation_from_ptr_covers_all_operations():
+    """Every Operation must be reconstructible from its own primitive pointer."""
+    for op in Operation:
+        assert Operation.from_ptr(op.primitive) == op
+
+
+def test_operation_from_ptr_rejects_non_operation():
+    """from_ptr must reject objects that aren't UNARY/BINARY/VARY."""
+    from rayforce.errors import RayforceInitError
+
+    with pytest.raises(RayforceInitError, match="not an operation"):
+        Operation.from_ptr(I64(42).ptr)
 
 
 def test_operation_til():

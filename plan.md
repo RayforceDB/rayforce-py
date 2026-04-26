@@ -64,19 +64,19 @@ Closes xfail `_AGG_BROADCASTS` (`tests/types/test_fn.py:12-16`).
 
 Closes skip `test_operation_from_ptr_roundtrip` (`tests/types/test_operators.py:208`).
 
-- [ ] In `rayforce/types/operators.py`, add a module-level cache populated
+- [x] In `rayforce/types/operators.py`, add a module-level cache populated
       lazily on first call:
       `def _build_primitive_reverse_map() -> dict[int, Operation]` — iterate
       the `Operation` enum, call `FFI.env_get_internal_fn_by_name(op.value)`,
       key on the integer pointer (FFI exposes `id()` on the returned
       `RayObject`; if not, add an FFI helper `obj_addr(obj) -> int`).
-- [ ] Implement `Operation.from_ptr(obj)` to use the cache; raise
+- [x] Implement `Operation.from_ptr(obj)` to use the cache; raise
       `RayforceTypeRegistryError` on miss.
-- [ ] Convert `@pytest.mark.skip(...)` → real test in
+- [x] Convert `@pytest.mark.skip(...)` → real test in
       `tests/types/test_operators.py:208`.
-- [ ] Verify: `pytest tests/types/test_operators.py -q` → green, no skip.
-- [ ] Verify: `pytest -q 2>&1 | tail -3` → skip count = baseline − 1.
-- [ ] Commit: `feat: Operation.from_ptr uses Python-side reverse lookup cache (POST_M16 P1)`
+- [x] Verify: `pytest tests/types/test_operators.py -q` → green, no skip.
+- [x] Verify: `pytest -q 2>&1 | tail -3` → skip count = baseline − 1.
+- [x] Commit: `feat: Operation.from_ptr uses Python-side reverse lookup cache (POST_M16 P1)`
 
 ---
 

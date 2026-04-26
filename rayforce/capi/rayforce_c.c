@@ -191,6 +191,9 @@ static PyMethodDef rayforce_methods[] = {
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
     {"quote", raypy_quote, METH_VARARGS, "Quote (clone) object"},
     {"rc_obj", raypy_rc, METH_VARARGS, "Get reference count of object"},
+    {"obj_addr", raypy_obj_addr, METH_VARARGS,
+     "Get integer address of the underlying ray_t* (stable identity for "
+     "primitive lookups)"},
     {"set_obj_attrs", raypy_set_obj_attrs, METH_VARARGS,
      "Set object attributes"},
     {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
