@@ -108,24 +108,27 @@ Adds backward compat for raw `eval_str` callers using v1 verb names
 Refactor existing workaround pattern. Does **not** close any xfail. Prepares
 the ground for a clean delete when `CORE_FIXES.md §3` lands.
 
-- [ ] In `rayforce/types/table.py`, define
+- [x] In `rayforce/types/table.py`, define
       `_TYPE_PRESERVING_OPS: frozenset[Operation]` (currently: ops that
       operate on TIMESTAMP and lose the type tag — confirm by inspecting
       v2 `promote_type` behavior; minimum: ADD, SUBTRACT,
       `_ShiftTzExpression`'s op).
-- [ ] Add helper
+- [x] Add helper
       `def _recover_temporal_dtypes(table: Table, original_dtypes: dict[str, str]) -> Table`
       that, for each column whose `original_dtypes[name]` was TIMESTAMP/DATE/TIME
       but whose current dtype is I64/I32, emits an `(as 'TYPE col)` cast.
-- [ ] Replace the ad-hoc cast at `rayforce/types/table.py:~250` (current
+- [x] Replace the ad-hoc cast at `rayforce/types/table.py:~250` (current
       site #1), `~285` (#2), `~1124` (#3) with calls to the helper.
-- [ ] `_ShiftTzExpression` (~line 297): keep behavior identical, but route
+      (Note: prior commits had already consolidated to a single live cast
+      site in `SelectQuery.execute`; that one site is now routed through
+      the helper.)
+- [x] `_ShiftTzExpression` (~line 297): keep behavior identical, but route
       its post-cast through the helper for consistency.
-- [ ] Verify: `pytest tests/types/table/ -q` → green (no behavior change).
-- [ ] Verify: `git diff rayforce/types/table.py | grep '^+' | wc -l` ≤
+- [x] Verify: `pytest tests/types/table/ -q` → green (no behavior change).
+- [x] Verify: `git diff rayforce/types/table.py | grep '^+' | wc -l` ≤
       `git diff rayforce/types/table.py | grep '^-' | wc -l` (refactor
       should not grow the file).
-- [ ] Commit: `feat: centralize temporal type recovery for DAG-demoted columns (POST_M16 P3)`
+- [x] Commit: `feat: centralize temporal type recovery for DAG-demoted columns (POST_M16 P3)`
 
 ---
 

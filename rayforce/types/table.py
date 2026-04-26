@@ -122,6 +122,32 @@ _AGGREGATION_OPS: frozenset[Operation] = frozenset(
     }
 )
 
+_TYPE_PRESERVING_OPS: frozenset[Operation] = frozenset({Operation.ADD, Operation.SUBTRACT})
+
+
+def _recover_temporal_dtypes(table: Table, original_dtypes: dict[str, str]) -> Table:
+    """Cast cols back to their original ray_name when v2 DAG demoted TIMESTAMP/DATE/TIME."""
+    if not original_dtypes:
+        return table
+    cur = table.dtypes
+    targets: dict[str, str] = {}
+    for n, o in original_dtypes.items():
+        if o.upper() in {"TIMESTAMP", "DATE", "TIME"} and cur.get(n) in {"I64", "I32"}:
+            targets[n] = o.lower()
+    if not targets:
+        return table
+    names = [c.value if hasattr(c, "value") else str(c) for c in table.columns()]
+    cols = []
+    for n in names:
+        if n in targets:
+            ref = List([Operation.AT, table.evaled_ptr, QuotedSymbol(n)])
+            cols.append(utils.eval_obj(List([Operation.AS, QuotedSymbol(targets[n]), ref])))
+        else:
+            cols.append(table[n])
+    return Table(
+        FFI.init_table(columns=Vector(items=names, ray_type=Symbol).ptr, values=List(cols).ptr)
+    )
+
 
 def _is_aggregation_only_select(select_query: SelectQuery) -> bool:
     """Mirror of `plugins/sql.py:_is_aggregation_only_select` expressed over
@@ -1158,15 +1184,6 @@ class SelectQuery(IPCQueryMixin):
             return None
         return (result_name, expr.operands[0].name)
 
-    def _shift_tz_column_names(self) -> list[str]:
-        """Names of computed columns that used `Column.shift_tz`. The v2 DAG
-        demotes TIMESTAMP+I64 arithmetic to I64, so after the select completes
-        we cast these columns back to TIMESTAMP Python-side."""
-        if not self._select_cols:
-            return []
-        _, computed = self._select_cols
-        return [name for name, expr in computed.items() if isinstance(expr, _ShiftTzExpression)]
-
     def execute(self) -> Table:
         distinct_spec = self._distinct_only_projection()
         if distinct_spec is not None:
@@ -1195,31 +1212,12 @@ class SelectQuery(IPCQueryMixin):
         else:
             result = utils.eval_obj(List([Operation.SELECT, self.compile()]))
 
-        shift_tz_names = self._shift_tz_column_names()
-        if shift_tz_names and isinstance(result, Table):
-            as_sym = QuotedSymbol("timestamp")
-            col_names = [c.value if hasattr(c, "value") else str(c) for c in result.columns()]
-            cast_targets = set(shift_tz_names)
-            new_cols = [
-                utils.eval_obj(
-                    List(
-                        [
-                            Operation.AS,
-                            as_sym,
-                            List([Operation.AT, result.evaled_ptr, QuotedSymbol(name)]),
-                        ]
-                    )
-                )
-                if name in cast_targets
-                else result[name]
-                for name in col_names
-            ]
-            result = Table(
-                FFI.init_table(
-                    columns=Vector(items=col_names, ray_type=Symbol).ptr,
-                    values=List(new_cols).ptr,
-                )
-            )
+        if isinstance(result, Table) and self._select_cols:
+            _, computed = self._select_cols
+            shifts = {
+                n: "TIMESTAMP" for n, e in computed.items() if isinstance(e, _ShiftTzExpression)
+            }
+            result = _recover_temporal_dtypes(result, shifts)
         if isinstance(result, Table) and _is_aggregation_only_select(self):
             result = result.take(1)
         return result
