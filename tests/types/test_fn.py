@@ -7,14 +7,6 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# §F (FAILING_TESTS M9) extended only to the SQL plugin — the Table.select
-# path still broadcasts no-GROUP-BY aggregations across all input rows.
-_AGG_BROADCASTS = pytest.mark.xfail(
-    reason="FAILING_TESTS §F: Table.select broadcasts no-GROUP-BY aggregations; "
-    "Table-level .take(1) collapse is out of M10 scope",
-    strict=False,
-)
-
 # §L: v2's `/` on I64÷I64 promotes to F64 instead of truncating. Core-side fix
 # tracked as FAILING_TESTS §L (listed as "No — core").
 _INT_DIV_PROMOTED_TO_FLOAT = pytest.mark.xfail(
@@ -68,7 +60,6 @@ def test_fn_apply_to_column():
     assert_column_values(result, "squared_value", [4, 9, 16])
 
 
-@_AGG_BROADCASTS
 def test_fn_apply_with_aggregation():
     table = Table(
         {

@@ -109,6 +109,44 @@ class _TableProtocol(t.Protocol):
     def columns(self) -> Vector: ...
 
 
+_AGGREGATION_OPS: frozenset[Operation] = frozenset(
+    {
+        Operation.COUNT,
+        Operation.SUM,
+        Operation.AVG,
+        Operation.MIN,
+        Operation.MAX,
+        Operation.FIRST,
+        Operation.LAST,
+        Operation.MEDIAN,
+    }
+)
+
+
+def _is_aggregation_only_select(select_query: SelectQuery) -> bool:
+    """Mirror of `plugins/sql.py:_is_aggregation_only_select` expressed over
+    `Operation` enum members. Returns True when every projected column is an
+    aggregation `Expression` and no GROUP BY is present, in which case the
+    DAG's element-wise broadcast must be collapsed to a single row."""
+    if select_query._by_cols and (select_query._by_cols[0] or select_query._by_cols[1]):
+        return False
+    if not select_query._select_cols:
+        return False
+    cols, computed = select_query._select_cols
+    if cols:
+        return False
+    if not computed:
+        return False
+    for expr in computed.values():
+        if not isinstance(expr, Expression):
+            return False
+        if not isinstance(expr.operation, Operation):
+            return False
+        if expr.operation not in _AGGREGATION_OPS:
+            return False
+    return True
+
+
 class AggregationMixin:
     def count(self) -> Expression:
         return Expression(Operation.COUNT, self)
@@ -1182,6 +1220,8 @@ class SelectQuery(IPCQueryMixin):
                     values=List(new_cols).ptr,
                 )
             )
+        if isinstance(result, Table) and _is_aggregation_only_select(self):
+            result = result.take(1)
         return result
 
 

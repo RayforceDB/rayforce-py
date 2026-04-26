@@ -1007,7 +1007,7 @@ def test_cast_unknown_column_raises():
 
 
 def test_concat_with_mismatched_column_names():
-    """Concatenating tables with different column names raises a domain error.
+    """Concatenating tables with different column names raises a value error.
 
     v1 raised ``RayforceValueError`` with a "column mismatch" message; v2 uses
     packed error codes and the readable message is out-of-band, so the test
@@ -1026,7 +1026,7 @@ def test_concat_with_mismatched_column_names():
         }
     )
 
-    with pytest.raises(errors.RayforceDomainError):
+    with pytest.raises(errors.RayforceValueError):
         table1.concat(table2)
 
 

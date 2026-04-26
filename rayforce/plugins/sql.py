@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 import typing as t
 
+from rayforce.types.table import _is_aggregation_only_select
+
 if t.TYPE_CHECKING:
     import sqlglot.expressions as exp  # type: ignore[import-not-found]
 
@@ -47,8 +49,6 @@ FUNC_MAP = {
     "MEDIAN": "median",
     "DISTINCT": "distinct",
 }
-
-_AGGREGATION_FUNCS = frozenset({"COUNT", "SUM", "AVG", "MIN", "MAX", "FIRST", "LAST", "MEDIAN"})
 
 
 class ExprType(Enum):
@@ -99,19 +99,6 @@ class ParsedUpsert:
 
 
 ParsedQuery = ParsedSelect | ParsedUpdate | ParsedInsert | ParsedUpsert
-
-
-def _is_aggregation_only_select(parsed: ParsedSelect) -> bool:
-    if parsed.group_by:
-        return False
-    if not parsed.columns:
-        return False
-    for _, expr in parsed.columns:
-        if expr.type != ExprType.FUNCTION:
-            return False
-        if expr.value.upper() not in _AGGREGATION_FUNCS:
-            return False
-    return True
 
 
 class SQLParser:
@@ -395,11 +382,7 @@ class SQLCompiler:
             query = query.order_by(*[col for col, _ in _order], desc=desc)
 
         result = query.execute()
-
-        # v2 DAG's element-wise SELECT broadcasts scalar aggregations across
-        # all input rows. If every projected column is an aggregation and
-        # there's no GROUP BY, collapse to a single row Python-side.
-        if _is_aggregation_only_select(parsed):
+        if _is_aggregation_only_select(query):
             result = result.take(1)
 
         return result
