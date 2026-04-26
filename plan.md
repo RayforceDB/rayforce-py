@@ -137,19 +137,22 @@ the ground for a clean delete when `CORE_FIXES.md §3` lands.
 Audit and fix any direct pointer arithmetic on `ray_t*` payloads bypassing
 `ray_data()`.
 
-- [ ] Run: `grep -nE '\(\s*(int|uint|char|double|float)[0-9]*_?t?\s*\*\s*\)\s*\(\s*\w+\s*\+\s*1\s*\)' rayforce/capi/*.c`
-- [ ] For each hit, replace with the appropriate `AS_*(v)` macro from
+- [x] Run: `grep -nE '\(\s*(int|uint|char|double|float)[0-9]*_?t?\s*\*\s*\)\s*\(\s*\w+\s*\+\s*1\s*\)' rayforce/capi/*.c`
+- [x] For each hit, replace with the appropriate `AS_*(v)` macro from
       `raypy_compat.h` (which routes through `ray_data()`).
-- [ ] Add `tests/test_sliced_vector_pyext.py`:
-  - [ ] Construct a Vector, take a Python slice (`v[1:5]`), assert each
+      (Audit grep returned zero hits — pyext was already clean. Added a
+      `vec_slice` FFI wrapper around `ray_vec_slice` so slice safety has
+      a regression test.)
+- [x] Add `tests/test_sliced_vector_pyext.py`:
+  - [x] Construct a Vector, take a Python slice (`v[1:5]`), assert each
         element via `at_idx`, `read_*`, and a numpy roundtrip.
-  - [ ] Repeat for I64, F64, B8, SYM, TIMESTAMP vectors.
-  - [ ] Each test must operate on a sliced (not contiguous) source.
-- [ ] Verify: `pytest tests/test_sliced_vector_pyext.py -q` → all green.
-- [ ] Verify: `make app && pytest -q` → no regressions.
-- [ ] Final grep returns zero hits:
+  - [x] Repeat for I64, F64, B8, SYM, TIMESTAMP vectors.
+  - [x] Each test must operate on a sliced (not contiguous) source.
+- [x] Verify: `pytest tests/test_sliced_vector_pyext.py -q` → all green.
+- [x] Verify: `make app && pytest -q` → no regressions.
+- [x] Final grep returns zero hits:
       `grep -nE '\(\s*(int|uint|char|double|float)[0-9]*_?t?\s*\*\s*\)\s*\(\s*\w+\s*\+\s*1\s*\)' rayforce/capi/*.c`
-- [ ] Commit: `feat: pyext reads go through ray_data() for slice-attr safety (POST_M16 P4)`
+- [x] Commit: `feat: pyext reads go through ray_data() for slice-attr safety (POST_M16 P4)`
 
 ---
 

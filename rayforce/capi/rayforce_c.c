@@ -224,6 +224,8 @@ static PyMethodDef rayforce_methods[] = {
      "Test whether a vector element is null via the v2 null bitmap"},
     {"vec_set_null", raypy_vec_set_null, METH_VARARGS,
      "Set a vector element's null bit in the v2 null bitmap"},
+    {"vec_slice", raypy_vec_slice, METH_VARARGS,
+     "Zero-copy slice view of a vector — (vec, offset, length)"},
 
     {NULL, NULL, 0, NULL}};
 

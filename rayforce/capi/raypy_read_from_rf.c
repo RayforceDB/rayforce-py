@@ -614,3 +614,40 @@ PyObject *raypy_vec_set_null(PyObject *self, PyObject *args) {
   ray_vec_set_null(vec, (int64_t)idx, is_null ? true : false);
   Py_RETURN_NONE;
 }
+PyObject *raypy_vec_slice(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  Py_ssize_t offset;
+  Py_ssize_t length;
+  if (!PyArg_ParseTuple(args, "O!nn", &RayObjectType, &ray_obj, &offset,
+                        &length))
+    return NULL;
+
+  obj_p vec = ray_obj->obj;
+  if (vec == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_slice: object is null");
+    return NULL;
+  }
+  if (!ray_is_vec(vec)) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_slice: object is not a vector");
+    return NULL;
+  }
+  if (offset < 0 || length < 0 || offset > vec->len ||
+      length > vec->len - offset) {
+    PyErr_Format(PyExc_IndexError,
+                 "vec_slice: range [%zd, %zd) out of bounds (len %lld)", offset,
+                 offset + length, (long long)vec->len);
+    return NULL;
+  }
+
+  obj_p slice = ray_vec_slice(vec, (int64_t)offset, (int64_t)length);
+  if (slice == NULL || RAY_IS_ERR(slice)) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_slice: slice creation failed");
+    if (slice)
+      ray_release(slice);
+    return NULL;
+  }
+  return raypy_wrap_ray_object(slice);
+}

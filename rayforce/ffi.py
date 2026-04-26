@@ -344,6 +344,11 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def vec_slice(vec: r.RayObject, offset: int, length: int) -> r.RayObject:
+        return r.vec_slice(vec, offset, length)
+
+    @staticmethod
+    @errors.error_handler
     def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> None:
         return r.set_obj(obj, idx, value)
 
