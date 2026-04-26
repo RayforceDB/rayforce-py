@@ -375,12 +375,15 @@ class TestFromNumpyUnsupported:
             t.Vector.from_numpy(arr)
 
     def test_float32_preserved_as_rayf32(self):
-        """float32 is preserved as RAY_F32 in v2 (no longer widens to F64)."""
+        """float32 is preserved as RAY_F32 in v2 (no longer widens to F64).
+
+        Per-element access returns F32 scalars (length-1 RAY_F32 vector under
+        the hood — v2 still has no F32 atom kernel).
+        """
         arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
         v = t.Vector.from_numpy(arr)
         assert len(v) == 3
-        # No RAY_F32 scalar atom in v2 — per-element access widens to F64.
-        assert isinstance(v[0], t.F64)
+        assert isinstance(v[0], t.F32)
         assert abs(v[0].value - 1.0) < 1e-6
         assert abs(v[1].value - 2.0) < 1e-6
         assert abs(v[2].value - 3.0) < 1e-6
@@ -422,10 +425,12 @@ class TestFromNumpyUnsupported:
         with pytest.raises(errors.RayforceInitError, match="Cannot infer ray_type"):
             t.Vector.from_numpy(arr)
 
-    def test_float16_auto_widens_to_f64(self):
+    def test_float16_auto_widens_to_f32(self):
+        # float16 widens to float32 → RAY_F32 vector; per-element access
+        # boxes as F32.
         arr = np.array([1.0, 2.0], dtype=np.float16)
         v = t.Vector.from_numpy(arr)
-        assert isinstance(v[0], t.F64)
+        assert isinstance(v[0], t.F32)
         assert abs(v[0].value - 1.0) < 1e-3
 
     def test_not_ndarray_raises(self):
@@ -1326,14 +1331,15 @@ class TestEveryNumpyDtypeFromNumpy:
         with pytest.raises(errors.RayforceInitError):
             t.Vector.from_numpy(np.array([1], dtype=np.uint64))
 
-    def test_float16_auto_widens(self):
+    def test_float16_widens_to_f32(self):
+        # float16 → float32 widening; element type is F32.
         v = t.Vector.from_numpy(np.array([1.0], dtype=np.float16))
-        assert isinstance(v[0], t.F64)
+        assert isinstance(v[0], t.F32)
         assert abs(v[0].value - 1.0) < 1e-3
 
-    def test_float32_auto_widens(self):
+    def test_float32_preserved(self):
         v = t.Vector.from_numpy(np.array([1.0], dtype=np.float32))
-        assert isinstance(v[0], t.F64)
+        assert isinstance(v[0], t.F32)
         assert abs(v[0].value - 1.0) < 1e-6
 
     def test_complex64_unsupported(self):
@@ -1599,10 +1605,10 @@ class TestAutoWidening:
     def test_float32_preserved_values(self):
         arr = np.array([1.5, -2.5, 0.0, 3.14], dtype=np.float32)
         v = t.Vector.from_numpy(arr)
-        # Per-element access widens to F64 (no RAY_F32 scalar atom in v2).
-        assert isinstance(v[0], t.F64)
-        assert v[0].value == np.float64(np.float32(1.5))
-        assert v[1].value == np.float64(np.float32(-2.5))
+        # Per-element access boxes as F32 (length-1 RAY_F32 vector).
+        assert isinstance(v[0], t.F32)
+        assert v[0].value == float(np.float32(1.5))
+        assert v[1].value == float(np.float32(-2.5))
         assert v[2].value == 0.0
         result = v.to_numpy()
         assert result.dtype == np.float32
@@ -1644,7 +1650,7 @@ class TestAutoWidening:
                 "i64": np.array([10, 20, 30], dtype=np.int64),
             }
         )
-        assert isinstance(tbl["f32"][0], t.F64)
+        assert isinstance(tbl["f32"][0], t.F32)
         assert abs(tbl["f32"][0].value - 1.0) < 1e-6
 
     def test_table_with_int8_column(self):

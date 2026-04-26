@@ -169,12 +169,13 @@ class Vector(
             return U8(raw[idx])
 
         # v2 has no RAY_F32 scalar atom, so collection_elem can't box F32 vec
-        # elements. Read the raw bytes and widen to F64 for per-element access.
+        # elements. Read the raw bytes and box as F32 (length-1 vector under
+        # the hood — see scalars/numeric/float32.py).
         if vec_type == r.TYPE_F32:
-            from rayforce.types.scalars.numeric.float import F64
+            from rayforce.types.scalars.numeric.float32 import F32
 
             raw = FFI.read_vector_raw(self.ptr)
-            return F64(struct.unpack_from("<f", raw, idx * 4)[0])
+            return F32(struct.unpack_from("<f", raw, idx * 4)[0])
 
         return utils.ray_to_python(FFI.at_idx(self.ptr, idx))
 

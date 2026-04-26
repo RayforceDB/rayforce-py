@@ -190,27 +190,32 @@ pattern.
 
 Adds `F32` so users can construct/round-trip 32-bit floats directly.
 
-- [ ] Create `rayforce/types/scalars/numeric/float32.py`:
+- [x] Create `rayforce/types/scalars/numeric/float32.py`:
       class `F32` mirroring the existing `F64` shape (constructor accepts
       `float`, `to_python() -> float`, registry id = `RAY_F32 = 6`,
       negative-id atom = `-6`, raises on overflow).
-- [ ] Update `rayforce/types/scalars/numeric/__init__.py` to export `F32`.
-- [ ] Update `rayforce/types/registry.py` to register both atom and vector
-      type codes for F32.
-- [ ] Update `rayforce/__init__.py:__all__` to include `F32`.
-- [ ] In `rayforce/types/containers/vector.py`, in `Vector.from_numpy`,
+      (Note: v2 has no real F32 atom kernel; F32 internally wraps a
+      length-1 RAY_F32 vector and auto-promotes to F64 for arithmetic.)
+- [x] Update `rayforce/types/scalars/numeric/__init__.py` to export `F32`.
+- [x] Update `rayforce/types/registry.py` to register both atom and vector
+      type codes for F32. (Done via `TypeRegistry.register(-r.TYPE_F32, F32)`
+      at the bottom of float32.py — same pattern as F64. The vector code
+      path already looks up scalars by negative type code.)
+- [x] Update `rayforce/__init__.py:__all__` to include `F32`.
+- [x] In `rayforce/types/containers/vector.py`, in `Vector.from_numpy`,
       route `np.float32` arrays to `RAY_F32` (don't widen to F64) via
-      `init_vector_from_raw_buffer`.
-- [ ] In `Vector.to_numpy`, F32 vectors return `dtype=np.float32`.
-- [ ] Add `tests/types/scalars/numeric/test_float32.py` mirroring
+      `init_vector_from_raw_buffer`. (Already in place pre-M23; verified.)
+- [x] In `Vector.to_numpy`, F32 vectors return `dtype=np.float32`.
+      (Already in place pre-M23; verified.)
+- [x] Add `tests/types/scalars/numeric/test_float32.py` mirroring
       `test_float.py` (F64 tests). At minimum:
-  - [ ] construct from float; `to_python` roundtrip
-  - [ ] arithmetic with F32 and F64 (verify promotion behavior matches v2)
-  - [ ] numpy roundtrip preserves dtype
-  - [ ] Vector operations: `to_python`, `to_list`, indexing, slice
-- [ ] Verify: `pytest tests/types/scalars/numeric/ -q` → all green.
-- [ ] Verify: `pytest -q` → no regressions.
-- [ ] Commit: `feat: add F32 scalar class and direct numpy float32 routing (POST_M16 P6)`
+  - [x] construct from float; `to_python` roundtrip
+  - [x] arithmetic with F32 and F64 (verify promotion behavior matches v2)
+  - [x] numpy roundtrip preserves dtype
+  - [x] Vector operations: `to_python`, `to_list`, indexing, slice
+- [x] Verify: `pytest tests/types/scalars/numeric/ -q` → all green.
+- [x] Verify: `pytest -q` → no regressions.
+- [x] Commit: `feat: add F32 scalar class and direct numpy float32 routing (POST_M16 P6)`
 
 ---
 

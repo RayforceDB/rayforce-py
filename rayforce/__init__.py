@@ -58,6 +58,7 @@ from .errors import (  # noqa: E402
 )
 from .types import (  # noqa: E402
     B8,
+    F32,
     F64,
     GUID,
     I16,
@@ -95,6 +96,7 @@ except Exception:
 
 __all__ = [
     "B8",
+    "F32",
     "F64",
     "GUID",
     "I16",
