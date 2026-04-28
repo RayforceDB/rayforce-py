@@ -19,7 +19,11 @@ find "${EXEC_DIR}" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || 
 if [[ -n "${RAYFORCE_LOCAL_PATH}" ]]; then
     echo "Copying rayforce2 from ${RAYFORCE_LOCAL_PATH}..."
     mkdir -p "${EXEC_DIR}/tmp"
-    rsync -a --exclude='.git' --exclude='tmp' --exclude='build*' \
+    # Exclude pre-built artifacts so the Linux build doesn't pick up host
+    # Mach-O / arm64 .o files left by a local `make` in RAYFORCE_LOCAL_PATH.
+    rsync -a \
+        --exclude='.git' --exclude='tmp' --exclude='build*' \
+        --exclude='*.o' --exclude='*.so' --exclude='*.a' --exclude='*.dylib' \
         "${RAYFORCE_LOCAL_PATH}/" "${EXEC_DIR}/tmp/rayforce-c/"
 else
     echo "Cloning rayforce2 repo from GitHub..."

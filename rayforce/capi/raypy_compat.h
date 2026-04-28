@@ -132,6 +132,13 @@ static inline ray_t *clone_obj(ray_t *v) {
     (lst) = ray_list_append((lst), (obj));                                     \
   } while (0)
 
+/* ---- attribute flags (defined only in v2 internal headers) ----
+ * Pyext deliberately does not include v2 src/lang/eval.h or src/mem/heap.h.
+ * Re-declare the attrs we depend on here; values must match v2 source. */
+#ifndef RAY_ATTR_DICT
+#define RAY_ATTR_DICT 0x02 /* RAY_LIST + this bit = dict {k: v ...} */
+#endif
+
 /* ---- NULL singleton ---- */
 #define NULL_OBJ RAY_NULL_OBJ
 

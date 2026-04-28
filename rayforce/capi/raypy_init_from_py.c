@@ -790,14 +790,23 @@ obj_p raypy_init_date_from_py(PyObject *item) {
     Py_DECREF(str_obj);
     return NULL;
   }
+  /* PyUnicode_AsUTF8AndSize promises slen >= 0 on success, but GCC's flow
+   * analysis can't see that and emits a false-positive -Wstringop-overflow
+   * on the buf[slen]='\0' write. Narrow the range explicitly. */
+  if (slen < 0) {
+    Py_DECREF(str_obj);
+    PyErr_SetString(PyExc_RuntimeError, "init: negative string length");
+    return NULL;
+  }
+  size_t blen = (size_t)slen;
 
   /* v2's date cast only accepts "YYYY.MM.DD" — normalize ISO "YYYY-MM-DD"
    * (the common Python form via str(datetime.date)) into the dotted form. */
   char stackbuf[64];
   char *buf = stackbuf;
   char *heapbuf = NULL;
-  if ((size_t)slen + 1 > sizeof(stackbuf)) {
-    heapbuf = (char *)malloc((size_t)slen + 1);
+  if (blen + 1 > sizeof(stackbuf)) {
+    heapbuf = (char *)malloc(blen + 1);
     if (heapbuf == NULL) {
       Py_DECREF(str_obj);
       PyErr_NoMemory();
@@ -805,12 +814,12 @@ obj_p raypy_init_date_from_py(PyObject *item) {
     }
     buf = heapbuf;
   }
-  for (Py_ssize_t i = 0; i < slen; ++i) {
+  for (size_t i = 0; i < blen; ++i) {
     buf[i] = (src[i] == '-') ? '.' : src[i];
   }
-  buf[slen] = '\0';
+  buf[blen] = '\0';
 
-  obj_p ray_str_obj = ray_str(buf, (size_t)slen);
+  obj_p ray_str_obj = ray_str(buf, blen);
   if (heapbuf)
     free(heapbuf);
   Py_DECREF(str_obj);

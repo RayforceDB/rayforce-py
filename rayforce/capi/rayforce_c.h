@@ -1,7 +1,12 @@
 #ifndef RAYFORCE_C_H
 #define RAYFORCE_C_H
 
+/* Also passed via -DPY_SSIZE_T_CLEAN from the build flags. Guard the local
+ * define so GCC (which has no -Wno-macro-redefined and turns the redefinition
+ * into a hard error under -Werror) does not fail the build. */
+#ifndef PY_SSIZE_T_CLEAN
 #define PY_SSIZE_T_CLEAN
+#endif
 
 /* v2 public API */
 #include <rayforce.h>

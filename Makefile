@@ -23,7 +23,10 @@ pull_rayforce_from_github:
 	@if [ -n "$(RAYFORCE_LOCAL_PATH)" ]; then \
 		echo "📂 Copying rayforce2 from $(RAYFORCE_LOCAL_PATH)..."; \
 		mkdir -p $(EXEC_DIR)/tmp && \
-		rsync -a --exclude='.git' --exclude='tmp' --exclude='build*' "$(RAYFORCE_LOCAL_PATH)/" "$(EXEC_DIR)/tmp/rayforce-c/"; \
+		rsync -a \
+			--exclude='.git' --exclude='tmp' --exclude='build*' \
+			--exclude='*.o' --exclude='*.so' --exclude='*.a' --exclude='*.dylib' \
+			"$(RAYFORCE_LOCAL_PATH)/" "$(EXEC_DIR)/tmp/rayforce-c/"; \
 	else \
 		echo "⬇️  Cloning rayforce2 repo from $(RAYFORCE_GITHUB)..."; \
 		git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c; \

@@ -3,7 +3,12 @@ name: Build and publish wheels
 on:
   push:
     tags:
+      # Stable: X.Y.Z. Major version selects the core: 1.x.x → v1, 2.x.x → v2.
       - '[0-9]+.[0-9]+.[0-9]+'
+      # Pre-release per PEP 440: 2.0.0a1, 2.0.0b1, 2.0.0rc1 — always v2 core.
+      - '[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+b[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
 
 jobs:
   build_wheels:
@@ -20,7 +25,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
       MACOSX_DEPLOYMENT_TARGET: "11.0"
 
     steps:
@@ -28,6 +32,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
+
+      - name: Resolve core repo from tag
+        # Major version of the tag selects which Rayforce C core to clone:
+        #   1.x.x[*]   → rayforce.git   (v1 core, stable 1.0.x line)
+        #   2.x.x[*]   → rayforce2.git  (v2 core, alpha/beta/rc/GA of 2.x line)
+        # Anything else fails the build loudly so we don't ship a wheel built
+        # against the wrong core.
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          MAJOR="${TAG%%.*}"
+          case "$MAJOR" in
+            1)
+              echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"  >> "$GITHUB_ENV"
+              echo "RELEASE_TRACK=stable-1.x"                                    >> "$GITHUB_ENV"
+              ;;
+            2)
+              echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce2.git" >> "$GITHUB_ENV"
+              echo "RELEASE_TRACK=2.x"                                           >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unsupported major version '$MAJOR' (tag '$TAG'). Only 1.x.x and 2.x.x are recognized."
+              exit 1
+              ;;
+          esac
+          echo "Tag '$TAG' (major $MAJOR) → core repo will be cloned from \$RAYFORCE_GITHUB"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -55,7 +84,7 @@ jobs:
           CIBW_ARCHS: "auto64"
           CIBW_BEFORE_BUILD: "bash {project}/scripts/prepare_build.sh"
           CIBW_TEST_SKIP: "*"
-          CIBW_ENVIRONMENT: "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"
+          CIBW_ENVIRONMENT: "RAYFORCE_GITHUB=${{ env.RAYFORCE_GITHUB }}"
           CIBW_MACOS_ENVIRONMENT: "MACOSX_DEPLOYMENT_TARGET=11.0"
           CIBW_CACHE_PATH: ".cibw"
           CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64:latest"

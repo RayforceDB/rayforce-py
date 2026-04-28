@@ -5,62 +5,12 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
-## **`2.0.0-rc1`**
+## **`2.0.0a1`**
 
-First release built against the Rayforce v2 C core. This is a release candidate; the
-corresponding `2.0.0` GA waits on the upstream division-semantics fix tracked in
-[`CORE_FIXES.md`](https://github.com/RayforceDB/rayforce-py/blob/master/CORE_FIXES.md) §1.
+First alpha against the Rayforce v2 C core. The `1.0.x` line continues to be
+maintained against v1 core.
 
-### Removed
-
-- **`rayforce.network` subtree**: TCP and WebSocket clients (`RayforceTCPError`,
-  `RayforceWSError`) — v2 has no IPC/socket layer.
-- **`rayforce.plugins.raykx`**: the `raykx` plugin and dynamic-library loader.
-- **`C8` scalar**: removed from the public surface; v2 unifies it with `STR`.
-  Will be redesigned in a future release.
-- **FFI primitives**: `FFI.loadfn_from_file`, `hopen`, `hclose`,
-  `runtime_run`, `ipc_listen` — no v2 equivalents.
-
-### Added
-
-- **`F32` first-class scalar**: 32-bit float scalar mirroring `F64`. `Vector.from_numpy`
-  routes `np.float32` arrays directly to `RAY_F32` (no widening); `Vector.to_numpy`
-  preserves dtype on the round-trip.
-- **`rayforce.migrate` transcode tool**: one-shot v1→v2 type-code remapping for
-  persisted blobs and splayed/parted directories.
-  Run as `python -m rayforce.migrate {blob|splayed|parted} <src> <dst>`.
-- **v1-verb aliasing in `eval_str`**: legacy verb names (`hopen`, `hclose`,
-  `read-csv`, `write-csv`, `os-get-var`, `os-set-var`, `system`, `gc`, `memstat`,
-  `internals`, `sysinfo`) are token-aware-rewritten to their v2 namespaced forms.
-- **`Operation.from_ptr`**: Python-side reverse-lookup cache for primitive
-  pointers (replaces the dropped v2 `env_get_internal_name_by_fn` builtin).
-- **Null bitmap support across `Vector`**: `at_row` consults the per-vector null
-  bitmap so `None` survives round-trips through filters and joins.
-- **`Table.select` no-GROUP-BY collapse**: aggregations with no `.by()` now
-  collapse to a single row, matching v1 semantics. The DAG fix is tracked in
-  `CORE_FIXES.md` §9.
-
-### Internal
-
-- **`RAY_APPEND_REASSIGN` / `RAY_LIST_APPEND_REASSIGN` macros**: standardize the
-  v2 `ray_vec_append` / `ray_list_append` reassign pattern so callers can't
-  forget to reassign after a realloc.
-- **Slice-aware data access in pyext**: all `ray_t` payload reads route through
-  `ray_data()` (via `AS_*` macros in `raypy_compat.h`), preserving slice attrs.
-- **Centralized temporal-type recovery** for columns demoted by DAG arithmetic
-  (TIMESTAMP/DATE/TIME → I64) — single helper site, retired ad-hoc casts.
-
-### Known gaps (upstream — see [`CORE_FIXES.md`](https://github.com/RayforceDB/rayforce-py/blob/master/CORE_FIXES.md))
-
-- **§1 — Division semantics**: `F64/F64` floors and `I64/I64` promotes to F64.
-  Six tests xfail pending the core fix in `rayforce2/src/ops/arith.c`.
-- **§2 — Recursive `self` in DAG**: lambdas using `self` work in direct-eval
-  but not when applied to a column inside `SELECT`. One test xfails.
-- **§4 — Parted/splayed COW**: destructive ops (`update`, `insert`, `upsert`)
-  on tables loaded from disk silently clone via `ray_cow` instead of raising.
-  Two tests xfail.
-
-2026-04-26 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.0.0rc1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.0.0-rc1)**
+2026-04-28 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.0.0a1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.0.0a1)**
 
 ## **`0.6.3`**
 

@@ -31,13 +31,18 @@ if [ -z "$VERSION" ]; then
   echo ""
   echo -e "  ${BOLD}Usage:${NC} ./scripts/release.sh <version>"
   echo ""
-  echo "  Example: ./scripts/release.sh 0.6.0"
+  echo "  Examples:"
+  echo "    ./scripts/release.sh 1.0.1       # stable (1.x line, v1 core)"
+  echo "    ./scripts/release.sh 2.0.0a1     # alpha  (2.x line, v2 core)"
+  echo "    ./scripts/release.sh 2.0.0b1     # beta"
+  echo "    ./scripts/release.sh 2.0.0rc1    # release candidate"
   echo ""
   exit 1
 fi
 
-if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-  die "Invalid version format: '${VERSION}' (expected X.Y.Z)"
+# PEP 440 version (final or pre-release): X.Y.Z optionally followed by aN, bN, or rcN.
+if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?$'; then
+  die "Invalid version format: '${VERSION}' (expected X.Y.Z[aN|bN|rcN])"
 fi
 
 # --- Pre-flight checks ---
