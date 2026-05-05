@@ -18,7 +18,6 @@ pytestmark = pytest.mark.ffi
         (FFI.init_f64, 3.14, "invalid"),
         (FFI.init_u8, 255, "invalid"),
         # init_b8 accepts any python object
-        (FFI.init_c8, "a", b"invalid"),
         (FFI.init_symbol, "test", None),
         (FFI.init_date, "2025-10-10", "invalid"),
         (FFI.init_time, "08:00:01", "invalid"),
@@ -44,7 +43,6 @@ def test_init_functions(func, success_arg, fail_arg):
         (FFI.init_f64, FFI.read_f64, 3.14),
         (FFI.init_u8, FFI.read_u8, 255),
         (FFI.init_b8, FFI.read_b8, True),
-        (FFI.init_c8, FFI.read_c8, "a"),
         (FFI.init_symbol, FFI.read_symbol, "test"),
     ],
 )

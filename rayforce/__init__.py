@@ -90,7 +90,7 @@ from .utils import (  # noqa: E402
 )
 
 try:
-    core_version = String(eval_str("(internals)")["version"]).to_python()
+    core_version = String(eval_str("(.sys.build)")["version"]).to_python()
 except Exception:
     core_version = "unknown"
 
@@ -118,7 +118,6 @@ __all__ = [
     "RayforceError",
     "RayforceEvaluationError",
     "RayforceIndexError",
-    "RayforceInitError",
     "RayforceInitError",
     "RayforceLengthError",
     "RayforceNYIError",

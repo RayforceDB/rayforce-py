@@ -1,12 +1,5 @@
 #include "rayforce_c.h"
-#include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-
-#ifdef __APPLE__
-#include <mach/mach_time.h>
-#endif
 
 PyObject *raypy_init_i16(PyObject *self, PyObject *args) {
   (void)self;
@@ -16,7 +9,7 @@ PyObject *raypy_init_i16(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_i16_from_py(item);
+  ray_t *ray_obj = raypy_init_i16_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create i16 from Python object");
@@ -32,7 +25,7 @@ PyObject *raypy_init_i32(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_i32_from_py(item);
+  ray_t *ray_obj = raypy_init_i32_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create i32 from Python object");
@@ -48,7 +41,7 @@ PyObject *raypy_init_i64(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_i64_from_py(item);
+  ray_t *ray_obj = raypy_init_i64_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create i64 from Python object");
@@ -64,26 +57,10 @@ PyObject *raypy_init_f64(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_f64_from_py(item);
+  ray_t *ray_obj = raypy_init_f64_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create f64 from Python object");
-    return NULL;
-  }
-  return raypy_wrap_ray_object(ray_obj);
-}
-PyObject *raypy_init_c8(PyObject *self, PyObject *args) {
-  (void)self;
-  CHECK_MAIN_THREAD();
-
-  PyObject *item;
-  if (!PyArg_ParseTuple(args, "O", &item))
-    return NULL;
-
-  obj_p ray_obj = raypy_init_c8_from_py(item);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "init: failed to create c8 from Python object");
     return NULL;
   }
   return raypy_wrap_ray_object(ray_obj);
@@ -96,7 +73,7 @@ PyObject *raypy_init_string(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_string_from_py(item);
+  ray_t *ray_obj = raypy_init_string_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create string from Python object");
@@ -112,7 +89,7 @@ PyObject *raypy_init_symbol(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_symbol_from_py(item);
+  ray_t *ray_obj = raypy_init_symbol_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create symbol from Python object");
@@ -128,7 +105,7 @@ PyObject *raypy_init_b8(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_b8_from_py(item);
+  ray_t *ray_obj = raypy_init_b8_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create b8 from Python object");
@@ -144,7 +121,7 @@ PyObject *raypy_init_u8(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_u8_from_py(item);
+  ray_t *ray_obj = raypy_init_u8_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create u8 from Python object");
@@ -160,7 +137,7 @@ PyObject *raypy_init_date(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_date_from_py(item);
+  ray_t *ray_obj = raypy_init_date_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create date from Python object");
@@ -176,7 +153,7 @@ PyObject *raypy_init_time(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_time_from_py(item);
+  ray_t *ray_obj = raypy_init_time_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create time from Python object");
@@ -192,7 +169,7 @@ PyObject *raypy_init_timestamp(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_timestamp_from_py(item);
+  ray_t *ray_obj = raypy_init_timestamp_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create timestamp from Python object");
@@ -208,7 +185,7 @@ PyObject *raypy_init_guid(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_guid_from_py(item);
+  ray_t *ray_obj = raypy_init_guid_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create guid from Python object");
@@ -224,7 +201,7 @@ PyObject *raypy_init_list(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O", &item))
     return NULL;
 
-  obj_p ray_obj = raypy_init_list_from_py(item);
+  ray_t *ray_obj = raypy_init_list_from_py(item);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: failed to create list from Python object");
@@ -243,8 +220,8 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
                         &vals_obj))
     return NULL;
 
-  obj_p keys = keys_obj->obj;
-  obj_p vals = vals_obj->obj;
+  ray_t *keys = keys_obj->obj;
+  ray_t *vals = vals_obj->obj;
   if (keys == NULL || vals == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: table requires non-null keys and values");
@@ -274,7 +251,7 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
     return raypy_wrap_ray_object(ray_error("length", NULL));
   }
 
-  obj_p tbl = ray_table_new(ncols);
+  ray_t *tbl = ray_table_new(ncols);
   if (tbl == NULL || RAY_IS_ERR(tbl)) {
     if (tbl)
       ray_release(tbl);
@@ -300,7 +277,7 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
       name_id = key_elems[i]->i64;
     }
 
-    obj_p col = col_elems[i];
+    ray_t *col = col_elems[i];
     if (col == NULL) {
       ray_release(tbl);
       PyErr_SetString(PyExc_RuntimeError, "init: table column is null");
@@ -308,7 +285,7 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
     }
     /* ray_table_add_col retains col internally; caller keeps ownership via
      * `vals`, so no explicit retain/release is needed here. */
-    obj_p res = ray_table_add_col(tbl, name_id, col);
+    ray_t *res = ray_table_add_col(tbl, name_id, col);
     if (res == NULL || RAY_IS_ERR(res)) {
       ray_release(tbl);
       PyErr_Format(PyExc_RuntimeError,
@@ -332,8 +309,8 @@ PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
                         &vals_obj))
     return NULL;
 
-  obj_p keys = keys_obj->obj;
-  obj_p vals = vals_obj->obj;
+  ray_t *keys = keys_obj->obj;
+  ray_t *vals = vals_obj->obj;
   if (keys == NULL || vals == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: dict requires non-null keys and values");
@@ -346,7 +323,7 @@ PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
     return raypy_wrap_ray_object(ray_error("length", NULL));
   }
 
-  obj_p ray_obj = ray_dict_fn(keys, vals);
+  ray_t *ray_obj = ray_dict_fn(keys, vals);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "init: failed to create dictionary");
     return NULL;
@@ -354,25 +331,25 @@ PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-static obj_p convert_py_item_to_ray(PyObject *item, int type_code);
+static ray_t *convert_py_item_to_ray(PyObject *item, int type_code);
 
 /* Append a converted ray atom to the target collection.
  * For RAY_LIST / RAY_STR vectors / typed scalar vectors we choose the
  * appropriate v2 append function and reassign the target pointer (which
  * may have moved after a realloc). Returns 0 on success, -1 on error.
  *
- * When `atom` is the NULL_OBJ singleton we append a zero placeholder and
+ * When `atom` is the RAY_NULL_OBJ singleton we append a zero placeholder and
  * then set the v2 null bitmap bit for the new index, so downstream readers
  * that consult `ray_vec_is_null` can tell null from zero. */
-static int append_to_collection(obj_p *target_obj, obj_p atom) {
-  obj_p target = *target_obj;
+static int append_to_collection(ray_t **target_obj, ray_t *atom) {
+  ray_t *target = *target_obj;
   if (target == NULL || atom == NULL)
     return -1;
 
   bool is_null = RAY_IS_NULL(atom);
 
   if (target->type == RAY_LIST) {
-    RAY_LIST_APPEND_REASSIGN(target, atom);
+    target = ray_list_append(target, atom);
     if (target == NULL || RAY_IS_ERR(target))
       return -1;
     *target_obj = target;
@@ -380,7 +357,7 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
   }
 
   if (target->type == RAY_STR) {
-    obj_p result;
+    ray_t *result;
     if (is_null) {
       result = ray_str_vec_append(target, "", 0);
     } else {
@@ -411,7 +388,7 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
     p = &scratch;
     if (target->type == RAY_GUID) {
       static const uint8_t zero_guid[16] = {0};
-      RAY_APPEND_REASSIGN(target, zero_guid);
+      target = ray_vec_append(target, zero_guid);
       if (target == NULL || RAY_IS_ERR(target))
         return -1;
       ray_vec_set_null(target, target->len - 1, true);
@@ -452,7 +429,7 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
       break;
     case RAY_GUID: {
       const void *guid_payload = atom->obj ? ray_data(atom->obj) : NULL;
-      RAY_APPEND_REASSIGN(target, guid_payload);
+      target = ray_vec_append(target, guid_payload);
       if (target == NULL || RAY_IS_ERR(target))
         return -1;
       *target_obj = target;
@@ -462,7 +439,7 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
       return -1;
     }
   }
-  RAY_APPEND_REASSIGN(target, p);
+  target = ray_vec_append(target, p);
   if (target == NULL || RAY_IS_ERR(target))
     return -1;
   if (is_null)
@@ -471,7 +448,7 @@ static int append_to_collection(obj_p *target_obj, obj_p atom) {
   return 0;
 }
 
-static int fill_obj_from_py_sequence(obj_p *target_obj, PyObject *fill,
+static int fill_obj_from_py_sequence(ray_t **target_obj, PyObject *fill,
                                      int type_code, const char *error_msg) {
   Py_ssize_t len = PySequence_Size(fill);
   if (len < 0)
@@ -482,7 +459,7 @@ static int fill_obj_from_py_sequence(obj_p *target_obj, PyObject *fill,
     if (item == NULL)
       return -1;
 
-    obj_p ray_item = convert_py_item_to_ray(item, type_code);
+    ray_t *ray_item = convert_py_item_to_ray(item, type_code);
     Py_DECREF(item);
 
     if (ray_item == NULL && PyErr_Occurred()) {
@@ -543,7 +520,7 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "iO", &type_code, &second_arg))
     return NULL;
 
-  obj_p ray_obj = NULL;
+  ray_t *ray_obj = NULL;
   int vector_type_code = type_code < 0 ? -type_code : type_code;
 
   /* RAY_NULL isn't a real vec element type — fall back to RAY_LIST. */
@@ -560,7 +537,7 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
       /* Fill with NULL atoms so the list has actual elements, not just cap. */
       if (ray_obj != NULL && !RAY_IS_ERR(ray_obj) && length > 0) {
         for (Py_ssize_t i = 0; i < length; i++) {
-          RAY_LIST_APPEND_REASSIGN(ray_obj, RAY_NULL_OBJ);
+          ray_obj = ray_list_append(ray_obj, RAY_NULL_OBJ);
           if (ray_obj == NULL || RAY_IS_ERR(ray_obj))
             break;
         }
@@ -614,64 +591,56 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-// CONVERSION UTILS
-obj_p raypy_init_i16_from_py(PyObject *item) {
+ray_t *raypy_init_i16_from_py(PyObject *item) {
   long val = PyLong_AsLong(item);
   if (val == -1 && PyErr_Occurred())
     return NULL;
   return ray_i16((int16_t)val);
 }
-obj_p raypy_init_i32_from_py(PyObject *item) {
+ray_t *raypy_init_i32_from_py(PyObject *item) {
   long val = PyLong_AsLong(item);
   if (val == -1 && PyErr_Occurred())
     return NULL;
   return ray_i32((int32_t)val);
 }
-obj_p raypy_init_i64_from_py(PyObject *item) {
+ray_t *raypy_init_i64_from_py(PyObject *item) {
   long long val = PyLong_AsLongLong(item);
   if (val == -1 && PyErr_Occurred())
     return NULL;
   return ray_i64(val);
 }
-obj_p raypy_init_f64_from_py(PyObject *item) {
+ray_t *raypy_init_f64_from_py(PyObject *item) {
   double val = PyFloat_AsDouble(item);
   if (val == -1.0 && PyErr_Occurred())
     return NULL;
   return ray_f64(val);
 }
-obj_p raypy_init_c8_from_py(PyObject *item) {
-  Py_ssize_t str_len;
-  const char *str_val = PyUnicode_AsUTF8AndSize(item, &str_len);
-  if (str_val == NULL)
-    return NULL;
-  char ch = str_len > 0 ? str_val[0] : '\0';
-  return ray_str(&ch, 1);
-}
-obj_p raypy_init_string_from_py(PyObject *item) {
+ray_t *raypy_init_string_from_py(PyObject *item) {
   Py_ssize_t str_len;
   const char *str_val = PyUnicode_AsUTF8AndSize(item, &str_len);
   if (str_val == NULL)
     return NULL;
   return ray_str(str_val, (size_t)str_len);
 }
-obj_p raypy_init_b8_from_py(PyObject *item) {
+ray_t *raypy_init_b8_from_py(PyObject *item) {
   int val = PyObject_IsTrue(item);
   if (val == -1)
     return NULL;
   return ray_bool(val ? true : false);
 }
-obj_p raypy_init_u8_from_py(PyObject *item) {
+ray_t *raypy_init_u8_from_py(PyObject *item) {
   long val = PyLong_AsLong(item);
   if (val == -1 && PyErr_Occurred())
     return NULL;
   return ray_u8((uint8_t)val);
 }
-obj_p raypy_init_symbol_from_py(PyObject *item) {
+ray_t *raypy_init_symbol_from_py(PyObject *item) {
   Py_ssize_t str_len;
   const char *str_val = PyUnicode_AsUTF8AndSize(item, &str_len);
   if (str_val == NULL)
     return NULL;
-  return symbol(str_val, str_len);
+  int64_t sym_id = ray_sym_intern(str_val, (size_t)str_len);
+  return (sym_id < 0) ? NULL : ray_sym(sym_id);
 }
 
 /* Parse a hex digit. Returns -1 on bad input. */
@@ -714,7 +683,7 @@ static int parse_guid_bytes(const char *s, Py_ssize_t len, uint8_t out[16]) {
   return 0;
 }
 
-obj_p raypy_init_guid_from_py(PyObject *item) {
+ray_t *raypy_init_guid_from_py(PyObject *item) {
   PyObject *guid_str_obj = NULL;
 
   if (PyUnicode_Check(item)) {
@@ -742,7 +711,7 @@ obj_p raypy_init_guid_from_py(PyObject *item) {
 
   Py_DECREF(guid_str_obj);
 
-  obj_p ray_obj = ray_guid(bytes);
+  ray_t *ray_obj = ray_guid(bytes);
   if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
     if (ray_obj)
       ray_release(ray_obj);
@@ -754,16 +723,17 @@ obj_p raypy_init_guid_from_py(PyObject *item) {
 
 /* Cast a string atom to a temporal type via ray_cast_fn. The type symbol
  * is interned on demand. Returns NULL on error (with Python exception set). */
-static obj_p cast_string_to_temporal(obj_p str_obj, const char *type_name,
+static ray_t *cast_string_to_temporal(ray_t *str_obj, const char *type_name,
                                      size_t type_len) {
-  obj_p type_sym = symbol(type_name, (int64_t)type_len);
+  int64_t type_sym_id = ray_sym_intern(type_name, type_len);
+  ray_t *type_sym = (type_sym_id < 0) ? NULL : ray_sym(type_sym_id);
   if (type_sym == NULL) {
     PyErr_Format(PyExc_RuntimeError, "init: failed to intern type symbol '%s'",
                  type_name);
     return NULL;
   }
 
-  obj_p result = ray_cast_fn(type_sym, str_obj);
+  ray_t *result = ray_cast_fn(type_sym, str_obj);
   ray_release(type_sym);
 
   if (result == NULL) {
@@ -779,7 +749,7 @@ static obj_p cast_string_to_temporal(obj_p str_obj, const char *type_name,
   return result;
 }
 
-obj_p raypy_init_date_from_py(PyObject *item) {
+ray_t *raypy_init_date_from_py(PyObject *item) {
   PyObject *str_obj = PyObject_Str(item);
   if (str_obj == NULL)
     return NULL;
@@ -819,49 +789,49 @@ obj_p raypy_init_date_from_py(PyObject *item) {
   }
   buf[blen] = '\0';
 
-  obj_p ray_str_obj = ray_str(buf, blen);
+  ray_t *ray_str_obj = ray_str(buf, blen);
   if (heapbuf)
     free(heapbuf);
   Py_DECREF(str_obj);
   if (ray_str_obj == NULL)
     return NULL;
 
-  obj_p result = cast_string_to_temporal(ray_str_obj, "date", 4);
+  ray_t *result = cast_string_to_temporal(ray_str_obj, "date", 4);
   ray_release(ray_str_obj);
   return result;
 }
 
-obj_p raypy_init_time_from_py(PyObject *item) {
+ray_t *raypy_init_time_from_py(PyObject *item) {
   PyObject *str_obj = PyObject_Str(item);
   if (str_obj == NULL)
     return NULL;
 
-  obj_p ray_str_obj = raypy_init_string_from_py(str_obj);
+  ray_t *ray_str_obj = raypy_init_string_from_py(str_obj);
   Py_DECREF(str_obj);
   if (ray_str_obj == NULL)
     return NULL;
 
-  obj_p result = cast_string_to_temporal(ray_str_obj, "time", 4);
+  ray_t *result = cast_string_to_temporal(ray_str_obj, "time", 4);
   ray_release(ray_str_obj);
   return result;
 }
 
-obj_p raypy_init_timestamp_from_py(PyObject *item) {
+ray_t *raypy_init_timestamp_from_py(PyObject *item) {
   PyObject *str_obj = PyObject_Str(item);
   if (str_obj == NULL)
     return NULL;
 
-  obj_p ray_str_obj = raypy_init_string_from_py(str_obj);
+  ray_t *ray_str_obj = raypy_init_string_from_py(str_obj);
   Py_DECREF(str_obj);
   if (ray_str_obj == NULL)
     return NULL;
 
-  obj_p result = cast_string_to_temporal(ray_str_obj, "timestamp", 9);
+  ray_t *result = cast_string_to_temporal(ray_str_obj, "timestamp", 9);
   ray_release(ray_str_obj);
   return result;
 }
 
-obj_p raypy_init_dict_from_py(PyObject *item) {
+ray_t *raypy_init_dict_from_py(PyObject *item) {
   if (!PyDict_Check(item))
     return NULL;
 
@@ -869,7 +839,7 @@ obj_p raypy_init_dict_from_py(PyObject *item) {
   if (dict_size < 0)
     return NULL;
 
-  obj_p dict_keys = ray_sym_vec_new(RAY_SYM_W64, dict_size);
+  ray_t *dict_keys = ray_sym_vec_new(RAY_SYM_W64, dict_size);
   if (dict_keys == NULL || RAY_IS_ERR(dict_keys)) {
     if (dict_keys)
       ray_release(dict_keys);
@@ -888,7 +858,7 @@ obj_p raypy_init_dict_from_py(PyObject *item) {
   int64_t *ids = (int64_t *)ray_data(dict_keys);
 
   while (PyDict_Next(item, &pos, &key, &val)) {
-    obj_p ray_key = raypy_init_symbol_from_py(key);
+    ray_t *ray_key = raypy_init_symbol_from_py(key);
     if (!ray_key) {
       Py_DECREF(py_dict_values);
       ray_release(dict_keys);
@@ -902,14 +872,14 @@ obj_p raypy_init_dict_from_py(PyObject *item) {
   }
   dict_keys->len = dict_size;
 
-  obj_p dict_values = raypy_init_list_from_py(py_dict_values);
+  ray_t *dict_values = raypy_init_list_from_py(py_dict_values);
   Py_DECREF(py_dict_values);
   if (!dict_values) {
     ray_release(dict_keys);
     return NULL;
   }
 
-  obj_p result = ray_dict_fn(dict_keys, dict_values);
+  ray_t *result = ray_dict_fn(dict_keys, dict_values);
   ray_release(dict_keys);
   ray_release(dict_values);
   if (!result || RAY_IS_ERR(result)) {
@@ -921,11 +891,11 @@ obj_p raypy_init_dict_from_py(PyObject *item) {
   return result;
 }
 
-obj_p raypy_init_list_from_py(PyObject *item) {
+ray_t *raypy_init_list_from_py(PyObject *item) {
   if (!PyList_Check(item) && !PyTuple_Check(item))
     return NULL;
 
-  obj_p list_vec = ray_list_new(0);
+  ray_t *list_vec = ray_list_new(0);
   if (list_vec == NULL || RAY_IS_ERR(list_vec)) {
     if (list_vec)
       ray_release(list_vec);
@@ -941,9 +911,9 @@ obj_p raypy_init_list_from_py(PyObject *item) {
   return list_vec;
 }
 
-static obj_p convert_py_item_to_ray(PyObject *item, int type_code) {
+static ray_t *convert_py_item_to_ray(PyObject *item, int type_code) {
   if (item == Py_None) {
-    return NULL_OBJ;
+    return RAY_NULL_OBJ;
   }
 
   if (PyObject_TypeCheck(item, &RayObjectType)) {
@@ -970,33 +940,33 @@ static obj_p convert_py_item_to_ray(PyObject *item, int type_code) {
 
   int abs_type_code = type_code < 0 ? -type_code : type_code;
   if (abs_type_code > 0) {
-    if (abs_type_code == TYPE_I16) {
+    if (abs_type_code == RAY_I16) {
       return raypy_init_i16_from_py(item);
-    } else if (abs_type_code == TYPE_I32) {
+    } else if (abs_type_code == RAY_I32) {
       return raypy_init_i32_from_py(item);
-    } else if (abs_type_code == TYPE_I64) {
+    } else if (abs_type_code == RAY_I64) {
       return raypy_init_i64_from_py(item);
-    } else if (abs_type_code == TYPE_F64) {
+    } else if (abs_type_code == RAY_F64) {
       return raypy_init_f64_from_py(item);
     } else if (abs_type_code == RAY_F32) {
       /* v2 has no F32 atom — produce an F64; the append path narrows it. */
       return raypy_init_f64_from_py(item);
-    } else if (abs_type_code == TYPE_B8) {
+    } else if (abs_type_code == RAY_BOOL) {
       return raypy_init_b8_from_py(item);
-    } else if (abs_type_code == TYPE_SYMBOL) {
+    } else if (abs_type_code == RAY_SYM) {
       return raypy_init_symbol_from_py(item);
-    } else if (abs_type_code == TYPE_U8) {
+    } else if (abs_type_code == RAY_U8) {
       return raypy_init_u8_from_py(item);
     } else if (abs_type_code == RAY_STR) {
       /* RAY_STR atoms (and length-1 c8 fallback) — both produce ray_str. */
       return raypy_init_string_from_py(item);
-    } else if (abs_type_code == TYPE_GUID) {
+    } else if (abs_type_code == RAY_GUID) {
       return raypy_init_guid_from_py(item);
-    } else if (abs_type_code == TYPE_DATE) {
+    } else if (abs_type_code == RAY_DATE) {
       return raypy_init_date_from_py(item);
-    } else if (abs_type_code == TYPE_TIME) {
+    } else if (abs_type_code == RAY_TIME) {
       return raypy_init_time_from_py(item);
-    } else if (abs_type_code == TYPE_TIMESTAMP) {
+    } else if (abs_type_code == RAY_TIMESTAMP) {
       return raypy_init_timestamp_from_py(item);
     }
     return NULL;
@@ -1021,7 +991,7 @@ static obj_p convert_py_item_to_ray(PyObject *item, int type_code) {
     if (type_name != NULL) {
       const char *name_str = PyUnicode_AsUTF8(type_name);
       if (name_str != NULL) {
-        obj_p result = NULL;
+        ray_t *result = NULL;
         if (strcmp(name_str, "date") == 0) {
           result = raypy_init_date_from_py(item);
         } else if (strcmp(name_str, "time") == 0) {

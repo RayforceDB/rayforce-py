@@ -244,10 +244,10 @@ class OperatorMixin:
     def __mul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, self, other)
 
-    def __floordiv__(self, other) -> Expression:
+    def __truediv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, self, other)
 
-    def __truediv__(self, other) -> Expression:
+    def __floordiv__(self, other) -> Expression:
         return Expression(Operation.DIV_INT, self, other)
 
     def __mod__(self, other) -> Expression:
@@ -280,10 +280,10 @@ class OperatorMixin:
     def __rmul__(self, other) -> Expression:
         return Expression(Operation.MULTIPLY, other, self)
 
-    def __rfloordiv__(self, other) -> Expression:
+    def __rtruediv__(self, other) -> Expression:
         return Expression(Operation.DIVIDE, other, self)
 
-    def __rtruediv__(self, other) -> Expression:
+    def __rfloordiv__(self, other) -> Expression:
         return Expression(Operation.DIV_INT, other, self)
 
 
@@ -868,12 +868,15 @@ class TableQueryMixin:
     def by(self, *cols, **computed_cols) -> SelectQuery:
         return SelectQuery(table=t.cast("_TableProtocol", self)).by(*cols, **computed_cols)
 
+    @DestructiveOperationHandler()
     def update(self, **kwargs) -> UpdateQuery:
         return UpdateQuery(t.cast("_TableProtocol", self), **kwargs)
 
+    @DestructiveOperationHandler()
     def insert(self, *args, **kwargs) -> InsertQuery:
         return InsertQuery(t.cast("_TableProtocol", self), *args, **kwargs)
 
+    @DestructiveOperationHandler()
     def upsert(self, *args, key_columns: int, **kwargs) -> UpsertQuery:
         return UpsertQuery(t.cast("_TableProtocol", self), *args, key_columns=key_columns, **kwargs)
 

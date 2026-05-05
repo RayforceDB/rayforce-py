@@ -11,21 +11,14 @@
 /* v2 public API */
 #include <rayforce.h>
 
-/* v2 internal headers (still under src/; available because we build with -Isrc)
- */
-#include "lang/env.h" /* ray_env_get, ray_env_set, ray_env_init, ray_lang_init */
-#include "lang/eval.h" /* ray_eval, ray_at */
-/* Internal header was renamed: upstream GitHub ships it as lang/internal.h,
- * older local trees still call it lang/eval_internal.h. Pick whichever is
- * present so we compile against both. */
-#if defined(__has_include) && __has_include("lang/internal.h")
-#include "lang/internal.h" /* collection_elem, ray_cast_fn, ray_dict_fn, … */
-#else
-#include "lang/eval_internal.h"
-#endif
-#include "lang/format.h" /* ray_fmt */
-#include "store/serde.h" /* ray_ser, ray_de, ray_obj_save, ray_obj_load */
-#include "table/sym.h"   /* RAY_SYM_W64, RAY_SYM_ELEM */
+/* v2 internal headers (under src/; we build with -Isrc) */
+#include "lang/env.h"      /* ray_env_get, ray_env_set */
+#include "lang/eval.h"     /* ray_eval */
+#include "lang/format.h"   /* ray_fmt */
+#include "lang/internal.h" /* collection_elem, ray_cast_fn, ray_dict_fn, ... */
+#include "ops/ops.h"       /* ray_is_lazy, ray_lazy_materialize */
+#include "store/serde.h"   /* ray_ser, ray_de, ray_obj_save */
+#include "table/sym.h"     /* RAY_SYM_W64 */
 
 /* core/runtime.h would re-define ray_vm_t (also defined in lang/eval.h),
  * so we forward-declare just the runtime symbols we use here. */
@@ -33,22 +26,22 @@ typedef struct ray_runtime_s ray_runtime_t;
 ray_runtime_t *ray_runtime_create(int argc, char **argv);
 const char *ray_error_msg(void);
 
-/* v1 → v2 name shim (LAST) */
-#include "raypy_compat.h"
+/* v2 stores dicts as RAY_LIST + this attr bit. Not exposed by any public
+ * v2 header we include, so re-declared here; the value must match
+ * src/mem/heap.h. (Distinct enough from the other 0x02 attr — RAY_ATTR_GRAPH
+ * — because that one only ever appears on RAY_LAZY objects.) */
+#ifndef RAY_ATTR_DICT
+#define RAY_ATTR_DICT 0x02
+#endif
 
 #include <Python.h>
 #include <string.h>
 #include <unistd.h>
 
-#ifndef memcpy
-extern void *memcpy(void *dest, const void *src, size_t n);
-#endif
-
-/* Forward declarations */
 extern PyTypeObject RayObjectType;
 
 typedef struct {
-  PyObject_HEAD obj_p obj;
+  PyObject_HEAD ray_t *obj;
 } RayObject;
 
 extern void *g_runtime;
@@ -61,47 +54,27 @@ int check_main_thread(void);
       return NULL;                                                             \
   } while (0)
 
-#if defined(__GNUC__) || defined(__clang__)
-#define UNUSED_SELF_PARAM __attribute__((unused))
-#else
-#define UNUSED_SELF_PARAM
-#endif
+ray_t *raypy_init_i16_from_py(PyObject *item);
+ray_t *raypy_init_i32_from_py(PyObject *item);
+ray_t *raypy_init_i64_from_py(PyObject *item);
+ray_t *raypy_init_f64_from_py(PyObject *item);
+ray_t *raypy_init_b8_from_py(PyObject *item);
+ray_t *raypy_init_u8_from_py(PyObject *item);
+ray_t *raypy_init_symbol_from_py(PyObject *item);
+ray_t *raypy_init_string_from_py(PyObject *item);
+ray_t *raypy_init_list_from_py(PyObject *item);
+ray_t *raypy_init_guid_from_py(PyObject *item);
+ray_t *raypy_init_date_from_py(PyObject *item);
+ray_t *raypy_init_time_from_py(PyObject *item);
+ray_t *raypy_init_timestamp_from_py(PyObject *item);
+ray_t *raypy_init_dict_from_py(PyObject *item);
 
-obj_p raypy_init_i16_from_py(PyObject *item);
-obj_p raypy_init_i32_from_py(PyObject *item);
-obj_p raypy_init_i64_from_py(PyObject *item);
-obj_p raypy_init_f64_from_py(PyObject *item);
-obj_p raypy_init_c8_from_py(PyObject *item);
-obj_p raypy_init_b8_from_py(PyObject *item);
-obj_p raypy_init_u8_from_py(PyObject *item);
-obj_p raypy_init_symbol_from_py(PyObject *item);
-obj_p raypy_init_string_from_py(PyObject *item);
-obj_p raypy_init_list_from_py(PyObject *item);
-obj_p raypy_init_guid_from_py(PyObject *item);
-obj_p raypy_init_date_from_py(PyObject *item);
-obj_p raypy_init_time_from_py(PyObject *item);
-obj_p raypy_init_timestamp_from_py(PyObject *item);
-obj_p raypy_init_dict_from_py(PyObject *item);
-
-/* Temporal utility functions */
-int is_leap_year(int year);
-long days_since_epoch(int year, int month, int day);
-int parse_iso_date(const char *str, Py_ssize_t len, int *year, int *month,
-                   int *day);
-int parse_iso_time(const char *str, Py_ssize_t len, int *hour, int *minute,
-                   int *second, int *microsecond);
-int parse_iso_timestamp(const char *str, Py_ssize_t len, int *year, int *month,
-                        int *day, int *hour, int *minute, int *second,
-                        int *microsecond, int *tz_offset_hours,
-                        int *tz_offset_minutes);
-
-PyObject *raypy_wrap_ray_object(obj_p ray_obj);
+PyObject *raypy_wrap_ray_object(ray_t *ray_obj);
 
 PyObject *raypy_init_i16(PyObject *self, PyObject *args);
 PyObject *raypy_init_i32(PyObject *self, PyObject *args);
 PyObject *raypy_init_i64(PyObject *self, PyObject *args);
 PyObject *raypy_init_f64(PyObject *self, PyObject *args);
-PyObject *raypy_init_c8(PyObject *self, PyObject *args);
 PyObject *raypy_init_string(PyObject *self, PyObject *args);
 PyObject *raypy_init_symbol(PyObject *self, PyObject *args);
 PyObject *raypy_init_b8(PyObject *self, PyObject *args);
@@ -120,7 +93,6 @@ PyObject *raypy_read_i16(PyObject *self, PyObject *args);
 PyObject *raypy_read_i32(PyObject *self, PyObject *args);
 PyObject *raypy_read_i64(PyObject *self, PyObject *args);
 PyObject *raypy_read_f64(PyObject *self, PyObject *args);
-PyObject *raypy_read_c8(PyObject *self, PyObject *args);
 PyObject *raypy_read_string(PyObject *self, PyObject *args);
 PyObject *raypy_read_symbol(PyObject *self, PyObject *args);
 PyObject *raypy_read_b8(PyObject *self, PyObject *args);
@@ -166,5 +138,15 @@ PyObject *raypy_read_vector_raw(PyObject *self, PyObject *args);
 PyObject *raypy_vec_is_null(PyObject *self, PyObject *args);
 PyObject *raypy_vec_set_null(PyObject *self, PyObject *args);
 PyObject *raypy_vec_slice(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_connect(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_close(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_send(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_send_async(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_server_init(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_server_poll(PyObject *self, PyObject *args);
+PyObject *raypy_ipc_server_destroy(PyObject *self, PyObject *args);
+PyObject *raypy_kdb_connect(PyObject *self, PyObject *args);
+PyObject *raypy_kdb_close(PyObject *self, PyObject *args);
+PyObject *raypy_kdb_send(PyObject *self, PyObject *args);
 
 #endif

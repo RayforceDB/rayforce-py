@@ -36,8 +36,3 @@ def test_v2_type_codes() -> None:
 
     assert r.TYPE_NULL == 126
     assert r.TYPE_ERR == 127
-
-
-def test_c8_alias_matches_str() -> None:
-    """TYPE_C8 is retained as a back-compat alias for TYPE_STR."""
-    assert r.TYPE_C8 == r.TYPE_STR

@@ -63,7 +63,7 @@ PyObject *raypy_init_vector_from_buffer(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  obj_p ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
+  ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
   if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
     if (ray_obj)
       ray_release(ray_obj);
@@ -135,7 +135,7 @@ PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args) {
   int vector_type_code = type_code < 0 ? -type_code : type_code;
 
   if (length == 0) {
-    obj_p ray_obj = ray_vec_new((int8_t)vector_type_code, 0);
+    ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, 0);
     if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
       if (ray_obj)
         ray_release(ray_obj);
@@ -165,7 +165,7 @@ PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  obj_p ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
+  ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
   if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
     if (ray_obj)
       ray_release(ray_obj);
@@ -271,7 +271,7 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     const int32_t *offsets = (const int32_t *)offsets_buffer_view.buf;
     const char *data = (const char *)data_buffer_view.buf;
 
-    obj_p ray_obj = ray_sym_vec_new(RAY_SYM_W64, (int64_t)length);
+    ray_t *ray_obj = ray_sym_vec_new(RAY_SYM_W64, (int64_t)length);
     if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
       if (ray_obj)
         ray_release(ray_obj);
@@ -382,7 +382,7 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     const int32_t *offsets = (const int32_t *)offsets_buffer_view.buf;
     const char *data = (const char *)data_buffer_view.buf;
 
-    obj_p ray_obj = ray_vec_new(RAY_STR, (int64_t)length);
+    ray_t *ray_obj = ray_vec_new(RAY_STR, (int64_t)length);
     if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
       if (ray_obj)
         ray_release(ray_obj);
@@ -500,7 +500,7 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  obj_p ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
+  ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
   if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
     if (ray_obj)
       ray_release(ray_obj);

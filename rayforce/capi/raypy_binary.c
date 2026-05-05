@@ -10,7 +10,7 @@ PyObject *raypy_binary_set(PyObject *self, PyObject *args) {
                         &RayObjectType, &value))
     return NULL;
 
-  obj_p target = symbol_or_path->obj;
+  ray_t *target = symbol_or_path->obj;
 
   if (target->type == -RAY_SYM) {
     if (ray_env_set(target->i64, value->obj) != RAY_OK) {

@@ -39,11 +39,6 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def init_c8(value: str) -> r.RayObject:
-        return r.init_c8(value)
-
-    @staticmethod
-    @errors.error_handler
     def init_symbol(value: str) -> r.RayObject:
         return r.init_symbol(value)
 
@@ -101,11 +96,6 @@ class FFI:
     @errors.error_handler
     def read_b8(obj: r.RayObject) -> bool:
         return r.read_b8(obj)
-
-    @staticmethod
-    @errors.error_handler
-    def read_c8(obj: r.RayObject) -> str:
-        return r.read_c8(obj)
 
     @staticmethod
     @errors.error_handler
@@ -356,6 +346,41 @@ class FFI:
     @errors.error_handler
     def init_runtime() -> None:
         r.init_runtime()
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_connect(host: str, port: int, user: str = "", password: str = "") -> int:
+        return r.ipc_connect(host, port, user, password)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_close(handle: int) -> None:
+        return r.ipc_close(handle)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_send(handle: int, msg: r.RayObject) -> r.RayObject:
+        return r.ipc_send(handle, msg)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_send_async(handle: int, msg: r.RayObject) -> None:
+        return r.ipc_send_async(handle, msg)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_server_init(port: int) -> int:
+        return r.ipc_server_init(port)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_server_poll(server: int, timeout_ms: int) -> int:
+        return r.ipc_server_poll(server, timeout_ms)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_server_destroy(server: int) -> None:
+        return r.ipc_server_destroy(server)
 
     @staticmethod
     @errors.error_handler

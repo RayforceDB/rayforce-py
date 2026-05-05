@@ -55,10 +55,6 @@ def test_operation_multiply_scalars():
     assert result.value == 30
 
 
-@pytest.mark.xfail(
-    reason="CORE_FIXES.md §1 — v2 ray_div_fn floors F64/F64 to int; upstream fix in rayforce2/src/ops/arith.c",
-    strict=False,
-)
 def test_operation_divide_scalars():
     result = eval_obj(List([Operation.DIVIDE, F64(10.0), F64(4.0)]))
     assert abs(result.value - 2.5) < 1e-9

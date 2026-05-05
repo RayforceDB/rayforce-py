@@ -14,7 +14,7 @@ PyObject *raypy_eval_str(PyObject *self, PyObject *args) {
   }
 
   const char *src = ray_str_ptr(item->obj);
-  obj_p ray_obj = ray_eval_str(src);
+  ray_t *ray_obj = ray_eval_str(src);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "eval: failed to evaluate string expression");
@@ -32,7 +32,7 @@ PyObject *raypy_eval_obj(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p ray_obj = eval_obj(item->obj);
+  ray_t *ray_obj = ray_eval(item->obj);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "eval: failed to evaluate object");
     return NULL;

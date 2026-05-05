@@ -7,19 +7,9 @@ from tests.helpers.assertions import (
     assert_table_shape,
 )
 
-# v2's `/` on I64÷I64 promotes to F64 instead of truncating. Tracked upstream
-# in CORE_FIXES.md §1.
-_INT_DIV_PROMOTED_TO_FLOAT = pytest.mark.xfail(
-    reason="CORE_FIXES.md §1 — v2 `/` on I64 operands returns F64, not truncated I64",
-    strict=False,
-)
-
-# Recursive `self` calls inside a lambda body cannot be β-reduced at DAG
-# compile time — the DAG's named-lambda inliner has no binding for `self`.
 _RECURSIVE_SELF_IN_DAG = pytest.mark.xfail(
-    reason="CORE_FIXES.md §2 — v2 DAG β-reduction doesn't bind `self` in lambda "
-    "bodies; recursive lambdas work in direct-eval but not when applied to a "
-    "column in SELECT",
+    reason="recursive `self` not bound during DAG β-reduction; see "
+    "docs/core_bugs/recursive_self_in_dag.md",
     strict=False,
 )
 
@@ -104,7 +94,6 @@ def test_fn_apply_with_group_by():
     assert dict(zip(categories, sums, strict=True)) == {"A": 13, "B": 41}
 
 
-@_INT_DIV_PROMOTED_TO_FLOAT
 def test_fn_normalize_with_multiple_args():
     table = Table(
         {
@@ -121,7 +110,7 @@ def test_fn_normalize_with_multiple_args():
     ).execute()
 
     assert_contains_columns(result, ["value", "normalized"])
-    assert_column_values(result, "normalized", [0, 0, 1])
+    assert_column_values(result, "normalized", [0.5, 0.75, 1.0])
 
 
 @_RECURSIVE_SELF_IN_DAG

@@ -181,10 +181,10 @@ class Operation(enum.StrEnum):
     TIMEIT = "timeit"
     TIMER = "timer"
 
-    # Storage
-    SET_SPLAYED = "set-splayed"
-    GET_SPLAYED = "get-splayed"
-    GET_PARTED = "get-parted"
+    # Storage (v2 namespaced names)
+    SET_SPLAYED = ".db.splayed.set"
+    GET_SPLAYED = ".db.splayed.get"
+    GET_PARTED = ".db.parted.get"
 
     # Metadata
     META = "meta"

@@ -9,43 +9,35 @@ typedef union {
   double f64;
 } scalar_scratch_t;
 
-/* Extract a raw scalar payload from an atom for ray_vec_append/set.
- * Returns a pointer into the supplied scratch buffer (caller-owned) and
- * sets *out_size to the element width.  Returns NULL if the atom type
- * cannot be coerced into the target vector's element width. */
-static const void *atom_scalar_ptr(obj_p atom, int8_t vec_type,
-                                   scalar_scratch_t *scratch,
-                                   size_t *out_size) {
+/* Pack an atom's payload into the scratch union and return a pointer to it,
+ * suitable for ray_vec_append / ray_vec_insert_at / ray_vec_set. NULL if the
+ * atom type can't be coerced. */
+static const void *atom_scalar_ptr(ray_t *atom, int8_t vec_type,
+                                   scalar_scratch_t *scratch) {
   switch (vec_type) {
   case RAY_BOOL:
   case RAY_U8:
     scratch->u8 = atom->u8;
-    *out_size = 1;
     return &scratch->u8;
   case RAY_I16:
     scratch->i16 = atom->i16;
-    *out_size = 2;
     return &scratch->i16;
   case RAY_I32:
   case RAY_DATE:
   case RAY_TIME:
     scratch->i32 = atom->i32;
-    *out_size = 4;
     return &scratch->i32;
   case RAY_I64:
   case RAY_TIMESTAMP:
   case RAY_SYM:
     scratch->i64 = atom->i64;
-    *out_size = 8;
     return &scratch->i64;
   case RAY_F32:
     /* v2 has no F32 atom — narrow from an F64 atom. */
     scratch->f32 = (float)atom->f64;
-    *out_size = 4;
     return &scratch->f32;
   case RAY_F64:
     scratch->f64 = atom->f64;
-    *out_size = 8;
     return &scratch->f64;
   default:
     return NULL;
@@ -63,7 +55,7 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
                         &RayObjectType, &item))
     return NULL;
 
-  obj_p target = ray_obj->obj;
+  ray_t *target = ray_obj->obj;
   if (target == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "iter: cannot insert into null object");
     return NULL;
@@ -76,7 +68,7 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
   }
 
   if (target->type == RAY_LIST) {
-    obj_p result = ray_list_insert_at(target, (int64_t)index, item->obj);
+    ray_t *result = ray_list_insert_at(target, (int64_t)index, item->obj);
     if (result == NULL || RAY_IS_ERR(result)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert into list");
       return NULL;
@@ -91,7 +83,7 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
                       "iter: RAY_STR vector requires a string atom");
       return NULL;
     }
-    obj_p result = ray_str_vec_insert_at(
+    ray_t *result = ray_str_vec_insert_at(
         target, (int64_t)index, ray_str_ptr(item->obj), ray_str_len(item->obj));
     if (result == NULL || RAY_IS_ERR(result)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert string");
@@ -103,14 +95,13 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
 
   /* Typed scalar vector — extract raw scalar from atom and insert. */
   scalar_scratch_t scratch;
-  size_t esz = 0;
-  const void *p = atom_scalar_ptr(item->obj, target->type, &scratch, &esz);
+  const void *p = atom_scalar_ptr(item->obj, target->type, &scratch);
   if (p == NULL) {
     PyErr_SetString(PyExc_TypeError,
                     "iter: unsupported element type for typed vector");
     return NULL;
   }
-  obj_p result = ray_vec_insert_at(target, (int64_t)index, p);
+  ray_t *result = ray_vec_insert_at(target, (int64_t)index, p);
   if (result == NULL || RAY_IS_ERR(result)) {
     PyErr_SetString(PyExc_RuntimeError, "iter: failed to insert scalar");
     return NULL;
@@ -129,14 +120,14 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
                         &item))
     return NULL;
 
-  obj_p target = ray_obj->obj;
+  ray_t *target = ray_obj->obj;
   if (target == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "iter: cannot push to null object");
     return NULL;
   }
 
   if (target->type == RAY_LIST) {
-    RAY_LIST_APPEND_REASSIGN(target, item->obj);
+    target = ray_list_append(target, item->obj);
     if (target == NULL || RAY_IS_ERR(target)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to push object");
       return NULL;
@@ -151,7 +142,7 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
                       "iter: RAY_STR vector requires a string atom");
       return NULL;
     }
-    obj_p result = ray_str_vec_append(target, ray_str_ptr(item->obj),
+    ray_t *result = ray_str_vec_append(target, ray_str_ptr(item->obj),
                                       ray_str_len(item->obj));
     if (result == NULL || RAY_IS_ERR(result)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to append string");
@@ -163,14 +154,13 @@ PyObject *raypy_push_obj(PyObject *self, PyObject *args) {
 
   /* Typed scalar vector — extract raw scalar from atom and append. */
   scalar_scratch_t scratch;
-  size_t esz = 0;
-  const void *p = atom_scalar_ptr(item->obj, target->type, &scratch, &esz);
+  const void *p = atom_scalar_ptr(item->obj, target->type, &scratch);
   if (p == NULL) {
     PyErr_SetString(PyExc_TypeError,
                     "iter: unsupported element type for typed vector");
     return NULL;
   }
-  RAY_APPEND_REASSIGN(target, p);
+  target = ray_vec_append(target, p);
   if (target == NULL || RAY_IS_ERR(target)) {
     PyErr_SetString(PyExc_RuntimeError, "iter: failed to push scalar");
     return NULL;
@@ -190,8 +180,8 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
                         &RayObjectType, &idx_obj, &RayObjectType, &val_obj))
     return NULL;
 
-  obj_p target = ray_obj->obj;
-  obj_p idx_atom = idx_obj->obj;
+  ray_t *target = ray_obj->obj;
+  ray_t *idx_atom = idx_obj->obj;
   if (target == NULL || idx_atom == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "iter: null target or index");
     return NULL;
@@ -213,7 +203,7 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
   }
 
   if (target->type == RAY_LIST) {
-    obj_p result = ray_list_set(target, idx, val_obj->obj);
+    ray_t *result = ray_list_set(target, idx, val_obj->obj);
     if (result == NULL || RAY_IS_ERR(result)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to set list element");
       return NULL;
@@ -228,7 +218,7 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
                       "iter: RAY_STR vector requires a string atom");
       return NULL;
     }
-    obj_p result = ray_str_vec_set(target, idx, ray_str_ptr(val_obj->obj),
+    ray_t *result = ray_str_vec_set(target, idx, ray_str_ptr(val_obj->obj),
                                    ray_str_len(val_obj->obj));
     if (result == NULL || RAY_IS_ERR(result)) {
       PyErr_SetString(PyExc_RuntimeError, "iter: failed to set string element");
@@ -239,14 +229,13 @@ PyObject *raypy_set_obj(PyObject *self, PyObject *args) {
   }
 
   scalar_scratch_t scratch;
-  size_t esz = 0;
-  const void *p = atom_scalar_ptr(val_obj->obj, target->type, &scratch, &esz);
+  const void *p = atom_scalar_ptr(val_obj->obj, target->type, &scratch);
   if (p == NULL) {
     PyErr_SetString(PyExc_TypeError,
                     "iter: unsupported element type for typed vector");
     return NULL;
   }
-  obj_p result = ray_vec_set(target, idx, p);
+  ray_t *result = ray_vec_set(target, idx, p);
   if (result == NULL || RAY_IS_ERR(result)) {
     PyErr_SetString(PyExc_RuntimeError, "iter: failed to set scalar element");
     return NULL;

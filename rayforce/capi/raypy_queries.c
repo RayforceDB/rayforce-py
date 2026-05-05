@@ -9,8 +9,8 @@ PyObject *raypy_update(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &update_dict))
     return NULL;
 
-  obj_p call_args[1] = {update_dict->obj};
-  obj_p ray_obj = ray_update(call_args, 1);
+  ray_t *call_args[1] = {update_dict->obj};
+  ray_t *ray_obj = ray_update_fn(call_args, 1);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "query: failed to execute update query");
@@ -30,8 +30,8 @@ PyObject *raypy_insert(PyObject *self, PyObject *args) {
                         &RayObjectType, &data_obj))
     return NULL;
 
-  obj_p call_args[2] = {table_obj->obj, data_obj->obj};
-  obj_p ray_obj = ray_insert(call_args, 2);
+  ray_t *call_args[2] = {table_obj->obj, data_obj->obj};
+  ray_t *ray_obj = ray_insert_fn(call_args, 2);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "query: failed to execute insert query");
@@ -51,8 +51,8 @@ PyObject *raypy_upsert(PyObject *self, PyObject *args) {
                         &RayObjectType, &keys_obj, &RayObjectType, &data_obj))
     return NULL;
 
-  obj_p call_args[3] = {table_obj->obj, keys_obj->obj, data_obj->obj};
-  obj_p ray_obj = ray_upsert(call_args, 3);
+  ray_t *call_args[3] = {table_obj->obj, keys_obj->obj, data_obj->obj};
+  ray_t *ray_obj = ray_upsert_fn(call_args, 3);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "query: failed to execute upsert query");
@@ -61,10 +61,9 @@ PyObject *raypy_upsert(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-/* (read-csv [schema] path) — forward to ray_read_csv_fn. If schema_obj is
- * None, call with just path. Schema must be a RAY_SYM vector of UPPERCASE
- * type names ("I64", "F64", "B8", "DATE", "TIME", "TIMESTAMP", "SYMBOL",
- * "STR", "GUID", "I32", "I16", "U8"). */
+/* (.csv.read [schema] path) — schema is a RAY_SYM vector of UPPERCASE type
+ * names ("I64", "F64", "B8", "DATE", "TIME", "TIMESTAMP", "SYMBOL", "STR",
+ * "GUID", "I32", "I16", "U8"). */
 PyObject *raypy_read_csv(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -75,9 +74,9 @@ PyObject *raypy_read_csv(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "OO!", &schema_arg, &RayObjectType, &path_obj))
     return NULL;
 
-  obj_p ray_obj;
+  ray_t *ray_obj;
   if (schema_arg == Py_None) {
-    obj_p call_args[1] = {path_obj->obj};
+    ray_t *call_args[1] = {path_obj->obj};
     ray_obj = ray_read_csv_fn(call_args, 1);
   } else {
     if (!PyObject_TypeCheck(schema_arg, &RayObjectType)) {
@@ -85,7 +84,7 @@ PyObject *raypy_read_csv(PyObject *self, PyObject *args) {
                       "read_csv: schema must be None or RayObject");
       return NULL;
     }
-    obj_p call_args[2] = {((RayObject *)schema_arg)->obj, path_obj->obj};
+    ray_t *call_args[2] = {((RayObject *)schema_arg)->obj, path_obj->obj};
     ray_obj = ray_read_csv_fn(call_args, 2);
   }
 
@@ -96,7 +95,7 @@ PyObject *raypy_read_csv(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-/* (write-csv table path) — forward to ray_write_csv_fn. */
+/* (.csv.write table path) */
 PyObject *raypy_write_csv(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -108,8 +107,8 @@ PyObject *raypy_write_csv(PyObject *self, PyObject *args) {
                         &RayObjectType, &path_obj))
     return NULL;
 
-  obj_p call_args[2] = {table_obj->obj, path_obj->obj};
-  obj_p ray_obj = ray_write_csv_fn(call_args, 2);
+  ray_t *call_args[2] = {table_obj->obj, path_obj->obj};
+  ray_t *ray_obj = ray_write_csv_fn(call_args, 2);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "write_csv: failed to write CSV");
     return NULL;
@@ -117,9 +116,8 @@ PyObject *raypy_write_csv(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-/* (set-splayed dir table [sym_path]) — forward to ray_set_splayed_fn. If
- * sym_arg is None, the core picks a default sym path; otherwise it must be a
- * STR RayObject. */
+/* (.db.splayed.set dir table [sym_path]) — when sym_arg is None the core
+ * picks a default sym path; otherwise it must be a STR RayObject. */
 PyObject *raypy_set_splayed(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -132,9 +130,9 @@ PyObject *raypy_set_splayed(PyObject *self, PyObject *args) {
                         &table_obj, &sym_arg))
     return NULL;
 
-  obj_p ray_obj;
+  ray_t *ray_obj;
   if (sym_arg == Py_None) {
-    obj_p call_args[2] = {dir_obj->obj, table_obj->obj};
+    ray_t *call_args[2] = {dir_obj->obj, table_obj->obj};
     ray_obj = ray_set_splayed_fn(call_args, 2);
   } else {
     if (!PyObject_TypeCheck(sym_arg, &RayObjectType)) {
@@ -142,7 +140,7 @@ PyObject *raypy_set_splayed(PyObject *self, PyObject *args) {
                       "set_splayed: sym_path must be None or RayObject");
       return NULL;
     }
-    obj_p call_args[3] = {dir_obj->obj, table_obj->obj,
+    ray_t *call_args[3] = {dir_obj->obj, table_obj->obj,
                           ((RayObject *)sym_arg)->obj};
     ray_obj = ray_set_splayed_fn(call_args, 3);
   }
@@ -154,7 +152,7 @@ PyObject *raypy_set_splayed(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-/* (get-splayed dir [sym_path]) — forward to ray_get_splayed_fn. */
+/* (.db.splayed.get dir [sym_path]) */
 PyObject *raypy_get_splayed(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -165,9 +163,9 @@ PyObject *raypy_get_splayed(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!O", &RayObjectType, &dir_obj, &sym_arg))
     return NULL;
 
-  obj_p ray_obj;
+  ray_t *ray_obj;
   if (sym_arg == Py_None) {
-    obj_p call_args[1] = {dir_obj->obj};
+    ray_t *call_args[1] = {dir_obj->obj};
     ray_obj = ray_get_splayed_fn(call_args, 1);
   } else {
     if (!PyObject_TypeCheck(sym_arg, &RayObjectType)) {
@@ -175,7 +173,7 @@ PyObject *raypy_get_splayed(PyObject *self, PyObject *args) {
                       "get_splayed: sym_path must be None or RayObject");
       return NULL;
     }
-    obj_p call_args[2] = {dir_obj->obj, ((RayObject *)sym_arg)->obj};
+    ray_t *call_args[2] = {dir_obj->obj, ((RayObject *)sym_arg)->obj};
     ray_obj = ray_get_splayed_fn(call_args, 2);
   }
 
@@ -186,8 +184,8 @@ PyObject *raypy_get_splayed(PyObject *self, PyObject *args) {
   return raypy_wrap_ray_object(ray_obj);
 }
 
-/* (get-parted root name) — forward to ray_get_parted_fn. `name` must be a
- * SYM RayObject (quoted symbol atom). */
+/* (.db.parted.get root name) — `name` must be a SYM RayObject (quoted
+ * symbol atom). */
 PyObject *raypy_get_parted(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -199,8 +197,8 @@ PyObject *raypy_get_parted(PyObject *self, PyObject *args) {
                         &name_obj))
     return NULL;
 
-  obj_p call_args[2] = {root_obj->obj, name_obj->obj};
-  obj_p ray_obj = ray_get_parted_fn(call_args, 2);
+  ray_t *call_args[2] = {root_obj->obj, name_obj->obj};
+  ray_t *ray_obj = ray_get_parted_fn(call_args, 2);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "get_parted: failed to load table");
     return NULL;

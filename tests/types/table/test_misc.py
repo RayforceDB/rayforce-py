@@ -170,12 +170,6 @@ def test_set_splayed_and_from_parted(tmp_path):
     assert_column_values(result, "status", ["active", "inactive", "active", "active"] * 3)
 
 
-@pytest.mark.xfail(
-    reason="CORE_FIXES.md §4 — parted/splayed COW: v2 ray_cow clones on write, so "
-    "destructive ops on loaded parted tables do not raise; needs non-COW mutation "
-    "entrypoint in rayforce2/src/store/part.c",
-    strict=False,
-)
 def test_splayed_table_destructive_operations_raise_error(tmp_path):
     table = Table(
         {
@@ -205,12 +199,6 @@ def test_splayed_table_destructive_operations_raise_error(tmp_path):
         loaded_table.upsert(id="001", name="alice_updated", age=30, key_columns=1)
 
 
-@pytest.mark.xfail(
-    reason="CORE_FIXES.md §4 — parted/splayed COW: v2 ray_cow clones on write, so "
-    "destructive ops on loaded parted tables do not raise; needs non-COW mutation "
-    "entrypoint in rayforce2/src/store/part.c",
-    strict=False,
-)
 def test_parted_table_destructive_operations_raise_error(tmp_path):
     table = Table(
         {

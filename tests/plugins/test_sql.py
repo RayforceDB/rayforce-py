@@ -9,12 +9,6 @@ from tests.helpers.assertions import (
 
 pytestmark = pytest.mark.plugin
 
-# Per-test xfails for residual gaps tracked upstream in CORE_FIXES.md.
-_F64_DIVIDE_FLOORS = pytest.mark.xfail(
-    reason="CORE_FIXES.md §1 — F64/I64 division yields integer-floored result in v2 core",
-    strict=False,
-)
-
 
 @pytest.fixture
 def sqlglot():
@@ -239,7 +233,6 @@ def test_arithmetic_subtraction(sqlglot, sample_table):
     assert_contains_columns(result, ["adjusted"])
 
 
-@_F64_DIVIDE_FLOORS
 def test_arithmetic_division(sqlglot, sample_table):
     result = sample_table.sql("SELECT name, salary / 12 AS monthly FROM self")
     assert_contains_columns(result, ["monthly"])

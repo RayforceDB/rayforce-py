@@ -24,7 +24,6 @@ from rayforce.types.base import (
 )
 from rayforce.types.containers.list import List
 from rayforce.types.operators import Operation
-from rayforce.types.scalars.numeric.unsigned import U8
 from rayforce.types.scalars.other.symbol import Symbol
 
 _RAW_FORMATS: dict[int, tuple[str, int]] = {
@@ -134,12 +133,6 @@ class Vector(
         self, value: t.Sequence[t.Any], ray_type: type[RayObject] | int
     ) -> r.RayObject:
         type_code = abs(ray_type if isinstance(ray_type, int) else ray_type.type_code)
-        # v2 has no RAY_F32 atom ctor, so the items → raypy_init_vector path
-        # can't convert Python floats to F32 element-by-element. Route F32
-        # through the numpy raw-buffer path instead.
-        if type_code == r.TYPE_F32:
-            arr = np.asarray(list(value), dtype=np.float32)
-            return FFI.init_vector_from_raw_buffer(type_code, len(arr), arr.data)
         return FFI.init_vector(type_code, list(value))
 
     def to_python(self) -> list:
@@ -160,13 +153,6 @@ class Vector(
             from rayforce.types.null import Null
 
             return Null
-
-        # The C-level at_idx returns B8 scalars for U8 vector elements
-        # because both are 1-byte types and the value loses precision (bool).
-        # Read the correct byte value directly from the raw buffer instead.
-        if vec_type == r.TYPE_U8:
-            raw = FFI.read_vector_raw(self.ptr)
-            return U8(raw[idx])
 
         # v2 has no RAY_F32 scalar atom, so collection_elem can't box F32 vec
         # elements. Read the raw bytes and box as F32 (length-1 vector under
