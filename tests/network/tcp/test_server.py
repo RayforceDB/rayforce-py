@@ -33,10 +33,7 @@ def python_ipc_server():
     """Spawn a TCPServer in a subprocess so its main-thread blocking loop is
     isolated from the test process."""
     port = _find_free_port()
-    code = (
-        "from rayforce.network import TCPServer; "
-        f"TCPServer({port}).listen()"
-    )
+    code = f"from rayforce.network import TCPServer; TCPServer({port}).listen()"
     proc = subprocess.Popen(
         [sys.executable, "-c", code],
         stdout=subprocess.DEVNULL,

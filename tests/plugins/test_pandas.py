@@ -3,7 +3,7 @@ import datetime as dt
 import pytest
 
 from rayforce.plugins.pandas import from_pandas
-from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp
+from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Timestamp
 from rayforce.types.null import Null
 from tests.helpers.assertions import (
     assert_column_values,

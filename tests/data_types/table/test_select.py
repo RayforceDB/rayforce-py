@@ -1,7 +1,7 @@
 import datetime as dt
 from zoneinfo import ZoneInfo
 
-from rayforce import F64, I64, Column, Symbol, Table, Timestamp, Vector
+from rayforce import F64, I64, Column, Symbol, Table, Vector
 from tests.helpers.assertions import (
     assert_column_values,
     assert_columns,

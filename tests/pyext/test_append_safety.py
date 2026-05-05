@@ -36,7 +36,7 @@ class TestVectorAppendSafety:
         # library returned; that pointer must be the sole owner.
         assert FFI.rc_obj(v.ptr) == 1
 
-        for i in range(0, N_APPENDS + 1):
+        for i in range(N_APPENDS + 1):
             assert v[i].value == i
 
     def test_f64_vector_grows_through_realloc(self):

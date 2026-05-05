@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from rayforce import errors
-from rayforce.types import Column, Dict, Expression, Table, Vector
+from rayforce.types import Column, Dict, Table, Vector
 from rayforce.types.scalars import B8, F64, I64, Date, Symbol, Time, Timestamp
 from tests.helpers.assertions import (
     assert_column_values,

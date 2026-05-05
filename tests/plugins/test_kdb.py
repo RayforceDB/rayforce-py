@@ -117,8 +117,6 @@ def test_kdb_table(q_server):
         assert [v.value for v in result["a"]] == [1, 2, 3]
 
 
-
-
 def test_kdb_close_blocks_subsequent_send(q_server):
     host, port = q_server
     conn = KDBEngine(host, port).acquire()

@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import pytest
 
-from rayforce import F64, I64, Symbol, Table, Vector
+from rayforce import F64, I64, Symbol, Vector
 from rayforce.types.scalars import Time
 
 
-@pytest.fixture()
+@pytest.fixture
 def employees_table(make_table):
     """A saved 4-row employee table (id, name, dept, age, salary).
 
@@ -29,7 +29,7 @@ def employees_table(make_table):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def trades_table(make_table):
     """A saved 4-row trades table (Sym, Ts, Price).
 
@@ -52,7 +52,7 @@ def trades_table(make_table):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def quotes_table(make_table):
     """A saved 6-row quotes table (Sym, Ts, Bid, Ask).
 
