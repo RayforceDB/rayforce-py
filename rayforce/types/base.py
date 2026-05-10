@@ -140,6 +140,12 @@ class _AriphmeticMixin:
     def __mod__(self, other) -> t.Any:
         return _eval_operation("MODULO", self, other)
 
+    def __pow__(self, other) -> t.Any:
+        return _eval_operation("POW", self, other)
+
+    def __rpow__(self, other) -> t.Any:
+        return _eval_operation("POW", other, self)
+
 
 class AriphmeticScalarMixin(Scalar, _AriphmeticMixin): ...
 
@@ -246,6 +252,14 @@ class AggContainerMixin(_AggMixin, Container):
     def deviation(self) -> t.Any:
         return _eval_operation("DEVIATION", self)
 
+    def std(self) -> t.Any:
+        # Sample std (ddof=1), matching polars/pandas. Engine verb
+        # `stddev`. For population std (ddof=0) use `.deviation()`.
+        return _eval_operation("STDDEV", self)
+
+    def pearson_corr(self, other: t.Any) -> t.Any:
+        return _eval_operation("PEARSON_CORR", self, other)
+
     def min(self) -> t.Any:
         return _eval_operation("MIN", self)
 
@@ -265,6 +279,14 @@ class ElementAccessContainerMixin(Container):
 
     def at(self, index: t.Any) -> t.Any:
         return _eval_operation("AT", self, index)
+
+    def top(self, n: int) -> t.Any:
+        # n largest values, descending. Per-group inside .by(...) gives
+        # canonical H2O q8 (largest-N per id6) without a full sort.
+        return _eval_operation("TOP", self, n)
+
+    def bot(self, n: int) -> t.Any:
+        return _eval_operation("BOT", self, n)
 
 
 class SetOperationContainerMixin(Container):
