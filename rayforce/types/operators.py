@@ -17,6 +17,7 @@ class Operation(enum.StrEnum):
     MODULO = "%"
     DIV_INT = "div"
     NEGATE = "neg"
+    POW = "pow"
 
     # Comparison
     EQUALS = "=="
@@ -42,7 +43,9 @@ class Operation(enum.StrEnum):
     FIRST = "first"
     LAST = "last"
     MEDIAN = "med"
-    DEVIATION = "dev"
+    DEVIATION = "dev"           # population std, ddof=0
+    STDDEV = "stddev"           # sample std, ddof=1 (matches polars/pandas)
+    PEARSON_CORR = "pearson_corr"
     ROW = "row"
 
     # Statistical
@@ -60,6 +63,8 @@ class Operation(enum.StrEnum):
     REVERSE = "reverse"
     GROUP = "group"
     TAKE = "take"
+    TOP = "top"
+    BOT = "bot"
     REMOVE = "remove"
     FILTER = "filter"
     FIND = "find"
