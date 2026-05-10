@@ -201,6 +201,28 @@ class AggregationMixin:
     def median(self) -> Expression:
         return Expression(Operation.MEDIAN, self)
 
+    def deviation(self) -> Expression:
+        # Population std (ddof=0). Engine verb `dev`. For sample std
+        # matching polars/pandas, use `.std()` instead.
+        return Expression(Operation.DEVIATION, self)
+
+    def std(self) -> Expression:
+        # Sample std (ddof=1), matching polars `pl.std` and pandas
+        # `.std()`. Engine verb `stddev`.
+        return Expression(Operation.STDDEV, self)
+
+    def pearson_corr(self, other: t.Any) -> Expression:
+        # Pearson correlation between two columns; per-group inside
+        # .by(...) closes canonical H2O q9 (with `**2` for r²).
+        return Expression(Operation.PEARSON_CORR, self, other)
+
+    def top(self, n: int) -> Expression:
+        # n largest values per group (descending). Closes q8.
+        return Expression(Operation.TOP, self, n)
+
+    def bot(self, n: int) -> Expression:
+        return Expression(Operation.BOT, self, n)
+
     def distinct(self) -> Expression:
         return Expression(Operation.DISTINCT, self)
 
@@ -252,6 +274,12 @@ class OperatorMixin:
 
     def __mod__(self, other) -> Expression:
         return Expression(Operation.MODULO, self, other)
+
+    def __pow__(self, other) -> Expression:
+        return Expression(Operation.POW, self, other)
+
+    def __rpow__(self, other) -> Expression:
+        return Expression(Operation.POW, other, self)
 
     def __eq__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.EQUALS, self, other)
