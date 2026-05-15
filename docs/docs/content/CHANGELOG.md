@@ -12,6 +12,12 @@ maintained against v1 core.
 
 2026-04-28 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.0.0a1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.0.0a1)**
 
+## **`1.0.0`**
+
+- Project has came out of beta. Stable release
+
+2026-04-20 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/1.0.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/1.0.0)**
+
 ## **`0.6.3`**
 
 ### Bug Fixes
