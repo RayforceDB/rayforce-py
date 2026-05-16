@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 /*
  * raypy_kdb.c — KDB+ IPC client.
  *
