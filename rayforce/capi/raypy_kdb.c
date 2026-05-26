@@ -170,22 +170,6 @@ static int8_t kdb_type_of(int8_t ray_type) {
   }
 }
 
-static int kdb_elem_size(int8_t ray_type) {
-  switch (ray_type < 0 ? -ray_type : ray_type) {
-  case RAY_BOOL:
-  case RAY_U8: return 1;
-  case RAY_I16: return 2;
-  case RAY_I32:
-  case RAY_DATE:
-  case RAY_TIME:
-  case RAY_F32: return 4;
-  case RAY_I64:
-  case RAY_TIMESTAMP:
-  case RAY_F64: return 8;
-  case RAY_GUID: return 16;
-  default: return 0;
-  }
-}
 
 /* Forward */
 static int64_t kdb_size_obj(ray_t *obj);
@@ -193,7 +177,7 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj);
 static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len);
 
 /* Build a v2 table from a RAY_SYM-vec of column names and a RAY_LIST of
- * column vectors. Consumes references to `keys` and `vals` on success. */
+ * column vectors. Consumes references to `keys` and `vals`. */
 static ray_t *kdb_make_table(ray_t *keys, ray_t *vals) {
   if (keys == NULL || vals == NULL || keys->type != RAY_SYM ||
       vals->type != RAY_LIST || keys->len != vals->len) {
@@ -201,25 +185,8 @@ static ray_t *kdb_make_table(ray_t *keys, ray_t *vals) {
     if (vals) ray_release(vals);
     return ray_error("kdb: malformed table — expected (sym-vec, list)", NULL);
   }
-  int64_t ncols = keys->len;
-  ray_t *tbl = ray_table_new(ncols);
-  if (tbl == NULL || RAY_IS_ERR(tbl)) {
-    ray_release(keys);
-    ray_release(vals);
-    return tbl ? tbl : ray_error("kdb: table_new failed", NULL);
-  }
-  int64_t *ids = (int64_t *)ray_data(keys);
-  ray_t **cols = (ray_t **)ray_data(vals);
-  for (int64_t i = 0; i < ncols; i++) {
-    ray_t *res = ray_table_add_col(tbl, ids[i], cols[i]);
-    if (res == NULL || RAY_IS_ERR(res)) {
-      ray_release(tbl);
-      ray_release(keys);
-      ray_release(vals);
-      return res ? res : ray_error("kdb: table_add_col failed", NULL);
-    }
-    tbl = res;
-  }
+  ray_t *tbl = raypy_build_table((const int64_t *)ray_data(keys),
+                                 (ray_t *const *)ray_data(vals), keys->len);
   ray_release(keys);
   ray_release(vals);
   return tbl;
@@ -304,7 +271,7 @@ static int64_t kdb_size_obj(ray_t *obj) {
   if (t == RAY_NULL)
     return 1 + 1 + 4;
 
-  int esz = kdb_elem_size(t);
+  int esz = (int)ray_scalar_elem_size(t);
   if (esz == 0)
     return 0;
   return 1 + 1 + 4 + obj->len * esz;
@@ -449,7 +416,7 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
     return buf + 4 - start;
   }
 
-  int esz = kdb_elem_size(t);
+  int esz = (int)ray_scalar_elem_size(t);
   if (esz == 0)
     return -1;
   *buf++ = 0;
@@ -457,12 +424,7 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
   memcpy(buf, &len32, 4);
   buf += 4;
   size_t n = (size_t)obj->len * esz;
-  if (t == RAY_F32) {
-    /* Already F32-sized; ray_data is f32-packed. */
-    memcpy(buf, ray_data(obj), n);
-  } else {
-    memcpy(buf, ray_data(obj), n);
-  }
+  memcpy(buf, ray_data(obj), n);
   return buf + n - start;
 }
 
@@ -511,15 +473,24 @@ static ray_t *kdb_des_atom_i(uint8_t **buf, int64_t *len, int8_t ray_type,
   return o;
 }
 
-static ray_t *kdb_des_vec_i(uint8_t **buf, int64_t *len, int8_t ray_type,
-                            int width) {
-  KDB_NEED(1 + 4);
+/* Read a kdb vector header: 1 byte attrs + 4 bytes int32 length.
+ * Advances *buf by 5 and decrements *len. Returns -1 on buffer underflow. */
+static int kdb_read_vec_header(uint8_t **buf, int64_t *len, int32_t *out_n) {
+  if (*len < 5)
+    return -1;
   (*buf)++;
   *len -= 1; /* attrs */
-  int32_t n;
-  memcpy(&n, *buf, 4);
+  memcpy(out_n, *buf, 4);
   *buf += 4;
   *len -= 4;
+  return 0;
+}
+
+static ray_t *kdb_des_vec_i(uint8_t **buf, int64_t *len, int8_t ray_type,
+                            int width) {
+  int32_t n;
+  if (kdb_read_vec_header(buf, len, &n) < 0)
+    return ray_error("kdb: buffer underflow", NULL);
   if (n < 0)
     return ray_error("kdb: negative vector length", NULL);
   int64_t bytes = (int64_t)n * width;
@@ -553,7 +524,7 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   case -KDB_KH: return kdb_des_atom_i(buf, len, RAY_I16, 2);
   case -KDB_KI: return kdb_des_atom_i(buf, len, RAY_I32, 4);
   case -KDB_KJ: return kdb_des_atom_i(buf, len, RAY_I64, 8);
-  case -KDB_KP: return kdb_des_atom_i(buf, len, RAY_TIMESTAMP, 8);
+  case -KDB_KP:
   case -KDB_KN: return kdb_des_atom_i(buf, len, RAY_TIMESTAMP, 8);
   case -KDB_KD:
   case -KDB_KM: return kdb_des_atom_i(buf, len, RAY_DATE, 4);
@@ -608,7 +579,7 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   case KDB_KH: return kdb_des_vec_i(buf, len, RAY_I16, 2);
   case KDB_KI: return kdb_des_vec_i(buf, len, RAY_I32, 4);
   case KDB_KJ: return kdb_des_vec_i(buf, len, RAY_I64, 8);
-  case KDB_KP: return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
+  case KDB_KP:
   case KDB_KN: return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
   case KDB_KD:
   case KDB_KM: return kdb_des_vec_i(buf, len, RAY_DATE, 4);
@@ -618,13 +589,9 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   case KDB_KZ: return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
   case KDB_KE: {
     /* Real (4-byte float) vector — convert to F64 vec for v2. */
-    KDB_NEED(1 + 4);
-    (*buf)++;
-    *len -= 1;
     int32_t n;
-    memcpy(&n, *buf, 4);
-    *buf += 4;
-    *len -= 4;
+    if (kdb_read_vec_header(buf, len, &n) < 0)
+      return ray_error("kdb: buffer underflow", NULL);
     if (n < 0) return ray_error("kdb: negative real-vec length", NULL);
     int64_t bytes = (int64_t)n * 4;
     if (*len < bytes) return ray_error("kdb: buffer underflow (real-vec)", NULL);
@@ -648,13 +615,9 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   case KDB_UU: return kdb_des_vec_i(buf, len, RAY_GUID, 16);
   case KDB_KC: {
     /* KC vector → RAY_STR atom of length n */
-    KDB_NEED(1 + 4);
-    (*buf)++;
-    *len -= 1;
     int32_t n;
-    memcpy(&n, *buf, 4);
-    *buf += 4;
-    *len -= 4;
+    if (kdb_read_vec_header(buf, len, &n) < 0)
+      return ray_error("kdb: buffer underflow", NULL);
     if (n < 0) return ray_error("kdb: negative char-vec length", NULL);
     if (*len < n) return ray_error("kdb: buffer underflow (char-vec)", NULL);
     ray_t *s = ray_str((const char *)*buf, (size_t)n);
@@ -663,13 +626,9 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
     return s;
   }
   case KDB_KS: {
-    KDB_NEED(1 + 4);
-    (*buf)++;
-    *len -= 1;
     int32_t n;
-    memcpy(&n, *buf, 4);
-    *buf += 4;
-    *len -= 4;
+    if (kdb_read_vec_header(buf, len, &n) < 0)
+      return ray_error("kdb: buffer underflow", NULL);
     if (n < 0) return ray_error("kdb: negative symbol-vec length", NULL);
     ray_t *vec = ray_sym_vec_new(RAY_SYM_W64, n);
     if (vec == NULL || RAY_IS_ERR(vec)) {
@@ -698,13 +657,9 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   }
 
   case 0: { /* general list */
-    KDB_NEED(1 + 4);
-    (*buf)++;
-    *len -= 1;
     int32_t n;
-    memcpy(&n, *buf, 4);
-    *buf += 4;
-    *len -= 4;
+    if (kdb_read_vec_header(buf, len, &n) < 0)
+      return ray_error("kdb: buffer underflow", NULL);
     if (n < 0) return ray_error("kdb: negative list length", NULL);
     ray_t *list = ray_list_new(0);
     for (int32_t i = 0; i < n; i++) {

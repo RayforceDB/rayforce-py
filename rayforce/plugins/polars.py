@@ -17,48 +17,50 @@ if platform.system() == "Linux" and platform.machine() == "x86_64":
     )
 
 
+_POLARS_DTYPE_TO_RAY: dict[str, type[RayObject]] = {
+    "bool": B8,
+    "boolean": B8,
+    "i8": I16,
+    "int8": I16,
+    "i16": I16,
+    "int16": I16,
+    "i32": I32,
+    "int32": I32,
+    "i64": I64,
+    "int64": I64,
+    "int": I64,
+    "f32": F64,
+    "float32": F64,
+    "f64": F64,
+    "float64": F64,
+    "float": F64,
+    "str": Symbol,
+    "string": Symbol,
+    "object": Symbol,
+    "utf8": Symbol,
+    "datetime": Timestamp,
+    "timestamp": Timestamp,
+    "datetimes": Timestamp,
+    "date": Date,
+}
+
+
 def _infer_ray_type_from_polars_dtype(dtype: t.Any) -> type[RayObject]:
+    # Polars dtypes carry their canonical name via `__name__`; the type itself
+    # (a metaclass instance) also has a useful `__name__`. Fall back to
+    # str(dtype) for "Datetime(...)" / "Timestamp(...)" parametric forms.
+    candidates: list[str] = []
     if hasattr(dtype, "__name__"):
-        dtype_name = dtype.__name__.lower()
-        if dtype_name in ("bool", "boolean"):
-            return B8
-        if dtype_name in ("i8", "int8", "i16", "int16"):
-            return I16
-        if dtype_name in ("i32", "int32"):
-            return I32
-        if dtype_name in ("i64", "int64", "int"):
-            return I64
-        if dtype_name in ("f32", "float32", "f64", "float64", "float"):
-            return F64
-        if dtype_name in ("str", "string", "object", "utf8"):
-            return Symbol
-        if dtype_name in ("datetime", "timestamp", "datetimes"):
+        candidates.append(dtype.__name__.lower())
+    candidates.append(type(dtype).__name__.lower())
+    candidates.append(str(dtype).lower())
+
+    for name in candidates:
+        ray_type = _POLARS_DTYPE_TO_RAY.get(name)
+        if ray_type is not None:
+            return ray_type
+        if name.startswith(("datetime", "timestamp")):
             return Timestamp
-        if dtype_name == "date":
-            return Date
-
-    dtype_type_name = type(dtype).__name__.lower()
-    if dtype_type_name in ("datetime", "timestamp"):
-        return Timestamp
-
-    dtype_str = str(dtype).lower()
-    if dtype_str in ("bool", "boolean"):
-        return B8
-    if dtype_str in ("i8", "int8", "i16", "int16"):
-        return I16
-    if dtype_str in ("i32", "int32"):
-        return I32
-    if dtype_str in ("i64", "int64", "int"):
-        return I64
-    if dtype_str in ("f32", "float32", "f64", "float64", "float"):
-        return F64
-    if dtype_str in ("str", "string", "object", "utf8"):
-        return Symbol
-    if dtype_str.startswith(("datetime", "timestamp")):
-        return Timestamp
-    if dtype_str == "date":
-        return Date
-
     return Symbol
 
 

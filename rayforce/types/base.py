@@ -340,6 +340,3 @@ class MappableScalarMixin(_MappableMixin, Scalar): ...
 
 
 class MappableContainerMixin(_MappableMixin, Container): ...
-
-
-ValueAccessContainerMixin = ElementAccessContainerMixin  # backward compatibility

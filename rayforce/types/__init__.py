@@ -1,4 +1,4 @@
-from .containers import Dict, List, String, Vector
+from .containers import Dict, List, Vector
 from .fn import Fn
 from .null import Null
 from .operators import Operation
@@ -13,6 +13,7 @@ from .scalars import (
     U8,
     Date,
     QuotedSymbol,
+    String,
     Symbol,
     Time,
     Timestamp,

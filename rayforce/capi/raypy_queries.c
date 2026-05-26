@@ -1,5 +1,23 @@
 #include "rayforce_c.h"
 
+/* Decode an Optional[RayObject] Python arg. Writes the underlying ray_t*
+ * into *out (NULL if `arg` is Py_None) and returns 0; returns -1 with PyErr
+ * set when the type is wrong. */
+static int unpack_optional_ray(PyObject *arg, ray_t **out,
+                               const char *fn_name, const char *arg_name) {
+  if (arg == Py_None) {
+    *out = NULL;
+    return 0;
+  }
+  if (!PyObject_TypeCheck(arg, &RayObjectType)) {
+    PyErr_Format(PyExc_TypeError, "%s: %s must be None or RayObject",
+                 fn_name, arg_name);
+    return -1;
+  }
+  *out = ((RayObject *)arg)->obj;
+  return 0;
+}
+
 PyObject *raypy_update(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -74,20 +92,21 @@ PyObject *raypy_read_csv(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "OO!", &schema_arg, &RayObjectType, &path_obj))
     return NULL;
 
-  ray_t *ray_obj;
-  if (schema_arg == Py_None) {
-    ray_t *call_args[1] = {path_obj->obj};
-    ray_obj = ray_read_csv_fn(call_args, 1);
-  } else {
-    if (!PyObject_TypeCheck(schema_arg, &RayObjectType)) {
-      PyErr_SetString(PyExc_TypeError,
-                      "read_csv: schema must be None or RayObject");
-      return NULL;
-    }
-    ray_t *call_args[2] = {((RayObject *)schema_arg)->obj, path_obj->obj};
-    ray_obj = ray_read_csv_fn(call_args, 2);
-  }
+  ray_t *schema_obj = NULL;
+  if (unpack_optional_ray(schema_arg, &schema_obj, "read_csv", "schema") < 0)
+    return NULL;
 
+  ray_t *call_args[2];
+  int nargs;
+  if (schema_obj) {
+    call_args[0] = schema_obj;
+    call_args[1] = path_obj->obj;
+    nargs = 2;
+  } else {
+    call_args[0] = path_obj->obj;
+    nargs = 1;
+  }
+  ray_t *ray_obj = ray_read_csv_fn(call_args, nargs);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "read_csv: failed to read CSV");
     return NULL;
@@ -130,21 +149,12 @@ PyObject *raypy_set_splayed(PyObject *self, PyObject *args) {
                         &table_obj, &sym_arg))
     return NULL;
 
-  ray_t *ray_obj;
-  if (sym_arg == Py_None) {
-    ray_t *call_args[2] = {dir_obj->obj, table_obj->obj};
-    ray_obj = ray_set_splayed_fn(call_args, 2);
-  } else {
-    if (!PyObject_TypeCheck(sym_arg, &RayObjectType)) {
-      PyErr_SetString(PyExc_TypeError,
-                      "set_splayed: sym_path must be None or RayObject");
-      return NULL;
-    }
-    ray_t *call_args[3] = {dir_obj->obj, table_obj->obj,
-                          ((RayObject *)sym_arg)->obj};
-    ray_obj = ray_set_splayed_fn(call_args, 3);
-  }
+  ray_t *sym_obj = NULL;
+  if (unpack_optional_ray(sym_arg, &sym_obj, "set_splayed", "sym_path") < 0)
+    return NULL;
 
+  ray_t *call_args[3] = {dir_obj->obj, table_obj->obj, sym_obj};
+  ray_t *ray_obj = ray_set_splayed_fn(call_args, sym_obj ? 3 : 2);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "set_splayed: failed to save table");
     return NULL;
@@ -163,20 +173,12 @@ PyObject *raypy_get_splayed(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!O", &RayObjectType, &dir_obj, &sym_arg))
     return NULL;
 
-  ray_t *ray_obj;
-  if (sym_arg == Py_None) {
-    ray_t *call_args[1] = {dir_obj->obj};
-    ray_obj = ray_get_splayed_fn(call_args, 1);
-  } else {
-    if (!PyObject_TypeCheck(sym_arg, &RayObjectType)) {
-      PyErr_SetString(PyExc_TypeError,
-                      "get_splayed: sym_path must be None or RayObject");
-      return NULL;
-    }
-    ray_t *call_args[2] = {dir_obj->obj, ((RayObject *)sym_arg)->obj};
-    ray_obj = ray_get_splayed_fn(call_args, 2);
-  }
+  ray_t *sym_obj = NULL;
+  if (unpack_optional_ray(sym_arg, &sym_obj, "get_splayed", "sym_path") < 0)
+    return NULL;
 
+  ray_t *call_args[2] = {dir_obj->obj, sym_obj};
+  ray_t *ray_obj = ray_get_splayed_fn(call_args, sym_obj ? 2 : 1);
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "get_splayed: failed to load table");
     return NULL;

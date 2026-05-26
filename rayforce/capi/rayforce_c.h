@@ -44,7 +44,7 @@ typedef struct {
   PyObject_HEAD ray_t *obj;
 } RayObject;
 
-extern void *g_runtime;
+extern ray_runtime_t *g_runtime;
 
 int check_main_thread(void);
 
@@ -53,6 +53,73 @@ int check_main_thread(void);
     if (!check_main_thread())                                                  \
       return NULL;                                                             \
   } while (0)
+
+/* Absolute value of a type code — atoms are negative, vecs are positive,
+ * |t| is the canonical type id. */
+static inline int ray_abs_type(int t) {
+  return t < 0 ? -t : t;
+}
+
+/* Byte width of a fixed-size scalar/vec element. Handles both atom (negative)
+ * and vec (positive) type codes. Returns 0 for variable-width or unknown
+ * types (RAY_LIST, RAY_SYM, RAY_STR, RAY_TABLE, RAY_DICT, ...). Callers
+ * needing RAY_SYM (8) / RAY_STR (16) sizes must layer that on top. */
+static inline size_t ray_scalar_elem_size(int8_t type) {
+  switch (type < 0 ? -type : type) {
+  case RAY_BOOL:
+  case RAY_U8:        return 1;
+  case RAY_I16:       return 2;
+  case RAY_I32:
+  case RAY_DATE:
+  case RAY_TIME:
+  case RAY_F32:       return 4;
+  case RAY_I64:
+  case RAY_F64:
+  case RAY_TIMESTAMP: return 8;
+  case RAY_GUID:      return 16;
+  default:            return 0;
+  }
+}
+
+/* Scratch buffer for narrowing a ray atom payload into the natural storage
+ * width of a typed vec, used by ray_vec_append / ray_vec_set / etc. */
+typedef union {
+  uint8_t u8;
+  int16_t i16;
+  int32_t i32;
+  int64_t i64;
+  float f32;
+  double f64;
+} scalar_scratch_t;
+
+/* Pack an atom's payload into `scratch` and return a pointer to it, suitable
+ * for ray_vec_append / ray_vec_insert_at / ray_vec_set. Returns NULL for
+ * types that need out-of-band handling (GUID, STR, LIST). */
+static inline const void *atom_scalar_ptr(ray_t *atom, int8_t vec_type,
+                                          scalar_scratch_t *scratch) {
+  switch (vec_type) {
+  case RAY_BOOL:
+  case RAY_U8:        scratch->u8 = atom->u8;    return &scratch->u8;
+  case RAY_I16:       scratch->i16 = atom->i16;  return &scratch->i16;
+  case RAY_I32:
+  case RAY_DATE:
+  case RAY_TIME:      scratch->i32 = atom->i32;  return &scratch->i32;
+  case RAY_I64:
+  case RAY_TIMESTAMP:
+  case RAY_SYM:       scratch->i64 = atom->i64;  return &scratch->i64;
+  /* v2 has no F32 atom — narrow from an F64 atom. */
+  case RAY_F32:       scratch->f32 = (float)atom->f64; return &scratch->f32;
+  case RAY_F64:       scratch->f64 = atom->f64;  return &scratch->f64;
+  default:            return NULL;
+  }
+}
+
+/* Build a v2 table from parallel arrays of column sym-ids and ray_t* columns.
+ * Does not take ownership of `col_ids` or `cols`; `ray_table_add_col` retains
+ * each column internally. On failure returns a RAY_IS_ERR ray_t (never NULL,
+ * never PyErr — caller maps to its own error channel). */
+ray_t *raypy_build_table(const int64_t *col_ids, ray_t *const *cols,
+                         int64_t ncols);
 
 ray_t *raypy_init_i16_from_py(PyObject *item);
 ray_t *raypy_init_i32_from_py(PyObject *item);

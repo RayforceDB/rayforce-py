@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 from datetime import UTC, datetime
+import weakref
 
 from rayforce import _rayforce_c as r
 from rayforce import utils
@@ -22,8 +23,7 @@ from rayforce.plugins import errors
 
 
 class KDBConnection:
-    def __init__(self, engine: KDBEngine, handle: int) -> None:
-        self.engine = engine
+    def __init__(self, handle: int) -> None:
         self._handle = handle
         self.established_at = datetime.now(UTC)
         self.disposed_at: datetime | None = None
@@ -47,17 +47,12 @@ class KDBConnection:
             r.kdb_close(self._handle)
         self.is_closed = True
         self.disposed_at = datetime.now(UTC)
-        self.engine.pool.pop(id(self), None)
 
     def __enter__(self) -> KDBConnection:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
-
-    def __del__(self) -> None:
-        with contextlib.suppress(Exception):
-            self.close()
 
     def __repr__(self) -> str:
         if self.is_closed:
@@ -72,7 +67,9 @@ class KDBEngine:
     def __init__(self, host: str, port: int) -> None:
         self.host = host
         self.port = port
-        self.pool: dict[int, KDBConnection] = {}
+        # WeakValueDictionary: closed/abandoned connections drop out on GC,
+        # so the pool reflects live connections only.
+        self.pool: weakref.WeakValueDictionary[int, KDBConnection] = weakref.WeakValueDictionary()
 
     @property
     def url(self) -> str:
@@ -83,7 +80,7 @@ class KDBEngine:
             handle = r.kdb_connect(self.host, self.port)
         except RuntimeError as exc:
             raise errors.KDBConnectionError(f"Error when establishing connection: {exc}") from exc
-        conn = KDBConnection(engine=self, handle=handle)
+        conn = KDBConnection(handle=handle)
         self.pool[id(conn)] = conn
         return conn
 

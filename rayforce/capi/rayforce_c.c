@@ -2,7 +2,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-void *g_runtime = NULL;
+ray_runtime_t *g_runtime = NULL;
 
 // Objects dropped from non-main threads (asyncio) are queued here and processed
 // later
@@ -75,7 +75,7 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
                     "runtime: failed to initialize Rayforce");
     return NULL;
   }
-  g_runtime = (void *)rt;
+  g_runtime = rt;
 
   g_main_thread_id = (unsigned long)PyThread_get_thread_ident();
   Py_RETURN_NONE;

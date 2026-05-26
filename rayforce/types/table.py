@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import datetime as dt
 from functools import wraps
 import os
 import typing as t
@@ -23,11 +24,10 @@ from rayforce.types import (
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
+from rayforce.types.scalars.temporal.date import Date
 from rayforce.types.scalars.temporal.timestamp import tz_offset_nanos
 
 if t.TYPE_CHECKING:
-    import datetime as dt
-
     from rayforce.types.fn import Fn
 
 
@@ -74,16 +74,23 @@ def _collect_part_dirs(root: str) -> list[str]:
 
 
 def _infer_part_column(part_dirs: list[str]) -> tuple[str, list[t.Any], type]:
-    import datetime as _dt
-
-    from rayforce.types.scalars.temporal.date import Date
-
     if all(_is_date_dir(d) for d in part_dirs):
-        values = [_dt.date(int(d[:4]), int(d[5:7]), int(d[8:])) for d in part_dirs]
+        values = [dt.date(int(d[:4]), int(d[5:7]), int(d[8:])) for d in part_dirs]
         return "date", values, Date
     if all(_is_int_dir(d) for d in part_dirs):
         return "part", [int(d) for d in part_dirs], I64
     return "part", list(part_dirs), Symbol
+
+
+def _col_name(c: t.Any) -> str:
+    """Column-name accessor. Symbol scalars expose `.value`; everything else
+    (str, Expression with a name, etc.) round-trips through str()."""
+    return c.value if hasattr(c, "value") else str(c)
+
+
+def _unwrap_value(v: t.Any) -> t.Any:
+    """Unwrap a ray scalar to its Python value, leaving non-scalars untouched."""
+    return v.value if hasattr(v, "value") else v
 
 
 def _make_name_sym(name: str) -> r.RayObject:
@@ -122,8 +129,6 @@ _AGGREGATION_OPS: frozenset[Operation] = frozenset(
     }
 )
 
-_TYPE_PRESERVING_OPS: frozenset[Operation] = frozenset({Operation.ADD, Operation.SUBTRACT})
-
 
 def _recover_temporal_dtypes(table: Table, original_dtypes: dict[str, str]) -> Table:
     """Cast cols back to their original ray_name when v2 DAG demoted TIMESTAMP/DATE/TIME."""
@@ -136,7 +141,7 @@ def _recover_temporal_dtypes(table: Table, original_dtypes: dict[str, str]) -> T
             targets[n] = o.lower()
     if not targets:
         return table
-    names = [c.value if hasattr(c, "value") else str(c) for c in table.columns()]
+    names = [_col_name(c) for c in table.columns()]
     cols = []
     for n in names:
         if n in targets:
@@ -174,59 +179,10 @@ def _is_aggregation_only_select(select_query: SelectQuery) -> bool:
 
 
 class AggregationMixin:
-    def count(self) -> Expression:
-        return Expression(Operation.COUNT, self)
-
-    def sum(self) -> Expression:
-        return Expression(Operation.SUM, self)
-
-    def mean(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def avg(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def first(self) -> Expression:
-        return Expression(Operation.FIRST, self)
-
-    def last(self) -> Expression:
-        return Expression(Operation.LAST, self)
-
-    def max(self) -> Expression:
-        return Expression(Operation.MAX, self)
-
-    def min(self) -> Expression:
-        return Expression(Operation.MIN, self)
-
-    def median(self) -> Expression:
-        return Expression(Operation.MEDIAN, self)
-
-    def deviation(self) -> Expression:
-        # Population std (ddof=0). Engine verb `dev`. For sample std
-        # matching polars/pandas, use `.std()` instead.
-        return Expression(Operation.DEVIATION, self)
-
-    def std(self) -> Expression:
-        # Sample std (ddof=1), matching polars `pl.std` and pandas
-        # `.std()`. Engine verb `stddev`.
-        return Expression(Operation.STDDEV, self)
-
-    def pearson_corr(self, other: t.Any) -> Expression:
-        # Pearson correlation between two columns; per-group inside
-        # .by(...) closes canonical H2O q9 (with `**2` for r²).
-        return Expression(Operation.PEARSON_CORR, self, other)
-
-    def top(self, n: int) -> Expression:
-        # n largest values per group (descending). Closes q8.
-        return Expression(Operation.TOP, self, n)
-
-    def bot(self, n: int) -> Expression:
-        return Expression(Operation.BOT, self, n)
-
-    def distinct(self) -> Expression:
-        return Expression(Operation.DISTINCT, self)
-
     def is_(self, other: bool) -> Expression:
+        # v2 engine doesn't broadcast EQUALS(bool_expr, True_literal) the way
+        # v1 did via MAP_RIGHT; short-circuit Expression cases to keep filter
+        # behaviour. Plain Column compares element-wise normally.
         if isinstance(self, Expression) and other is True:
             return self
         if isinstance(self, Expression) and other is False:
@@ -250,36 +206,51 @@ class AggregationMixin:
         return Expression(Operation.IN, self, Expression(Operation.LIST, *values))
 
 
+# Method name → Operation member. mean is an AVG alias; deviation is population
+# std (engine `dev`); std is sample std (engine `stddev`).
+_UNARY_AGGS = {
+    "count": "COUNT",
+    "sum": "SUM",
+    "mean": "AVG",
+    "avg": "AVG",
+    "first": "FIRST",
+    "last": "LAST",
+    "max": "MAX",
+    "min": "MIN",
+    "median": "MEDIAN",
+    "deviation": "DEVIATION",
+    "std": "STDDEV",
+    "distinct": "DISTINCT",
+}
+_BINARY_AGGS = {"pearson_corr": "PEARSON_CORR", "top": "TOP", "bot": "BOT"}
+
+
+def _unary_agg(py_name: str, op_name: str):
+    def fwd(self) -> Expression:
+        return Expression(Operation[op_name], self)
+
+    fwd.__name__ = py_name
+    return fwd
+
+
+def _binary_agg(py_name: str, op_name: str):
+    def fwd(self, other) -> Expression:
+        return Expression(Operation[op_name], self, other)
+
+    fwd.__name__ = py_name
+    return fwd
+
+
+for _name, _op in _UNARY_AGGS.items():
+    setattr(AggregationMixin, _name, _unary_agg(_name, _op))
+for _name, _op in _BINARY_AGGS.items():
+    setattr(AggregationMixin, _name, _binary_agg(_name, _op))
+del _name, _op
+
+
 class OperatorMixin:
-    def __and__(self, other) -> Expression:
-        return Expression(Operation.AND, self, other)
-
-    def __or__(self, other) -> Expression:
-        return Expression(Operation.OR, self, other)
-
-    def __add__(self, other) -> Expression:
-        return Expression(Operation.ADD, self, other)
-
-    def __sub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, self, other)
-
-    def __mul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, self, other)
-
-    def __truediv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, self, other)
-
-    def __floordiv__(self, other) -> Expression:
-        return Expression(Operation.DIV_INT, self, other)
-
-    def __mod__(self, other) -> Expression:
-        return Expression(Operation.MODULO, self, other)
-
-    def __pow__(self, other) -> Expression:
-        return Expression(Operation.POW, self, other)
-
-    def __rpow__(self, other) -> Expression:
-        return Expression(Operation.POW, other, self)
+    # __eq__ overridden below — explicitly opt out of default hashing.
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.EQUALS, self, other)
@@ -287,32 +258,46 @@ class OperatorMixin:
     def __ne__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.NOT_EQUALS, self, other)
 
-    def __lt__(self, other) -> Expression:
-        return Expression(Operation.LESS_THAN, self, other)
 
-    def __le__(self, other) -> Expression:
-        return Expression(Operation.LESS_EQUAL, self, other)
+_FORWARD_OPS = {
+    "__and__": "AND",
+    "__or__": "OR",
+    "__add__": "ADD",
+    "__sub__": "SUBTRACT",
+    "__mul__": "MULTIPLY",
+    "__truediv__": "DIVIDE",
+    "__floordiv__": "DIV_INT",
+    "__mod__": "MODULO",
+    "__pow__": "POW",
+    "__lt__": "LESS_THAN",
+    "__le__": "LESS_EQUAL",
+    "__gt__": "GREATER_THAN",
+    "__ge__": "GREATER_EQUAL",
+}
+_REVERSE_OPS = {
+    "__radd__": "ADD",
+    "__rsub__": "SUBTRACT",
+    "__rmul__": "MULTIPLY",
+    "__rtruediv__": "DIVIDE",
+    "__rfloordiv__": "DIV_INT",
+    "__rpow__": "POW",
+}
 
-    def __gt__(self, other) -> Expression:
-        return Expression(Operation.GREATER_THAN, self, other)
 
-    def __ge__(self, other) -> Expression:
-        return Expression(Operation.GREATER_EQUAL, self, other)
+def _binary_op(dunder: str, op_name: str, reversed_: bool = False):
+    def fwd(self, other) -> Expression:
+        a, b = (other, self) if reversed_ else (self, other)
+        return Expression(Operation[op_name], a, b)
 
-    def __radd__(self, other) -> Expression:
-        return Expression(Operation.ADD, other, self)
+    fwd.__name__ = dunder
+    return fwd
 
-    def __rsub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, other, self)
 
-    def __rmul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, other, self)
-
-    def __rtruediv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, other, self)
-
-    def __rfloordiv__(self, other) -> Expression:
-        return Expression(Operation.DIV_INT, other, self)
+for _dunder, _op in _FORWARD_OPS.items():
+    setattr(OperatorMixin, _dunder, _binary_op(_dunder, _op))
+for _dunder, _op in _REVERSE_OPS.items():
+    setattr(OperatorMixin, _dunder, _binary_op(_dunder, _op, reversed_=True))
+del _dunder, _op
 
 
 class Expression(AggregationMixin, OperatorMixin):
@@ -450,8 +435,6 @@ class TableInitMixin:
 
     @classmethod
     def from_dict(cls, data: dict[str, t.Any]) -> t.Self:
-        import numpy as np
-
         columns: dict[str, Vector] = {}
         for name, values in data.items():
             if isinstance(values, Vector):
@@ -514,10 +497,8 @@ class TableInitMixin:
             nrows = len(part_tbl)
             part_col = Vector(items=[part_value] * nrows, ray_type=part_ray_type)
             cols = part_tbl.columns().to_python()
-            col_names = [part_col_name] + [c.value if hasattr(c, "value") else str(c) for c in cols]
-            col_values = [part_col] + [
-                part_tbl[c.value if hasattr(c, "value") else str(c)] for c in cols
-            ]
+            col_names = [part_col_name] + [_col_name(c) for c in cols]
+            col_values = [part_col] + [part_tbl[_col_name(c)] for c in cols]
             parts.append(
                 Table(
                     FFI.init_table(
@@ -617,7 +598,7 @@ class TableValueAccessorMixin:
         # and overwrite nulled cells with `Null`. Skip non-vector columns
         # (e.g. heterogeneous `List` columns) — `vec_is_null` only accepts
         # typed vectors.
-        col_names = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        col_names = [_col_name(c) for c in self.columns()]
         col_vectors = self.values()
         for col_name, col_vec in zip(col_names, col_vectors, strict=True):
             col_ptr = col_vec.ptr if hasattr(col_vec, "ptr") else col_vec
@@ -712,7 +693,7 @@ class TableValueAccessorMixin:
                 col_values = self.values()
                 new_data: dict[str, Vector] = {}
                 for i, name_sym in enumerate(col_names):
-                    name = name_sym.value if hasattr(name_sym, "value") else str(name_sym)
+                    name = _col_name(name_sym)
                     new_data[name] = utils.eval_obj(
                         List([Operation.AT, col_values[i], Vector(items=key, ray_type=I64)])
                     )
@@ -741,9 +722,6 @@ class TableValueAccessorMixin:
 
         numeric_types = {r.TYPE_I64, r.TYPE_I32, r.TYPE_I16, r.TYPE_F64, r.TYPE_U8}
 
-        def _extract(val: t.Any) -> t.Any:
-            return val.value if hasattr(val, "value") else val
-
         for i, col_name in enumerate(columns):
             col_vector = values[i]
             if not col_vector:
@@ -752,13 +730,13 @@ class TableValueAccessorMixin:
             if FFI.get_obj_type(col_vector.ptr) not in numeric_types:
                 continue
 
-            name = col_name.value if hasattr(col_name, "value") else str(col_name)
+            name = _col_name(col_name)
 
             stats[name] = {
-                "count": _extract(utils.eval_obj(List([Operation.COUNT, col_vector.ptr]))),
-                "mean": _extract(utils.eval_obj(List([Operation.AVG, col_vector.ptr]))),
-                "min": _extract(utils.eval_obj(List([Operation.MIN, col_vector.ptr]))),
-                "max": _extract(utils.eval_obj(List([Operation.MAX, col_vector.ptr]))),
+                "count": _unwrap_value(utils.eval_obj(List([Operation.COUNT, col_vector.ptr]))),
+                "mean": _unwrap_value(utils.eval_obj(List([Operation.AVG, col_vector.ptr]))),
+                "min": _unwrap_value(utils.eval_obj(List([Operation.MIN, col_vector.ptr]))),
+                "max": _unwrap_value(utils.eval_obj(List([Operation.MAX, col_vector.ptr]))),
             }
 
         return stats
@@ -772,7 +750,7 @@ class TableValueAccessorMixin:
         vals = self.values()
         result: dict[str, str] = {}
         for col_sym, vec in zip(cols, vals, strict=True):
-            name = col_sym.value if hasattr(col_sym, "value") else str(col_sym)
+            name = _col_name(col_sym)
             tc = FFI.get_obj_type(vec.ptr)
             scalar_cls = TypeRegistry.get(-tc if tc > 0 else tc)
             ray_name = getattr(scalar_cls, "ray_name", None) if scalar_cls else None
@@ -781,7 +759,7 @@ class TableValueAccessorMixin:
 
     @DestructiveOperationHandler()
     def drop(self, *cols: str) -> Table:
-        current_cols = {c.value if hasattr(c, "value") else str(c) for c in self.columns()}
+        current_cols = {_col_name(c) for c in self.columns()}
         cols_to_drop = set(cols)
         if unknown := (cols_to_drop - current_cols):
             raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
@@ -791,7 +769,7 @@ class TableValueAccessorMixin:
 
     @DestructiveOperationHandler()
     def rename(self, mapping: dict[str, str]) -> Table:
-        current_cols = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        current_cols = [_col_name(c) for c in self.columns()]
         unknown = set(mapping.keys()) - set(current_cols)
         if unknown:
             raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
@@ -807,7 +785,7 @@ class TableValueAccessorMixin:
         return t.cast("Table", self).select(**select_args).execute()
 
     def cast(self, column: str, to_type: type) -> Table:
-        current_cols = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        current_cols = [_col_name(c) for c in self.columns()]
         if column not in current_cols:
             raise errors.RayforceConversionError(f"Column not found: {column}")
 
@@ -836,7 +814,7 @@ class TableValueAccessorMixin:
     @DestructiveOperationHandler()
     def to_dict(self) -> dict[str, list]:
         vals = self.values()
-        col_names = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        col_names = [_col_name(c) for c in self.columns()]
         return {
             name: vals[i].to_list() if hasattr(vals[i], "to_list") else list(vals[i])
             for i, name in enumerate(col_names)
@@ -1132,9 +1110,7 @@ class SelectQuery(IPCQueryMixin):
         if self._select_cols:
             cols, computed = self._select_cols
             if "*" in cols and computed:
-                current_cols = [
-                    c.value if hasattr(c, "value") else str(c) for c in self.table.columns()
-                ]
+                current_cols = [_col_name(c) for c in self.table.columns()]
                 attributes = {
                     col: _make_name_sym(col) for col in current_cols if col not in computed
                 }
@@ -1311,6 +1287,25 @@ class UpdateQuery(IPCQueryMixin):
         return Table(new_table)
 
 
+def _build_list_of_vectors(args: tuple, *, ipc: bool) -> r.RayObject:
+    """Pack a tuple of column-sequences into a list of Vectors. Shared by
+    InsertQuery / UpsertQuery's iterable-first path."""
+    out = List([Operation.LIST]) if ipc else List([])
+    for sub in args:
+        out.append(Vector(items=sub, ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0]))))
+    return out.ptr
+
+
+def _build_dict_of_vectors(kwargs: dict) -> r.RayObject:
+    """Pack kwargs into a Dict of (sym-keys, Vector-values). Shared by
+    InsertQuery / UpsertQuery's kwargs-with-iterable-values path."""
+    keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
+    values = List([])
+    for val in kwargs.values():
+        values.append(Vector(items=val, ray_type=FFI.get_obj_type(utils.python_to_ray(val[0]))))
+    return Dict.from_items(keys=keys, values=values).ptr
+
+
 class InsertQuery(IPCQueryMixin):
     def __init__(self, table: _TableProtocol, *args, **kwargs):
         self.table = table
@@ -1323,46 +1318,17 @@ class InsertQuery(IPCQueryMixin):
     def compile(self, *, ipc: bool = False) -> r.RayObject:
         if self.args:
             first = self.args[0]
-
             if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
-                _args = List([]) if not ipc else List([Operation.LIST])
-                for sub in self.args:
-                    _args.append(
-                        Vector(
-                            items=sub,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0])),
-                        )
-                    )
-                insertable = _args.ptr
+                return _build_list_of_vectors(self.args, ipc=ipc)
+            return (List([Operation.LIST, *self.args]) if ipc else List(self.args)).ptr
 
-            else:
-                insertable = (
-                    List(self.args).ptr if not ipc else List([Operation.LIST, *self.args]).ptr
-                )
-
-        elif self.kwargs:
-            values = list(self.kwargs.values())
-            first_val = values[0]
-
+        if self.kwargs:
+            first_val = next(iter(self.kwargs.values()))
             if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
-                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
-                _values = List([])
+                return _build_dict_of_vectors(self.kwargs)
+            return Dict(self.kwargs).ptr
 
-                for val in values:
-                    _values.append(
-                        Vector(
-                            items=val,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(val[0])),
-                        )
-                    )
-                insertable = Dict.from_items(keys=keys, values=_values).ptr
-
-            else:
-                insertable = Dict(self.kwargs).ptr
-        else:
-            raise errors.RayforceQueryCompilationError("No data to insert")
-
-        return insertable
+        raise errors.RayforceQueryCompilationError("No data to insert")
 
     @property
     def ipc(self) -> r.RayObject:  # type: ignore[override]
@@ -1396,61 +1362,23 @@ class UpsertQuery(IPCQueryMixin):
         self.key_columns = key_columns
 
     def compile(self, *, ipc: bool = False) -> tuple[r.RayObject, r.RayObject]:
+        # Upsert always packs into Vectors — scalar args/values are wrapped
+        # in length-1 Vectors before packing.
         if self.args:
             first = self.args[0]
-
-            if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
-                _args = List([]) if not ipc else List([Operation.LIST])
-                for sub in self.args:
-                    _args.append(
-                        Vector(
-                            items=sub,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0])),
-                        )
-                    )
-                upsertable = _args.ptr
-
-            else:
-                _args = List([]) if not ipc else List([Operation.LIST])
-                for sub in self.args:
-                    _args.append(
-                        Vector(
-                            items=[sub],
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub)),
-                        )
-                    )
-                upsertable = _args.ptr
-
-        # TODO: for consistency with insert, allow to use single values isntead of vectors
+            packed_args = (
+                self.args
+                if isinstance(first, Iterable) and not isinstance(first, (str, bytes))
+                else tuple([a] for a in self.args)
+            )
+            upsertable = _build_list_of_vectors(packed_args, ipc=ipc)
         elif self.kwargs:
-            values = list(self.kwargs.values())
-            first_val = values[0]
-
+            first_val = next(iter(self.kwargs.values()))
             if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
-                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
-                _values = List([])
-
-                for val in values:
-                    _values.append(
-                        Vector(
-                            items=val,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(val[0])),
-                        )
-                    )
-                upsertable = Dict.from_items(keys=keys, values=_values).ptr
-
+                packed_kwargs = self.kwargs
             else:
-                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
-                _values = List([])
-
-                for val in values:
-                    _values.append(
-                        Vector(
-                            items=[val],
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(val)),
-                        )
-                    )
-                upsertable = Dict.from_items(keys=keys, values=_values).ptr
+                packed_kwargs = {k: [v] for k, v in self.kwargs.items()}
+            upsertable = _build_dict_of_vectors(packed_kwargs)
         else:
             raise errors.RayforceQueryCompilationError("No data to insert")
 
@@ -1505,9 +1433,7 @@ class PivotQuery:
 
     def execute(self) -> Table:
         col_vec = self.table[self.columns]
-        unique_values = list(
-            dict.fromkeys(v.value if hasattr(v, "value") else v for v in col_vec.to_python())
-        )
+        unique_values = list(dict.fromkeys(_unwrap_value(v) for v in col_vec.to_python()))
         if not unique_values:
             raise errors.RayforceValueError(f"No values in pivot column '{self.columns}'")
 

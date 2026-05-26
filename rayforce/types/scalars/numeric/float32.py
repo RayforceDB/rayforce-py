@@ -62,10 +62,8 @@ class F32(AriphmeticScalarMixin, ComparisonScalarMixin, AggScalarMixin):
             f"{r.TYPE_F32} (vector), got type={actual}"
         )
 
-    # v2 has no F32 arithmetic — promote both sides to F64 for binary numeric
-    # ops so F32 ± F32 / F32 ± F64 produce sensible results (matches numpy
-    # behavior in spirit: F32 widens to F64 when interacting with F64; here
-    # we widen F32 unconditionally because v2 lacks F32 op kernels).
+    # v2 has no F32 arithmetic kernels — promote both sides to F64 for binary
+    # numeric ops. Matches numpy's F32-widens-to-F64 spirit.
     def _as_f64(self):
         from rayforce.types.scalars.numeric.float import F64
 
@@ -75,38 +73,30 @@ class F32(AriphmeticScalarMixin, ComparisonScalarMixin, AggScalarMixin):
     def _promote(value):
         return value._as_f64() if isinstance(value, F32) else value
 
-    def __add__(self, other):
-        return self._as_f64() + self._promote(other)
 
-    def __radd__(self, other):
-        return self._promote(other) + self._as_f64()
+def _f32_promoted_dunder(op_name: str):
+    def fwd(self, other):
+        return getattr(self._as_f64(), op_name)(self._promote(other))
 
-    def __sub__(self, other):
-        return self._as_f64() - self._promote(other)
+    fwd.__name__ = op_name
+    return fwd
 
-    def __rsub__(self, other):
-        return self._promote(other) - self._as_f64()
 
-    def __mul__(self, other):
-        return self._as_f64() * self._promote(other)
-
-    def __rmul__(self, other):
-        return self._promote(other) * self._as_f64()
-
-    def __truediv__(self, other):
-        return self._as_f64() / self._promote(other)
-
-    def __rtruediv__(self, other):
-        return self._promote(other) / self._as_f64()
-
-    def __floordiv__(self, other):
-        return self._as_f64() // self._promote(other)
-
-    def __rfloordiv__(self, other):
-        return self._promote(other) // self._as_f64()
-
-    def __mod__(self, other):
-        return self._as_f64() % self._promote(other)
+for _op in (
+    "__add__",
+    "__radd__",
+    "__sub__",
+    "__rsub__",
+    "__mul__",
+    "__rmul__",
+    "__truediv__",
+    "__rtruediv__",
+    "__floordiv__",
+    "__rfloordiv__",
+    "__mod__",
+):
+    setattr(F32, _op, _f32_promoted_dunder(_op))
+del _op
 
 
 TypeRegistry.register(-r.TYPE_F32, F32)

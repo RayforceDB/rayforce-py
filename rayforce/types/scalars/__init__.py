@@ -1,5 +1,5 @@
 from .numeric import F32, F64, I16, I32, I64, U8
-from .other import B8, GUID, QuotedSymbol, Symbol
+from .other import B8, GUID, QuotedSymbol, String, Symbol
 from .temporal import Date, Time, Timestamp
 
 __all__ = [
@@ -12,12 +12,9 @@ __all__ = [
     "I64",
     "U8",
     "Date",
-    "Dict",
-    "List",
     "QuotedSymbol",
+    "String",
     "Symbol",
-    "Table",
     "Time",
     "Timestamp",
-    "Vector",
 ]

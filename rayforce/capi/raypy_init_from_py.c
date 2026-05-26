@@ -209,6 +209,30 @@ PyObject *raypy_init_list(PyObject *self, PyObject *args) {
   }
   return raypy_wrap_ray_object(ray_obj);
 }
+ray_t *raypy_build_table(const int64_t *col_ids, ray_t *const *cols,
+                         int64_t ncols) {
+  ray_t *tbl = ray_table_new(ncols);
+  if (tbl == NULL)
+    return ray_error("table_new failed", NULL);
+  if (RAY_IS_ERR(tbl))
+    return tbl;
+  for (int64_t i = 0; i < ncols; i++) {
+    if (cols[i] == NULL) {
+      ray_release(tbl);
+      return ray_error("table column is null", NULL);
+    }
+    /* ray_table_add_col retains the column internally and may return a new
+     * pointer on realloc. */
+    ray_t *res = ray_table_add_col(tbl, col_ids[i], cols[i]);
+    if (res == NULL || RAY_IS_ERR(res)) {
+      ray_release(tbl);
+      return res ? res : ray_error("table_add_col failed", NULL);
+    }
+    tbl = res;
+  }
+  return tbl;
+}
+
 PyObject *raypy_init_table(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -227,16 +251,7 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
                     "init: table requires non-null keys and values");
     return NULL;
   }
-
-  /* v2 ray_table requires names as a list of sym atoms. High-level Python code
-   * passes a symbol vector. Accept either form; use ray_table_new + add_col
-   * directly so we don't depend on ray_table's unbox path. */
-  int64_t ncols;
-  int keys_is_sym_vec = (keys->type == RAY_SYM);
-  int keys_is_list = (keys->type == RAY_LIST);
-  if (keys_is_sym_vec || keys_is_list) {
-    ncols = keys->len;
-  } else {
+  if (keys->type != RAY_SYM && keys->type != RAY_LIST) {
     PyErr_SetString(PyExc_RuntimeError,
                     "init: table keys must be a symbol vector or list");
     return NULL;
@@ -245,57 +260,27 @@ PyObject *raypy_init_table(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_RuntimeError, "init: table values must be a list");
     return NULL;
   }
-  if (vals->len != ncols) {
-    /* Return a ray_t ERROR so the Python error_handler wrapper can map
-     * code "length" → RayforceLengthError. */
+  int64_t ncols = keys->len;
+  if (vals->len != ncols)
     return raypy_wrap_ray_object(ray_error("length", NULL));
-  }
 
-  ray_t *tbl = ray_table_new(ncols);
-  if (tbl == NULL || RAY_IS_ERR(tbl)) {
-    if (tbl)
-      ray_release(tbl);
-    PyErr_SetString(PyExc_RuntimeError, "init: failed to create table");
-    return NULL;
-  }
-
-  ray_t **col_elems = (ray_t **)ray_data(vals);
-
-  for (int64_t i = 0; i < ncols; i++) {
-    int64_t name_id;
-    if (keys_is_sym_vec) {
-      int64_t *ids = (int64_t *)ray_data(keys);
-      name_id = ids[i];
-    } else {
-      ray_t **key_elems = (ray_t **)ray_data(keys);
+  ray_t *const *cols = (ray_t *const *)ray_data(vals);
+  ray_t *tbl;
+  if (keys->type == RAY_SYM) {
+    tbl = raypy_build_table((const int64_t *)ray_data(keys), cols, ncols);
+  } else {
+    ray_t **key_elems = (ray_t **)ray_data(keys);
+    int64_t *ids = (int64_t *)alloca((size_t)ncols * sizeof(int64_t));
+    for (int64_t i = 0; i < ncols; i++) {
       if (key_elems[i] == NULL || key_elems[i]->type != -RAY_SYM) {
-        ray_release(tbl);
         PyErr_SetString(PyExc_RuntimeError,
                         "init: table key elements must be symbols");
         return NULL;
       }
-      name_id = key_elems[i]->i64;
+      ids[i] = key_elems[i]->i64;
     }
-
-    ray_t *col = col_elems[i];
-    if (col == NULL) {
-      ray_release(tbl);
-      PyErr_SetString(PyExc_RuntimeError, "init: table column is null");
-      return NULL;
-    }
-    /* ray_table_add_col retains col internally; caller keeps ownership via
-     * `vals`, so no explicit retain/release is needed here. */
-    ray_t *res = ray_table_add_col(tbl, name_id, col);
-    if (res == NULL || RAY_IS_ERR(res)) {
-      ray_release(tbl);
-      PyErr_Format(PyExc_RuntimeError,
-                   "init: failed to add column %lld to table", (long long)i);
-      return NULL;
-    }
-    /* ray_table_add_col may return a new pointer (realloc). */
-    tbl = res;
+    tbl = raypy_build_table(ids, cols, ncols);
   }
-
   return raypy_wrap_ray_object(tbl);
 }
 PyObject *raypy_init_dict(PyObject *self, PyObject *args) {
@@ -373,72 +358,23 @@ static int append_to_collection(ray_t **target_obj, ray_t *atom) {
     return 0;
   }
 
-  /* Typed scalar vec — extract the raw scalar from the atom. */
-  union {
-    uint8_t u8;
-    int16_t i16;
-    int32_t i32;
-    int64_t i64;
-    float f32;
-    double f64;
-  } scratch;
+  /* Typed scalar vec. GUID payload is a 16-byte buffer, not a scratch union;
+   * the null/non-null distinction matters for the bitmap, not the payload
+   * (a non-null GUID still memcpy's its 16 bytes). */
+  scalar_scratch_t scratch;
   const void *p;
-  if (is_null) {
+  if (target->type == RAY_GUID) {
+    static const uint8_t zero_guid[16] = {0};
+    p = is_null ? (const void *)zero_guid
+                : (atom->obj ? ray_data(atom->obj) : NULL);
+  } else if (is_null) {
     memset(&scratch, 0, sizeof(scratch));
     p = &scratch;
-    if (target->type == RAY_GUID) {
-      static const uint8_t zero_guid[16] = {0};
-      target = ray_vec_append(target, zero_guid);
-      if (target == NULL || RAY_IS_ERR(target))
-        return -1;
-      ray_vec_set_null(target, target->len - 1, true);
-      *target_obj = target;
-      return 0;
-    }
   } else {
-    switch (target->type) {
-    case RAY_BOOL:
-    case RAY_U8:
-      scratch.u8 = atom->u8;
-      p = &scratch.u8;
-      break;
-    case RAY_I16:
-      scratch.i16 = atom->i16;
-      p = &scratch.i16;
-      break;
-    case RAY_I32:
-    case RAY_DATE:
-    case RAY_TIME:
-      scratch.i32 = atom->i32;
-      p = &scratch.i32;
-      break;
-    case RAY_I64:
-    case RAY_TIMESTAMP:
-    case RAY_SYM:
-      scratch.i64 = atom->i64;
-      p = &scratch.i64;
-      break;
-    case RAY_F32:
-      /* v2 has no F32 atom — narrow from an F64 atom. */
-      scratch.f32 = (float)atom->f64;
-      p = &scratch.f32;
-      break;
-    case RAY_F64:
-      scratch.f64 = atom->f64;
-      p = &scratch.f64;
-      break;
-    case RAY_GUID: {
-      const void *guid_payload = atom->obj ? ray_data(atom->obj) : NULL;
-      target = ray_vec_append(target, guid_payload);
-      if (target == NULL || RAY_IS_ERR(target))
-        return -1;
-      *target_obj = target;
-      return 0;
-    }
-    default:
-      return -1;
-    }
+    p = atom_scalar_ptr(atom, target->type, &scratch);
   }
+  if (p == NULL)
+    return -1;
   target = ray_vec_append(target, p);
   if (target == NULL || RAY_IS_ERR(target))
     return -1;
@@ -483,31 +419,17 @@ static int fill_obj_from_py_sequence(ray_t **target_obj, PyObject *fill,
   return 0;
 }
 
-/* Helper: element size (bytes) for typed vec types — used to zero-init
- * pre-sized vectors. Returns 0 for unsupported types. */
+/* Element size (bytes) for vec storage during pre-sized zero-init. Extends
+ * ray_scalar_elem_size with RAY_SYM (8) and RAY_STR (16, ray_str_t footprint)
+ * which the buffer/serde paths don't accept. Returns 0 for unsupported. */
 static size_t vec_elem_size_for_init(int8_t type) {
+  size_t n = ray_scalar_elem_size(type);
+  if (n)
+    return n;
   switch (type) {
-  case RAY_BOOL:
-  case RAY_U8:
-    return 1;
-  case RAY_I16:
-    return 2;
-  case RAY_I32:
-  case RAY_DATE:
-  case RAY_TIME:
-  case RAY_F32:
-    return 4;
-  case RAY_I64:
-  case RAY_F64:
-  case RAY_TIMESTAMP:
-  case RAY_SYM:
-    return 8;
-  case RAY_GUID:
-    return 16;
-  case RAY_STR:
-    return 16; /* ray_str_t footprint */
-  default:
-    return 0;
+  case RAY_SYM: return 8;
+  case RAY_STR: return 16;
+  default:      return 0;
   }
 }
 
@@ -521,7 +443,7 @@ PyObject *raypy_init_vector(PyObject *self, PyObject *args) {
     return NULL;
 
   ray_t *ray_obj = NULL;
-  int vector_type_code = type_code < 0 ? -type_code : type_code;
+  int vector_type_code = ray_abs_type(type_code);
 
   /* RAY_NULL isn't a real vec element type — fall back to RAY_LIST. */
   if (vector_type_code == RAY_NULL)
@@ -801,34 +723,28 @@ ray_t *raypy_init_date_from_py(PyObject *item) {
   return result;
 }
 
-ray_t *raypy_init_time_from_py(PyObject *item) {
+/* str(item) → ray_str → cast_string_to_temporal. Shared by time / timestamp;
+ * date has its own ISO-dotted normalization and stays separate. */
+static ray_t *init_temporal_from_py_str(PyObject *item, const char *type_name,
+                                        size_t type_name_len) {
   PyObject *str_obj = PyObject_Str(item);
   if (str_obj == NULL)
     return NULL;
-
   ray_t *ray_str_obj = raypy_init_string_from_py(str_obj);
   Py_DECREF(str_obj);
   if (ray_str_obj == NULL)
     return NULL;
-
-  ray_t *result = cast_string_to_temporal(ray_str_obj, "time", 4);
+  ray_t *result = cast_string_to_temporal(ray_str_obj, type_name, type_name_len);
   ray_release(ray_str_obj);
   return result;
 }
 
+ray_t *raypy_init_time_from_py(PyObject *item) {
+  return init_temporal_from_py_str(item, "time", 4);
+}
+
 ray_t *raypy_init_timestamp_from_py(PyObject *item) {
-  PyObject *str_obj = PyObject_Str(item);
-  if (str_obj == NULL)
-    return NULL;
-
-  ray_t *ray_str_obj = raypy_init_string_from_py(str_obj);
-  Py_DECREF(str_obj);
-  if (ray_str_obj == NULL)
-    return NULL;
-
-  ray_t *result = cast_string_to_temporal(ray_str_obj, "timestamp", 9);
-  ray_release(ray_str_obj);
-  return result;
+  return init_temporal_from_py_str(item, "timestamp", 9);
 }
 
 ray_t *raypy_init_dict_from_py(PyObject *item) {
@@ -938,36 +854,31 @@ static ray_t *convert_py_item_to_ray(PyObject *item, int type_code) {
     Py_XDECREF(ptr_attr);
   }
 
-  int abs_type_code = type_code < 0 ? -type_code : type_code;
+  int abs_type_code = ray_abs_type(type_code);
   if (abs_type_code > 0) {
-    if (abs_type_code == RAY_I16) {
-      return raypy_init_i16_from_py(item);
-    } else if (abs_type_code == RAY_I32) {
-      return raypy_init_i32_from_py(item);
-    } else if (abs_type_code == RAY_I64) {
-      return raypy_init_i64_from_py(item);
-    } else if (abs_type_code == RAY_F64) {
-      return raypy_init_f64_from_py(item);
-    } else if (abs_type_code == RAY_F32) {
-      /* v2 has no F32 atom — produce an F64; the append path narrows it. */
-      return raypy_init_f64_from_py(item);
-    } else if (abs_type_code == RAY_BOOL) {
-      return raypy_init_b8_from_py(item);
-    } else if (abs_type_code == RAY_SYM) {
-      return raypy_init_symbol_from_py(item);
-    } else if (abs_type_code == RAY_U8) {
-      return raypy_init_u8_from_py(item);
-    } else if (abs_type_code == RAY_STR) {
-      /* RAY_STR atoms (and length-1 c8 fallback) — both produce ray_str. */
-      return raypy_init_string_from_py(item);
-    } else if (abs_type_code == RAY_GUID) {
-      return raypy_init_guid_from_py(item);
-    } else if (abs_type_code == RAY_DATE) {
-      return raypy_init_date_from_py(item);
-    } else if (abs_type_code == RAY_TIME) {
-      return raypy_init_time_from_py(item);
-    } else if (abs_type_code == RAY_TIMESTAMP) {
-      return raypy_init_timestamp_from_py(item);
+    /* RAY_F32 routes to F64's init: v2 has no F32 atom, append narrows.
+     * RAY_STR routes to ray_str: covers both atom + legacy c8-vector case. */
+    static const struct {
+      int code;
+      ray_t *(*fn)(PyObject *);
+    } init_table[] = {
+        {RAY_I16, raypy_init_i16_from_py},
+        {RAY_I32, raypy_init_i32_from_py},
+        {RAY_I64, raypy_init_i64_from_py},
+        {RAY_F64, raypy_init_f64_from_py},
+        {RAY_F32, raypy_init_f64_from_py},
+        {RAY_BOOL, raypy_init_b8_from_py},
+        {RAY_SYM, raypy_init_symbol_from_py},
+        {RAY_U8, raypy_init_u8_from_py},
+        {RAY_STR, raypy_init_string_from_py},
+        {RAY_GUID, raypy_init_guid_from_py},
+        {RAY_DATE, raypy_init_date_from_py},
+        {RAY_TIME, raypy_init_time_from_py},
+        {RAY_TIMESTAMP, raypy_init_timestamp_from_py},
+    };
+    for (size_t i = 0; i < sizeof(init_table) / sizeof(init_table[0]); i++) {
+      if (init_table[i].code == abs_type_code)
+        return init_table[i].fn(item);
     }
     return NULL;
   }

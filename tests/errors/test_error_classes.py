@@ -32,7 +32,6 @@ from rayforce import errors
         errors.RayforceTypeRegistryError,
         errors.RayforceUserError,
         errors.RayforceValueError,
-        errors.RayforceWSError,
     ],
 )
 def test_error_inherits_from_rayforce_error(cls):
@@ -66,7 +65,6 @@ def test_error_inherits_from_rayforce_error(cls):
         errors.RayforceTypeRegistryError,
         errors.RayforceUserError,
         errors.RayforceValueError,
-        errors.RayforceWSError,
     ],
 )
 def test_error_is_exception(cls):

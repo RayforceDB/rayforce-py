@@ -65,27 +65,8 @@ PyObject *raypy_read_vector_raw(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &obj))
     return NULL;
 
-  size_t elem_size;
-  switch (obj->obj->type) {
-  case RAY_BOOL:
-  case RAY_U8:
-    elem_size = 1;
-    break;
-  case RAY_I16:
-    elem_size = sizeof(int16_t);
-    break;
-  case RAY_I32:
-  case RAY_DATE:
-  case RAY_TIME:
-  case RAY_F32:
-    elem_size = sizeof(int32_t);
-    break;
-  case RAY_I64:
-  case RAY_TIMESTAMP:
-  case RAY_F64:
-    elem_size = sizeof(int64_t);
-    break;
-  default:
+  size_t elem_size = ray_scalar_elem_size(obj->obj->type);
+  if (elem_size == 0) {
     PyErr_SetString(PyExc_RuntimeError,
                     "read_vector_raw: unsupported vector type");
     return NULL;

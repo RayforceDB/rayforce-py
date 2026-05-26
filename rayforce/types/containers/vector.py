@@ -17,13 +17,10 @@ from rayforce.types.base import (
     FunctionalContainerMixin,
     IterableContainerMixin,
     RayObject,
-    Scalar,
     SearchContainerMixin,
     SetOperationContainerMixin,
     SortContainerMixin,
 )
-from rayforce.types.containers.list import List
-from rayforce.types.operators import Operation
 from rayforce.types.scalars.other.symbol import Symbol
 
 _RAW_FORMATS: dict[int, tuple[str, int]] = {
@@ -328,86 +325,3 @@ class Vector(
             f"Supported: {list(_NUMPY_TO_RAY.keys())}, datetime64, timedelta64, and string arrays. "
             f"Pass ray_type explicitly."
         )
-
-    def reverse(self) -> Vector:
-        return utils.eval_obj(List([Operation.REVERSE, self.ptr]))
-
-
-class String(Scalar):
-    """v2 string atom (type -RAY_STR).
-
-    Stored as a single RayObject atom — SSO for ≤7 bytes, pooled otherwise.
-    Exposes len/iter/index helpers so call sites written against the old
-    C8-vector shape continue to work at the Python layer.
-    """
-
-    type_code = -r.TYPE_STR
-    ray_name = "str"
-
-    def __init__(
-        self,
-        value: str | String | Vector | None = None,
-        *,
-        ptr: r.RayObject | None = None,
-    ) -> None:
-        if ptr is not None:
-            actual = FFI.get_obj_type(ptr)
-            if actual != self.type_code:
-                raise errors.RayforceInitError(
-                    f"Expected String RayObject (type {self.type_code}), got {actual}"
-                )
-            self.ptr = ptr
-            return
-
-        if isinstance(value, String):
-            self.ptr = value.ptr
-            return
-
-        if isinstance(value, Vector):
-            # Legacy compatibility: a Vector pointing at a RAY_STR atom.
-            if FFI.get_obj_type(value.ptr) != self.type_code:
-                raise errors.RayforceInitError(
-                    f"Expected Vector wrapping String (type {self.type_code}), "
-                    f"got {FFI.get_obj_type(value.ptr)}"
-                )
-            self.ptr = value.ptr
-            return
-
-        if value is None:
-            raise errors.RayforceInitError("String requires 'value' or 'ptr'")
-
-        if not isinstance(value, str):
-            raise errors.RayforceInitError(f"String expects str, got {type(value).__name__}")
-        self.ptr = FFI.init_string(value)
-
-    def _create_from_value(self, value: t.Any) -> r.RayObject:
-        return FFI.init_string(value)
-
-    def to_python(self) -> str:  # type: ignore[override]
-        return FFI.read_string(self.ptr)
-
-    def __len__(self) -> int:
-        return FFI.get_obj_length(self.ptr)
-
-    def __bool__(self) -> bool:
-        return len(self) > 0
-
-    def __getitem__(self, idx: int) -> String:
-        py = self.to_python()
-        if idx < 0:
-            idx = len(py) + idx
-        if idx < 0 or idx >= len(py):
-            raise errors.RayforceIndexError(f"String index out of range: {idx}")
-        return String(py[idx])
-
-    def __iter__(self) -> t.Iterator[String]:
-        for ch in self.to_python():
-            yield String(ch)
-
-    def to_numpy(self) -> t.Any:
-        return np.array(list(self.to_python()))
-
-
-from rayforce.types.registry import TypeRegistry  # noqa: E402
-
-TypeRegistry.register(-r.TYPE_STR, String)

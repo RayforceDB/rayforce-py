@@ -379,28 +379,52 @@ PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
   ray_release(s);
   return result;
 }
-/* Build a 2-entry ray dict `{code: <code>, message: <msg>}` from the error. */
+/* Build a 2-entry ray dict `{code: <code>, message: <msg>}` from the error.
+ * Returns NULL on any allocation/intern failure (callers fall back to a plain
+ * runtime error). */
 static ray_t *build_err_dict(const char *code, const char *msg) {
   if (!code) code = "err";
   if (!msg) msg = "";
 
-  ray_t *keys = ray_sym_vec_new(RAY_SYM_W64, 2);
+  ray_t *keys = NULL, *vals = NULL, *code_atom = NULL, *msg_atom = NULL;
+  ray_t *dict = NULL;
+
+  keys = ray_sym_vec_new(RAY_SYM_W64, 2);
+  if (keys == NULL || RAY_IS_ERR(keys)) goto fail;
+  int64_t code_id = ray_sym_intern("code", 4);
+  int64_t msg_id = ray_sym_intern("message", 7);
+  if (code_id < 0 || msg_id < 0) goto fail;
   int64_t *ids = (int64_t *)ray_data(keys);
-  ids[0] = ray_sym_intern("code", 4);
-  ids[1] = ray_sym_intern("message", 7);
+  ids[0] = code_id;
+  ids[1] = msg_id;
   keys->len = 2;
 
-  ray_t *code_atom = ray_str(code, strlen(code));
-  ray_t *msg_atom = ray_str(msg, strlen(msg));
-  ray_t *vals = ray_list_new(2);
-  vals = ray_list_append(vals, code_atom);
-  vals = ray_list_append(vals, msg_atom);
-  ray_release(code_atom);
-  ray_release(msg_atom);
+  code_atom = ray_str(code, strlen(code));
+  if (code_atom == NULL || RAY_IS_ERR(code_atom)) goto fail;
+  msg_atom = ray_str(msg, strlen(msg));
+  if (msg_atom == NULL || RAY_IS_ERR(msg_atom)) goto fail;
 
-  ray_t *dict = ray_dict_fn(keys, vals);
-  ray_release(keys);
-  ray_release(vals);
+  vals = ray_list_new(2);
+  if (vals == NULL || RAY_IS_ERR(vals)) goto fail;
+  /* ray_list_append returns a new pointer; abandon the old on failure. */
+  ray_t *r1 = ray_list_append(vals, code_atom);
+  if (r1 == NULL || RAY_IS_ERR(r1)) goto fail;
+  vals = r1;
+  ray_t *r2 = ray_list_append(vals, msg_atom);
+  if (r2 == NULL || RAY_IS_ERR(r2)) goto fail;
+  vals = r2;
+
+  dict = ray_dict_fn(keys, vals);
+  if (dict == NULL || RAY_IS_ERR(dict)) {
+    dict = NULL;
+    goto fail;
+  }
+
+fail:
+  if (code_atom) ray_release(code_atom);
+  if (msg_atom) ray_release(msg_atom);
+  if (keys) ray_release(keys);
+  if (vals) ray_release(vals);
   return dict;
 }
 
@@ -508,6 +532,31 @@ PyObject *raypy_obj_addr(PyObject *self, PyObject *args) {
 
   return PyLong_FromVoidPtr((void *)ray_obj->obj);
 }
+/* Extract a non-NULL vec ray_t* from a RayObject, with PyErr-on-failure
+ * prefixed by `fn_name`. */
+static ray_t *unwrap_vec(RayObject *obj, const char *fn_name) {
+  ray_t *vec = obj->obj;
+  if (vec == NULL) {
+    PyErr_Format(PyExc_RuntimeError, "%s: object is null", fn_name);
+    return NULL;
+  }
+  if (!ray_is_vec(vec)) {
+    PyErr_Format(PyExc_RuntimeError, "%s: object is not a vector", fn_name);
+    return NULL;
+  }
+  return vec;
+}
+
+/* Validate that `idx` is in [0, vec->len). Sets PyErr and returns -1 on miss. */
+static int check_vec_index(ray_t *vec, Py_ssize_t idx, const char *fn_name) {
+  if (idx < 0 || idx >= vec->len) {
+    PyErr_Format(PyExc_IndexError, "%s: index %zd out of range (len %lld)",
+                 fn_name, idx, (long long)vec->len);
+    return -1;
+  }
+  return 0;
+}
+
 PyObject *raypy_vec_is_null(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -517,21 +566,9 @@ PyObject *raypy_vec_is_null(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &idx))
     return NULL;
 
-  ray_t *vec = ray_obj->obj;
-  if (vec == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "vec_is_null: object is null");
+  ray_t *vec = unwrap_vec(ray_obj, "vec_is_null");
+  if (vec == NULL || check_vec_index(vec, idx, "vec_is_null") < 0)
     return NULL;
-  }
-  if (!ray_is_vec(vec)) {
-    PyErr_SetString(PyExc_RuntimeError, "vec_is_null: object is not a vector");
-    return NULL;
-  }
-  if (idx < 0 || idx >= vec->len) {
-    PyErr_Format(PyExc_IndexError,
-                 "vec_is_null: index %zd out of range (len %lld)", idx,
-                 (long long)vec->len);
-    return NULL;
-  }
   return PyBool_FromLong(ray_vec_is_null(vec, (int64_t)idx));
 }
 PyObject *raypy_vec_set_null(PyObject *self, PyObject *args) {
@@ -544,21 +581,9 @@ PyObject *raypy_vec_set_null(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!np", &RayObjectType, &ray_obj, &idx, &is_null))
     return NULL;
 
-  ray_t *vec = ray_obj->obj;
-  if (vec == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "vec_set_null: object is null");
+  ray_t *vec = unwrap_vec(ray_obj, "vec_set_null");
+  if (vec == NULL || check_vec_index(vec, idx, "vec_set_null") < 0)
     return NULL;
-  }
-  if (!ray_is_vec(vec)) {
-    PyErr_SetString(PyExc_RuntimeError, "vec_set_null: object is not a vector");
-    return NULL;
-  }
-  if (idx < 0 || idx >= vec->len) {
-    PyErr_Format(PyExc_IndexError,
-                 "vec_set_null: index %zd out of range (len %lld)", idx,
-                 (long long)vec->len);
-    return NULL;
-  }
   ray_vec_set_null(vec, (int64_t)idx, is_null ? true : false);
   Py_RETURN_NONE;
 }
@@ -573,15 +598,9 @@ PyObject *raypy_vec_slice(PyObject *self, PyObject *args) {
                         &length))
     return NULL;
 
-  ray_t *vec = ray_obj->obj;
-  if (vec == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "vec_slice: object is null");
+  ray_t *vec = unwrap_vec(ray_obj, "vec_slice");
+  if (vec == NULL)
     return NULL;
-  }
-  if (!ray_is_vec(vec)) {
-    PyErr_SetString(PyExc_RuntimeError, "vec_slice: object is not a vector");
-    return NULL;
-  }
   if (offset < 0 || length < 0 || offset > vec->len ||
       length > vec->len - offset) {
     PyErr_Format(PyExc_IndexError,

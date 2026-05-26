@@ -24,8 +24,7 @@ class Fn(RayObject):
     type_code = r.TYPE_LAMBDA
     ray_name = "LAMBDA"
 
-    @classmethod
-    def _create_from_value(cls, value: str) -> r.RayObject:
+    def _create_from_value(self, value: str) -> r.RayObject:
         if not isinstance(value, str):
             raise errors.RayforceInitError(f"Expected string, got {type(value)}")
         if not value.startswith("(fn"):
