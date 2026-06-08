@@ -10,9 +10,15 @@ static ray_t *vec_write_atom(ray_t *target, int64_t idx, ray_t *atom,
   ray_t *result = NULL;
   if (target->type == RAY_LIST) {
     switch (op) {
-    case VW_APPEND: result = ray_list_append(target, atom); break;
-    case VW_INSERT: result = ray_list_insert_at(target, idx, atom); break;
-    case VW_SET:    result = ray_list_set(target, idx, atom); break;
+    case VW_APPEND:
+      result = ray_list_append(target, atom);
+      break;
+    case VW_INSERT:
+      result = ray_list_insert_at(target, idx, atom);
+      break;
+    case VW_SET:
+      result = ray_list_set(target, idx, atom);
+      break;
     }
   } else if (target->type == RAY_STR) {
     if (atom == NULL || atom->type != -RAY_STR) {
@@ -23,9 +29,15 @@ static ray_t *vec_write_atom(ray_t *target, int64_t idx, ray_t *atom,
     const char *p = ray_str_ptr(atom);
     size_t n = ray_str_len(atom);
     switch (op) {
-    case VW_APPEND: result = ray_str_vec_append(target, p, n); break;
-    case VW_INSERT: result = ray_str_vec_insert_at(target, idx, p, n); break;
-    case VW_SET:    result = ray_str_vec_set(target, idx, p, n); break;
+    case VW_APPEND:
+      result = ray_str_vec_append(target, p, n);
+      break;
+    case VW_INSERT:
+      result = ray_str_vec_insert_at(target, idx, p, n);
+      break;
+    case VW_SET:
+      result = ray_str_vec_set(target, idx, p, n);
+      break;
     }
   } else {
     scalar_scratch_t scratch;
@@ -36,9 +48,15 @@ static ray_t *vec_write_atom(ray_t *target, int64_t idx, ray_t *atom,
       return NULL;
     }
     switch (op) {
-    case VW_APPEND: result = ray_vec_append(target, p); break;
-    case VW_INSERT: result = ray_vec_insert_at(target, idx, p); break;
-    case VW_SET:    result = ray_vec_set(target, idx, p); break;
+    case VW_APPEND:
+      result = ray_vec_append(target, p);
+      break;
+    case VW_INSERT:
+      result = ray_vec_insert_at(target, idx, p);
+      break;
+    case VW_SET:
+      result = ray_vec_set(target, idx, p);
+      break;
     }
   }
   if (result == NULL || RAY_IS_ERR(result)) {
@@ -69,8 +87,8 @@ PyObject *raypy_insert_obj(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  ray_t *result = vec_write_atom(target, (int64_t)index, item->obj,
-                                  VW_INSERT, "insert");
+  ray_t *result =
+      vec_write_atom(target, (int64_t)index, item->obj, VW_INSERT, "insert");
   if (result == NULL)
     return NULL;
   ray_obj->obj = result;

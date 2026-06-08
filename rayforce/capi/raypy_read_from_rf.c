@@ -383,35 +383,44 @@ PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
  * Returns NULL on any allocation/intern failure (callers fall back to a plain
  * runtime error). */
 static ray_t *build_err_dict(const char *code, const char *msg) {
-  if (!code) code = "err";
-  if (!msg) msg = "";
+  if (!code)
+    code = "err";
+  if (!msg)
+    msg = "";
 
   ray_t *keys = NULL, *vals = NULL, *code_atom = NULL, *msg_atom = NULL;
   ray_t *dict = NULL;
 
   keys = ray_sym_vec_new(RAY_SYM_W64, 2);
-  if (keys == NULL || RAY_IS_ERR(keys)) goto fail;
+  if (keys == NULL || RAY_IS_ERR(keys))
+    goto fail;
   int64_t code_id = ray_sym_intern("code", 4);
   int64_t msg_id = ray_sym_intern("message", 7);
-  if (code_id < 0 || msg_id < 0) goto fail;
+  if (code_id < 0 || msg_id < 0)
+    goto fail;
   int64_t *ids = (int64_t *)ray_data(keys);
   ids[0] = code_id;
   ids[1] = msg_id;
   keys->len = 2;
 
   code_atom = ray_str(code, strlen(code));
-  if (code_atom == NULL || RAY_IS_ERR(code_atom)) goto fail;
+  if (code_atom == NULL || RAY_IS_ERR(code_atom))
+    goto fail;
   msg_atom = ray_str(msg, strlen(msg));
-  if (msg_atom == NULL || RAY_IS_ERR(msg_atom)) goto fail;
+  if (msg_atom == NULL || RAY_IS_ERR(msg_atom))
+    goto fail;
 
   vals = ray_list_new(2);
-  if (vals == NULL || RAY_IS_ERR(vals)) goto fail;
+  if (vals == NULL || RAY_IS_ERR(vals))
+    goto fail;
   /* ray_list_append returns a new pointer; abandon the old on failure. */
   ray_t *r1 = ray_list_append(vals, code_atom);
-  if (r1 == NULL || RAY_IS_ERR(r1)) goto fail;
+  if (r1 == NULL || RAY_IS_ERR(r1))
+    goto fail;
   vals = r1;
   ray_t *r2 = ray_list_append(vals, msg_atom);
-  if (r2 == NULL || RAY_IS_ERR(r2)) goto fail;
+  if (r2 == NULL || RAY_IS_ERR(r2))
+    goto fail;
   vals = r2;
 
   dict = ray_dict_fn(keys, vals);
@@ -421,10 +430,14 @@ static ray_t *build_err_dict(const char *code, const char *msg) {
   }
 
 fail:
-  if (code_atom) ray_release(code_atom);
-  if (msg_atom) ray_release(msg_atom);
-  if (keys) ray_release(keys);
-  if (vals) ray_release(vals);
+  if (code_atom)
+    ray_release(code_atom);
+  if (msg_atom)
+    ray_release(msg_atom);
+  if (keys)
+    ray_release(keys);
+  if (vals)
+    ray_release(vals);
   return dict;
 }
 
@@ -547,7 +560,8 @@ static ray_t *unwrap_vec(RayObject *obj, const char *fn_name) {
   return vec;
 }
 
-/* Validate that `idx` is in [0, vec->len). Sets PyErr and returns -1 on miss. */
+/* Validate that `idx` is in [0, vec->len). Sets PyErr and returns -1 on miss.
+ */
 static int check_vec_index(ray_t *vec, Py_ssize_t idx, const char *fn_name) {
   if (idx < 0 || idx >= vec->len) {
     PyErr_Format(PyExc_IndexError, "%s: index %zd out of range (len %lld)",

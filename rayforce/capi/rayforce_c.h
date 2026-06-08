@@ -56,9 +56,7 @@ int check_main_thread(void);
 
 /* Absolute value of a type code — atoms are negative, vecs are positive,
  * |t| is the canonical type id. */
-static inline int ray_abs_type(int t) {
-  return t < 0 ? -t : t;
-}
+static inline int ray_abs_type(int t) { return t < 0 ? -t : t; }
 
 /* Byte width of a fixed-size scalar/vec element. Handles both atom (negative)
  * and vec (positive) type codes. Returns 0 for variable-width or unknown
@@ -67,17 +65,23 @@ static inline int ray_abs_type(int t) {
 static inline size_t ray_scalar_elem_size(int8_t type) {
   switch (type < 0 ? -type : type) {
   case RAY_BOOL:
-  case RAY_U8:        return 1;
-  case RAY_I16:       return 2;
+  case RAY_U8:
+    return 1;
+  case RAY_I16:
+    return 2;
   case RAY_I32:
   case RAY_DATE:
   case RAY_TIME:
-  case RAY_F32:       return 4;
+  case RAY_F32:
+    return 4;
   case RAY_I64:
   case RAY_F64:
-  case RAY_TIMESTAMP: return 8;
-  case RAY_GUID:      return 16;
-  default:            return 0;
+  case RAY_TIMESTAMP:
+    return 8;
+  case RAY_GUID:
+    return 16;
+  default:
+    return 0;
   }
 }
 
@@ -99,18 +103,31 @@ static inline const void *atom_scalar_ptr(ray_t *atom, int8_t vec_type,
                                           scalar_scratch_t *scratch) {
   switch (vec_type) {
   case RAY_BOOL:
-  case RAY_U8:        scratch->u8 = atom->u8;    return &scratch->u8;
-  case RAY_I16:       scratch->i16 = atom->i16;  return &scratch->i16;
+  case RAY_U8:
+    scratch->u8 = atom->u8;
+    return &scratch->u8;
+  case RAY_I16:
+    scratch->i16 = atom->i16;
+    return &scratch->i16;
   case RAY_I32:
   case RAY_DATE:
-  case RAY_TIME:      scratch->i32 = atom->i32;  return &scratch->i32;
+  case RAY_TIME:
+    scratch->i32 = atom->i32;
+    return &scratch->i32;
   case RAY_I64:
   case RAY_TIMESTAMP:
-  case RAY_SYM:       scratch->i64 = atom->i64;  return &scratch->i64;
+  case RAY_SYM:
+    scratch->i64 = atom->i64;
+    return &scratch->i64;
   /* v2 has no F32 atom — narrow from an F64 atom. */
-  case RAY_F32:       scratch->f32 = (float)atom->f64; return &scratch->f32;
-  case RAY_F64:       scratch->f64 = atom->f64;  return &scratch->f64;
-  default:            return NULL;
+  case RAY_F32:
+    scratch->f32 = (float)atom->f64;
+    return &scratch->f32;
+  case RAY_F64:
+    scratch->f64 = atom->f64;
+    return &scratch->f64;
+  default:
+    return NULL;
   }
 }
 

@@ -288,7 +288,8 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     const char *data = (const char *)data_view.buf;
     ray_t *ray_obj = ray_sym_vec_new(RAY_SYM_W64, (int64_t)length);
     if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
-      if (ray_obj) ray_release(ray_obj);
+      if (ray_obj)
+        ray_release(ray_obj);
       PyBuffer_Release(&offsets_view);
       PyBuffer_Release(&data_view);
       Py_XDECREF(null_bitmap_py);
@@ -344,7 +345,8 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     const char *data = (const char *)data_view.buf;
     ray_t *ray_obj = ray_vec_new(RAY_STR, (int64_t)length);
     if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
-      if (ray_obj) ray_release(ray_obj);
+      if (ray_obj)
+        ray_release(ray_obj);
       PyBuffer_Release(&offsets_view);
       PyBuffer_Release(&data_view);
       Py_XDECREF(null_bitmap_py);
@@ -356,7 +358,8 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
       ray_obj = ray_str_vec_append(ray_obj, data + offsets[i],
                                    (size_t)(offsets[i + 1] - offsets[i]));
       if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
-        if (ray_obj) ray_release(ray_obj);
+        if (ray_obj)
+          ray_release(ray_obj);
         PyBuffer_Release(&offsets_view);
         PyBuffer_Release(&data_view);
         Py_XDECREF(null_bitmap_py);
@@ -395,9 +398,8 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
   }
 
   int is_boolean_bitmap = (vector_type_code == RAY_BOOL);
-  size_t expected_size = is_boolean_bitmap
-                            ? ((size_t)length + 7) / 8
-                            : (size_t)length * element_size;
+  size_t expected_size = is_boolean_bitmap ? ((size_t)length + 7) / 8
+                                           : (size_t)length * element_size;
 
   if ((size_t)data_view.len < expected_size) {
     PyBuffer_Release(&data_view);
@@ -408,7 +410,8 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
 
   ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
   if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
-    if (ray_obj) ray_release(ray_obj);
+    if (ray_obj)
+      ray_release(ray_obj);
     PyBuffer_Release(&data_view);
     Py_XDECREF(null_bitmap_py);
     PyErr_SetString(PyExc_RuntimeError, "Failed to create vector");

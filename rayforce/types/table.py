@@ -268,7 +268,6 @@ _FORWARD_OPS = {
     "__truediv__": "DIVIDE",
     "__floordiv__": "DIV_INT",
     "__mod__": "MODULO",
-    "__pow__": "POW",
     "__lt__": "LESS_THAN",
     "__le__": "LESS_EQUAL",
     "__gt__": "GREATER_THAN",
@@ -280,11 +279,10 @@ _REVERSE_OPS = {
     "__rmul__": "MULTIPLY",
     "__rtruediv__": "DIVIDE",
     "__rfloordiv__": "DIV_INT",
-    "__rpow__": "POW",
 }
 
 
-def _binary_op(dunder: str, op_name: str, reversed_: bool = False):
+def _binary_op(dunder: str, op_name: str, *, reversed_: bool = False):
     def fwd(self, other) -> Expression:
         a, b = (other, self) if reversed_ else (self, other)
         return Expression(Operation[op_name], a, b)
@@ -1129,7 +1127,7 @@ class SelectQuery(IPCQueryMixin):
         if self._where_conditions:
             combined = self._where_conditions[0]
             for cond in self._where_conditions[1:]:
-                combined = combined & cond
+                combined = combined & cond  # type: ignore[operator]  # __and__ via setattr
             where_expr = combined
 
         if self._by_cols and (self._by_cols[0] or self._by_cols[1]):

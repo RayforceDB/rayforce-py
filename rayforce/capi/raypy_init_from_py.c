@@ -427,9 +427,12 @@ static size_t vec_elem_size_for_init(int8_t type) {
   if (n)
     return n;
   switch (type) {
-  case RAY_SYM: return 8;
-  case RAY_STR: return 16;
-  default:      return 0;
+  case RAY_SYM:
+    return 8;
+  case RAY_STR:
+    return 16;
+  default:
+    return 0;
   }
 }
 
@@ -646,7 +649,7 @@ ray_t *raypy_init_guid_from_py(PyObject *item) {
 /* Cast a string atom to a temporal type via ray_cast_fn. The type symbol
  * is interned on demand. Returns NULL on error (with Python exception set). */
 static ray_t *cast_string_to_temporal(ray_t *str_obj, const char *type_name,
-                                     size_t type_len) {
+                                      size_t type_len) {
   int64_t type_sym_id = ray_sym_intern(type_name, type_len);
   ray_t *type_sym = (type_sym_id < 0) ? NULL : ray_sym(type_sym_id);
   if (type_sym == NULL) {
@@ -734,7 +737,8 @@ static ray_t *init_temporal_from_py_str(PyObject *item, const char *type_name,
   Py_DECREF(str_obj);
   if (ray_str_obj == NULL)
     return NULL;
-  ray_t *result = cast_string_to_temporal(ray_str_obj, type_name, type_name_len);
+  ray_t *result =
+      cast_string_to_temporal(ray_str_obj, type_name, type_name_len);
   ray_release(ray_str_obj);
   return result;
 }

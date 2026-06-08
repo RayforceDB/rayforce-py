@@ -24,26 +24,26 @@
 /* ================================================================
  * KDB+ wire-format constants
  * ================================================================ */
-#define KDB_KB 1   /* boolean      */
-#define KDB_UU 2   /* guid (16B)   */
-#define KDB_KG 4   /* byte         */
-#define KDB_KH 5   /* short        */
-#define KDB_KI 6   /* int          */
-#define KDB_KJ 7   /* long         */
-#define KDB_KE 8   /* real (f32)   */
-#define KDB_KF 9   /* float (f64)  */
-#define KDB_KC 10  /* char         */
-#define KDB_KS 11  /* symbol       */
-#define KDB_KP 12  /* timestamp    */
-#define KDB_KM 13  /* month        */
-#define KDB_KD 14  /* date         */
-#define KDB_KZ 15  /* datetime     */
-#define KDB_KN 16  /* timespan     */
-#define KDB_KU 17  /* minute       */
-#define KDB_KV 18  /* second       */
-#define KDB_KT 19  /* time         */
-#define KDB_XT 98  /* table        */
-#define KDB_XD 99  /* dict         */
+#define KDB_KB 1  /* boolean      */
+#define KDB_UU 2  /* guid (16B)   */
+#define KDB_KG 4  /* byte         */
+#define KDB_KH 5  /* short        */
+#define KDB_KI 6  /* int          */
+#define KDB_KJ 7  /* long         */
+#define KDB_KE 8  /* real (f32)   */
+#define KDB_KF 9  /* float (f64)  */
+#define KDB_KC 10 /* char         */
+#define KDB_KS 11 /* symbol       */
+#define KDB_KP 12 /* timestamp    */
+#define KDB_KM 13 /* month        */
+#define KDB_KD 14 /* date         */
+#define KDB_KZ 15 /* datetime     */
+#define KDB_KN 16 /* timespan     */
+#define KDB_KU 17 /* minute       */
+#define KDB_KV 18 /* second       */
+#define KDB_KT 19 /* time         */
+#define KDB_XT 98 /* table        */
+#define KDB_XD 99 /* dict         */
 #define KDB_ERR (-128)
 
 #define KDB_MSG_SYNC 1
@@ -149,27 +149,44 @@ static int8_t kdb_type_of(int8_t ray_type) {
   int sign = (ray_type < 0) ? -1 : 1;
   int t = (ray_type < 0) ? -ray_type : ray_type;
   switch (t) {
-  case RAY_BOOL: return (int8_t)(sign * KDB_KB);
-  case RAY_U8: return (int8_t)(sign * KDB_KG);
-  case RAY_I16: return (int8_t)(sign * KDB_KH);
-  case RAY_I32: return (int8_t)(sign * KDB_KI);
-  case RAY_I64: return (int8_t)(sign * KDB_KJ);
-  case RAY_F32: return (int8_t)(sign * KDB_KE);
-  case RAY_F64: return (int8_t)(sign * KDB_KF);
-  case RAY_DATE: return (int8_t)(sign * KDB_KD);
-  case RAY_TIME: return (int8_t)(sign * KDB_KT);
-  case RAY_TIMESTAMP: return (int8_t)(sign * KDB_KP);
-  case RAY_GUID: return (int8_t)(sign * KDB_UU);
-  case RAY_SYM: return (int8_t)(sign * KDB_KS);
-  case RAY_STR: return (int8_t)(sign * KDB_KC);
-  case RAY_LIST: return 0;
-  case RAY_TABLE: return KDB_XT;
-  case RAY_DICT: return KDB_XD;
-  case RAY_ERROR: return KDB_ERR;
-  default: return 0;
+  case RAY_BOOL:
+    return (int8_t)(sign * KDB_KB);
+  case RAY_U8:
+    return (int8_t)(sign * KDB_KG);
+  case RAY_I16:
+    return (int8_t)(sign * KDB_KH);
+  case RAY_I32:
+    return (int8_t)(sign * KDB_KI);
+  case RAY_I64:
+    return (int8_t)(sign * KDB_KJ);
+  case RAY_F32:
+    return (int8_t)(sign * KDB_KE);
+  case RAY_F64:
+    return (int8_t)(sign * KDB_KF);
+  case RAY_DATE:
+    return (int8_t)(sign * KDB_KD);
+  case RAY_TIME:
+    return (int8_t)(sign * KDB_KT);
+  case RAY_TIMESTAMP:
+    return (int8_t)(sign * KDB_KP);
+  case RAY_GUID:
+    return (int8_t)(sign * KDB_UU);
+  case RAY_SYM:
+    return (int8_t)(sign * KDB_KS);
+  case RAY_STR:
+    return (int8_t)(sign * KDB_KC);
+  case RAY_LIST:
+    return 0;
+  case RAY_TABLE:
+    return KDB_XT;
+  case RAY_DICT:
+    return KDB_XD;
+  case RAY_ERROR:
+    return KDB_ERR;
+  default:
+    return 0;
   }
 }
-
 
 /* Forward */
 static int64_t kdb_size_obj(ray_t *obj);
@@ -181,8 +198,10 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len);
 static ray_t *kdb_make_table(ray_t *keys, ray_t *vals) {
   if (keys == NULL || vals == NULL || keys->type != RAY_SYM ||
       vals->type != RAY_LIST || keys->len != vals->len) {
-    if (keys) ray_release(keys);
-    if (vals) ray_release(vals);
+    if (keys)
+      ray_release(keys);
+    if (vals)
+      ray_release(vals);
     return ray_error("kdb: malformed table — expected (sym-vec, list)", NULL);
   }
   ray_t *tbl = raypy_build_table((const int64_t *)ray_data(keys),
@@ -203,26 +222,33 @@ static int64_t kdb_size_obj(ray_t *obj) {
     int abs_t = -t;
     switch (abs_t) {
     case RAY_BOOL:
-    case RAY_U8: return 1 + 1;
-    case RAY_I16: return 1 + 2;
+    case RAY_U8:
+      return 1 + 1;
+    case RAY_I16:
+      return 1 + 2;
     case RAY_I32:
     case RAY_DATE:
     case RAY_TIME:
-    case RAY_F32: return 1 + 4;
+    case RAY_F32:
+      return 1 + 4;
     case RAY_I64:
     case RAY_TIMESTAMP:
-    case RAY_F64: return 1 + 8;
-    case RAY_GUID: return 1 + 16;
+    case RAY_F64:
+      return 1 + 8;
+    case RAY_GUID:
+      return 1 + 16;
     case RAY_SYM: {
       ray_t *s = ray_sym_str(obj->i64);
       int64_t n = s ? (int64_t)ray_str_len(s) : 0;
-      if (s) ray_release(s);
+      if (s)
+        ray_release(s);
       return 1 + n + 1; /* null-terminated */
     }
     case RAY_STR: {
       /* Single char goes as -KC atom; multi-char as KC vector. */
       int64_t n = (int64_t)ray_str_len(obj);
-      if (n == 1) return 1 + 1;
+      if (n == 1)
+        return 1 + 1;
       return 1 + 1 + 4 + n;
     }
     }
@@ -243,7 +269,8 @@ static int64_t kdb_size_obj(ray_t *obj) {
     for (int64_t i = 0; i < obj->len; i++) {
       ray_t *s = ray_sym_str(ids[i]);
       size += s ? (int64_t)ray_str_len(s) + 1 : 1;
-      if (s) ray_release(s);
+      if (s)
+        ray_release(s);
     }
     return size;
   }
@@ -256,7 +283,8 @@ static int64_t kdb_size_obj(ray_t *obj) {
     for (int64_t i = 0; i < ncols; i++) {
       ray_t *s = ray_sym_str(ray_table_col_name(obj, i));
       names += s ? (int64_t)ray_str_len(s) + 1 : 1;
-      if (s) ray_release(s);
+      if (s)
+        ray_release(s);
     }
     int64_t cols = 1 + 1 + 4; /* list type + attrs + count */
     for (int64_t i = 0; i < ncols; i++)
@@ -293,20 +321,32 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
     int abs_t = -t;
     switch (abs_t) {
     case RAY_BOOL:
-    case RAY_U8: *buf++ = obj->u8; return buf - start;
-    case RAY_I16: memcpy(buf, &obj->i16, 2); return buf + 2 - start;
+    case RAY_U8:
+      *buf++ = obj->u8;
+      return buf - start;
+    case RAY_I16:
+      memcpy(buf, &obj->i16, 2);
+      return buf + 2 - start;
     case RAY_I32:
     case RAY_DATE:
-    case RAY_TIME: memcpy(buf, &obj->i32, 4); return buf + 4 - start;
+    case RAY_TIME:
+      memcpy(buf, &obj->i32, 4);
+      return buf + 4 - start;
     case RAY_F32: {
       float f = (float)obj->f64;
       memcpy(buf, &f, 4);
       return buf + 4 - start;
     }
     case RAY_I64:
-    case RAY_TIMESTAMP: memcpy(buf, &obj->i64, 8); return buf + 8 - start;
-    case RAY_F64: memcpy(buf, &obj->f64, 8); return buf + 8 - start;
-    case RAY_GUID: memcpy(buf, ray_data(obj), 16); return buf + 16 - start;
+    case RAY_TIMESTAMP:
+      memcpy(buf, &obj->i64, 8);
+      return buf + 8 - start;
+    case RAY_F64:
+      memcpy(buf, &obj->f64, 8);
+      return buf + 8 - start;
+    case RAY_GUID:
+      memcpy(buf, ray_data(obj), 16);
+      return buf + 16 - start;
     case RAY_SYM: {
       ray_t *s = ray_sym_str(obj->i64);
       size_t n = s ? ray_str_len(s) : 0;
@@ -325,7 +365,7 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
       }
       /* RAY_STR atom (n>1) → KC vector */
       start[0] = (uint8_t)KDB_KC;
-      *buf++ = 0;            /* attrs */
+      *buf++ = 0; /* attrs */
       uint32_t len32 = (uint32_t)n;
       memcpy(buf, &len32, 4);
       buf += 4;
@@ -345,7 +385,8 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
     ray_t **elems = (ray_t **)ray_data(obj);
     for (int64_t i = 0; i < obj->len; i++) {
       int64_t r = kdb_ser_obj(buf, elems[i]);
-      if (r < 0) return -1;
+      if (r < 0)
+        return -1;
       buf += r;
     }
     return buf - start;
@@ -370,14 +411,15 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
   }
   if (t == RAY_TABLE) {
     int64_t ncols = ray_table_ncols(obj);
-    *buf++ = 0;                /* attrs */
-    *buf++ = (uint8_t)KDB_XD;  /* table is dict-of-cols on the wire */
+    *buf++ = 0;               /* attrs */
+    *buf++ = (uint8_t)KDB_XD; /* table is dict-of-cols on the wire */
 
     /* keys: KS vector of column names */
     *buf++ = (uint8_t)KDB_KS;
-    *buf++ = 0;                /* attrs */
+    *buf++ = 0; /* attrs */
     uint32_t kn = (uint32_t)ncols;
-    memcpy(buf, &kn, 4); buf += 4;
+    memcpy(buf, &kn, 4);
+    buf += 4;
     for (int64_t i = 0; i < ncols; i++) {
       ray_t *s = ray_sym_str(ray_table_col_name(obj, i));
       size_t n = s ? ray_str_len(s) : 0;
@@ -390,12 +432,14 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
     }
 
     /* values: general list of column vectors */
-    *buf++ = 0;                /* list type */
-    *buf++ = 0;                /* attrs */
-    memcpy(buf, &kn, 4); buf += 4;
+    *buf++ = 0; /* list type */
+    *buf++ = 0; /* attrs */
+    memcpy(buf, &kn, 4);
+    buf += 4;
     for (int64_t i = 0; i < ncols; i++) {
       int64_t r = kdb_ser_obj(buf, ray_table_get_col_idx(obj, i));
-      if (r < 0) return -1;
+      if (r < 0)
+        return -1;
       buf += r;
     }
     return buf - start;
@@ -406,7 +450,8 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
   if (t == RAY_ERROR) {
     const char *msg = ray_err_code(obj);
     size_t n = msg ? strlen(msg) : 0;
-    if (n) memcpy(buf, msg, n);
+    if (n)
+      memcpy(buf, msg, n);
     buf[n] = 0;
     return buf + n + 1 - start;
   }
@@ -442,11 +487,13 @@ static int64_t kdb_ser_obj(uint8_t *buf, ray_t *obj) {
  * because v2's atom union shares storage by width: BOOL/U8 → u8;
  * I16 → i16; I32/DATE/TIME → i32; I64/TIMESTAMP → i64. */
 static ray_t *kdb_des_atom_i(uint8_t **buf, int64_t *len, int8_t ray_type,
-                              int width) {
+                             int width) {
   KDB_NEED(width);
   ray_t *o = NULL;
   switch (width) {
-  case 1: o = ray_u8(**buf); break;
+  case 1:
+    o = ray_u8(**buf);
+    break;
   case 2: {
     int16_t v;
     memcpy(&v, *buf, 2);
@@ -499,7 +546,8 @@ static ray_t *kdb_des_vec_i(uint8_t **buf, int64_t *len, int8_t ray_type,
 
   ray_t *vec = ray_vec_new(ray_type, n);
   if (vec == NULL || RAY_IS_ERR(vec)) {
-    if (vec) ray_release(vec);
+    if (vec)
+      ray_release(vec);
     return ray_error("kdb: vector alloc failed", NULL);
   }
   memcpy(ray_data(vec), *buf, bytes);
@@ -519,18 +567,26 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
 
   switch (type) {
   /* Atoms (negative type). The deserializer reads raw bytes then re-tags. */
-  case -KDB_KB: return kdb_des_atom_i(buf, len, RAY_BOOL, 1);
-  case -KDB_KG: return kdb_des_atom_i(buf, len, RAY_U8, 1);
-  case -KDB_KH: return kdb_des_atom_i(buf, len, RAY_I16, 2);
-  case -KDB_KI: return kdb_des_atom_i(buf, len, RAY_I32, 4);
-  case -KDB_KJ: return kdb_des_atom_i(buf, len, RAY_I64, 8);
+  case -KDB_KB:
+    return kdb_des_atom_i(buf, len, RAY_BOOL, 1);
+  case -KDB_KG:
+    return kdb_des_atom_i(buf, len, RAY_U8, 1);
+  case -KDB_KH:
+    return kdb_des_atom_i(buf, len, RAY_I16, 2);
+  case -KDB_KI:
+    return kdb_des_atom_i(buf, len, RAY_I32, 4);
+  case -KDB_KJ:
+    return kdb_des_atom_i(buf, len, RAY_I64, 8);
   case -KDB_KP:
-  case -KDB_KN: return kdb_des_atom_i(buf, len, RAY_TIMESTAMP, 8);
+  case -KDB_KN:
+    return kdb_des_atom_i(buf, len, RAY_TIMESTAMP, 8);
   case -KDB_KD:
-  case -KDB_KM: return kdb_des_atom_i(buf, len, RAY_DATE, 4);
+  case -KDB_KM:
+    return kdb_des_atom_i(buf, len, RAY_DATE, 4);
   case -KDB_KT:
   case -KDB_KU:
-  case -KDB_KV: return kdb_des_atom_i(buf, len, RAY_TIME, 4);
+  case -KDB_KV:
+    return kdb_des_atom_i(buf, len, RAY_TIME, 4);
   case -KDB_KE: {
     KDB_NEED(4);
     float f;
@@ -556,7 +612,8 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   }
   case -KDB_KS: {
     int64_t n = 0;
-    while (n < *len && (*buf)[n] != '\0') n++;
+    while (n < *len && (*buf)[n] != '\0')
+      n++;
     if (n >= *len)
       return ray_error("kdb: symbol not null-terminated", NULL);
     int64_t id = ray_sym_intern((const char *)*buf, (size_t)n);
@@ -574,30 +631,42 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
   }
 
   /* Vectors */
-  case KDB_KB: return kdb_des_vec_i(buf, len, RAY_BOOL, 1);
-  case KDB_KG: return kdb_des_vec_i(buf, len, RAY_U8, 1);
-  case KDB_KH: return kdb_des_vec_i(buf, len, RAY_I16, 2);
-  case KDB_KI: return kdb_des_vec_i(buf, len, RAY_I32, 4);
-  case KDB_KJ: return kdb_des_vec_i(buf, len, RAY_I64, 8);
+  case KDB_KB:
+    return kdb_des_vec_i(buf, len, RAY_BOOL, 1);
+  case KDB_KG:
+    return kdb_des_vec_i(buf, len, RAY_U8, 1);
+  case KDB_KH:
+    return kdb_des_vec_i(buf, len, RAY_I16, 2);
+  case KDB_KI:
+    return kdb_des_vec_i(buf, len, RAY_I32, 4);
+  case KDB_KJ:
+    return kdb_des_vec_i(buf, len, RAY_I64, 8);
   case KDB_KP:
-  case KDB_KN: return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
+  case KDB_KN:
+    return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
   case KDB_KD:
-  case KDB_KM: return kdb_des_vec_i(buf, len, RAY_DATE, 4);
+  case KDB_KM:
+    return kdb_des_vec_i(buf, len, RAY_DATE, 4);
   case KDB_KT:
   case KDB_KU:
-  case KDB_KV: return kdb_des_vec_i(buf, len, RAY_TIME, 4);
-  case KDB_KZ: return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
+  case KDB_KV:
+    return kdb_des_vec_i(buf, len, RAY_TIME, 4);
+  case KDB_KZ:
+    return kdb_des_vec_i(buf, len, RAY_TIMESTAMP, 8);
   case KDB_KE: {
     /* Real (4-byte float) vector — convert to F64 vec for v2. */
     int32_t n;
     if (kdb_read_vec_header(buf, len, &n) < 0)
       return ray_error("kdb: buffer underflow", NULL);
-    if (n < 0) return ray_error("kdb: negative real-vec length", NULL);
+    if (n < 0)
+      return ray_error("kdb: negative real-vec length", NULL);
     int64_t bytes = (int64_t)n * 4;
-    if (*len < bytes) return ray_error("kdb: buffer underflow (real-vec)", NULL);
+    if (*len < bytes)
+      return ray_error("kdb: buffer underflow (real-vec)", NULL);
     ray_t *vec = ray_vec_new(RAY_F64, n);
     if (vec == NULL || RAY_IS_ERR(vec)) {
-      if (vec) ray_release(vec);
+      if (vec)
+        ray_release(vec);
       return ray_error("kdb: vector alloc failed", NULL);
     }
     double *out = (double *)ray_data(vec);
@@ -611,15 +680,19 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
     *len -= bytes;
     return vec;
   }
-  case KDB_KF: return kdb_des_vec_i(buf, len, RAY_F64, 8);
-  case KDB_UU: return kdb_des_vec_i(buf, len, RAY_GUID, 16);
+  case KDB_KF:
+    return kdb_des_vec_i(buf, len, RAY_F64, 8);
+  case KDB_UU:
+    return kdb_des_vec_i(buf, len, RAY_GUID, 16);
   case KDB_KC: {
     /* KC vector → RAY_STR atom of length n */
     int32_t n;
     if (kdb_read_vec_header(buf, len, &n) < 0)
       return ray_error("kdb: buffer underflow", NULL);
-    if (n < 0) return ray_error("kdb: negative char-vec length", NULL);
-    if (*len < n) return ray_error("kdb: buffer underflow (char-vec)", NULL);
+    if (n < 0)
+      return ray_error("kdb: negative char-vec length", NULL);
+    if (*len < n)
+      return ray_error("kdb: buffer underflow (char-vec)", NULL);
     ray_t *s = ray_str((const char *)*buf, (size_t)n);
     *buf += n;
     *len -= n;
@@ -629,16 +702,19 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
     int32_t n;
     if (kdb_read_vec_header(buf, len, &n) < 0)
       return ray_error("kdb: buffer underflow", NULL);
-    if (n < 0) return ray_error("kdb: negative symbol-vec length", NULL);
+    if (n < 0)
+      return ray_error("kdb: negative symbol-vec length", NULL);
     ray_t *vec = ray_sym_vec_new(RAY_SYM_W64, n);
     if (vec == NULL || RAY_IS_ERR(vec)) {
-      if (vec) ray_release(vec);
+      if (vec)
+        ray_release(vec);
       return ray_error("kdb: symbol vector alloc failed", NULL);
     }
     int64_t *ids = (int64_t *)ray_data(vec);
     for (int32_t i = 0; i < n; i++) {
       int64_t k = 0;
-      while (k < *len && (*buf)[k] != '\0') k++;
+      while (k < *len && (*buf)[k] != '\0')
+        k++;
       if (k >= *len) {
         ray_release(vec);
         return ray_error("kdb: symbol not null-terminated in vec", NULL);
@@ -660,7 +736,8 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
     int32_t n;
     if (kdb_read_vec_header(buf, len, &n) < 0)
       return ray_error("kdb: buffer underflow", NULL);
-    if (n < 0) return ray_error("kdb: negative list length", NULL);
+    if (n < 0)
+      return ray_error("kdb: negative list length", NULL);
     ray_t *list = ray_list_new(0);
     for (int32_t i = 0; i < n; i++) {
       ray_t *elem = kdb_des_obj(buf, len);
@@ -680,7 +757,8 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
     (*buf) += 2;
     *len -= 2;
     ray_t *keys = kdb_des_obj(buf, len);
-    if (keys == NULL || RAY_IS_ERR(keys)) return keys;
+    if (keys == NULL || RAY_IS_ERR(keys))
+      return keys;
     ray_t *vals = kdb_des_obj(buf, len);
     if (vals == NULL || RAY_IS_ERR(vals)) {
       ray_release(keys);
@@ -691,7 +769,8 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
 
   case KDB_XD: { /* dict = keys + values; could be a keyed table */
     ray_t *keys = kdb_des_obj(buf, len);
-    if (keys == NULL || RAY_IS_ERR(keys)) return keys;
+    if (keys == NULL || RAY_IS_ERR(keys))
+      return keys;
     ray_t *vals = kdb_des_obj(buf, len);
     if (vals == NULL || RAY_IS_ERR(vals)) {
       ray_release(keys);
@@ -701,7 +780,8 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
     ray_t *dict = ray_list_new(0);
     dict = ray_list_append(dict, keys);
     dict = ray_list_append(dict, vals);
-    if (dict) dict->attrs |= RAY_ATTR_DICT;
+    if (dict)
+      dict->attrs |= RAY_ATTR_DICT;
     return dict;
   }
 
@@ -719,35 +799,50 @@ static ray_t *kdb_des_obj(uint8_t **buf, int64_t *len) {
 
 static int kdb_decompress(const uint8_t *src, int64_t src_len,
                           uint8_t **out_buf, int64_t *out_len) {
-  if (src_len < 4) return -1;
+  if (src_len < 4)
+    return -1;
 
   uint32_t header_size;
   memcpy(&header_size, src, 4);
   int64_t out_size = (int64_t)header_size - (int64_t)sizeof(kdb_header_t);
-  if (out_size <= 0) return -1;
+  if (out_size <= 0)
+    return -1;
 
   uint32_t buffer[256] = {0};
   uint8_t *result = (uint8_t *)malloc((size_t)out_size);
-  if (result == NULL) return -1;
+  if (result == NULL)
+    return -1;
 
   int64_t i = 0, n = 0, f = 0, s = 0, p = 0, d = 4;
   while (s < out_size) {
     if (i == 0) {
-      if (d >= src_len) { free(result); return -1; }
+      if (d >= src_len) {
+        free(result);
+        return -1;
+      }
       f = src[d++];
       i = 1;
     }
     if (f & i) {
-      if (d >= src_len) { free(result); return -1; }
+      if (d >= src_len) {
+        free(result);
+        return -1;
+      }
       int64_t r = buffer[src[d++]];
       result[s++] = result[r++];
       result[s++] = result[r++];
-      if (d >= src_len) { free(result); return -1; }
+      if (d >= src_len) {
+        free(result);
+        return -1;
+      }
       n = src[d++];
       for (int64_t m = 0; m < n; m++)
         result[s + m] = result[r + m];
     } else {
-      if (d >= src_len) { free(result); return -1; }
+      if (d >= src_len) {
+        free(result);
+        return -1;
+      }
       result[s++] = src[d++];
     }
     while (p < s - 1) {
@@ -759,7 +854,8 @@ static int kdb_decompress(const uint8_t *src, int64_t src_len,
       p = s;
     }
     i *= 2;
-    if (i == 256) i = 0;
+    if (i == 256)
+      i = 0;
   }
   *out_buf = result;
   *out_len = out_size;
@@ -847,7 +943,8 @@ PyObject *raypy_kdb_send(PyObject *self, PyObject *args) {
 
   size_t total = sizeof(kdb_header_t) + (size_t)body_size;
   uint8_t *buf = (uint8_t *)malloc(total);
-  if (buf == NULL) return PyErr_NoMemory();
+  if (buf == NULL)
+    return PyErr_NoMemory();
 
   int64_t written = kdb_ser_obj(buf + sizeof(kdb_header_t), msg->obj);
   if (written < 0) {
@@ -883,7 +980,8 @@ PyObject *raypy_kdb_send(PyObject *self, PyObject *args) {
   }
 
   uint8_t *body = (uint8_t *)malloc((size_t)body_len);
-  if (body == NULL) return PyErr_NoMemory();
+  if (body == NULL)
+    return PyErr_NoMemory();
   if (kdb_recv_all(fd, body, (size_t)body_len) < 0) {
     free(body);
     PyErr_SetString(PyExc_RuntimeError, "kdb: recv body failed");
@@ -906,7 +1004,8 @@ PyObject *raypy_kdb_send(PyObject *self, PyObject *args) {
   int64_t remaining = decoded_len;
   ray_t *result = kdb_des_obj(&cursor, &remaining);
   free(body);
-  if (decompressed) free(decompressed);
+  if (decompressed)
+    free(decompressed);
   if (result == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "kdb: deserialization returned null");
     return NULL;

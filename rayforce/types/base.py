@@ -140,12 +140,6 @@ class _AriphmeticMixin:
     def __mod__(self, other) -> t.Any:
         return _eval_operation("MODULO", self, other)
 
-    def __pow__(self, other) -> t.Any:
-        return _eval_operation("POW", self, other)
-
-    def __rpow__(self, other) -> t.Any:
-        return _eval_operation("POW", other, self)
-
 
 class AriphmeticScalarMixin(Scalar, _AriphmeticMixin): ...
 

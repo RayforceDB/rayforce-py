@@ -20,7 +20,6 @@ class Operation(enum.StrEnum):
     MODULO = "%"
     DIV_INT = "div"
     NEGATE = "neg"
-    POW = "pow"
 
     # Comparison
     EQUALS = "=="
@@ -46,8 +45,8 @@ class Operation(enum.StrEnum):
     FIRST = "first"
     LAST = "last"
     MEDIAN = "med"
-    DEVIATION = "dev"           # population std, ddof=0
-    STDDEV = "stddev"           # sample std, ddof=1 (matches polars/pandas)
+    DEVIATION = "dev"  # population std, ddof=0
+    STDDEV = "stddev"  # sample std, ddof=1 (matches polars/pandas)
     PEARSON_CORR = "pearson_corr"
     ROW = "row"
 
@@ -125,7 +124,6 @@ class Operation(enum.StrEnum):
     SCAN_LEFT = "scan-left"
     SCAN_RIGHT = "scan-right"
     APPLY = "apply"
-    ARGS = "args"
     ALTER = "alter"
     MODIFY = "modify"
 
@@ -184,7 +182,6 @@ class Operation(enum.StrEnum):
     # System
     EXIT = "exit"
     TIMEIT = "timeit"
-    TIMER = "timer"
 
     # Storage (v2 namespaced names)
     SET_SPLAYED = ".db.splayed.set"

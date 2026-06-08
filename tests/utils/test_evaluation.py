@@ -147,10 +147,13 @@ def test_eval_str_errors(expr):
         eval_str(expr)
 
 
-def test_eval_str_divide_by_zero_returns_zero():
-    """v2 (/ x 0) returns 0.0 (no exception)."""
-    assert eval_str("(/ 1 0)") == 0.0
-    assert eval_str("(/ 100 0)") == 0.0
+def test_eval_str_divide_by_zero_returns_nan():
+    """v2 `(/ x 0)` returns NaN (no exception)."""
+    import math
+
+    for expr in ("(/ 1 0)", "(/ 100 0)", "(/ 1.0 0.0)"):
+        result = eval_str(expr)
+        assert math.isnan(result.value if hasattr(result, "value") else result)
 
 
 @pytest.mark.parametrize("invalid", [123, 1.5, [], None, object()])

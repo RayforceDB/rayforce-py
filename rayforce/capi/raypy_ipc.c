@@ -10,8 +10,8 @@
  * Python-level cancellation work naturally.
  */
 
-#include "rayforce_c.h"
 #include "core/ipc.h"
+#include "rayforce_c.h"
 #include <stdlib.h>
 
 /* ---- Client ---- */

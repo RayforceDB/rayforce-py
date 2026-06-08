@@ -3,15 +3,15 @@
 /* Decode an Optional[RayObject] Python arg. Writes the underlying ray_t*
  * into *out (NULL if `arg` is Py_None) and returns 0; returns -1 with PyErr
  * set when the type is wrong. */
-static int unpack_optional_ray(PyObject *arg, ray_t **out,
-                               const char *fn_name, const char *arg_name) {
+static int unpack_optional_ray(PyObject *arg, ray_t **out, const char *fn_name,
+                               const char *arg_name) {
   if (arg == Py_None) {
     *out = NULL;
     return 0;
   }
   if (!PyObject_TypeCheck(arg, &RayObjectType)) {
-    PyErr_Format(PyExc_TypeError, "%s: %s must be None or RayObject",
-                 fn_name, arg_name);
+    PyErr_Format(PyExc_TypeError, "%s: %s must be None or RayObject", fn_name,
+                 arg_name);
     return -1;
   }
   *out = ((RayObject *)arg)->obj;

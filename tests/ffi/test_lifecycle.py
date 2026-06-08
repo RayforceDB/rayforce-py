@@ -117,9 +117,11 @@ def test_vec_set_null_each_idx(idx):
     assert FFI.vec_is_null(v.ptr, idx) is True
 
 
-def test_vec_set_null_then_unset():
+def test_vec_set_null_unset_is_noop():
+    """Per core (vec.c:862-864) nullity is in-band via type-correct sentinel;
+    `set_null(idx, False)` is a no-op — caller must overwrite payload to clear."""
     v = Vector(items=[1, 2, 3], ray_type=I64)
     FFI.vec_set_null(v.ptr, 1, is_null=True)
     assert FFI.vec_is_null(v.ptr, 1) is True
     FFI.vec_set_null(v.ptr, 1, is_null=False)
-    assert FFI.vec_is_null(v.ptr, 1) is False
+    assert FFI.vec_is_null(v.ptr, 1) is True
