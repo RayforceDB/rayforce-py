@@ -2,7 +2,7 @@
 set -e -x
 
 EXEC_DIR=$(pwd)
-RAYFORCE_GITHUB="${RAYFORCE_GITHUB:-https://github.com/RayforceDB/rayforce2.git}"
+RAYFORCE_GITHUB="${RAYFORCE_GITHUB:-https://github.com/RayforceDB/rayforce.git}"
 RAYFORCE_LOCAL_PATH="${RAYFORCE_LOCAL_PATH:-}"
 
 PYTHON_BIN="${PYTHON_BIN:-python}"
@@ -48,32 +48,25 @@ else
     SHARED_FLAGS=""
 fi
 
-echo "Patching v2 Makefile for Python extension target..."
+echo "Copying pyext sources..."
 mkdir -p "${EXEC_DIR}/tmp/rayforce-c/pyext"
+cp "${EXEC_DIR}"/rayforce/capi/*.c "${EXEC_DIR}/tmp/rayforce-c/pyext/"
+cp "${EXEC_DIR}"/rayforce/capi/*.h "${EXEC_DIR}/tmp/rayforce-c/pyext/"
+
+echo "Patching v2 Makefile for Python extension target..."
+# PY_SRC = wildcard so any new pyext/*.c is picked up automatically and stays
+# in sync with the local Makefile (which uses an explicit list).
 cat >> "${EXEC_DIR}/tmp/rayforce-c/Makefile" << EOF
 
 
 # ---- Python extension target (added by rayforce-py prepare_build.sh) ----
-PY_SRC = pyext/rayforce_c.c pyext/raypy_init_from_py.c pyext/raypy_init_from_buffer.c pyext/raypy_read_from_rf.c pyext/raypy_queries.c pyext/raypy_binary.c pyext/raypy_eval.c pyext/raypy_iter.c pyext/raypy_serde.c
+PY_SRC = \$(wildcard pyext/*.c)
 PY_OBJ = \$(PY_SRC:.c=.o)
 python: CFLAGS = \$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I${PYTHON_INCLUDE} -Ipyext -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function
 python: LDFLAGS = \$(RELEASE_LDFLAGS) ${PYTHON_LDFLAGS}
 python: \$(LIB_OBJ) \$(PY_OBJ)
 	\$(CC) -shared -o _rayforce.so \$(CFLAGS) \$(LIB_OBJ) \$(PY_OBJ) \$(LIBS) \$(LDFLAGS) ${SHARED_FLAGS}
 EOF
-
-echo "Copying pyext sources..."
-cp "${EXEC_DIR}/rayforce/capi/rayforce_c.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/rayforce_c.c"
-cp "${EXEC_DIR}/rayforce/capi/rayforce_c.h" "${EXEC_DIR}/tmp/rayforce-c/pyext/rayforce_c.h"
-cp "${EXEC_DIR}/rayforce/capi/raypy_compat.h" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_compat.h"
-cp "${EXEC_DIR}/rayforce/capi/raypy_init_from_py.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_init_from_py.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_init_from_buffer.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_init_from_buffer.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_read_from_rf.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_read_from_rf.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_queries.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_queries.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_binary.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_binary.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_eval.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_eval.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_iter.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_iter.c"
-cp "${EXEC_DIR}/rayforce/capi/raypy_serde.c" "${EXEC_DIR}/tmp/rayforce-c/pyext/raypy_serde.c"
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
 make python

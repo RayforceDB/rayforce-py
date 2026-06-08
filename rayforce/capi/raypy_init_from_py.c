@@ -1,4 +1,5 @@
 #include "rayforce_c.h"
+#include <alloca.h>
 #include <stdlib.h>
 
 PyObject *raypy_init_i16(PyObject *self, PyObject *args) {

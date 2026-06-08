@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayforce_py"
-version = "2.0.0a1"
+version = "2.0.0b1"
 description = "Python bindings for RayforceDB"
 readme = "README.md"
 authors = [{name = "RayforceDB"}]
@@ -65,7 +65,7 @@ before-build = "bash {project}/scripts/prepare_build.sh"
 test-skip = "*"  # Skip tests for now
 
 [tool.cibuildwheel.environment]
-RAYFORCE_GITHUB = "https://github.com/RayforceDB/rayforce2.git"
+RAYFORCE_GITHUB = "https://github.com/RayforceDB/rayforce.git"
 
 [tool.cibuildwheel.macos]
 environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }

@@ -15,22 +15,10 @@ jobs:
         with:
           submodules: false
 
-      - name: Resolve core repo from branch
-        # master → v1 core (stable 1.0.x line); rayforce2 → v2 core (2.x line).
+      - name: Resolve core repo
         run: |
-          case "$GITHUB_REF_NAME" in
-            master)
-              echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"  >> "$GITHUB_ENV"
-              ;;
-            rayforce2)
-              echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce2.git" >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "::error::Coverage workflow not configured for branch '$GITHUB_REF_NAME'"
-              exit 1
-              ;;
-          esac
-          echo "Branch '$GITHUB_REF_NAME' → \$RAYFORCE_GITHUB"
+          echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git" >> "$GITHUB_ENV"
+          echo "Branch '$GITHUB_REF_NAME' → https://github.com/RayforceDB/rayforce.git"
 
       - name: Set up Python 3.14
         uses: actions/setup-python@v5

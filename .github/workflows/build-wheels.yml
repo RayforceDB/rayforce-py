@@ -33,30 +33,11 @@ jobs:
         with:
           submodules: false
 
-      - name: Resolve core repo from tag
-        # Major version of the tag selects which Rayforce C core to clone:
-        #   1.x.x[*]   → rayforce.git   (v1 core, stable 1.0.x line)
-        #   2.x.x[*]   → rayforce2.git  (v2 core, alpha/beta/rc/GA of 2.x line)
-        # Anything else fails the build loudly so we don't ship a wheel built
-        # against the wrong core.
+      - name: Resolve core repo
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          MAJOR="${TAG%%.*}"
-          case "$MAJOR" in
-            1)
-              echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"  >> "$GITHUB_ENV"
-              echo "RELEASE_TRACK=stable-1.x"                                    >> "$GITHUB_ENV"
-              ;;
-            2)
-              echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce2.git" >> "$GITHUB_ENV"
-              echo "RELEASE_TRACK=2.x"                                           >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "::error::Unsupported major version '$MAJOR' (tag '$TAG'). Only 1.x.x and 2.x.x are recognized."
-              exit 1
-              ;;
-          esac
-          echo "Tag '$TAG' (major $MAJOR) → core repo will be cloned from \$RAYFORCE_GITHUB"
+          echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git" >> "$GITHUB_ENV"
+          echo "Tag '$TAG' → core repo will be cloned from https://github.com/RayforceDB/rayforce.git"
 
       - name: Set up Python
         uses: actions/setup-python@v5

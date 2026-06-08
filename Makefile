@@ -1,6 +1,6 @@
 UNAME_S := $(shell uname -s)
 
-RAYFORCE_GITHUB ?= https://github.com/RayforceDB/rayforce2.git
+RAYFORCE_GITHUB ?= https://github.com/RayforceDB/rayforce.git
 RAYFORCE_LOCAL_PATH ?=
 EXEC_DIR = $(shell pwd)
 LIBNAME = _rayforce.so
@@ -21,14 +21,14 @@ endif
 pull_rayforce_from_github:
 	@rm -rf $(EXEC_DIR)/tmp/rayforce-c
 	@if [ -n "$(RAYFORCE_LOCAL_PATH)" ]; then \
-		echo "📂 Copying rayforce2 from $(RAYFORCE_LOCAL_PATH)..."; \
+		echo "📂 Copying rayforce from $(RAYFORCE_LOCAL_PATH)..."; \
 		mkdir -p $(EXEC_DIR)/tmp && \
 		rsync -a \
 			--exclude='.git' --exclude='tmp' --exclude='build*' \
 			--exclude='*.o' --exclude='*.so' --exclude='*.a' --exclude='*.dylib' \
 			"$(RAYFORCE_LOCAL_PATH)/" "$(EXEC_DIR)/tmp/rayforce-c/"; \
 	else \
-		echo "⬇️  Cloning rayforce2 repo from $(RAYFORCE_GITHUB)..."; \
+		echo "⬇️  Cloning rayforce repo from $(RAYFORCE_GITHUB)..."; \
 		git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c; \
 	fi
 
@@ -36,7 +36,7 @@ patch_rayforce_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@mkdir -p $(EXEC_DIR)/tmp/rayforce-c/pyext
 	@printf '\n\n# ---- Python extension target (added by rayforce-py) ----\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@printf 'PY_SRC = pyext/rayforce_c.c pyext/raypy_init_from_py.c pyext/raypy_init_from_buffer.c pyext/raypy_read_from_rf.c pyext/raypy_queries.c pyext/raypy_binary.c pyext/raypy_eval.c pyext/raypy_iter.c pyext/raypy_serde.c pyext/raypy_ipc.c pyext/raypy_kdb.c\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@printf 'PY_SRC = $$(wildcard pyext/*.c)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@printf 'PY_OBJ = $$(PY_SRC:.c=.o)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@printf 'python: CFLAGS = $$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I$(PYTHON_INCLUDE) -Ipyext -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@printf 'python: LDFLAGS = $$(RELEASE_LDFLAGS) $(RELEASE_LDFLAGS_PY)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
@@ -59,18 +59,8 @@ clean:
 
 rayforce_binaries:
 	@mkdir -p tmp/rayforce-c/pyext
-	@cp rayforce/capi/rayforce_c.c tmp/rayforce-c/pyext/rayforce_c.c
-	@cp rayforce/capi/rayforce_c.h tmp/rayforce-c/pyext/rayforce_c.h
-	@cp rayforce/capi/raypy_init_from_py.c tmp/rayforce-c/pyext/raypy_init_from_py.c
-	@cp rayforce/capi/raypy_init_from_buffer.c tmp/rayforce-c/pyext/raypy_init_from_buffer.c
-	@cp rayforce/capi/raypy_read_from_rf.c tmp/rayforce-c/pyext/raypy_read_from_rf.c
-	@cp rayforce/capi/raypy_queries.c tmp/rayforce-c/pyext/raypy_queries.c
-	@cp rayforce/capi/raypy_binary.c tmp/rayforce-c/pyext/raypy_binary.c
-	@cp rayforce/capi/raypy_eval.c tmp/rayforce-c/pyext/raypy_eval.c
-	@cp rayforce/capi/raypy_iter.c tmp/rayforce-c/pyext/raypy_iter.c
-	@cp rayforce/capi/raypy_serde.c tmp/rayforce-c/pyext/raypy_serde.c
-	@cp rayforce/capi/raypy_ipc.c tmp/rayforce-c/pyext/raypy_ipc.c
-	@cp rayforce/capi/raypy_kdb.c tmp/rayforce-c/pyext/raypy_kdb.c
+	@cp rayforce/capi/*.c tmp/rayforce-c/pyext/
+	@cp rayforce/capi/*.h tmp/rayforce-c/pyext/
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
