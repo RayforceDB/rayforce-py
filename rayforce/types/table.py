@@ -31,7 +31,10 @@ if t.TYPE_CHECKING:
     from rayforce.types.fn import Fn
 
 
-_RAY_ATTR_NAME = 0x20
+# Core flipped -RAY_SYM atom polarity (rayforce commit 6635321a): ATTR_QUOTED
+# (0x20) SET now marks a literal symbol; CLEAR marks a name reference (column /
+# global-env lookup). A name-reference atom must therefore have 0x20 cleared.
+_ATTR_NAME_REF = 0x00
 
 
 def _is_date_dir(name: str) -> bool:
@@ -94,11 +97,12 @@ def _unwrap_value(v: t.Any) -> t.Any:
 
 
 def _make_name_sym(name: str) -> r.RayObject:
-    """Build a `-RAY_SYM` atom with `RAY_ATTR_NAME` set so the v2 DAG
+    """Build a `-RAY_SYM` atom with ATTR_QUOTED *cleared* so the v2 DAG
     compiler treats it as a column / global-env name reference rather than
-    a const symbol literal."""
+    a const symbol literal. (init_symbol now yields a quoted literal, so the
+    flag must be explicitly cleared here.)"""
     sym = FFI.init_symbol(name)
-    FFI.set_obj_attrs(sym, _RAY_ATTR_NAME)
+    FFI.set_obj_attrs(sym, _ATTR_NAME_REF)
     return sym
 
 
@@ -1148,7 +1152,7 @@ class SelectQuery(IPCQueryMixin):
         if isinstance(self.table, Table):
             if self.table.is_reference:
                 name_sym = FFI.init_symbol(self.table._ptr)
-                FFI.set_obj_attrs(name_sym, _RAY_ATTR_NAME)
+                FFI.set_obj_attrs(name_sym, _ATTR_NAME_REF)
                 query_items["from"] = name_sym
             else:
                 query_items["from"] = self.table.ptr

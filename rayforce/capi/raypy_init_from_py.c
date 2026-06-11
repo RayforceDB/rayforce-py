@@ -566,7 +566,16 @@ ray_t *raypy_init_symbol_from_py(PyObject *item) {
   if (str_val == NULL)
     return NULL;
   int64_t sym_id = ray_sym_intern(str_val, (size_t)str_len);
-  return (sym_id < 0) ? NULL : ray_sym(sym_id);
+  if (sym_id < 0)
+    return NULL;
+  /* A symbol built from a Python string is a literal value, not a variable
+   * name. Core flipped the -RAY_SYM atom default to "name reference" (commit
+   * 6635321a); the literal must now carry ATTR_QUOTED or eval resolves it as
+   * a variable and raises "name undefined". */
+  ray_t *sym = ray_sym(sym_id);
+  if (sym != NULL)
+    sym->attrs |= ATTR_QUOTED;
+  return sym;
 }
 
 /* Parse a hex digit. Returns -1 on bad input. */

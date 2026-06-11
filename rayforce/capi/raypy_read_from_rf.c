@@ -333,6 +333,13 @@ PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
   if (!allocated) {
     /* Borrowed pointer — bump rc so Python wrapper owns its share. */
     ray_retain(elem);
+  } else if (elem->type == -RAY_SYM) {
+    /* A symbol extracted from a vector is a literal data value, not a
+     * variable name. Mark the fresh atom ATTR_QUOTED so it round-trips as
+     * data (e.g. as a dict key or `in` operand) instead of resolving as a
+     * variable under the core's name-reference default (commit 6635321a).
+     * Only safe on freshly-allocated atoms — never mutate borrowed storage. */
+    elem->attrs |= ATTR_QUOTED;
   }
   return raypy_wrap_ray_object(elem);
 }
