@@ -1,15 +1,3 @@
-"""KDB+ IPC client.
-
-Ships its own KDB+ wire-format codec (no external `q` C library required).
-Connections speak the documented KDB+ IPC protocol over a blocking socket;
-responses come back as rayforce v2 objects.
-
-Use:
-
-    with KDBEngine("127.0.0.1", 5000).acquire() as kdb:
-        result = kdb.execute("til 5")  # → rayforce types
-"""
-
 from __future__ import annotations
 
 import contextlib
@@ -62,13 +50,9 @@ class KDBConnection:
 
 
 class KDBEngine:
-    """Thin connection factory + lifetime manager for KDB+ connections."""
-
     def __init__(self, host: str, port: int) -> None:
         self.host = host
         self.port = port
-        # WeakValueDictionary: closed/abandoned connections drop out on GC,
-        # so the pool reflects live connections only.
         self.pool: weakref.WeakValueDictionary[int, KDBConnection] = weakref.WeakValueDictionary()
 
     @property

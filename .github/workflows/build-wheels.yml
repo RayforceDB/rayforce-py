@@ -3,12 +3,11 @@ name: Build and publish wheels
 on:
   push:
     tags:
-      # Stable: X.Y.Z. Major version selects the core: 1.x.x → v1, 2.x.x → v2.
+      # Stable: X.Y.Z
       - '[0-9]+.[0-9]+.[0-9]+'
-      # Pre-release per PEP 440: 2.0.0a1, 2.0.0b1, 2.0.0rc1 — always v2 core.
+      # Pre-release: 2.0.0a1, 2.0.0b1
       - '[0-9]+.[0-9]+.[0-9]+a[0-9]+'
       - '[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
 
 jobs:
   build_wheels:
@@ -32,12 +31,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
-
-      - name: Resolve core repo
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git" >> "$GITHUB_ENV"
-          echo "Tag '$TAG' → core repo will be cloned from https://github.com/RayforceDB/rayforce.git"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -65,7 +58,7 @@ jobs:
           CIBW_ARCHS: "auto64"
           CIBW_BEFORE_BUILD: "bash {project}/scripts/prepare_build.sh"
           CIBW_TEST_SKIP: "*"
-          CIBW_ENVIRONMENT: "RAYFORCE_GITHUB=${{ env.RAYFORCE_GITHUB }}"
+          CIBW_ENVIRONMENT: "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git"
           CIBW_MACOS_ENVIRONMENT: "MACOSX_DEPLOYMENT_TARGET=11.0"
           CIBW_CACHE_PATH: ".cibw"
           CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64:latest"

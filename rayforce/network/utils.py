@@ -14,7 +14,6 @@ def validate_port(port: int) -> None:
 
 
 def python_to_ipc(data: t.Any) -> r.RayObject:
-    """Coerce a Python value into a ray_t* suitable for ipc_send."""
     from rayforce import List, String
     from rayforce.plugins.sql import SQLQuery
     from rayforce.types.table import (

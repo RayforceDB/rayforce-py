@@ -15,11 +15,6 @@ jobs:
         with:
           submodules: false
 
-      - name: Resolve core repo
-        run: |
-          echo "RAYFORCE_GITHUB=https://github.com/RayforceDB/rayforce.git" >> "$GITHUB_ENV"
-          echo "Branch '$GITHUB_REF_NAME' → https://github.com/RayforceDB/rayforce.git"
-
       - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
