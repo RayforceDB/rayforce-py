@@ -46,3 +46,4 @@ tables/
 *.parquet
 .claude/
 db/
+CLAUDE.md

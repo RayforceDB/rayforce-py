@@ -101,13 +101,4 @@ citest:
 	python3 -m mypy rayforce/
 	python3 -u -m pytest -x -vv tests/
 
-test-linux-versions:
-	@chmod +x scripts/test_linux_versions.sh
-	@./scripts/test_linux_versions.sh
-
-test-macos-versions:
-	@chmod +x scripts/test_macos_versions.sh
-	@./scripts/test_macos_versions.sh
-
-test-versions: test-linux-versions test-macos-versions
 # }}
