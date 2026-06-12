@@ -15,7 +15,6 @@ if t.TYPE_CHECKING:
 
 class TypeRegistry:
     _types: t.ClassVar[dict[int, type[RayObject | Operation | Null | Fn | Table]]] = {}
-    _initialized: t.ClassVar[bool] = False
 
     @classmethod
     def register(
@@ -38,8 +37,8 @@ class TypeRegistry:
     def from_ptr(cls, ptr: r.RayObject) -> RayObject | Operation | type[Null] | Fn | Table:
         """
         IMPORTANT: Vectors have POSITIVE type codes, Scalars have NEGATIVE type codes
-        If type_code > 0: it's a VECTOR (e.g., 3 = I16 vector, 6 = Symbol vector)
-        If type_code < 0: it's a SCALAR (e.g., -3 = I16 scalar, -6 = Symbol scalar)
+        If type_code > 0: it's a VECTOR (e.g., 3 = I16 vector, 12 = Symbol vector)
+        If type_code < 0: it's a SCALAR (e.g., -3 = I16 scalar, -12 = Symbol scalar)
         """
 
         if not isinstance(ptr, r.RayObject):
@@ -60,10 +59,7 @@ class TypeRegistry:
             r.TYPE_TABLE,
             r.TYPE_LAMBDA,
         ):
-            from rayforce.types import Null, String, Vector
-
-            if type_code == r.TYPE_C8:
-                return String(ptr=ptr)
+            from rayforce.types import Null, Vector
 
             if type_code == r.TYPE_NULL:
                 return Null  # type: ignore[return-value]
@@ -86,15 +82,3 @@ class TypeRegistry:
     @classmethod
     def list_registered_types(cls) -> dict[int, str]:
         return {code: type_class.__name__ for code, type_class in cls._types.items()}
-
-    @classmethod
-    def initialize(cls) -> None:
-        if cls._initialized:
-            return
-
-        try:
-            from rayforce import types  # noqa: F401
-
-            cls._initialized = True
-        except ImportError:
-            pass

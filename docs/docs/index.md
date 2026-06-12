@@ -145,11 +145,11 @@ Try in Browser
 </div>
 </a>
 
-<a href="content/documentation/websocket.html" class="bento-card-link">
+<a href="content/documentation/IPC.html" class="bento-card-link">
 <div class="bento-card bento-card-wide bento-card-brand-navy">
 <div class="bento-card-content">
-<h3><strong>WebSocket and TCP Servers</strong></h3>
-<p>Execute queries over WebSocket and TCP connections with low latency. <strong>Deploy servers</strong>, organize data in a <strong>distributed manner</strong>, and build distributed data processing applications.</p>
+<h3><strong>TCP Servers</strong></h3>
+<p>Execute queries over TCP connections with low latency. <strong>Deploy servers</strong>, organize data in a <strong>distributed manner</strong>, and build distributed data processing applications.</p>
 </div>
 </div>
 </a>

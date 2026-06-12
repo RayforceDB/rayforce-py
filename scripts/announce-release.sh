@@ -65,7 +65,15 @@ else
   fi
 fi
 
-CONTENT="**New Rayforce-Py Version is Released!**"
+# Pre-release label for PEP 440 alpha/beta/rc versions
+LABEL=""
+case "${VERSION}" in
+  *a[0-9]*)  LABEL="[ALPHA] " ;;
+  *b[0-9]*)  LABEL="[BETA] "  ;;
+  *rc[0-9]*) LABEL="[RC] "    ;;
+esac
+
+CONTENT="**${LABEL}New Rayforce-Py Version is Released!**"
 
 if [ -n "${CHANGELOG_CONTENT}" ]; then
   CONTENT="${CONTENT}

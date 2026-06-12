@@ -1,82 +1,54 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 
-from rayforce import String, errors
-from rayforce import _rayforce_c as r
-from rayforce.network.tcp.client import TCPClient
-
-pytestmark = pytest.mark.network
+from rayforce import errors
+from rayforce.network import TCPClient
 
 
-@pytest.fixture
-def mock_handle():
-    return MagicMock(spec=r.RayObject)
+def test_client_evaluates_arithmetic(rayforce_ipc_server):
+    host, port = rayforce_ipc_server
+    with TCPClient(host, port) as c:
+        assert c.execute("(+ 1 2)") == 3
+        assert c.execute("(* 6 7)") == 42
 
 
-def _obj_type_for(handle):
-    """Return a side_effect callable that maps *handle* to TYPE_I64, else TYPE_C8."""
-
-    def _side_effect(obj):
-        return r.TYPE_I64 if obj == handle else r.TYPE_C8
-
-    return _side_effect
+def test_client_evaluates_aggregation(rayforce_ipc_server):
+    host, port = rayforce_ipc_server
+    with TCPClient(host, port) as c:
+        assert c.execute("(sum (til 100))") == 4950
 
 
-def _make_client(mock_handle):
-    """Create a TCPClient with mocked hopen and get_obj_type."""
-    with (
-        patch(
-            "rayforce.network.tcp.client.FFI.get_obj_type", side_effect=_obj_type_for(mock_handle)
-        ),
-        patch("rayforce.network.tcp.client.FFI.hopen", return_value=mock_handle),
-    ):
-        return TCPClient(host="localhost", port=5000)
+def test_client_returns_vector(rayforce_ipc_server):
+    host, port = rayforce_ipc_server
+    with TCPClient(host, port) as c:
+        result = c.execute("(til 5)")
+        assert [v.value for v in result] == [0, 1, 2, 3, 4]
 
 
-def test_execute_success(mock_handle):
-    client = _make_client(mock_handle)
-    mock_result = MagicMock(spec=r.RayObject)
-
-    with (
-        patch("rayforce.network.tcp.client.FFI.write", return_value=mock_result) as mock_write,
-        patch("rayforce.network.tcp.client.ray_to_python", return_value="result") as mock_convert,
-    ):
-        result = client.execute(String("test_query"))
-        assert result == "result"
-        mock_write.assert_called_once()
-        mock_convert.assert_called_once()
+def test_client_close_blocks_subsequent_send(rayforce_ipc_server):
+    host, port = rayforce_ipc_server
+    c = TCPClient(host, port)
+    c.close()
+    with pytest.raises(errors.RayforceTCPError, match="closed connection"):
+        c.execute("(+ 1 2)")
 
 
-def test_execute_closed(mock_handle):
-    client = _make_client(mock_handle)
-    client._alive = False
-
-    with pytest.raises(errors.RayforceTCPError, match="Cannot write to closed connection"):
-        client.execute(String("test_query"))
-
-
-def test_close(mock_handle):
-    with (
-        patch(
-            "rayforce.network.tcp.client.FFI.get_obj_type", side_effect=_obj_type_for(mock_handle)
-        ),
-        patch("rayforce.network.tcp.client.FFI.hopen", return_value=mock_handle),
-        patch("rayforce.network.tcp.client.FFI.hclose") as mock_hclose,
-    ):
-        client = TCPClient(host="localhost", port=5000)
-        client.close()
-
-        assert client._alive is False
-        mock_hclose.assert_called_once_with(mock_handle)
+def test_client_invalid_port_rejected(rayforce_ipc_server):
+    host, _ = rayforce_ipc_server
+    with pytest.raises(errors.RayforceValueError):
+        TCPClient(host, 0)
+    with pytest.raises(errors.RayforceValueError):
+        TCPClient(host, 70000)
 
 
-def test_context_manager(mock_handle):
-    client = _make_client(mock_handle)
+def test_tcp_classes_exported_top_level():
+    """TCPClient/TCPServer are importable from the top-level rayforce namespace."""
+    import rayforce
 
-    with patch.object(TCPClient, "close") as mock_close:
-        with client:
-            assert client is not None
-        mock_close.assert_called_once()
+    assert "TCPClient" in rayforce.__all__
+    assert "TCPServer" in rayforce.__all__
+    from rayforce import TCPClient as TC
+    from rayforce import TCPServer as TS
+
+    assert TC is not None and TS is not None

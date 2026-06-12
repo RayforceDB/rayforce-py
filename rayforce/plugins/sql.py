@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import functools
 import typing as t
+
+from rayforce.types.table import _is_aggregation_only_select
 
 if t.TYPE_CHECKING:
     import sqlglot.expressions as exp  # type: ignore[import-not-found]
@@ -18,6 +21,31 @@ def _ensure_sqlglot():
             "sqlglot is required for SQL support. Install it with: pip install rayforce-py[sql]"
         ) from e
     return sqlglot
+
+
+# Mapping from sqlglot AST node class → our string op. Cached so the dicts are
+# built once on first call instead of per-expression. sqlglot is optional, so
+# we can't materialise these at module import.
+@functools.cache
+def _sqlglot_op_maps() -> tuple[dict[type, str], dict[type, str]]:
+    import sqlglot.expressions as exp
+
+    cmp_map: dict[type, str] = {
+        exp.EQ: "=",
+        exp.NEQ: "!=",
+        exp.GT: ">",
+        exp.GTE: ">=",
+        exp.LT: "<",
+        exp.LTE: "<=",
+    }
+    arith_map: dict[type, str] = {
+        exp.Add: "+",
+        exp.Sub: "-",
+        exp.Mul: "*",
+        exp.Div: "/",
+        exp.Mod: "%",
+    }
+    return cmp_map, arith_map
 
 
 OP_MAP = {
@@ -242,18 +270,11 @@ class SQLParser:
         if isinstance(node, exp.Paren):
             return self._parse_expr(node.this)
 
-        if isinstance(node, (exp.EQ, exp.NEQ, exp.GT, exp.GTE, exp.LT, exp.LTE)):
-            op_map = {
-                exp.EQ: "=",
-                exp.NEQ: "!=",
-                exp.GT: ">",
-                exp.GTE: ">=",
-                exp.LT: "<",
-                exp.LTE: "<=",
-            }
+        cmp_map, arith_map = _sqlglot_op_maps()
+        if type(node) in cmp_map:
             return ParsedExpr(
                 type=ExprType.BINARY_OP,
-                op=op_map[type(node)],
+                op=cmp_map[type(node)],
                 left=self._parse_expr(node.this),
                 right=self._parse_expr(node.expression),
             )
@@ -287,17 +308,10 @@ class SQLParser:
                 return ParsedExpr(type=ExprType.LITERAL, value=-inner.value)
             return ParsedExpr(type=ExprType.UNARY_OP, op="NEG", left=inner)
 
-        if isinstance(node, (exp.Add, exp.Sub, exp.Mul, exp.Div, exp.Mod)):
-            op_map = {
-                exp.Add: "+",
-                exp.Sub: "-",
-                exp.Mul: "*",
-                exp.Div: "/",
-                exp.Mod: "%",
-            }
+        if type(node) in arith_map:
             return ParsedExpr(
                 type=ExprType.BINARY_OP,
-                op=op_map[type(node)],
+                op=arith_map[type(node)],
                 left=self._parse_expr(node.this),
                 right=self._parse_expr(node.expression),
             )
@@ -345,6 +359,16 @@ class SQLCompiler:
             return self._compile_upsert(parsed, table)
         raise ValueError(f"Unsupported query type: {type(parsed).__name__}")
 
+    # Override hooks: SQLIPCCompiler returns the unexecuted query.
+    def _finalize_select(self, query):
+        result = query.execute()
+        if _is_aggregation_only_select(query):
+            result = result.take(1)
+        return result
+
+    def _finalize(self, query):
+        return query.execute()
+
     def _compile_select(self, parsed: ParsedSelect, table: Table) -> Table:
         select_args: list[str] = []
         select_kwargs: dict[str, t.Any] = {}
@@ -371,10 +395,15 @@ class SQLCompiler:
             query = query.by(*_by)
 
         if _order := parsed.order_by:
-            desc = any(is_desc for _, is_desc in parsed.order_by)
+            directions = {is_desc for _, is_desc in _order}
+            if len(directions) > 1:
+                raise NotImplementedError(
+                    "ORDER BY with mixed ASC/DESC directions is not supported"
+                )
+            desc = directions.pop()
             query = query.order_by(*[col for col, _ in _order], desc=desc)
 
-        return query.execute()
+        return self._finalize_select(query)
 
     def _compile_update(self, parsed: ParsedUpdate, table: Table) -> Table:
         update_kwargs: dict[str, t.Any] = {
@@ -385,7 +414,7 @@ class SQLCompiler:
         if _where := parsed.where_clause:
             query = query.where(self._compile_expr(_where))
 
-        return query.execute()
+        return self._finalize(query)
 
     def _compile_insert(self, parsed: ParsedInsert, table: Table) -> Table:
         compiled_rows: list[list[t.Any]] = [
@@ -398,14 +427,14 @@ class SQLCompiler:
             for row in compiled_rows:
                 for i, col in enumerate(_columns):
                     insert_kwargs[col].append(row[i])
-            return table.insert(**insert_kwargs).execute()
+            return self._finalize(table.insert(**insert_kwargs))
 
         if len(compiled_rows) == 1:
-            return table.insert(*compiled_rows[0]).execute()
+            return self._finalize(table.insert(*compiled_rows[0]))
 
-        return table.insert(
-            *[[row[i] for row in compiled_rows] for i in range(len(compiled_rows[0]))]
-        ).execute()
+        return self._finalize(
+            table.insert(*[[row[i] for row in compiled_rows] for i in range(len(compiled_rows[0]))])
+        )
 
     def _compile_upsert(self, parsed: ParsedUpsert, table: Table) -> Table:
         compiled_rows: list[list[t.Any]] = [
@@ -417,15 +446,17 @@ class SQLCompiler:
             for row in compiled_rows:
                 for i, col in enumerate(parsed.columns):
                     upsert_kwargs[col].append(row[i])
-            return table.upsert(**upsert_kwargs, key_columns=parsed.key_columns).execute()
+            return self._finalize(table.upsert(**upsert_kwargs, key_columns=parsed.key_columns))
 
         if len(compiled_rows) == 1:
-            return table.upsert(*compiled_rows[0], key_columns=parsed.key_columns).execute()
+            return self._finalize(table.upsert(*compiled_rows[0], key_columns=parsed.key_columns))
 
-        return table.upsert(
-            *[[row[i] for row in compiled_rows] for i in range(len(compiled_rows[0]))],
-            key_columns=parsed.key_columns,
-        ).execute()
+        return self._finalize(
+            table.upsert(
+                *[[row[i] for row in compiled_rows] for i in range(len(compiled_rows[0]))],
+                key_columns=parsed.key_columns,
+            )
+        )
 
     def _compile_expr(self, expr: ParsedExpr) -> t.Any:
         from rayforce.types.table import Column
@@ -497,83 +528,10 @@ class SQLQuery:
 
 
 class SQLIPCCompiler(SQLCompiler):
-    def _compile_select(self, parsed: ParsedSelect, table: Table):
-        select_args: list[str] = []
-        select_kwargs: dict[str, t.Any] = {}
+    """Compiles a SQL statement to an unexecuted query, for IPC dispatch."""
 
-        for alias, expr in parsed.columns:
-            if expr.type == ExprType.STAR:
-                select_args.append("*")
-            elif expr.type == ExprType.COLUMN and alias is None:
-                select_args.append(expr.value)
-            else:
-                name = alias if alias else self._infer_name(expr)
-                select_kwargs[name] = self._compile_expr(expr)
-
-        query = (
-            table.select(*select_args, **select_kwargs)
-            if select_args or select_kwargs
-            else table.select("*")
-        )
-
-        if _where := parsed.where_clause:
-            query = query.where(self._compile_expr(_where))
-
-        if _by := parsed.group_by:
-            query = query.by(*_by)
-
-        if _order := parsed.order_by:
-            desc = any(is_desc for _, is_desc in _order)
-            query = query.order_by(*[col for col, _ in _order], desc=desc)
-
+    def _finalize_select(self, query):
         return query
 
-    def _compile_update(self, parsed: ParsedUpdate, table: Table):
-        update_kwargs: dict[str, t.Any] = {
-            col_name: self._compile_expr(expr) for col_name, expr in parsed.assignments.items()
-        }
-
-        query = table.update(**update_kwargs)
-        if _where := parsed.where_clause:
-            query = query.where(self._compile_expr(_where))
-
+    def _finalize(self, query):
         return query
-
-    def _compile_insert(self, parsed: ParsedInsert, table: Table):
-        compiled_rows: list[list[t.Any]] = [
-            [self._compile_expr(val) for val in row] for row in parsed.values
-        ]
-
-        if _columns := parsed.columns:
-            insert_kwargs: dict[str, list[t.Any]] = {col: [] for col in _columns}
-            for row in compiled_rows:
-                for i, col in enumerate(parsed.columns):
-                    insert_kwargs[col].append(row[i])
-            return table.insert(**insert_kwargs)
-
-        if len(compiled_rows) == 1:
-            return table.insert(*compiled_rows[0])
-
-        return table.insert(
-            *[[row[i] for row in compiled_rows] for i in range(len(compiled_rows[0]))]
-        )
-
-    def _compile_upsert(self, parsed: ParsedUpsert, table: Table):
-        compiled_rows: list[list[t.Any]] = [
-            [self._compile_expr(val) for val in row] for row in parsed.values
-        ]
-
-        if _columns := parsed.columns:
-            upsert_kwargs: dict[str, list[t.Any]] = {col: [] for col in _columns}
-            for row in compiled_rows:
-                for i, col in enumerate(parsed.columns):
-                    upsert_kwargs[col].append(row[i])
-            return table.upsert(**upsert_kwargs, key_columns=parsed.key_columns)
-
-        if len(compiled_rows) == 1:
-            return table.upsert(*compiled_rows[0], key_columns=parsed.key_columns)
-
-        return table.upsert(
-            *[[row[i] for row in compiled_rows] for i in range(len(compiled_rows[0]))],
-            key_columns=parsed.key_columns,
-        )

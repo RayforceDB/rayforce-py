@@ -1,65 +1,75 @@
 from __future__ import annotations
 
-from unittest.mock import patch
+import os
+import socket
+import subprocess
+import sys
+import time
 
 import pytest
 
-from rayforce import errors
-from rayforce.network.tcp.server import TCPServer
+from rayforce.network import TCPClient, TCPServer
 
-pytestmark = pytest.mark.network
+
+def _find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def _wait_for_port(host: str, port: int, timeout: float = 3.0) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=0.2):
+                return
+        except OSError:
+            time.sleep(0.05)
+    raise RuntimeError(f"server never bound to {host}:{port}")
 
 
 @pytest.fixture
-def server():
-    return TCPServer(port=5000)
+def python_ipc_server():
+    """Spawn a TCPServer in a subprocess so its main-thread blocking loop is
+    isolated from the test process."""
+    port = _find_free_port()
+    code = f"from rayforce.network import TCPServer; TCPServer({port}).listen()"
+    proc = subprocess.Popen(
+        [sys.executable, "-c", code],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env={**os.environ},
+    )
+    try:
+        _wait_for_port("127.0.0.1", port)
+        yield "127.0.0.1", port
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
 
 
-@pytest.mark.parametrize("port", (0, 65536, -1))
-def test_init_invalid_port(port):
-    with pytest.raises(errors.RayforceTCPError, match="Invalid port"):
-        TCPServer(port=port)
+def test_server_accepts_client_and_evaluates(python_ipc_server):
+    host, port = python_ipc_server
+    with TCPClient(host, port) as c:
+        assert c.execute("(+ 2 3)") == 5
+        assert c.execute("(sum (til 10))") == 45
 
 
-@patch("rayforce.network.tcp.server.FFI.ipc_listen")
-@patch("rayforce.network.tcp.server.FFI.runtime_run")
-def test_listen_success(mock_runtime_run, mock_ipc_listen, server):
-    mock_ipc_listen.return_value = 123
-    mock_runtime_run.return_value = 0
+def test_server_invalid_port_rejected():
+    from rayforce import errors
 
-    server.listen()
-
-    mock_ipc_listen.assert_called_once_with(5000)
-    assert server._listener_id == 123
-    mock_runtime_run.assert_called_once()
+    with pytest.raises(errors.RayforceValueError):
+        TCPServer(0)
+    with pytest.raises(errors.RayforceValueError):
+        TCPServer(70000)
 
 
-@patch("rayforce.network.tcp.server.FFI.ipc_listen")
-@patch("rayforce.network.tcp.server.FFI.runtime_run")
-@patch("rayforce.network.tcp.server.FFI.ipc_close_listener")
-def test_listen_closes_on_exception(mock_close, mock_runtime_run, mock_ipc_listen, server):
-    mock_ipc_listen.return_value = 123
-    mock_runtime_run.side_effect = RuntimeError("Test error")
-
-    with pytest.raises(RuntimeError, match="Test error"):
-        server.listen()
-
-    mock_ipc_listen.assert_called_once_with(5000)
-    mock_close.assert_called_once_with(123)
-    assert server._listener_id is None
-
-
-@pytest.mark.parametrize("exc_cls", [RuntimeError, KeyboardInterrupt])
-@patch("rayforce.network.tcp.server.FFI.ipc_listen")
-@patch("rayforce.network.tcp.server.FFI.runtime_run")
-@patch("rayforce.network.tcp.server.FFI.ipc_close_listener")
-def test_listen_closes_on_interrupt(mock_close, mock_runtime_run, mock_ipc_listen, server, exc_cls):
-    mock_ipc_listen.return_value = 123
-    mock_runtime_run.side_effect = exc_cls("Test error") if exc_cls is RuntimeError else exc_cls()
-
-    with pytest.raises(exc_cls):
-        server.listen()
-
-    mock_ipc_listen.assert_called_once_with(5000)
-    mock_close.assert_called_once_with(123)
-    assert server._listener_id is None
+def test_server_idempotent_close():
+    port = _find_free_port()
+    server = TCPServer(port)
+    server.close()
+    server.close()  # second close is a no-op

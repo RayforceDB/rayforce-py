@@ -58,8 +58,8 @@ Parquet/Arrow types are automatically mapped to Rayforce types:
 | Arrow Type | Rayforce Type |
 |------------|---------------|
 | `bool` | `B8` |
-| `int8`, `uint8` | `U8` |
-| `int16`, `uint16` | `I16` |
+| `uint8` | `U8` |
+| `int8`, `int16`, `uint16` | `I16` |
 | `int32`, `uint32` | `I32` |
 | `int64`, `uint64` | `I64` |
 | `float32`, `float64` | `F64` |

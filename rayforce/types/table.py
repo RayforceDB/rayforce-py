@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import datetime as dt
 from functools import wraps
+import os
 import typing as t
 
 import numpy as np
@@ -10,10 +12,10 @@ from rayforce import _rayforce_c as r
 from rayforce import errors, utils
 from rayforce.ffi import FFI
 from rayforce.types import (
-    C8,
     I64,
     Dict,
     List,
+    Null,
     QuotedSymbol,
     String,
     Symbol,
@@ -22,12 +24,86 @@ from rayforce.types import (
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
 from rayforce.types.registry import TypeRegistry
+from rayforce.types.scalars.temporal.date import Date
 from rayforce.types.scalars.temporal.timestamp import tz_offset_nanos
 
 if t.TYPE_CHECKING:
-    import datetime as dt
-
     from rayforce.types.fn import Fn
+
+
+# Core flipped -RAY_SYM atom polarity (rayforce commit 6635321a): ATTR_QUOTED
+# (0x20) SET now marks a literal symbol; CLEAR marks a name reference (column /
+# global-env lookup). A name-reference atom must therefore have 0x20 cleared.
+_ATTR_NAME_REF = 0x00
+
+
+def _is_date_dir(name: str) -> bool:
+    if len(name) != 10 or name[4] != "." or name[7] != ".":
+        return False
+    digits = name[:4] + name[5:7] + name[8:]
+    if not digits.isdigit():
+        return False
+    month = int(name[5:7])
+    day = int(name[8:])
+    return 1 <= month <= 12 and 1 <= day <= 31
+
+
+def _is_int_dir(name: str) -> bool:
+    if not name:
+        return False
+    body = name[1:] if name[0] == "-" else name
+    return body.isdigit()
+
+
+def _collect_part_dirs(root: str) -> list[str]:
+    if not os.path.isdir(root):
+        return []
+    out = []
+    for entry in os.listdir(root):
+        if entry.startswith(".") or entry == "sym":
+            continue
+        if not os.path.isdir(os.path.join(root, entry)):
+            continue
+        if not (_is_date_dir(entry) or _is_int_dir(entry)):
+            continue
+        out.append(entry)
+    # Sort numerically when all entries are ints (so "2" precedes "10");
+    # date strings (YYYY.MM.DD) already sort correctly lexically.
+    if out and all(_is_int_dir(d) for d in out):
+        out.sort(key=int)
+    else:
+        out.sort()
+    return out
+
+
+def _infer_part_column(part_dirs: list[str]) -> tuple[str, list[t.Any], type]:
+    if all(_is_date_dir(d) for d in part_dirs):
+        values = [dt.date(int(d[:4]), int(d[5:7]), int(d[8:])) for d in part_dirs]
+        return "date", values, Date
+    if all(_is_int_dir(d) for d in part_dirs):
+        return "part", [int(d) for d in part_dirs], I64
+    return "part", list(part_dirs), Symbol
+
+
+def _col_name(c: t.Any) -> str:
+    """Column-name accessor. Symbol scalars expose `.value`; everything else
+    (str, Expression with a name, etc.) round-trips through str()."""
+    return c.value if hasattr(c, "value") else str(c)
+
+
+def _unwrap_value(v: t.Any) -> t.Any:
+    """Unwrap a ray scalar to its Python value, leaving non-scalars untouched."""
+    return v.value if hasattr(v, "value") else v
+
+
+def _make_name_sym(name: str) -> r.RayObject:
+    """Build a `-RAY_SYM` atom with ATTR_QUOTED *cleared* so the v2 DAG
+    compiler treats it as a column / global-env name reference rather than
+    a const symbol literal. (init_symbol now yields a quoted literal, so the
+    flag must be explicitly cleared here.)"""
+    sym = FFI.init_symbol(name)
+    FFI.set_obj_attrs(sym, _ATTR_NAME_REF)
+    return sym
 
 
 class _TableProtocol(t.Protocol):
@@ -44,39 +120,78 @@ class _TableProtocol(t.Protocol):
     def columns(self) -> Vector: ...
 
 
+_AGGREGATION_OPS: frozenset[Operation] = frozenset(
+    {
+        Operation.COUNT,
+        Operation.SUM,
+        Operation.AVG,
+        Operation.MIN,
+        Operation.MAX,
+        Operation.FIRST,
+        Operation.LAST,
+        Operation.MEDIAN,
+    }
+)
+
+
+def _recover_temporal_dtypes(table: Table, original_dtypes: dict[str, str]) -> Table:
+    """Cast cols back to their original ray_name when v2 DAG demoted TIMESTAMP/DATE/TIME."""
+    if not original_dtypes:
+        return table
+    cur = table.dtypes
+    targets: dict[str, str] = {}
+    for n, o in original_dtypes.items():
+        if o.upper() in {"TIMESTAMP", "DATE", "TIME"} and cur.get(n) in {"I64", "I32"}:
+            targets[n] = o.lower()
+    if not targets:
+        return table
+    names = [_col_name(c) for c in table.columns()]
+    cols = []
+    for n in names:
+        if n in targets:
+            ref = List([Operation.AT, table.evaled_ptr, QuotedSymbol(n)])
+            cols.append(utils.eval_obj(List([Operation.AS, QuotedSymbol(targets[n]), ref])))
+        else:
+            cols.append(table[n])
+    return Table(
+        FFI.init_table(columns=Vector(items=names, ray_type=Symbol).ptr, values=List(cols).ptr)
+    )
+
+
+def _is_aggregation_only_select(select_query: SelectQuery) -> bool:
+    """Mirror of `plugins/sql.py:_is_aggregation_only_select` expressed over
+    `Operation` enum members. Returns True when every projected column is an
+    aggregation `Expression` and no GROUP BY is present, in which case the
+    DAG's element-wise broadcast must be collapsed to a single row."""
+    if select_query._by_cols and (select_query._by_cols[0] or select_query._by_cols[1]):
+        return False
+    if not select_query._select_cols:
+        return False
+    cols, computed = select_query._select_cols
+    if cols:
+        return False
+    if not computed:
+        return False
+    for expr in computed.values():
+        if not isinstance(expr, Expression):
+            return False
+        if not isinstance(expr.operation, Operation):
+            return False
+        if expr.operation not in _AGGREGATION_OPS:
+            return False
+    return True
+
+
 class AggregationMixin:
-    def count(self) -> Expression:
-        return Expression(Operation.COUNT, self)
-
-    def sum(self) -> Expression:
-        return Expression(Operation.SUM, self)
-
-    def mean(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def avg(self) -> Expression:
-        return Expression(Operation.AVG, self)
-
-    def first(self) -> Expression:
-        return Expression(Operation.FIRST, self)
-
-    def last(self) -> Expression:
-        return Expression(Operation.LAST, self)
-
-    def max(self) -> Expression:
-        return Expression(Operation.MAX, self)
-
-    def min(self) -> Expression:
-        return Expression(Operation.MIN, self)
-
-    def median(self) -> Expression:
-        return Expression(Operation.MEDIAN, self)
-
-    def distinct(self) -> Expression:
-        return Expression(Operation.DISTINCT, self)
-
     def is_(self, other: bool) -> Expression:
-        return Expression(Operation.MAP_RIGHT, Operation.EQUALS, other, self)
+        # v2 engine doesn't broadcast EQUALS(bool_expr, True_literal) the way
+        # v1 did via MAP_RIGHT; short-circuit Expression cases to keep filter
+        # behaviour. Plain Column compares element-wise normally.
+        if isinstance(self, Expression) and other is True:
+            return self
+        if isinstance(self, Expression) and other is False:
+            return Expression(Operation.NOT, self)
+        return Expression(Operation.EQUALS, self, other)
 
     def isin(self, values: list[t.Any] | RayObject) -> Expression:
         if isinstance(values, RayObject):
@@ -95,30 +210,51 @@ class AggregationMixin:
         return Expression(Operation.IN, self, Expression(Operation.LIST, *values))
 
 
+# Method name → Operation member. mean is an AVG alias; deviation is population
+# std (engine `dev`); std is sample std (engine `stddev`).
+_UNARY_AGGS = {
+    "count": "COUNT",
+    "sum": "SUM",
+    "mean": "AVG",
+    "avg": "AVG",
+    "first": "FIRST",
+    "last": "LAST",
+    "max": "MAX",
+    "min": "MIN",
+    "median": "MEDIAN",
+    "deviation": "DEVIATION",
+    "std": "STDDEV",
+    "distinct": "DISTINCT",
+}
+_BINARY_AGGS = {"pearson_corr": "PEARSON_CORR", "top": "TOP", "bot": "BOT"}
+
+
+def _unary_agg(py_name: str, op_name: str):
+    def fwd(self) -> Expression:
+        return Expression(Operation[op_name], self)
+
+    fwd.__name__ = py_name
+    return fwd
+
+
+def _binary_agg(py_name: str, op_name: str):
+    def fwd(self, other) -> Expression:
+        return Expression(Operation[op_name], self, other)
+
+    fwd.__name__ = py_name
+    return fwd
+
+
+for _name, _op in _UNARY_AGGS.items():
+    setattr(AggregationMixin, _name, _unary_agg(_name, _op))
+for _name, _op in _BINARY_AGGS.items():
+    setattr(AggregationMixin, _name, _binary_agg(_name, _op))
+del _name, _op
+
+
 class OperatorMixin:
-    def __and__(self, other) -> Expression:
-        return Expression(Operation.AND, self, other)
-
-    def __or__(self, other) -> Expression:
-        return Expression(Operation.OR, self, other)
-
-    def __add__(self, other) -> Expression:
-        return Expression(Operation.ADD, self, other)
-
-    def __sub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, self, other)
-
-    def __mul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, self, other)
-
-    def __floordiv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, self, other)
-
-    def __truediv__(self, other) -> Expression:
-        return Expression(Operation.DIV_INT, self, other)
-
-    def __mod__(self, other) -> Expression:
-        return Expression(Operation.MODULO, self, other)
+    # __eq__ overridden below — explicitly opt out of default hashing.
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.EQUALS, self, other)
@@ -126,76 +262,106 @@ class OperatorMixin:
     def __ne__(self, other) -> Expression:  # type: ignore[override]
         return Expression(Operation.NOT_EQUALS, self, other)
 
-    def __lt__(self, other) -> Expression:
-        return Expression(Operation.LESS_THAN, self, other)
 
-    def __le__(self, other) -> Expression:
-        return Expression(Operation.LESS_EQUAL, self, other)
+_FORWARD_OPS = {
+    "__and__": "AND",
+    "__or__": "OR",
+    "__add__": "ADD",
+    "__sub__": "SUBTRACT",
+    "__mul__": "MULTIPLY",
+    "__truediv__": "DIVIDE",
+    "__floordiv__": "DIV_INT",
+    "__mod__": "MODULO",
+    "__lt__": "LESS_THAN",
+    "__le__": "LESS_EQUAL",
+    "__gt__": "GREATER_THAN",
+    "__ge__": "GREATER_EQUAL",
+}
+_REVERSE_OPS = {
+    "__radd__": "ADD",
+    "__rsub__": "SUBTRACT",
+    "__rmul__": "MULTIPLY",
+    "__rtruediv__": "DIVIDE",
+    "__rfloordiv__": "DIV_INT",
+}
 
-    def __gt__(self, other) -> Expression:
-        return Expression(Operation.GREATER_THAN, self, other)
 
-    def __ge__(self, other) -> Expression:
-        return Expression(Operation.GREATER_EQUAL, self, other)
+def _binary_op(dunder: str, op_name: str, *, reversed_: bool = False):
+    def fwd(self, other) -> Expression:
+        a, b = (other, self) if reversed_ else (self, other)
+        return Expression(Operation[op_name], a, b)
 
-    def __radd__(self, other) -> Expression:
-        return Expression(Operation.ADD, other, self)
+    fwd.__name__ = dunder
+    return fwd
 
-    def __rsub__(self, other) -> Expression:
-        return Expression(Operation.SUBTRACT, other, self)
 
-    def __rmul__(self, other) -> Expression:
-        return Expression(Operation.MULTIPLY, other, self)
-
-    def __rfloordiv__(self, other) -> Expression:
-        return Expression(Operation.DIVIDE, other, self)
-
-    def __rtruediv__(self, other) -> Expression:
-        return Expression(Operation.DIV_INT, other, self)
+for _dunder, _op in _FORWARD_OPS.items():
+    setattr(OperatorMixin, _dunder, _binary_op(_dunder, _op))
+for _dunder, _op in _REVERSE_OPS.items():
+    setattr(OperatorMixin, _dunder, _binary_op(_dunder, _op, reversed_=True))
+del _dunder, _op
 
 
 class Expression(AggregationMixin, OperatorMixin):
-    def __init__(self, operation: Operation | Fn, *operands: t.Any) -> None:
+    def __init__(self, operation: Operation | Fn | r.RayObject, *operands: t.Any) -> None:
         self.operation = operation
         self.operands = operands
 
     def compile(self, *, ipc: bool = False) -> r.RayObject:
+        # `(sum (filter col mask))` isn't DAG-lowerable — `filter` isn't
+        # wired into `compile_expr_dag`'s binary-op table, so the select
+        # errors out. Rewrite to `(sum (if mask col 0))`, which the DAG
+        # compiles to OP_SUM(OP_IF(mask, col, 0)) — a per-element masked
+        # sum matching the filter-then-sum semantics.
         if (
-            self.operation == Operation.MAP
-            and len(self.operands) == 2
-            and isinstance(self.operands[0], Column)
-            and isinstance(self.operands[1], Expression)
+            self.operation == Operation.SUM
+            and len(self.operands) == 1
+            and isinstance(self.operands[0], Expression)
+            and self.operands[0].operation == Operation.FILTER
+            and len(self.operands[0].operands) == 2
         ):
-            return List(
-                [
-                    Operation.MAP,
-                    Operation.AT,
-                    self.operands[0].name,
-                    List([Operation.WHERE, self.operands[1].compile()]),
-                ]
-            ).ptr
+            col, mask = self.operands[0].operands
+            return Expression(
+                Operation.SUM,
+                Expression(Operation.IF, mask, col, 0),
+            ).compile(ipc=ipc)
 
-        # Standard expression compilation
+        # Standard expression compilation. The v2 DAG compiler in
+        # `compile_expr_dag` accepts only:
+        #   * lists whose head is a `-RAY_SYM` (the builtin's name),
+        #   * column references encoded as `-RAY_SYM` with `RAY_ATTR_NAME`,
+        #   * string literals as `RAY_STR` atoms (no `(quote ...)` wrapper).
+        # We emit those shapes uniformly so the same compiled AST works in
+        # both DAG-lowered query paths (where/select compute) and the
+        # eval-level fallback (which resolves the head sym via env_get).
         converted_operands: list[t.Any] = []
         for operand in self.operands:
             if isinstance(operand, Expression):
                 converted_operands.append(operand.compile(ipc=ipc))
             elif isinstance(operand, Column):
-                converted_operands.append(operand.name)
+                converted_operands.append(_make_name_sym(operand.name))
             elif hasattr(operand, "ptr"):
                 converted_operands.append(operand)
             elif isinstance(operand, str):
-                converted_operands.append(List([Operation.QUOTE, operand]).ptr)
+                converted_operands.append(String(operand).ptr)
             else:
                 converted_operands.append(operand)
-        # Convert operation to its primitive if it's an Operation enum
-        operation_obj = (
-            self.operation.primitive if isinstance(self.operation, Operation) else self.operation
+        operation_obj: t.Any = (
+            _make_name_sym(self.operation.value)
+            if isinstance(self.operation, Operation)
+            else self.operation
         )
         return List([operation_obj, *converted_operands]).ptr
 
     def execute(self) -> t.Any:
         return utils.eval_obj(self.compile())
+
+
+class _ShiftTzExpression(Expression):
+    """Marker subclass for `Column.shift_tz`. The DAG lowers TIMESTAMP+I64
+    to I64 and doesn't accept `(as 'timestamp …)` as a projection, so the
+    result carries the shift but loses the temporal tag. `SelectQuery.execute`
+    recovers it by casting the column Python-side after the select runs."""
 
 
 class Column(AggregationMixin, OperatorMixin):
@@ -204,10 +370,37 @@ class Column(AggregationMixin, OperatorMixin):
         self.table = table
 
     def where(self, condition: Expression) -> Expression:
-        return Expression(Operation.MAP, self, condition)
+        return Expression(Operation.FILTER, self, condition)
 
     def shift_tz(self, tz: dt.tzinfo) -> Expression:
-        return Expression(Operation.ADD, self, tz_offset_nanos(tz))
+        # v2's DAG `promote_type` demotes TIMESTAMP+I64 to I64. The DAG's
+        # `as` projection only handles fixed-width numerics (not TIMESTAMP),
+        # so we mark the expression and recover the temporal tag after the
+        # select runs — see `SelectQuery.execute`.
+        return _ShiftTzExpression(Operation.ADD, self, tz_offset_nanos(tz))
+
+
+def _coerce_column(col: t.Any) -> t.Any:
+    """Unify homogeneous Python lists and rayforce `List` columns into a
+    typed `Vector`. RAY_LIST columns are not accepted by the v2 DAG filter
+    path, so passing `[True, False, True]` or `List([True, False, True])`
+    as a table column must be pre-promoted to a RAY_B8 vector."""
+    if isinstance(col, list) and col:
+        if all(isinstance(x, bool) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_B8)
+        if all(isinstance(x, int) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_I64)
+        if all(isinstance(x, float) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_F64)
+        if all(isinstance(x, str) for x in col):
+            return Vector(items=col, ray_type=r.TYPE_SYMBOL)
+    if isinstance(col, List) and len(col) > 0:
+        first_type = FFI.get_obj_type(col[0].ptr)
+        if first_type < 0 and all(
+            FFI.get_obj_type(col[i].ptr) == first_type for i in range(1, len(col))
+        ):
+            return Vector(items=list(col), ray_type=first_type)
+    return col
 
 
 class TableInitMixin:
@@ -216,10 +409,11 @@ class TableInitMixin:
 
     def __init__(self, ptr: r.RayObject | str | dict[str, Vector]) -> None:
         if isinstance(ptr, dict):
+            coerced = {name: _coerce_column(val) for name, val in ptr.items()}
             self._ptr, self.is_reference = (
                 FFI.init_table(
-                    columns=Vector(items=ptr.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
-                    values=List(ptr.values()).ptr,
+                    columns=Vector(items=coerced.keys(), ray_type=Symbol).ptr,  # type: ignore[arg-type]
+                    values=List(coerced.values()).ptr,
                 ),
                 False,
             )
@@ -243,8 +437,6 @@ class TableInitMixin:
 
     @classmethod
     def from_dict(cls, data: dict[str, t.Any]) -> t.Self:
-        import numpy as np
-
         columns: dict[str, Vector] = {}
         for name, values in data.items():
             if isinstance(values, Vector):
@@ -261,15 +453,9 @@ class TableInitMixin:
 
     @classmethod
     def from_csv(cls, column_types: list[RayObject], path: str) -> t.Self:
-        return utils.eval_obj(
-            List(
-                [
-                    Operation.READ_CSV,
-                    Vector([c.ray_name for c in column_types], ray_type=Symbol),
-                    String(path),
-                ]
-            )
-        )
+        schema = Vector([c.ray_name.upper() for c in column_types], ray_type=Symbol).ptr
+        result = FFI.read_csv(schema, FFI.init_string(path))
+        return cls(result)
 
     @property
     def ptr(self) -> r.RayObject:
@@ -285,21 +471,48 @@ class TableInitMixin:
 
     @classmethod
     def from_splayed(cls, path: str, symfile: str | None = None) -> Table:
-        _args = [FFI.init_string(path)]
-        if symfile is not None:
-            _args.append(FFI.init_string(symfile))
-        _tbl = utils.eval_obj(List([Operation.GET_SPLAYED, *_args]))
+        sym_ptr = FFI.init_string(symfile) if symfile is not None else None
+        _tbl_ptr = FFI.get_splayed(FFI.init_string(path), sym_ptr)
+        _tbl = utils.ray_to_python(_tbl_ptr)
         _tbl.is_parted = True
         return _tbl
 
     @classmethod
     def from_parted(cls, path: str, name: str) -> Table:
-        _args = [FFI.init_string(path)]
-        if name is not None:
-            _args.append(QuotedSymbol(name).ptr)
-        _tbl = utils.eval_obj(List([Operation.GET_PARTED, *_args]))
-        _tbl.is_parted = True
-        return _tbl
+        part_dirs = _collect_part_dirs(path)
+        if not part_dirs:
+            _tbl_ptr = FFI.get_parted(FFI.init_string(path), QuotedSymbol(name).ptr)
+            _tbl = utils.ray_to_python(_tbl_ptr)
+            _tbl.is_parted = True
+            return _tbl
+
+        part_col_name, part_values, part_ray_type = _infer_part_column(part_dirs)
+        sym_path = os.path.join(path, "sym")
+        has_sym = os.path.exists(sym_path)
+
+        root = path.rstrip("/")
+        parts: list[Table] = []
+        for part_dir, part_value in zip(part_dirs, part_values, strict=True):
+            splayed = f"{root}/{part_dir}/{name}/"
+            part_tbl = cls.from_splayed(splayed, sym_path if has_sym else None)
+            part_tbl.is_parted = False
+            nrows = len(part_tbl)
+            part_col = Vector(items=[part_value] * nrows, ray_type=part_ray_type)
+            cols = part_tbl.columns().to_python()
+            col_names = [part_col_name] + [_col_name(c) for c in cols]
+            col_values = [part_col] + [part_tbl[_col_name(c)] for c in cols]
+            parts.append(
+                Table(
+                    FFI.init_table(
+                        columns=Vector(items=col_names, ray_type=Symbol).ptr,
+                        values=List(col_values).ptr,
+                    )
+                )
+            )
+
+        result = parts[0].concat(*parts[1:]) if len(parts) > 1 else parts[0]
+        result.is_parted = True
+        return result
 
 
 class TableIOMixin:
@@ -320,16 +533,25 @@ class TableIOMixin:
         FFI.binary_set(FFI.init_symbol(name), self.ptr)
 
     def set_splayed(self, path: str, symlink: str | None = None) -> None:
-        _args = [FFI.init_string(path), self.evaled_ptr]
-        if symlink is not None:
-            _args.append(FFI.init_string(symlink))
-        utils.eval_obj(List([Operation.SET_SPLAYED, *_args]))
+        os.makedirs(path, exist_ok=True)
+        sym_ptr = FFI.init_string(symlink) if symlink is not None else None
+        FFI.set_splayed(FFI.init_string(path), self.evaled_ptr, sym_ptr)
+
+    def to_splayed(self, path: str, symlink: str | None = None) -> None:
+        self.set_splayed(path, symlink)
 
     def set_csv(self, path: str, separator: str | None = None) -> None:
-        _args = [FFI.init_string(path), self.evaled_ptr]
-        if separator is not None:
-            _args.append(C8(separator).ptr)
-        utils.eval_obj(List([Operation.WRITE_CSV, *_args]))
+        FFI.write_csv(self.evaled_ptr, FFI.init_string(path))
+        if separator is not None and separator != ",":
+            # Re-emit via the stdlib csv module so embedded commas inside
+            # quoted fields survive the delimiter change. A naive
+            # str.replace(",", sep) corrupts any comma-bearing values.
+            import csv
+
+            with open(path, newline="") as fh:
+                rows = list(csv.reader(fh))
+            with open(path, "w", newline="") as fh:
+                csv.writer(fh, delimiter=separator).writerows(rows)
 
 
 class DestructiveOperationHandler:
@@ -367,8 +589,26 @@ class TableValueAccessorMixin:
     @DestructiveOperationHandler()
     def at_row(self, row_n: int) -> Dict:
         if not isinstance(row_n, int):
-            raise errors.RayforceConversionError("Row number has to an integer")
-        return utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
+            raise errors.RayforceConversionError("Row number has to be an integer")
+        original = row_n
+        if row_n < 0:
+            row_n += len(self)
+        if row_n < 0 or row_n >= len(self):
+            raise errors.RayforceIndexError(f"Row out of bounds: {original}")
+        result = utils.eval_obj(List([Operation.AT, self.evaled_ptr, I64(row_n)]))
+        # `(at t i)` loses per-column null-bitmap info; consult it per column
+        # and overwrite nulled cells with `Null`. Skip non-vector columns
+        # (e.g. heterogeneous `List` columns) — `vec_is_null` only accepts
+        # typed vectors.
+        col_names = [_col_name(c) for c in self.columns()]
+        col_vectors = self.values()
+        for col_name, col_vec in zip(col_names, col_vectors, strict=True):
+            col_ptr = col_vec.ptr if hasattr(col_vec, "ptr") else col_vec
+            if FFI.get_obj_type(col_ptr) <= 0:
+                continue
+            if FFI.vec_is_null(col_ptr, row_n):
+                result[col_name] = Null
+        return result
 
     @DestructiveOperationHandler()
     def take(self, n: int, offset: int = 0) -> Table:
@@ -394,7 +634,7 @@ class TableValueAccessorMixin:
             List([Operation.COUNT, [Operation.AT, [Operation.VALUE, self.evaled_ptr], 0]])
         )
         cols = utils.eval_obj(List([Operation.COUNT, [Operation.KEY, self.evaled_ptr]]))
-        return (rows, cols)
+        return (rows.value, cols.value)
 
     @DestructiveOperationHandler()
     def __len__(self) -> int:
@@ -455,7 +695,7 @@ class TableValueAccessorMixin:
                 col_values = self.values()
                 new_data: dict[str, Vector] = {}
                 for i, name_sym in enumerate(col_names):
-                    name = name_sym.value if hasattr(name_sym, "value") else str(name_sym)
+                    name = _col_name(name_sym)
                     new_data[name] = utils.eval_obj(
                         List([Operation.AT, col_values[i], Vector(items=key, ray_type=I64)])
                     )
@@ -484,9 +724,6 @@ class TableValueAccessorMixin:
 
         numeric_types = {r.TYPE_I64, r.TYPE_I32, r.TYPE_I16, r.TYPE_F64, r.TYPE_U8}
 
-        def _extract(val: t.Any) -> t.Any:
-            return val.value if hasattr(val, "value") else val
-
         for i, col_name in enumerate(columns):
             col_vector = values[i]
             if not col_vector:
@@ -495,32 +732,36 @@ class TableValueAccessorMixin:
             if FFI.get_obj_type(col_vector.ptr) not in numeric_types:
                 continue
 
-            name = col_name.value if hasattr(col_name, "value") else str(col_name)
+            name = _col_name(col_name)
 
             stats[name] = {
-                "count": _extract(utils.eval_obj(List([Operation.COUNT, col_vector.ptr]))),
-                "mean": _extract(utils.eval_obj(List([Operation.AVG, col_vector.ptr]))),
-                "min": _extract(utils.eval_obj(List([Operation.MIN, col_vector.ptr]))),
-                "max": _extract(utils.eval_obj(List([Operation.MAX, col_vector.ptr]))),
+                "count": _unwrap_value(utils.eval_obj(List([Operation.COUNT, col_vector.ptr]))),
+                "mean": _unwrap_value(utils.eval_obj(List([Operation.AVG, col_vector.ptr]))),
+                "min": _unwrap_value(utils.eval_obj(List([Operation.MIN, col_vector.ptr]))),
+                "max": _unwrap_value(utils.eval_obj(List([Operation.MAX, col_vector.ptr]))),
             }
 
         return stats
 
     @property
     def dtypes(self) -> dict[str, str]:
-        meta = utils.eval_obj(
-            List([Operation.AS, [Operation.QUOTE, "DICT"], [Operation.META, self.evaled_ptr]])
-        )
-        names, types = meta["name"], meta["type"]
-
-        return {
-            (n.value if hasattr(n, "value") else str(n)): t.value if hasattr(t, "value") else str(t)
-            for n, t in zip(names, types, strict=True)
-        }
+        # v2 `meta table` returns a summary dict ({'type': 'TABLE', 'len': N}),
+        # not a per-column breakdown. Derive column types directly from each
+        # column's type code via the scalar TypeRegistry entry.
+        cols = self.columns()
+        vals = self.values()
+        result: dict[str, str] = {}
+        for col_sym, vec in zip(cols, vals, strict=True):
+            name = _col_name(col_sym)
+            tc = FFI.get_obj_type(vec.ptr)
+            scalar_cls = TypeRegistry.get(-tc if tc > 0 else tc)
+            ray_name = getattr(scalar_cls, "ray_name", None) if scalar_cls else None
+            result[name] = ray_name.upper() if ray_name else str(tc)
+        return result
 
     @DestructiveOperationHandler()
     def drop(self, *cols: str) -> Table:
-        current_cols = {c.value if hasattr(c, "value") else str(c) for c in self.columns()}
+        current_cols = {_col_name(c) for c in self.columns()}
         cols_to_drop = set(cols)
         if unknown := (cols_to_drop - current_cols):
             raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
@@ -530,20 +771,23 @@ class TableValueAccessorMixin:
 
     @DestructiveOperationHandler()
     def rename(self, mapping: dict[str, str]) -> Table:
-        current_cols = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        current_cols = [_col_name(c) for c in self.columns()]
         unknown = set(mapping.keys()) - set(current_cols)
         if unknown:
             raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
 
-        select_args = {}
-        for col in current_cols:
-            new_name = mapping.get(col, col)
-            select_args[new_name] = Column(col)
+        resulting_names = [mapping.get(col, col) for col in current_cols]
+        collisions = {n for n in resulting_names if resulting_names.count(n) > 1}
+        if collisions:
+            raise errors.RayforceConversionError(
+                f"Rename would produce duplicate column names: {', '.join(sorted(collisions))}"
+            )
 
+        select_args = {mapping.get(col, col): Column(col) for col in current_cols}
         return t.cast("Table", self).select(**select_args).execute()
 
     def cast(self, column: str, to_type: type) -> Table:
-        current_cols = [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
+        current_cols = [_col_name(c) for c in self.columns()]
         if column not in current_cols:
             raise errors.RayforceConversionError(f"Column not found: {column}")
 
@@ -552,27 +796,30 @@ class TableValueAccessorMixin:
                 f"Invalid target type: {to_type}. Must be a Rayforce type like I64, F64, Symbol."
             )
 
-        select_args: dict[str, Expression | Column] = {}
+        # v2's DAG SELECT rejects `(as 'type col)` as a projected expression,
+        # so cast the target column Python-side and rebuild the table via
+        # FFI.init_table directly.
+        target_sym = QuotedSymbol(to_type.ray_name.lower())
+        new_vecs: list[RayObject] = []
         for col in current_cols:
+            vec = utils.eval_obj(List([Operation.AT, self.evaled_ptr, QuotedSymbol(col)]))
             if col == column:
-                select_args[col] = Expression(
-                    Operation.AS,
-                    QuotedSymbol(to_type.ray_name.lower()),
-                    Column(col),
-                )
-            else:
-                select_args[col] = Column(col)
+                vec = utils.eval_obj(List([Operation.AS, target_sym, vec]))
+            new_vecs.append(vec)
 
-        return t.cast("Table", self).select(**select_args).execute()
+        tbl_ptr = FFI.init_table(
+            columns=Vector(items=current_cols, ray_type=Symbol).ptr,
+            values=List([v.ptr for v in new_vecs]).ptr,
+        )
+        return Table(tbl_ptr)
 
     @DestructiveOperationHandler()
     def to_dict(self) -> dict[str, list]:
         vals = self.values()
+        col_names = [_col_name(c) for c in self.columns()]
         return {
-            name: vals[i].to_list()
-            for i, name in enumerate(
-                [c.value if hasattr(c, "value") else str(c) for c in self.columns()]
-            )
+            name: vals[i].to_list() if hasattr(vals[i], "to_list") else list(vals[i])
+            for i, name in enumerate(col_names)
         }
 
     @DestructiveOperationHandler()
@@ -629,12 +876,15 @@ class TableQueryMixin:
     def by(self, *cols, **computed_cols) -> SelectQuery:
         return SelectQuery(table=t.cast("_TableProtocol", self)).by(*cols, **computed_cols)
 
+    @DestructiveOperationHandler()
     def update(self, **kwargs) -> UpdateQuery:
         return UpdateQuery(t.cast("_TableProtocol", self), **kwargs)
 
+    @DestructiveOperationHandler()
     def insert(self, *args, **kwargs) -> InsertQuery:
         return InsertQuery(t.cast("_TableProtocol", self), *args, **kwargs)
 
+    @DestructiveOperationHandler()
     def upsert(self, *args, key_columns: int, **kwargs) -> UpsertQuery:
         return UpsertQuery(t.cast("_TableProtocol", self), *args, key_columns=key_columns, **kwargs)
 
@@ -680,7 +930,7 @@ class TableQueryMixin:
         index: str | list[str],
         columns: str,
         values: str,
-        aggfunc: t.Literal["sum", "count", "avg", "min", "max", "first", "last"],
+        aggfunc: t.Literal["sum", "count", "avg", "min", "max", "first", "last"] = "min",
     ) -> PivotQuery:
         return PivotQuery(t.cast("_TableProtocol", self), index, columns, values, aggfunc)
 
@@ -731,7 +981,9 @@ class _Join(IPCQueryMixin):
         on = self.on
         if isinstance(self.on, str):
             on = [self.on]
-        return Vector(items=on, ray_type=Symbol).ptr, self.table.ptr, self.other.ptr
+        # evaled_ptr resolves a reference Table(name) to its actual table ptr;
+        # .ptr would yield a quoted-literal symbol that the join can't resolve (#M5).
+        return Vector(items=on, ray_type=Symbol).ptr, self.table.evaled_ptr, self.other.evaled_ptr
 
     @property
     def ipc(self) -> r.RayObject:
@@ -762,15 +1014,15 @@ class _WindowJoin(_Join):
             if isinstance(expr, Expression):
                 agg_dict[name] = expr.compile()
             elif isinstance(expr, Column):
-                agg_dict[name] = expr.name
+                agg_dict[name] = _make_name_sym(expr.name)
             else:
                 agg_dict[name] = expr
 
         return (
             Vector(items=self.on, ray_type=Symbol).ptr,
             self.interval.compile(),
-            self.table.ptr,
-            *[t.ptr for t in self.join_with],
+            self.table.evaled_ptr,
+            *[t.evaled_ptr for t in self.join_with],
             Dict(agg_dict).ptr,
         )
 
@@ -858,22 +1110,22 @@ class SelectQuery(IPCQueryMixin):
         return self._ptr
 
     def compile(self) -> r.RayObject:
-        attributes = {}
+        attributes: dict[str, t.Any] = {}
         if self._select_cols:
             cols, computed = self._select_cols
             if "*" in cols and computed:
-                current_cols = [
-                    c.value if hasattr(c, "value") else str(c) for c in self.table.columns()
-                ]
-                attributes = {col: col for col in current_cols if col not in computed}
+                current_cols = [_col_name(c) for c in self.table.columns()]
+                attributes = {
+                    col: _make_name_sym(col) for col in current_cols if col not in computed
+                }
             else:
-                attributes = {col: col for col in cols if col != "*"}
+                attributes = {col: _make_name_sym(col) for col in cols if col != "*"}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
                     attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
-                    attributes[name] = expr.name
+                    attributes[name] = _make_name_sym(expr.name)
                 else:
                     attributes[name] = expr
 
@@ -881,18 +1133,18 @@ class SelectQuery(IPCQueryMixin):
         if self._where_conditions:
             combined = self._where_conditions[0]
             for cond in self._where_conditions[1:]:
-                combined = combined & cond
+                combined = combined & cond  # type: ignore[operator]  # __and__ via setattr
             where_expr = combined
 
         if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
             cols, computed = self._by_cols
-            by_attributes = {col: col for col in cols}
+            by_attributes = {col: _make_name_sym(col) for col in cols}
 
             for name, expr in computed.items():
                 if isinstance(expr, Expression):
                     by_attributes[name] = expr.compile()
                 elif isinstance(expr, Column):
-                    by_attributes[name] = expr.name
+                    by_attributes[name] = _make_name_sym(expr.name)
                 else:
                     by_attributes[name] = expr
             attributes["by"] = by_attributes
@@ -901,7 +1153,9 @@ class SelectQuery(IPCQueryMixin):
 
         if isinstance(self.table, Table):
             if self.table.is_reference:
-                query_items["from"] = Symbol(self.table._ptr).ptr
+                name_sym = FFI.init_symbol(self.table._ptr)
+                FFI.set_obj_attrs(name_sym, _ATTR_NAME_REF)
+                query_items["from"] = name_sym
             else:
                 query_items["from"] = self.table.ptr
         else:
@@ -919,10 +1173,45 @@ class SelectQuery(IPCQueryMixin):
     def ipc(self) -> r.RayObject:  # type: ignore[override]
         return Expression(Operation.SELECT, self.compile()).compile()
 
+    def _distinct_only_projection(self) -> tuple[str, str] | None:
+        """Return (result_name, col_name) if this query is just a single
+        `Expression(DISTINCT, Column(c))` projection with no where/by/order,
+        else None. The v2 DAG compiler rejects `distinct` in a SELECT
+        projection; for this shape we evaluate `(distinct (at T 'c))`
+        Python-side and materialize a single-column table."""
+        if self._where_conditions or self._order_by_cols:
+            return None
+        if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
+            return None
+        if not self._select_cols:
+            return None
+        cols, computed = self._select_cols
+        if cols or len(computed) != 1:
+            return None
+        [(result_name, expr)] = computed.items()
+        if not isinstance(expr, Expression) or expr.operation != Operation.DISTINCT:
+            return None
+        if len(expr.operands) != 1 or not isinstance(expr.operands[0], Column):
+            return None
+        return (result_name, expr.operands[0].name)
+
     def execute(self) -> Table:
+        distinct_spec = self._distinct_only_projection()
+        if distinct_spec is not None:
+            result_name, col_name = distinct_spec
+            distinct_vec = utils.eval_obj(
+                List(
+                    [
+                        Operation.DISTINCT,
+                        List([Operation.AT, self.table.evaled_ptr, QuotedSymbol(col_name)]),
+                    ]
+                )
+            )
+            return Table({result_name: distinct_vec})
+
         if self._order_by_cols:
             cols, desc = self._order_by_cols
-            return utils.eval_obj(
+            result = utils.eval_obj(
                 List(
                     [
                         Operation.XDESC if desc else Operation.XASC,
@@ -931,8 +1220,18 @@ class SelectQuery(IPCQueryMixin):
                     ]
                 )
             )
+        else:
+            result = utils.eval_obj(List([Operation.SELECT, self.compile()]))
 
-        return utils.eval_obj(List([Operation.SELECT, self.compile()]))
+        if isinstance(result, Table) and self._select_cols:
+            _, computed = self._select_cols
+            shifts = {
+                n: "TIMESTAMP" for n, e in computed.items() if isinstance(e, _ShiftTzExpression)
+            }
+            result = _recover_temporal_dtypes(result, shifts)
+        if isinstance(result, Table) and _is_aggregation_only_select(self):
+            result = result.take(1)
+        return result
 
 
 class UpdateQuery(IPCQueryMixin):
@@ -959,7 +1258,7 @@ class UpdateQuery(IPCQueryMixin):
             if isinstance(value, Expression):
                 converted_attrs[key] = value.compile(ipc=ipc)
             elif isinstance(value, Column):
-                converted_attrs[key] = value.name
+                converted_attrs[key] = _make_name_sym(value.name)
             elif isinstance(value, str):
                 converted_attrs[key] = (
                     QuotedSymbol(value).ptr
@@ -971,8 +1270,7 @@ class UpdateQuery(IPCQueryMixin):
 
         query_items = dict(converted_attrs)
         if self.table.is_reference:
-            cloned_table = FFI.quote(self.table.ptr)
-            query_items["from"] = cloned_table
+            query_items["from"] = Symbol(self.table._ptr).ptr
         else:
             query_items["from"] = self.table.ptr
 
@@ -987,9 +1285,29 @@ class UpdateQuery(IPCQueryMixin):
 
     def execute(self) -> Table:
         new_table = FFI.update(query=self.compile())
-        if self.table.is_reference:
+        result_type = FFI.get_obj_type(new_table)
+        if self.table.is_reference and result_type == -r.TYPE_SYMBOL:
             return Table(Symbol(ptr=new_table).value)
         return Table(new_table)
+
+
+def _build_list_of_vectors(args: tuple, *, ipc: bool) -> r.RayObject:
+    """Pack a tuple of column-sequences into a list of Vectors. Shared by
+    InsertQuery / UpsertQuery's iterable-first path."""
+    out = List([Operation.LIST]) if ipc else List([])
+    for sub in args:
+        out.append(Vector(items=sub, ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0]))))
+    return out.ptr
+
+
+def _build_dict_of_vectors(kwargs: dict) -> r.RayObject:
+    """Pack kwargs into a Dict of (sym-keys, Vector-values). Shared by
+    InsertQuery / UpsertQuery's kwargs-with-iterable-values path."""
+    keys = Vector(items=list(kwargs.keys()), ray_type=Symbol)
+    values = List([])
+    for val in kwargs.values():
+        values.append(Vector(items=val, ray_type=FFI.get_obj_type(utils.python_to_ray(val[0]))))
+    return Dict.from_items(keys=keys, values=values).ptr
 
 
 class InsertQuery(IPCQueryMixin):
@@ -1004,54 +1322,32 @@ class InsertQuery(IPCQueryMixin):
     def compile(self, *, ipc: bool = False) -> r.RayObject:
         if self.args:
             first = self.args[0]
-
             if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
-                _args = List([]) if not ipc else List([Operation.LIST])
-                for sub in self.args:
-                    _args.append(
-                        Vector(
-                            items=sub,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0])),
-                        )
-                    )
-                insertable = _args.ptr
+                return _build_list_of_vectors(self.args, ipc=ipc)
+            return (List([Operation.LIST, *self.args]) if ipc else List(self.args)).ptr
 
-            else:
-                insertable = (
-                    List(self.args).ptr if not ipc else List([Operation.LIST, *self.args]).ptr
-                )
-
-        elif self.kwargs:
-            values = list(self.kwargs.values())
-            first_val = values[0]
-
+        if self.kwargs:
+            first_val = next(iter(self.kwargs.values()))
             if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
-                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
-                _values = List([])
+                return _build_dict_of_vectors(self.kwargs)
+            return Dict(self.kwargs).ptr
 
-                for val in values:
-                    _values.append(
-                        Vector(
-                            items=val,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(val[0])),
-                        )
-                    )
-                insertable = Dict.from_items(keys=keys, values=_values).ptr
-
-            else:
-                insertable = Dict(self.kwargs).ptr
-        else:
-            raise errors.RayforceQueryCompilationError("No data to insert")
-
-        return insertable
+        raise errors.RayforceQueryCompilationError("No data to insert")
 
     @property
     def ipc(self) -> r.RayObject:  # type: ignore[override]
         return Expression(Operation.INSERT, self.table, self.compile(ipc=True)).compile()
 
     def execute(self) -> Table:
-        new_table = FFI.insert(table=FFI.quote(self.table.ptr), data=self.compile())
+        data = self.compile()
         if self.table.is_reference:
+            tbl_arg = Symbol(self.table._ptr).ptr
+            data = List([Operation.QUOTE, data]).ptr
+        else:
+            tbl_arg = self.table.ptr
+        new_table = FFI.insert(table=tbl_arg, data=data)
+        result_type = FFI.get_obj_type(new_table)
+        if self.table.is_reference and result_type == -r.TYPE_SYMBOL:
             return Table(Symbol(ptr=new_table).value)
         return Table(new_table)
 
@@ -1070,61 +1366,23 @@ class UpsertQuery(IPCQueryMixin):
         self.key_columns = key_columns
 
     def compile(self, *, ipc: bool = False) -> tuple[r.RayObject, r.RayObject]:
+        # Upsert always packs into Vectors — scalar args/values are wrapped
+        # in length-1 Vectors before packing.
         if self.args:
             first = self.args[0]
-
-            if isinstance(first, Iterable) and not isinstance(first, (str, bytes)):
-                _args = List([]) if not ipc else List([Operation.LIST])
-                for sub in self.args:
-                    _args.append(
-                        Vector(
-                            items=sub,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub[0])),
-                        )
-                    )
-                upsertable = _args.ptr
-
-            else:
-                _args = List([]) if not ipc else List([Operation.LIST])
-                for sub in self.args:
-                    _args.append(
-                        Vector(
-                            items=[sub],
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(sub)),
-                        )
-                    )
-                upsertable = _args.ptr
-
-        # TODO: for consistency with insert, allow to use single values isntead of vectors
+            packed_args = (
+                self.args
+                if isinstance(first, Iterable) and not isinstance(first, (str, bytes))
+                else tuple([a] for a in self.args)
+            )
+            upsertable = _build_list_of_vectors(packed_args, ipc=ipc)
         elif self.kwargs:
-            values = list(self.kwargs.values())
-            first_val = values[0]
-
+            first_val = next(iter(self.kwargs.values()))
             if isinstance(first_val, Iterable) and not isinstance(first_val, (str, bytes)):
-                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
-                _values = List([])
-
-                for val in values:
-                    _values.append(
-                        Vector(
-                            items=val,
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(val[0])),
-                        )
-                    )
-                upsertable = Dict.from_items(keys=keys, values=_values).ptr
-
+                packed_kwargs = self.kwargs
             else:
-                keys = Vector(items=list(self.kwargs.keys()), ray_type=Symbol)
-                _values = List([])
-
-                for val in values:
-                    _values.append(
-                        Vector(
-                            items=[val],
-                            ray_type=FFI.get_obj_type(utils.python_to_ray(val)),
-                        )
-                    )
-                upsertable = Dict.from_items(keys=keys, values=_values).ptr
+                packed_kwargs = {k: [v] for k, v in self.kwargs.items()}
+            upsertable = _build_dict_of_vectors(packed_kwargs)
         else:
             raise errors.RayforceQueryCompilationError("No data to insert")
 
@@ -1135,9 +1393,15 @@ class UpsertQuery(IPCQueryMixin):
         return Expression(Operation.UPSERT, self.table, *self.compile(ipc=True)).compile()
 
     def execute(self) -> Table:
-        compiled = self.compile()
-        new_table = FFI.upsert(table=FFI.quote(self.table.ptr), keys=compiled[0], data=compiled[1])
+        keys, data = self.compile()
         if self.table.is_reference:
+            tbl_arg = Symbol(self.table._ptr).ptr
+            data = List([Operation.QUOTE, data]).ptr
+        else:
+            tbl_arg = self.table.ptr
+        new_table = FFI.upsert(table=tbl_arg, keys=keys, data=data)
+        result_type = FFI.get_obj_type(new_table)
+        if self.table.is_reference and result_type == -r.TYPE_SYMBOL:
             return Table(Symbol(ptr=new_table).value)
         return Table(new_table)
 
@@ -1172,8 +1436,8 @@ class PivotQuery:
         self.aggfunc = aggfunc
 
     def execute(self) -> Table:
-        distinct = self.table.select(_col=Column(self.columns).distinct()).execute()
-        unique_values = [v.value if hasattr(v, "value") else v for v in distinct["_col"]]
+        col_vec = self.table[self.columns]
+        unique_values = list(dict.fromkeys(_unwrap_value(v) for v in col_vec.to_python()))
         if not unique_values:
             raise errors.RayforceValueError(f"No values in pivot column '{self.columns}'")
 

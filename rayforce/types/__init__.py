@@ -1,10 +1,10 @@
-from .containers import Dict, List, String, Vector
+from .containers import Dict, List, Vector
 from .fn import Fn
 from .null import Null
 from .operators import Operation
 from .scalars import (
     B8,
-    C8,
+    F32,
     F64,
     GUID,
     I16,
@@ -13,6 +13,7 @@ from .scalars import (
     U8,
     Date,
     QuotedSymbol,
+    String,
     Symbol,
     Time,
     Timestamp,
@@ -21,7 +22,7 @@ from .table import Column, Expression, Table, TableColumnInterval
 
 __all__ = [
     "B8",
-    "C8",
+    "F32",
     "F64",
     "GUID",
     "I16",

@@ -44,11 +44,11 @@ class List(
         return FFI.get_obj_length(self.ptr)
 
     def __setitem__(self, idx: int, value: t.Any) -> None:
-        FFI.insert_obj(
-            iterable=self.ptr,
-            ptr=python_to_ray(value),
-            idx=idx,
-        )
+        if idx < 0:
+            idx = len(self) + idx
+        if idx < 0 or idx >= len(self):
+            raise errors.RayforceIndexError(f"List index out of range: {idx}")
+        FFI.set_obj(obj=self.ptr, idx=FFI.init_i64(idx), value=python_to_ray(value))
 
     def __getitem__(self, idx: int) -> t.Any:
         if idx < 0:

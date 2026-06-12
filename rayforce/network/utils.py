@@ -14,7 +14,7 @@ def validate_port(port: int) -> None:
 
 
 def python_to_ipc(data: t.Any) -> r.RayObject:
-    from rayforce import List, String, errors
+    from rayforce import List, String
     from rayforce.plugins.sql import SQLQuery
     from rayforce.types.table import (
         AsofJoin,

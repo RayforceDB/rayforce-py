@@ -3,13 +3,13 @@
 
 ### Initializing an engine
 
-Rayforce-Py allows you to access KDB databases using a seamless raykx IPC.
+Rayforce-Py allows you to access KDB databases using a seamless IPC client.
 
 The connection with KDB database is being established via a dedicated `KDBEngine` type, which holds all connections to the specific KDB instance.
 
 To open the connection, first import the `KDBEngine` into your runtime:
 ```python
->>> from rayforce.plugins.raykx import KDBEngine
+>>> from rayforce.plugins.kdb import KDBEngine
 ```
 
 Then initialize the engine for a specific domain and port:
@@ -20,7 +20,7 @@ Then initialize the engine for a specific domain and port:
 This will create a new KDB engine instance with a `pool_size` tracker which helps you to keep track over the opened connections with the KDB instance:
 ```python
 >>> engine
-KDBEngine(pool_size: 0)
+KDBEngine(localhost:5050, pool_size: 0)
 ```
 
 ### Opening the connection
@@ -31,22 +31,22 @@ There are 2 ways to open the connection with the KDB instance once the engine is
 ```python
 >>> conn = engine.acquire()
 >>> conn
-KDBConnection(id:4382902992) - established at 2025-09-15T21:33:39.932434
+KDBConnection(id:4382902992) - established at 2025-09-15T21:33:39.932434+00:00
 ```
 Right after that the connection be executed (see below) or disposed:
 ```python
 >>> conn.close()
 >>> conn
-KDBConnection(id:4382902992) - disposed at 2025-09-15T21:34:46.752071
+KDBConnection(id:4382902992) - disposed at 2025-09-15T21:34:46.752071+00:00
 ```
 
 2. Second way is to use the context manager, which handles the disposal for you, leaving no open connection outside of the actual manager:
 ```python
 >>> with engine.acquire() as conn:
 ...    print(conn)
-KDBConnection(id:4832080144) - established at 2025-09-15T21:35:39.232321
+KDBConnection(id:4832080144) - established at 2025-09-15T21:35:39.232321+00:00
 >>> print(conn)
-KDBConnection(id:4832080144) - disposed at 2025-09-15T21:35:39.232500
+KDBConnection(id:4832080144) - disposed at 2025-09-15T21:35:39.232500+00:00
 ```
 
 ### Executing a query
@@ -55,30 +55,31 @@ In order to execute a KDB query, the `.execute()` method has to be called with t
 
 ```python
 >>> with engine.acquire() as conn:
-...    conn.execute("x: 150")
-...    conn.execute("y: 150")
-...    result = conn.execute("x + y")
+...    result = conn.execute("x: 150; y: 150; x + y")
 >>> print(result)
 I64(300)
 ```
 
-Rayforce-Py supports executing a query over any type, even with the tables. See local usage example:
+Rayforce-Py supports executing a query over any type, including tables:
 ```python
->>> engine = KDBEngine(host="localhost", port=6062)
-
 >>> with engine.acquire() as conn:
-...    result = conn.execute("0!select sum ExecQty, NotionalValue: sum ExecQty*ExecPrice by Broker, Account from MyTable where date=2025.08.01, Broker in `Bro1`Bro2`Bro3`Bro4")
+...     result = conn.execute(
+...         "0!select sum ExecQty by Broker from "
+...         "([] Broker:`Bro1`Bro1`Bro2`Bro3; ExecQty:404164 100000 9000 2900)"
+...     )
 
 >>> result
-Table[Vector[6](Symbol(Broker), Symbol(Account), Symbol(ExecQty), Symbol(NotionalValue))]
+Table[Symbol('Broker'), Symbol('ExecQty')]
 
 >>> print(result)
-┌────────┬─────────┬──────────────┬───────────────┐
-│ Broker │ Account │ ExecQty      │ NotionalValue │
-├────────┼─────────┼──────────────┼───────────────┤
-│ Bro1   │ 100001  │ 404164.00    │ 754027.92     │
-│ Bro2   │ 100002  │ 9000.00      │ 1.022542e+06  │
-│ Bro3   │ 100003  │ 2900.00      │ 112745.00     │
-│ Bro4   │ 100004  │ 604252.00    │ 961689.55     │
-...
+┌────────┬────────────────────────────┐
+│ Broker │          ExecQty           │
+│  SYM   │            I64             │
+├────────┼────────────────────────────┤
+│ Bro1   │ 504164                     │
+│ Bro2   │ 9000                       │
+│ Bro3   │ 2900                       │
+├────────┴────────────────────────────┤
+│ 3 rows (3 shown) 2 columns (2 shown)│
+└─────────────────────────────────────┘
 ```

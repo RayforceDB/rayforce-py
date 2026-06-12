@@ -21,9 +21,6 @@ from rayforce.types.base import (
     SetOperationContainerMixin,
     SortContainerMixin,
 )
-from rayforce.types.containers.list import List
-from rayforce.types.operators import Operation
-from rayforce.types.scalars.numeric.unsigned import U8
 from rayforce.types.scalars.other.symbol import Symbol
 
 _RAW_FORMATS: dict[int, tuple[str, int]] = {
@@ -32,6 +29,7 @@ _RAW_FORMATS: dict[int, tuple[str, int]] = {
     r.TYPE_I16: ("h", 2),
     r.TYPE_I32: ("i", 4),
     r.TYPE_I64: ("q", 8),
+    r.TYPE_F32: ("f", 4),
     r.TYPE_F64: ("d", 8),
     r.TYPE_DATE: ("i", 4),
     r.TYPE_TIME: ("i", 4),
@@ -43,6 +41,7 @@ _NUMPY_TO_RAY: dict[str, int] = {
     "int16": r.TYPE_I16,
     "int32": r.TYPE_I32,
     "int64": r.TYPE_I64,
+    "float32": r.TYPE_F32,
     "float64": r.TYPE_F64,
 }
 _RAY_TO_NUMPY: dict[int, str] = {
@@ -51,12 +50,12 @@ _RAY_TO_NUMPY: dict[int, str] = {
     r.TYPE_I16: "int16",
     r.TYPE_I32: "int32",
     r.TYPE_I64: "int64",
+    r.TYPE_F32: "float32",
     r.TYPE_F64: "float64",
 }
 # Auto-widen numpy dtypes that have no direct rayforce equivalent
 _NUMPY_WIDEN: dict[str, str] = {
-    "float16": "float64",
-    "float32": "float64",
+    "float16": "float32",
     "int8": "int16",
     "uint16": "int32",
     "uint32": "int64",
@@ -73,11 +72,19 @@ _NUMPY_DTYPES: dict[int, t.Any] = {
     r.TYPE_I16: np.int16,
     r.TYPE_I32: np.int32,
     r.TYPE_I64: np.int64,
+    r.TYPE_F32: np.float32,
     r.TYPE_F64: np.float64,
     r.TYPE_DATE: np.int32,
     r.TYPE_TIME: np.int32,
     r.TYPE_TIMESTAMP: np.int64,
 }
+
+
+def _apply_null_mask(vec: Vector, mask: t.Any) -> None:
+    if not mask.any():
+        return
+    for idx in np.flatnonzero(mask).tolist():
+        FFI.vec_set_null(vec.ptr, int(idx), is_null=True)
 
 
 class Vector(
@@ -137,12 +144,21 @@ class Vector(
         if idx < 0 or idx >= len(self):
             raise errors.RayforceIndexError(f"Vector index out of range: {idx}")
 
-        # The C-level at_idx returns B8 scalars for U8 vector elements
-        # because both are 1-byte types and the value loses precision (bool).
-        # Read the correct byte value directly from the raw buffer instead.
-        if FFI.get_obj_type(self.ptr) == r.TYPE_U8:
+        vec_type = FFI.get_obj_type(self.ptr)
+
+        if 0 < vec_type <= r.TYPE_STR and FFI.vec_is_null(self.ptr, idx):
+            from rayforce.types.null import Null
+
+            return Null
+
+        # v2 has no RAY_F32 scalar atom, so collection_elem can't box F32 vec
+        # elements. Read the raw bytes and box as F32 (length-1 vector under
+        # the hood — see scalars/numeric/float32.py).
+        if vec_type == r.TYPE_F32:
+            from rayforce.types.scalars.numeric.float32 import F32
+
             raw = FFI.read_vector_raw(self.ptr)
-            return U8(raw[idx])
+            return F32(struct.unpack_from("<f", raw, idx * 4)[0])
 
         return utils.ray_to_python(FFI.at_idx(self.ptr, idx))
 
@@ -170,7 +186,7 @@ class Vector(
         else:
             ptr = utils.python_to_ray(value)
 
-        FFI.insert_obj(iterable=self.ptr, idx=idx, ptr=ptr)
+        FFI.set_obj(obj=self.ptr, idx=FFI.init_i64(idx), value=ptr)
 
     def __iter__(self) -> t.Iterator[t.Any]:
         for i in range(len(self)):
@@ -181,7 +197,25 @@ class Vector(
         if fmt_info is None:
             return [el.value for el in self]  # Fallback
         fmt_char, _ = fmt_info
-        return list(struct.unpack(f"<{len(self)}{fmt_char}", FFI.read_vector_raw(self.ptr)))
+        values = list(struct.unpack(f"<{len(self)}{fmt_char}", FFI.read_vector_raw(self.ptr)))
+        # The raw buffer carries each null's sentinel; surface it as Null to match
+        # __getitem__/to_python instead of leaking the sentinel integer (see #M3).
+        null_mask = self._null_mask()
+        if null_mask.any():
+            from rayforce.types.null import Null
+
+            values = [Null if is_null else v for is_null, v in zip(null_mask, values, strict=True)]
+        return values
+
+    def _null_mask(self) -> t.Any:
+        n = len(self)
+        if n == 0:
+            return np.zeros(0, dtype=bool)
+        return np.fromiter(
+            (FFI.vec_is_null(self.ptr, i) for i in range(n)),
+            dtype=bool,
+            count=n,
+        )
 
     def to_numpy(self) -> t.Any:
         type_code = FFI.get_obj_type(self.ptr)
@@ -190,7 +224,7 @@ class Vector(
             return np.array(self.to_list())
         raw = np.frombuffer(FFI.read_vector_raw(self.ptr), dtype=dtype)
         if type_code == r.TYPE_TIMESTAMP:
-            null_mask = raw == _I64_NULL
+            null_mask = self._null_mask()
             if null_mask.any():
                 adjusted = raw.copy()
                 adjusted[null_mask] = 0
@@ -199,7 +233,7 @@ class Vector(
                 return result
             return (raw + _EPOCH_OFFSET_NS).view("datetime64[ns]")
         if type_code == r.TYPE_DATE:
-            null_mask = raw == _I32_NULL
+            null_mask = self._null_mask()
             if null_mask.any():
                 safe = raw.astype(np.int64)
                 safe[null_mask] = 0
@@ -208,7 +242,7 @@ class Vector(
                 return result
             return (raw.astype(np.int64) + _EPOCH_OFFSET_DAYS).astype("datetime64[D]")
         if type_code == r.TYPE_TIME:
-            null_mask = raw == _I32_NULL
+            null_mask = self._null_mask()
             if null_mask.any():
                 result = raw.astype("timedelta64[ms]").copy()
                 result[null_mask] = np.timedelta64("NaT")
@@ -253,18 +287,22 @@ class Vector(
                 int_arr = (raw_i64 - _EPOCH_OFFSET_DAYS).astype(np.int32)
                 if nat_mask.any():
                     int_arr[nat_mask] = _I32_NULL
-                return cls(
+                vec = cls(
                     ptr=FFI.init_vector_from_raw_buffer(r.TYPE_DATE, len(int_arr), int_arr.data)
                 )
+                _apply_null_mask(vec, nat_mask)
+                return vec
             # Any other resolution -> convert to ns -> Timestamp
             ns_view = arr.astype("datetime64[ns]").view(np.int64)
             nat_mask = ns_view == _I64_NULL
             ns_arr = ns_view.copy()
             ns_arr[~nat_mask] -= _EPOCH_OFFSET_NS
             # NaT positions keep int64 min (= rayforce null sentinel)
-            return cls(
+            vec = cls(
                 ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIMESTAMP, len(ns_arr), ns_arr.data)
             )
+            _apply_null_mask(vec, nat_mask)
+            return vec
 
         # timedelta64 -> Time (milliseconds since midnight)
         if arr.dtype.kind == "m":
@@ -274,7 +312,9 @@ class Vector(
             int_arr = raw_i64.astype(np.int32)
             if nat_mask.any():
                 int_arr[nat_mask] = _I32_NULL
-            return cls(ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIME, len(int_arr), int_arr.data))
+            vec = cls(ptr=FFI.init_vector_from_raw_buffer(r.TYPE_TIME, len(int_arr), int_arr.data))
+            _apply_null_mask(vec, nat_mask)
+            return vec
 
         # String/object arrays
         if arr.dtype.kind in ("U", "S", "O"):
@@ -293,35 +333,3 @@ class Vector(
             f"Supported: {list(_NUMPY_TO_RAY.keys())}, datetime64, timedelta64, and string arrays. "
             f"Pass ray_type explicitly."
         )
-
-    def reverse(self) -> Vector:
-        return utils.eval_obj(List([Operation.REVERSE, self.ptr]))
-
-
-class String(Vector):
-    ptr: r.RayObject
-    type_code = r.TYPE_C8
-
-    def __init__(
-        self, value: str | Vector | None = None, *, ptr: r.RayObject | None = None
-    ) -> None:
-        if ptr and (_type := FFI.get_obj_type(ptr)) != self.type_code:
-            raise errors.RayforceInitError(
-                f"Expected String RayObject (type {self.type_code}), got {_type}"
-            )
-
-        if isinstance(value, Vector):
-            if (_type := FFI.get_obj_type(value.ptr)) != r.TYPE_C8:
-                raise errors.RayforceInitError(
-                    f"Expected Vector (type {self.type_code}), got {_type}"
-                )
-            self.ptr = value.ptr
-
-        elif value is not None:
-            super().__init__(ray_type=String, ptr=FFI.init_string(value))
-
-        else:
-            super().__init__(ptr=ptr)
-
-    def to_python(self) -> str:  # type: ignore[override]
-        return "".join(i.value for i in self)

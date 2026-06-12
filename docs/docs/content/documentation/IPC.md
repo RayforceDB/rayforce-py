@@ -9,13 +9,13 @@ TCP IPC in Rayforce-Py consists of two main components:
 - **`TCPServer`** - Listens for incoming TCP connections on a specified port
 - **`TCPClient`** - Connects to remote Rayforce instances and executes queries
 
-The TCP IPC implementation uses Rayforce's native runtime event loop, ensuring optimal performance and seamless integration with the Rayforce ecosystem.
+The TCP IPC implementation uses Rayforce's native IPC protocol, ensuring optimal performance and seamless integration with the Rayforce ecosystem.
 
 ---
 
 ## :material-server: TCP Server
 
-The `TCPServer` class allows you to create a server that listens for incoming TCP connections. The server runs on Rayforce's native event loop.
+The `TCPServer` class allows you to create a server that listens for incoming TCP connections. The server runs a blocking poll loop over Rayforce's native IPC protocol.
 
 ### Creating a Server
 
@@ -26,12 +26,12 @@ To create a TCP server, import `TCPServer` and initialize it with a port:
 
 >>> server = TCPServer(port=5000)
 >>> server
-TCPServer(port=5000)
+TCPServer(port=5000, idle)
 ```
 
 ### Starting the Server
 
-The `listen()` method starts the server and blocks until the event loop exits:
+The `listen()` method starts the server and blocks until the server is stopped:
 
 ```python
 >>> server.listen()
@@ -39,7 +39,7 @@ Rayforce IPC Server listening on 5000 (id:123)
 ```
 
 !!! note "Blocking Operation"
-    The `listen()` method is **blocking** - it will run until the event loop is stopped (e.g., via KeyboardInterrupt or program termination). The server automatically closes the port when the event loop exits, so no manual cleanup is needed.
+    The `listen()` method is **blocking** - it will run until the server is stopped (e.g., via KeyboardInterrupt or program termination). The server automatically closes the port when the loop exits, so no manual cleanup is needed.
 
 ---
 
@@ -117,7 +117,7 @@ The `ipcsave()` method allows you to save query results or tables to a remote Ra
 >>> query = table.select("id", "name").where(Column("id") > 1)
 
 >>> # Save the query result to a variable on the remote server
->>> TCPClient.execute(query.ipcsave("filtered_results"))
+>>> client.execute(query.ipcsave("filtered_results"))
 ```
 
 !!! note ""

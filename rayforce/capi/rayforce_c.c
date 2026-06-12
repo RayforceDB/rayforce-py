@@ -2,23 +2,24 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-void *g_runtime = NULL;
+ray_runtime_t *g_runtime = NULL;
 
 // Objects dropped from non-main threads (asyncio) are queued here and processed
 // later
 static pthread_mutex_t g_dealloc_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned long g_main_thread_id = 0; // main thread ID
 
-static obj_p *g_dealloc_queue = NULL;
+static ray_t **g_dealloc_queue = NULL;
 static size_t g_dealloc_queue_size = 0;
 static size_t g_dealloc_queue_capacity = 0;
 
-static void queue_for_dealloc(obj_p obj) {
+static void queue_for_dealloc(ray_t *obj) {
   pthread_mutex_lock(&g_dealloc_mutex);
   if (g_dealloc_queue_size >= g_dealloc_queue_capacity) {
     size_t new_capacity =
         g_dealloc_queue_capacity == 0 ? 16 : g_dealloc_queue_capacity * 2;
-    obj_p *new_queue = realloc(g_dealloc_queue, new_capacity * sizeof(obj_p));
+    ray_t **new_queue =
+        realloc(g_dealloc_queue, new_capacity * sizeof(ray_t *));
     if (new_queue == NULL) {
       pthread_mutex_unlock(&g_dealloc_mutex);
       return;
@@ -33,7 +34,7 @@ static void queue_for_dealloc(obj_p obj) {
 static void process_deferred_dealloc(void) {
   pthread_mutex_lock(&g_dealloc_mutex);
   for (size_t i = 0; i < g_dealloc_queue_size; i++) {
-    drop_obj(g_dealloc_queue[i]);
+    ray_release(g_dealloc_queue[i]);
   }
   g_dealloc_queue_size = 0;
   pthread_mutex_unlock(&g_dealloc_mutex);
@@ -56,7 +57,6 @@ int check_main_thread(void) {
   return 1;
 }
 
-// GENERIC UTILS
 PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   (void)self;
   (void)args;
@@ -67,33 +67,37 @@ PyObject *raypy_init_runtime(PyObject *self, PyObject *args) {
   }
 
   char *argv[] = {"py", "-i", "0", NULL};
-  if (runtime_create(3, argv) == NULL) {
+  /* ray_runtime_create internally calls ray_heap_init, ray_sym_init,
+   * and ray_lang_init (which calls ray_env_init). */
+  ray_runtime_t *rt = ray_runtime_create(3, argv);
+  if (rt == NULL) {
     PyErr_SetString(PyExc_RuntimeError,
                     "runtime: failed to initialize Rayforce");
     return NULL;
   }
+  g_runtime = rt;
 
   g_main_thread_id = (unsigned long)PyThread_get_thread_ident();
   Py_RETURN_NONE;
 }
-PyObject *raypy_runtime_run(PyObject *self, PyObject *args) {
-  (void)self;
-  (void)args;
-  CHECK_MAIN_THREAD();
 
-  runtime_p runtime = runtime_get();
-  if (runtime == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "runtime: not initialized");
-    return NULL;
-  }
-
-  i32_t result = runtime_run();
-  return PyLong_FromLong(result);
-}
-PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
+PyObject *raypy_wrap_ray_object(ray_t *ray_obj) {
   if (ray_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "runtime: object cannot be null");
     return NULL;
+  }
+
+  /* v2 returns lazy DAG handles from ray_eval and graph-aware builtins.
+   * The Python boundary always wants a concrete value — same contract
+   * ray_eval_str enforces internally. ray_lazy_materialize is a no-op
+   * for non-lazy inputs and consumes the lazy ref on success. */
+  if (ray_is_lazy(ray_obj)) {
+    ray_obj = ray_lazy_materialize(ray_obj);
+    if (ray_obj == NULL) {
+      PyErr_SetString(PyExc_RuntimeError,
+                      "runtime: lazy materialization failed");
+      return NULL;
+    }
   }
 
   RayObject *result = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
@@ -101,15 +105,14 @@ PyObject *raypy_wrap_ray_object(obj_p ray_obj) {
     result->obj = ray_obj;
   return (PyObject *)result;
 }
-// --
 
 static void RayObject_dealloc(RayObject *self) {
-  if (self->obj != NULL && self->obj != NULL_OBJ) {
+  if (self->obj != NULL && self->obj != RAY_NULL_OBJ) {
     // if gc deallocates objects from background threads, we need to ensure
-    // that drop_obj always called from the main thread.
+    // that ray_release always called from the main thread.
     if (g_main_thread_id != 0 &&
         (unsigned long)PyThread_get_thread_ident() == g_main_thread_id) {
-      drop_obj(self->obj);
+      ray_release(self->obj);
     } else {
       queue_for_dealloc(self->obj);
     }
@@ -135,8 +138,6 @@ static PyMethodDef rayforce_methods[] = {
     {"init_i32", raypy_init_i32, METH_VARARGS, "Create a new i32 object"},
     {"init_i64", raypy_init_i64, METH_VARARGS, "Create a new i64 object"},
     {"init_f64", raypy_init_f64, METH_VARARGS, "Create a new f64 object"},
-    {"init_c8", raypy_init_c8, METH_VARARGS,
-     "Create a new c8 (character) object"},
     {"init_string", raypy_init_string, METH_VARARGS,
      "Create a new string object"},
     {"init_symbol", raypy_init_symbol, METH_VARARGS,
@@ -165,7 +166,6 @@ static PyMethodDef rayforce_methods[] = {
     {"read_i32", raypy_read_i32, METH_VARARGS, "Read i32 value from object"},
     {"read_i64", raypy_read_i64, METH_VARARGS, "Read i64 value from object"},
     {"read_f64", raypy_read_f64, METH_VARARGS, "Read f64 value from object"},
-    {"read_c8", raypy_read_c8, METH_VARARGS, "Read c8 value from object"},
     {"read_string", raypy_read_string, METH_VARARGS,
      "Read string value from object"},
     {"read_symbol", raypy_read_symbol, METH_VARARGS,
@@ -198,24 +198,27 @@ static PyMethodDef rayforce_methods[] = {
     {"env_get_internal_name_by_fn", raypy_env_get_internal_name_by_fn,
      METH_VARARGS, "Get internal function name"},
     {"eval_obj", raypy_eval_obj, METH_VARARGS, "Evaluate object"},
-    {"loadfn_from_file", raypy_loadfn, METH_VARARGS,
-     "Load function from shared library"},
     {"quote", raypy_quote, METH_VARARGS, "Quote (clone) object"},
     {"rc_obj", raypy_rc, METH_VARARGS, "Get reference count of object"},
+    {"obj_addr", raypy_obj_addr, METH_VARARGS,
+     "Get integer address of the underlying ray_t* (stable identity for "
+     "primitive lookups)"},
     {"set_obj_attrs", raypy_set_obj_attrs, METH_VARARGS,
      "Set object attributes"},
     {"get_obj_type", raypy_get_obj_type, METH_VARARGS, "Get object type"},
     {"update", raypy_update, METH_VARARGS, "Perform UPDATE query"},
     {"insert", raypy_insert, METH_VARARGS, "Perform INSERT query"},
     {"upsert", raypy_upsert, METH_VARARGS, "Perform UPSERT query"},
-    {"hopen", raypy_hopen, METH_VARARGS, "Open file or socket handle"},
-    {"hclose", raypy_hclose, METH_VARARGS, "Close file or socket handle"},
-    {"write", raypy_write, METH_VARARGS, "Write data to file or socket"},
-    {"ipc_listen", raypy_ipc_listen, METH_VARARGS,
-     "Listen for IPC connections on port"},
-    {"ipc_close_listener", raypy_ipc_close_listener, METH_VARARGS,
-     "Close IPC listener"},
-    {"runtime_run", raypy_runtime_run, METH_VARARGS, "Run blocking event loop"},
+    {"read_csv", raypy_read_csv, METH_VARARGS,
+     "Read CSV file into table — (schema | None, path)"},
+    {"write_csv", raypy_write_csv, METH_VARARGS,
+     "Write table to CSV file — (table, path)"},
+    {"set_splayed", raypy_set_splayed, METH_VARARGS,
+     "Save table to a splayed directory — (dir_str, table, sym_path | None)"},
+    {"get_splayed", raypy_get_splayed, METH_VARARGS,
+     "Load splayed table — (dir_str, sym_path | None)"},
+    {"get_parted", raypy_get_parted, METH_VARARGS,
+     "Load partitioned table — (root_str, table_name_sym)"},
     {"init_runtime", raypy_init_runtime, METH_VARARGS,
      "Initialize Rayforce runtime"},
     {"ser_obj", raypy_ser_obj, METH_VARARGS,
@@ -226,6 +229,33 @@ static PyMethodDef rayforce_methods[] = {
      "Read U8 vector as bytes"},
     {"read_vector_raw", raypy_read_vector_raw, METH_VARARGS,
      "Read numeric vector as raw bytes buffer"},
+    {"vec_is_null", raypy_vec_is_null, METH_VARARGS,
+     "Test whether a vector element is null via the v2 null bitmap"},
+    {"vec_set_null", raypy_vec_set_null, METH_VARARGS,
+     "Set a vector element's null bit in the v2 null bitmap"},
+    {"vec_slice", raypy_vec_slice, METH_VARARGS,
+     "Zero-copy slice view of a vector — (vec, offset, length)"},
+    {"ipc_connect", raypy_ipc_connect, METH_VARARGS,
+     "Open a v2 IPC client connection: (host, port, [user], [password]) -> "
+     "handle"},
+    {"ipc_close", raypy_ipc_close, METH_VARARGS,
+     "Close a v2 IPC client connection by handle"},
+    {"ipc_send", raypy_ipc_send, METH_VARARGS,
+     "Send a sync IPC request: (handle, msg) -> response"},
+    {"ipc_send_async", raypy_ipc_send_async, METH_VARARGS,
+     "Send a fire-and-forget IPC frame: (handle, msg)"},
+    {"ipc_server_init", raypy_ipc_server_init, METH_VARARGS,
+     "Bind a blocking IPC server on a port; returns an opaque server handle"},
+    {"ipc_server_poll", raypy_ipc_server_poll, METH_VARARGS,
+     "Poll the IPC server once: (server_handle, timeout_ms) -> events"},
+    {"ipc_server_destroy", raypy_ipc_server_destroy, METH_VARARGS,
+     "Shut down an IPC server bound by ipc_server_init"},
+    {"kdb_connect", raypy_kdb_connect, METH_VARARGS,
+     "Open a KDB+ IPC connection: (host, port) -> handle"},
+    {"kdb_close", raypy_kdb_close, METH_VARARGS,
+     "Close a KDB+ IPC connection by handle"},
+    {"kdb_send", raypy_kdb_send, METH_VARARGS,
+     "Send a sync KDB+ request: (handle, msg) -> response"},
 
     {NULL, NULL, 0, NULL}};
 
@@ -255,35 +285,29 @@ PyMODINIT_FUNC PyInit__rayforce_c(void) {
     return NULL;
   }
 
-  PyModule_AddIntConstant(m, "TYPE_LIST", TYPE_LIST);
-  PyModule_AddIntConstant(m, "TYPE_B8", TYPE_B8);
-  PyModule_AddIntConstant(m, "TYPE_U8", TYPE_U8);
-  PyModule_AddIntConstant(m, "TYPE_I16", TYPE_I16);
-  PyModule_AddIntConstant(m, "TYPE_I32", TYPE_I32);
-  PyModule_AddIntConstant(m, "TYPE_I64", TYPE_I64);
-  PyModule_AddIntConstant(m, "TYPE_SYMBOL", TYPE_SYMBOL);
-  PyModule_AddIntConstant(m, "TYPE_DATE", TYPE_DATE);
-  PyModule_AddIntConstant(m, "TYPE_TIME", TYPE_TIME);
-  PyModule_AddIntConstant(m, "TYPE_TIMESTAMP", TYPE_TIMESTAMP);
-  PyModule_AddIntConstant(m, "TYPE_F64", TYPE_F64);
-  PyModule_AddIntConstant(m, "TYPE_GUID", TYPE_GUID);
-  PyModule_AddIntConstant(m, "TYPE_C8", TYPE_C8);
-  PyModule_AddIntConstant(m, "TYPE_ENUM", TYPE_ENUM);
-  PyModule_AddIntConstant(m, "TYPE_MAPFILTER", TYPE_MAPFILTER);
-  PyModule_AddIntConstant(m, "TYPE_MAPGROUP", TYPE_MAPGROUP);
-  PyModule_AddIntConstant(m, "TYPE_MAPFD", TYPE_MAPFD);
-  PyModule_AddIntConstant(m, "TYPE_MAPCOMMON", TYPE_MAPCOMMON);
-  PyModule_AddIntConstant(m, "TYPE_MAPLIST", TYPE_MAPLIST);
-  PyModule_AddIntConstant(m, "TYPE_PARTEDLIST", TYPE_PARTEDLIST);
-  PyModule_AddIntConstant(m, "TYPE_TABLE", TYPE_TABLE);
-  PyModule_AddIntConstant(m, "TYPE_DICT", TYPE_DICT);
-  PyModule_AddIntConstant(m, "TYPE_LAMBDA", TYPE_LAMBDA);
-  PyModule_AddIntConstant(m, "TYPE_UNARY", TYPE_UNARY);
-  PyModule_AddIntConstant(m, "TYPE_BINARY", TYPE_BINARY);
-  PyModule_AddIntConstant(m, "TYPE_VARY", TYPE_VARY);
-  PyModule_AddIntConstant(m, "TYPE_TOKEN", TYPE_TOKEN);
-  PyModule_AddIntConstant(m, "TYPE_NULL", TYPE_NULL);
-  PyModule_AddIntConstant(m, "TYPE_ERR", TYPE_ERR);
+  /* Type codes — synced to rayforce2 include/rayforce.h */
+  PyModule_AddIntConstant(m, "TYPE_LIST", RAY_LIST);
+  PyModule_AddIntConstant(m, "TYPE_B8", RAY_BOOL);
+  PyModule_AddIntConstant(m, "TYPE_U8", RAY_U8);
+  PyModule_AddIntConstant(m, "TYPE_I16", RAY_I16);
+  PyModule_AddIntConstant(m, "TYPE_I32", RAY_I32);
+  PyModule_AddIntConstant(m, "TYPE_I64", RAY_I64);
+  PyModule_AddIntConstant(m, "TYPE_F32", RAY_F32);
+  PyModule_AddIntConstant(m, "TYPE_F64", RAY_F64);
+  PyModule_AddIntConstant(m, "TYPE_DATE", RAY_DATE);
+  PyModule_AddIntConstant(m, "TYPE_TIME", RAY_TIME);
+  PyModule_AddIntConstant(m, "TYPE_TIMESTAMP", RAY_TIMESTAMP);
+  PyModule_AddIntConstant(m, "TYPE_GUID", RAY_GUID);
+  PyModule_AddIntConstant(m, "TYPE_SYMBOL", RAY_SYM);
+  PyModule_AddIntConstant(m, "TYPE_STR", RAY_STR);
+  PyModule_AddIntConstant(m, "TYPE_TABLE", RAY_TABLE);
+  PyModule_AddIntConstant(m, "TYPE_DICT", RAY_DICT);
+  PyModule_AddIntConstant(m, "TYPE_LAMBDA", RAY_LAMBDA);
+  PyModule_AddIntConstant(m, "TYPE_UNARY", RAY_UNARY);
+  PyModule_AddIntConstant(m, "TYPE_BINARY", RAY_BINARY);
+  PyModule_AddIntConstant(m, "TYPE_VARY", RAY_VARY);
+  PyModule_AddIntConstant(m, "TYPE_NULL", RAY_NULL);
+  PyModule_AddIntConstant(m, "TYPE_ERR", RAY_ERROR);
 
   g_null_obj = (RayObject *)RayObjectType.tp_alloc(&RayObjectType, 0);
   if (g_null_obj == NULL) {
@@ -291,7 +315,7 @@ PyMODINIT_FUNC PyInit__rayforce_c(void) {
     return NULL;
   }
 
-  g_null_obj->obj = NULL_OBJ;
+  g_null_obj->obj = RAY_NULL_OBJ;
   Py_INCREF(g_null_obj);
 
   if (PyModule_AddObject(m, "NULL_OBJ", (PyObject *)g_null_obj) < 0) {

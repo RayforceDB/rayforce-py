@@ -5,8 +5,8 @@ There are 3 temporal types in Rayforce-Py:
 | Rayforce-Py Type | Low level representation                     | Python representation |
 |------------------|----------------------------------------------|-----------------------|
 | `Date`           | Number of days since January 1st 2000        | datetime.date         |
-| `Time`           | Number of miliseconds since 00:00            | datetime.time         |
-| `Timestamp`      | Number of nanoseconds since January 1st 2000 | datetime.timestamp    |
+| `Time`           | Number of milliseconds since 00:00           | datetime.time         |
+| `Timestamp`      | Number of nanoseconds since January 1st 2000 | datetime.datetime     |
 
 
 ### Date Usage
@@ -43,7 +43,7 @@ Time(datetime.time(14, 30, 45))
 >>> time
 Time(datetime.time(14, 30, 45))
 
->>> time = Time(52245000)  # As number of miliseconds since 00:00
+>>> time = Time(52245000)  # As number of milliseconds since 00:00
 >>> time
 Time(datetime.time(14, 30, 45))
 
@@ -75,7 +75,6 @@ Timestamp(datetime.datetime(2025, 5, 10, 14, 30, 45, tzinfo=datetime.timezone.ut
 Timestamp(datetime.datetime(2025, 5, 10, 14, 30, 45, tzinfo=datetime.timezone.utc))
 
 >>> timestamp.value
->>> timestamp
 datetime.datetime(2025, 5, 10, 14, 30, 45, tzinfo=datetime.timezone.utc)
 ```
 
@@ -91,13 +90,13 @@ The `shift_tz()` method shifts a `Timestamp` by a timezone offset, returning a n
 >>> ts = Timestamp(dt.datetime(2025, 6, 15, 12, 0, 0, tzinfo=dt.UTC))
 
 >>> ts.shift_tz(dt.timezone(dt.timedelta(hours=5)))
-Timestamp(datetime.datetime(2025, 6, 15, 17, 0, 0, tzinfo=datetime.timezone.utc))
+Timestamp(datetime.datetime(2025, 6, 15, 17, 0, tzinfo=datetime.timezone.utc))
 
 >>> ts.shift_tz(dt.timezone(dt.timedelta(hours=-5)))
-Timestamp(datetime.datetime(2025, 6, 15, 7, 0, 0, tzinfo=datetime.timezone.utc))
+Timestamp(datetime.datetime(2025, 6, 15, 7, 0, tzinfo=datetime.timezone.utc))
 
 >>> ts.shift_tz(ZoneInfo("Etc/GMT-5"))  # Etc/GMT-5 = UTC+5
-Timestamp(datetime.datetime(2025, 6, 15, 17, 0, 0, tzinfo=datetime.timezone.utc))
+Timestamp(datetime.datetime(2025, 6, 15, 17, 0, tzinfo=datetime.timezone.utc))
 ```
 
 `shift_tz` is also available on `Column` for use in queries, allowing you to shift an entire column of timestamps:

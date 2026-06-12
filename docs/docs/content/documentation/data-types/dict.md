@@ -23,7 +23,7 @@ The `Dict` type represents a key-value mapping. It's similar to Python dictionar
 Dict({'name': 'Alice', 'age': 29, 'active': True, 'score': 95.5, 'cache': {'enabled': True, 'ttl': 3600}})
 
 >>> user_data.keys()
-Vector[6]
+Vector([Symbol('name'), Symbol('age'), Symbol('active'), Symbol('score'), Symbol('cache')])
 >>> [i for i in user_data.keys()]
 [
     Symbol('name'),
@@ -62,16 +62,4 @@ Vector([Symbol('a'), Symbol('b'), Symbol('c')])
 
 >>> d.value()
 List([I64(1), I64(2), I64(3)])
-```
-
-### Sort Operations
-
-```python
->>> d = Dict({"c": 3, "a": 1, "b": 2})
-
->>> d.asc()
-Dict({'a': 1, 'b': 2, 'c': 3})
-
->>> d.desc()
-Dict({'c': 3, 'b': 2, 'a': 1})
 ```

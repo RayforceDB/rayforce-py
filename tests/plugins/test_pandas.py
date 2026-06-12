@@ -3,7 +3,7 @@ import datetime as dt
 import pytest
 
 from rayforce.plugins.pandas import from_pandas
-from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp
+from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Timestamp
 from rayforce.types.null import Null
 from tests.helpers.assertions import (
     assert_column_values,
@@ -188,6 +188,13 @@ def test_from_pandas_with_nulls(pandas):
     assert values[1][0].value == 1.5
     assert values[1][1] == Null
     assert values[1][2].value == 3.5
+
+
+def test_from_pandas_all_null_object_column(pandas):
+    # #L8: an entirely-null object column must convert without crashing.
+    df = pandas.DataFrame({"a": [None, None, None], "b": [1, 2, 3]})
+    table = from_pandas(df)
+    assert_table_shape(table, rows=3, cols=2)
 
 
 def test_from_pandas_datetime_with_nat(pandas):

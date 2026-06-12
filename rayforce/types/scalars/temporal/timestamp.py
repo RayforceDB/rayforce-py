@@ -21,7 +21,10 @@ def tz_offset_nanos(tz: dt.tzinfo) -> int:
 
 class Timestamp(Scalar):
     """
-    Represents a point in time with millisecond precision.
+    Represents a point in time at nanosecond resolution.
+
+    Stored as nanoseconds since 2000-01-01 UTC; ``to_python`` exposes it as a
+    ``datetime`` (microsecond precision, sub-microsecond nanos are truncated).
     """
 
     type_code = -r.TYPE_TIMESTAMP
@@ -34,6 +37,8 @@ class Timestamp(Scalar):
         return DATETIME_EPOCH + dt.timedelta(microseconds=FFI.read_timestamp(self.ptr) // 1000)
 
     def to_millis(self) -> int:
+        # NOTE: returns the raw engine value in NANOSECONDS, not milliseconds
+        # (name kept for back-compat). Unlike Time.to_millis which returns ms.
         return FFI.read_timestamp(self.ptr)
 
     def shift_tz(self, tz: dt.tzinfo) -> Timestamp:

@@ -5,6 +5,51 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`2.0.0`**
+
+First release against the **Rayforce v2 C core**. This is a major release with
+breaking changes to the type system, the network layer, and the plugin surface.
+The `1.0.x` line continues to be maintained against the v1 core.
+
+### Breaking Changes
+
+- **Built against the Rayforce v2 C core.** The bundled engine, build pipeline
+  (`make app`), and binary protocol all target v2. Code written against the v1
+  core may need updates — see the items below.
+- **Removed the `C8` / `Char` type.** v2 has no standalone character type; a
+  single character is now a length-1 [`String`](./documentation/data-types/string.md).
+  `C8` is no longer importable from `rayforce`.
+- **Removed WebSocket support.** The `WSClient` / `WSServer` classes and the
+  entire `rayforce.network.websocket` module have been removed. Use
+  [TCP IPC](./documentation/IPC.md) (`TCPClient` / `TCPServer`) for networked queries.
+- **Renamed the KDB+ plugin.** `rayforce.plugins.raykx` is now
+  [`rayforce.plugins.kdb`](./documentation/plugins/kdb.md); import `KDBEngine`
+  from the new path.
+- **Renumbered scalar type codes** to match the v2 core. Atoms use the negative
+  of these values (see the [Data Types overview](./documentation/data-types/overview.md)):
+
+  | Type | v1 code | v2 code |
+  |------|---------|---------|
+  | `Symbol` | 6 | 12 |
+  | `F64` | 10 | 7 |
+  | `Date` | 7 | 8 |
+  | `Time` | 8 | 9 |
+  | `Timestamp` | 9 | 10 |
+  | `String` | — | 13 |
+  | `F32` | — | 6 |
+
+### New Features
+
+- **Added the `F32`** (32-bit floating-point) type. Arithmetic on `F32` promotes
+  to `F64`.
+- **Added the `RayforceLimitError`** exception class (core `EC_LIMIT`).
+
+### Notes
+
+- `String` is now a first-class type (no longer modeled as a vector of `C8`).
+
+2026-06-12 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.0.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.0.0)**
+
 ## **`1.0.0`**
 
 - Project has came out of beta. Stable release
@@ -266,7 +311,7 @@ All notable changes to Rayforce-Py will be documented in this file.
 
 ### New Features
 
-- **Added WebSocket support**: New `WSClient` and `WSServer` classes in `rayforce.network.websocket` module for WebSocket-based communication. See [WebSocket documentation](./documentation/websocket.md) for details.
+- **Added WebSocket support**: New `WSClient` and `WSServer` classes in the `rayforce.network.websocket` module for WebSocket-based communication.
 - **Added TCP client/server**: New `TCPClient` and `TCPServer` classes in `rayforce.network.tcp` module exported from the main package.
 - **Added `asof_join()` method** to `Table` class for as-of joins (time-based joins). See [Joins documentation](./documentation/query-guide/joins.md#as-of-join) for details.
 - **Added `ipcsave()` method** to `Table` and query objects (`SelectQuery`, `UpdateQuery`, `InsertQuery`, `UpsertQuery`, `LeftJoin`, `InnerJoin`, `AsofJoin`, `WindowJoin`) for saving query results in IPC connections.

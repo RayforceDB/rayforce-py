@@ -39,11 +39,6 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def init_c8(value: str) -> r.RayObject:
-        return r.init_c8(value)
-
-    @staticmethod
-    @errors.error_handler
     def init_symbol(value: str) -> r.RayObject:
         return r.init_symbol(value)
 
@@ -104,8 +99,8 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def read_c8(obj: r.RayObject) -> str:
-        return r.read_c8(obj)
+    def read_string(obj: r.RayObject) -> str:
+        return r.read_string(obj)
 
     @staticmethod
     @errors.error_handler
@@ -229,6 +224,33 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def read_csv(schema: r.RayObject | None, path: r.RayObject) -> r.RayObject:
+        return r.read_csv(schema, path)
+
+    @staticmethod
+    @errors.error_handler
+    def write_csv(table: r.RayObject, path: r.RayObject) -> r.RayObject:
+        return r.write_csv(table, path)
+
+    @staticmethod
+    @errors.error_handler
+    def set_splayed(
+        dir_: r.RayObject, table: r.RayObject, sym_path: r.RayObject | None
+    ) -> r.RayObject:
+        return r.set_splayed(dir_, table, sym_path)
+
+    @staticmethod
+    @errors.error_handler
+    def get_splayed(dir_: r.RayObject, sym_path: r.RayObject | None) -> r.RayObject:
+        return r.get_splayed(dir_, sym_path)
+
+    @staticmethod
+    @errors.error_handler
+    def get_parted(root: r.RayObject, name: r.RayObject) -> r.RayObject:
+        return r.get_parted(root, name)
+
+    @staticmethod
+    @errors.error_handler
     def eval_str(obj: r.RayObject) -> r.RayObject:
         return r.eval_str(obj)
 
@@ -246,6 +268,11 @@ class FFI:
     @errors.error_handler
     def rc_obj(obj: r.RayObject) -> int:
         return r.rc_obj(obj)
+
+    @staticmethod
+    @errors.error_handler
+    def obj_addr(obj: r.RayObject) -> int:
+        return r.obj_addr(obj)
 
     @staticmethod
     @errors.error_handler
@@ -269,43 +296,8 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
-    def loadfn_from_file(filename: str, fn_name: str, args_count: int) -> r.RayObject:
-        return r.loadfn_from_file(filename, fn_name, args_count)
-
-    @staticmethod
-    @errors.error_handler
     def get_error_obj(error_obj: r.RayObject) -> r.RayObject:
         return r.get_error_obj(error_obj)
-
-    @staticmethod
-    @errors.error_handler
-    def hopen(path: r.RayObject) -> r.RayObject:
-        return r.hopen(path)
-
-    @staticmethod
-    @errors.error_handler
-    def hclose(handle: r.RayObject) -> None:
-        return r.hclose(handle)
-
-    @staticmethod
-    @errors.error_handler
-    def write(handle: r.RayObject, data: r.RayObject) -> None:
-        return r.write(handle, data)
-
-    @staticmethod
-    @errors.error_handler
-    def ipc_listen(port: int) -> int:
-        return r.ipc_listen(port)
-
-    @staticmethod
-    @errors.error_handler
-    def ipc_close_listener(listener_id: int) -> None:
-        return r.ipc_close_listener(listener_id)
-
-    @staticmethod
-    @errors.error_handler
-    def runtime_run() -> int:
-        return r.runtime_run()
 
     @staticmethod
     @errors.error_handler
@@ -332,6 +324,21 @@ class FFI:
 
     @staticmethod
     @errors.error_handler
+    def vec_is_null(vec: r.RayObject, idx: int) -> bool:
+        return r.vec_is_null(vec, idx)
+
+    @staticmethod
+    @errors.error_handler
+    def vec_set_null(vec: r.RayObject, idx: int, is_null: bool) -> None:
+        return r.vec_set_null(vec, idx, is_null)
+
+    @staticmethod
+    @errors.error_handler
+    def vec_slice(vec: r.RayObject, offset: int, length: int) -> r.RayObject:
+        return r.vec_slice(vec, offset, length)
+
+    @staticmethod
+    @errors.error_handler
     def set_obj(obj: r.RayObject, idx: r.RayObject, value: r.RayObject) -> None:
         return r.set_obj(obj, idx, value)
 
@@ -339,6 +346,41 @@ class FFI:
     @errors.error_handler
     def init_runtime() -> None:
         r.init_runtime()
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_connect(host: str, port: int, user: str = "", password: str = "") -> int:
+        return r.ipc_connect(host, port, user, password)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_close(handle: int) -> None:
+        return r.ipc_close(handle)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_send(handle: int, msg: r.RayObject) -> r.RayObject:
+        return r.ipc_send(handle, msg)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_send_async(handle: int, msg: r.RayObject) -> None:
+        return r.ipc_send_async(handle, msg)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_server_init(port: int) -> int:
+        return r.ipc_server_init(port)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_server_poll(server: int, timeout_ms: int) -> int:
+        return r.ipc_server_poll(server, timeout_ms)
+
+    @staticmethod
+    @errors.error_handler
+    def ipc_server_destroy(server: int) -> None:
+        return r.ipc_server_destroy(server)
 
     @staticmethod
     @errors.error_handler

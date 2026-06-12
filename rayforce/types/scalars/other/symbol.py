@@ -25,7 +25,7 @@ class QuotedSymbol(Symbol):
 
     def _create_from_value(self, value: str) -> r.RayObject:
         ptr = FFI.init_symbol(str(value))
-        FFI.set_obj_attrs(ptr, 8)  # Quoted attribute
+        FFI.set_obj_attrs(ptr, 0x20)  # ATTR_QUOTED: literal symbol, not a variable name
         return ptr
 
 

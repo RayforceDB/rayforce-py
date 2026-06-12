@@ -23,7 +23,7 @@ PyObject *raypy_read_i16(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_I16, "read: object is not an i16"))
+  if (!check_type(ray_obj, -RAY_I16, "read: object is not an i16"))
     return NULL;
 
   return PyLong_FromLong(ray_obj->obj->i16);
@@ -36,7 +36,7 @@ PyObject *raypy_read_i32(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_I32, "read: object is not an i32"))
+  if (!check_type(ray_obj, -RAY_I32, "read: object is not an i32"))
     return NULL;
 
   return PyLong_FromLong(ray_obj->obj->i32);
@@ -49,7 +49,7 @@ PyObject *raypy_read_i64(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_I64, "read: object is not an i64"))
+  if (!check_type(ray_obj, -RAY_I64, "read: object is not an i64"))
     return NULL;
 
   return PyLong_FromLongLong(ray_obj->obj->i64);
@@ -62,23 +62,10 @@ PyObject *raypy_read_f64(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_F64, "read: object is not an f64"))
+  if (!check_type(ray_obj, -RAY_F64, "read: object is not an f64"))
     return NULL;
 
   return PyFloat_FromDouble(ray_obj->obj->f64);
-}
-PyObject *raypy_read_c8(PyObject *self, PyObject *args) {
-  (void)self;
-  CHECK_MAIN_THREAD();
-
-  RayObject *ray_obj = parse_ray_object(args);
-  if (ray_obj == NULL)
-    return NULL;
-
-  if (!check_type(ray_obj, -TYPE_C8, "read: object is not a c8"))
-    return NULL;
-
-  return PyUnicode_FromStringAndSize(&ray_obj->obj->c8, 1);
 }
 PyObject *raypy_read_string(PyObject *self, PyObject *args) {
   (void)self;
@@ -88,10 +75,13 @@ PyObject *raypy_read_string(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, TYPE_C8, "read: object is not a string"))
+  if (ray_obj->obj == NULL || ray_obj->obj->type != -RAY_STR) {
+    PyErr_SetString(PyExc_RuntimeError, "read: object is not a string");
     return NULL;
-
-  return PyUnicode_FromStringAndSize(AS_C8(ray_obj->obj), ray_obj->obj->len);
+  }
+  const char *p = ray_str_ptr(ray_obj->obj);
+  size_t n = ray_str_len(ray_obj->obj);
+  return PyUnicode_FromStringAndSize(p, (Py_ssize_t)n);
 }
 PyObject *raypy_read_symbol(PyObject *self, PyObject *args) {
   (void)self;
@@ -101,14 +91,16 @@ PyObject *raypy_read_symbol(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_SYMBOL, "read: object is not a symbol"))
+  if (!check_type(ray_obj, -RAY_SYM, "read: object is not a symbol"))
     return NULL;
 
-  const char *str = str_from_symbol(ray_obj->obj->i64);
-  if (str == NULL)
+  ray_t *sstr = ray_sym_str(ray_obj->obj->i64);
+  if (sstr == NULL)
     Py_RETURN_NONE;
 
-  return PyUnicode_FromString(str);
+  PyObject *result =
+      PyUnicode_FromStringAndSize(ray_str_ptr(sstr), ray_str_len(sstr));
+  return result;
 }
 PyObject *raypy_read_b8(PyObject *self, PyObject *args) {
   (void)self;
@@ -118,7 +110,7 @@ PyObject *raypy_read_b8(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_B8, "read: object is not a b8"))
+  if (!check_type(ray_obj, -RAY_BOOL, "read: object is not a b8"))
     return NULL;
 
   return PyBool_FromLong(ray_obj->obj->b8);
@@ -131,7 +123,7 @@ PyObject *raypy_read_u8(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_U8, "read: object is not a u8"))
+  if (!check_type(ray_obj, -RAY_U8, "read: object is not a u8"))
     return NULL;
 
   return PyLong_FromLong((long)ray_obj->obj->u8);
@@ -144,10 +136,10 @@ PyObject *raypy_read_date(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_DATE, "read: object is not a date"))
+  if (!check_type(ray_obj, -RAY_DATE, "read: object is not a date"))
     return NULL;
 
-  return PyLong_FromLong(ray_obj->obj->i32);
+  return PyLong_FromLongLong(ray_obj->obj->i64);
 }
 PyObject *raypy_read_time(PyObject *self, PyObject *args) {
   (void)self;
@@ -157,10 +149,10 @@ PyObject *raypy_read_time(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_TIME, "read: object is not a time"))
+  if (!check_type(ray_obj, -RAY_TIME, "read: object is not a time"))
     return NULL;
 
-  return PyLong_FromLong(ray_obj->obj->i32);
+  return PyLong_FromLongLong(ray_obj->obj->i64);
 }
 PyObject *raypy_read_timestamp(PyObject *self, PyObject *args) {
   (void)self;
@@ -170,7 +162,7 @@ PyObject *raypy_read_timestamp(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_TIMESTAMP, "read: object is not a timestamp"))
+  if (!check_type(ray_obj, -RAY_TIMESTAMP, "read: object is not a timestamp"))
     return NULL;
 
   return PyLong_FromLongLong(ray_obj->obj->i64);
@@ -183,10 +175,16 @@ PyObject *raypy_read_guid(PyObject *self, PyObject *args) {
   if (ray_obj == NULL)
     return NULL;
 
-  if (!check_type(ray_obj, -TYPE_GUID, "read: object is not a guid"))
+  if (!check_type(ray_obj, -RAY_GUID, "read: object is not a guid"))
     return NULL;
 
-  return PyBytes_FromStringAndSize((const char *)AS_U8(ray_obj->obj), 16);
+  /* v2 stores GUID's 16 bytes in a U8 vector pointed to by obj->obj. */
+  ray_t *bytes_vec = ray_obj->obj->obj;
+  if (bytes_vec == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "read: guid has no payload");
+    return NULL;
+  }
+  return PyBytes_FromStringAndSize((const char *)ray_data(bytes_vec), 16);
 }
 PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
   (void)self;
@@ -196,18 +194,24 @@ PyObject *raypy_table_keys(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p keys = AS_LIST(item->obj)[0];
-  if (keys == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: table has no keys");
+  ray_t *tbl = item->obj;
+  if (tbl == NULL || tbl->type != RAY_TABLE) {
+    PyErr_SetString(PyExc_RuntimeError, "read: object is not a table");
     return NULL;
   }
 
-  obj_p ray_obj = clone_obj(keys);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone table keys");
+  int64_t ncols = ray_table_ncols(tbl);
+  ray_t *keys = ray_sym_vec_new(RAY_SYM_W64, ncols);
+  if (keys == NULL || RAY_IS_ERR(keys)) {
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to allocate sym vec");
     return NULL;
   }
-  return raypy_wrap_ray_object(ray_obj);
+  int64_t *ids = (int64_t *)ray_data(keys);
+  keys->len = ncols;
+  for (int64_t i = 0; i < ncols; ++i) {
+    ids[i] = ray_table_col_name(tbl, i);
+  }
+  return raypy_wrap_ray_object(keys);
 }
 PyObject *raypy_table_values(PyObject *self, PyObject *args) {
   (void)self;
@@ -217,18 +221,33 @@ PyObject *raypy_table_values(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p values = AS_LIST(item->obj)[1];
-  if (values == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: table has no values");
+  ray_t *tbl = item->obj;
+  if (tbl == NULL || tbl->type != RAY_TABLE) {
+    PyErr_SetString(PyExc_RuntimeError, "read: object is not a table");
     return NULL;
   }
 
-  obj_p ray_obj = clone_obj(values);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone table values");
+  int64_t ncols = ray_table_ncols(tbl);
+  ray_t *vals = ray_list_new(ncols);
+  if (vals == NULL || RAY_IS_ERR(vals)) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "read: failed to allocate list for values");
     return NULL;
   }
-  return raypy_wrap_ray_object(ray_obj);
+  for (int64_t i = 0; i < ncols; ++i) {
+    ray_t *col = ray_table_get_col_idx(tbl, i);
+    if (col == NULL) {
+      ray_release(vals);
+      PyErr_SetString(PyExc_RuntimeError, "read: table column missing");
+      return NULL;
+    }
+    vals = ray_list_append(vals, col);
+    if (vals == NULL || RAY_IS_ERR(vals)) {
+      PyErr_SetString(PyExc_RuntimeError, "read: failed to append column");
+      return NULL;
+    }
+  }
+  return raypy_wrap_ray_object(vals);
 }
 PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
   (void)self;
@@ -238,18 +257,14 @@ PyObject *raypy_dict_keys(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p keys = ray_key(item->obj);
-  if (keys == NULL) {
+  ray_t *keys = ray_key_fn(item->obj);
+  if (keys == NULL || RAY_IS_ERR(keys)) {
     PyErr_SetString(PyExc_RuntimeError, "read: dict has no keys");
+    if (keys)
+      ray_release(keys);
     return NULL;
   }
-
-  obj_p ray_obj = clone_obj(keys);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone dict keys");
-    return NULL;
-  }
-  return raypy_wrap_ray_object(ray_obj);
+  return raypy_wrap_ray_object(keys);
 }
 PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
   (void)self;
@@ -259,18 +274,14 @@ PyObject *raypy_dict_values(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p values = ray_value(item->obj);
-  if (values == NULL) {
+  ray_t *values = ray_value_fn(item->obj);
+  if (values == NULL || RAY_IS_ERR(values)) {
     PyErr_SetString(PyExc_RuntimeError, "read: dict has no values");
+    if (values)
+      ray_release(values);
     return NULL;
   }
-
-  obj_p ray_obj = clone_obj(values);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone dict values");
-    return NULL;
-  }
-  return raypy_wrap_ray_object(ray_obj);
+  return raypy_wrap_ray_object(values);
 }
 PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
   (void)self;
@@ -282,19 +293,18 @@ PyObject *raypy_dict_get(PyObject *self, PyObject *args) {
                         &key_obj))
     return NULL;
 
-  obj_p result = at_obj(item->obj, key_obj->obj);
+  ray_t *result = ray_at_fn(item->obj, key_obj->obj);
   if (result == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "read: key not found in dictionary");
     return NULL;
   }
-
-  obj_p ray_obj = clone_obj(result);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "read: failed to clone dictionary value");
+  if (RAY_IS_ERR(result)) {
+    PyErr_Format(PyExc_KeyError, "read: dict lookup failed: %s",
+                 ray_err_code(result));
+    ray_release(result);
     return NULL;
   }
-  return raypy_wrap_ray_object(ray_obj);
+  return raypy_wrap_ray_object(result);
 }
 PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
   (void)self;
@@ -305,18 +315,33 @@ PyObject *raypy_at_idx(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &item, &index))
     return NULL;
 
-  obj_p result = at_idx(item->obj, (i64_t)index);
-  if (result == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: value not found at index");
+  ray_t *coll = item->obj;
+  if (coll == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "read: collection is null");
     return NULL;
   }
 
-  obj_p ray_obj = clone_obj(result);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to clone item at index");
+  int allocated = 0;
+  ray_t *elem = collection_elem(coll, (int64_t)index, &allocated);
+  if (elem == NULL || RAY_IS_ERR(elem)) {
+    PyErr_SetString(PyExc_RuntimeError, "read: value not found at index");
+    if (elem && allocated)
+      ray_release(elem);
     return NULL;
   }
-  return raypy_wrap_ray_object(ray_obj);
+
+  if (!allocated) {
+    /* Borrowed pointer — bump rc so Python wrapper owns its share. */
+    ray_retain(elem);
+  } else if (elem->type == -RAY_SYM) {
+    /* A symbol extracted from a vector is a literal data value, not a
+     * variable name. Mark the fresh atom ATTR_QUOTED so it round-trips as
+     * data (e.g. as a dict key or `in` operand) instead of resolving as a
+     * variable under the core's name-reference default (commit 6635321a).
+     * Only safe on freshly-allocated atoms — never mutate borrowed storage. */
+    elem->attrs |= ATTR_QUOTED;
+  }
+  return raypy_wrap_ray_object(elem);
 }
 PyObject *raypy_get_obj_length(PyObject *self, PyObject *args) {
   (void)self;
@@ -326,7 +351,18 @@ PyObject *raypy_get_obj_length(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
-  return PyLong_FromUnsignedLongLong(ray_obj->obj->len);
+  ray_t *o = ray_obj->obj;
+  if (o == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "read: object is null");
+    return NULL;
+  }
+  if (o->type == RAY_TABLE) {
+    return PyLong_FromLongLong(ray_table_nrows(o));
+  }
+  if (o->type == -RAY_STR) {
+    return PyLong_FromUnsignedLongLong(ray_str_len(o));
+  }
+  return PyLong_FromLongLong(o->len);
 }
 PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
   (void)self;
@@ -337,16 +373,81 @@ PyObject *raypy_repr_table(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!|p", &RayObjectType, &ray_obj, &full))
     return NULL;
 
-  obj_p item = obj_fmt(ray_obj->obj, (b8_t)full);
-  if (item == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to format table");
+  ray_t *s = ray_fmt(ray_obj->obj, full ? 1 : 0);
+  if (s == NULL || RAY_IS_ERR(s)) {
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to format object");
+    if (s)
+      ray_release(s);
     return NULL;
   }
 
-  PyObject *result = PyUnicode_FromStringAndSize(AS_C8(item), item->len);
-  drop_obj(item);
+  PyObject *result =
+      PyUnicode_FromStringAndSize(ray_str_ptr(s), (Py_ssize_t)ray_str_len(s));
+  ray_release(s);
   return result;
 }
+/* Build a 2-entry ray dict `{code: <code>, message: <msg>}` from the error.
+ * Returns NULL on any allocation/intern failure (callers fall back to a plain
+ * runtime error). */
+static ray_t *build_err_dict(const char *code, const char *msg) {
+  if (!code)
+    code = "err";
+  if (!msg)
+    msg = "";
+
+  ray_t *keys = NULL, *vals = NULL, *code_atom = NULL, *msg_atom = NULL;
+  ray_t *dict = NULL;
+
+  keys = ray_sym_vec_new(RAY_SYM_W64, 2);
+  if (keys == NULL || RAY_IS_ERR(keys))
+    goto fail;
+  int64_t code_id = ray_sym_intern("code", 4);
+  int64_t msg_id = ray_sym_intern("message", 7);
+  if (code_id < 0 || msg_id < 0)
+    goto fail;
+  int64_t *ids = (int64_t *)ray_data(keys);
+  ids[0] = code_id;
+  ids[1] = msg_id;
+  keys->len = 2;
+
+  code_atom = ray_str(code, strlen(code));
+  if (code_atom == NULL || RAY_IS_ERR(code_atom))
+    goto fail;
+  msg_atom = ray_str(msg, strlen(msg));
+  if (msg_atom == NULL || RAY_IS_ERR(msg_atom))
+    goto fail;
+
+  vals = ray_list_new(2);
+  if (vals == NULL || RAY_IS_ERR(vals))
+    goto fail;
+  /* ray_list_append returns a new pointer; abandon the old on failure. */
+  ray_t *r1 = ray_list_append(vals, code_atom);
+  if (r1 == NULL || RAY_IS_ERR(r1))
+    goto fail;
+  vals = r1;
+  ray_t *r2 = ray_list_append(vals, msg_atom);
+  if (r2 == NULL || RAY_IS_ERR(r2))
+    goto fail;
+  vals = r2;
+
+  dict = ray_dict_fn(keys, vals);
+  if (dict == NULL || RAY_IS_ERR(dict)) {
+    dict = NULL;
+    goto fail;
+  }
+
+fail:
+  if (code_atom)
+    ray_release(code_atom);
+  if (msg_atom)
+    ray_release(msg_atom);
+  if (keys)
+    ray_release(keys);
+  if (vals)
+    ray_release(vals);
+  return dict;
+}
+
 PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
   (void)self;
   CHECK_MAIN_THREAD();
@@ -355,17 +456,26 @@ PyObject *raypy_get_error_obj(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &item))
     return NULL;
 
-  obj_p err = item->obj;
-  if (err == NULL || err->type != TYPE_ERR) {
-    return PyUnicode_FromString("Unknown error");
+  ray_t *err = item->obj;
+  const char *code = "unknown";
+  const char *msg = "";
+  if (err != NULL && RAY_IS_ERR(err)) {
+    code = ray_err_code(err);
+    msg = ray_error_msg();
+    if (!code)
+      code = "err";
+    if (!msg)
+      msg = "";
   }
 
-  obj_p ray_obj = err_info(err);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: failed to get error info");
+  ray_t *dict = build_err_dict(code, msg);
+  if (dict == NULL || RAY_IS_ERR(dict)) {
+    if (dict)
+      ray_release(dict);
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to build error dict");
     return NULL;
   }
-  return raypy_wrap_ray_object(ray_obj);
+  return raypy_wrap_ray_object(dict);
 }
 PyObject *raypy_env_get_internal_fn_by_name(PyObject *self, PyObject *args) {
   (void)self;
@@ -376,19 +486,20 @@ PyObject *raypy_env_get_internal_fn_by_name(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
     return NULL;
 
-  obj_p func_obj = env_get_internal_function(name);
-  if (func_obj == NULL_OBJ || func_obj == NULL) {
+  int64_t sym_id = ray_sym_intern(name, (size_t)name_len);
+  if (sym_id < 0) {
+    PyErr_SetString(PyExc_RuntimeError, "read: failed to intern function name");
+    return NULL;
+  }
+
+  ray_t *func_obj = ray_env_get(sym_id);
+  if (func_obj == RAY_NULL_OBJ || func_obj == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "read: function not found");
     return NULL;
   }
 
-  obj_p ray_obj = clone_obj(func_obj);
-  if (ray_obj == NULL) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "read: failed to clone internal function");
-    return NULL;
-  }
-  return raypy_wrap_ray_object(ray_obj);
+  ray_retain(func_obj);
+  return raypy_wrap_ray_object(func_obj);
 }
 PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args) {
   (void)self;
@@ -398,12 +509,10 @@ PyObject *raypy_env_get_internal_name_by_fn(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
-  str_p name = env_get_internal_name(ray_obj->obj);
-  if (name == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "read: function name not found");
-    return NULL;
-  }
-  return PyUnicode_FromString(name);
+  PyErr_SetString(
+      PyExc_NotImplementedError,
+      "env_get_internal_name_by_fn is not supported on rayforce v2");
+  return NULL;
 }
 PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
   (void)self;
@@ -417,6 +526,10 @@ PyObject *raypy_get_obj_type(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_RuntimeError, "read: object is null");
     return NULL;
   }
+  /* v2: dict is RAY_LIST + RAY_ATTR_DICT. Synthesize RAY_DICT for Python. */
+  if (ray_obj->obj->type == RAY_LIST && (ray_obj->obj->attrs & RAY_ATTR_DICT)) {
+    return PyLong_FromLong(RAY_DICT);
+  }
   return PyLong_FromLong(ray_obj->obj->type);
 }
 PyObject *raypy_rc(PyObject *self, PyObject *args) {
@@ -427,5 +540,102 @@ PyObject *raypy_rc(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
     return NULL;
 
-  return PyLong_FromUnsignedLong(rc_obj(ray_obj->obj));
+  return PyLong_FromUnsignedLong(ray_obj->obj ? ray_obj->obj->rc : 0u);
+}
+PyObject *raypy_obj_addr(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &ray_obj))
+    return NULL;
+
+  return PyLong_FromVoidPtr((void *)ray_obj->obj);
+}
+/* Extract a non-NULL vec ray_t* from a RayObject, with PyErr-on-failure
+ * prefixed by `fn_name`. */
+static ray_t *unwrap_vec(RayObject *obj, const char *fn_name) {
+  ray_t *vec = obj->obj;
+  if (vec == NULL) {
+    PyErr_Format(PyExc_RuntimeError, "%s: object is null", fn_name);
+    return NULL;
+  }
+  if (!ray_is_vec(vec)) {
+    PyErr_Format(PyExc_RuntimeError, "%s: object is not a vector", fn_name);
+    return NULL;
+  }
+  return vec;
+}
+
+/* Validate that `idx` is in [0, vec->len). Sets PyErr and returns -1 on miss.
+ */
+static int check_vec_index(ray_t *vec, Py_ssize_t idx, const char *fn_name) {
+  if (idx < 0 || idx >= vec->len) {
+    PyErr_Format(PyExc_IndexError, "%s: index %zd out of range (len %lld)",
+                 fn_name, idx, (long long)vec->len);
+    return -1;
+  }
+  return 0;
+}
+
+PyObject *raypy_vec_is_null(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  Py_ssize_t idx;
+  if (!PyArg_ParseTuple(args, "O!n", &RayObjectType, &ray_obj, &idx))
+    return NULL;
+
+  ray_t *vec = unwrap_vec(ray_obj, "vec_is_null");
+  if (vec == NULL || check_vec_index(vec, idx, "vec_is_null") < 0)
+    return NULL;
+  return PyBool_FromLong(ray_vec_is_null(vec, (int64_t)idx));
+}
+PyObject *raypy_vec_set_null(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  Py_ssize_t idx;
+  int is_null;
+  if (!PyArg_ParseTuple(args, "O!np", &RayObjectType, &ray_obj, &idx, &is_null))
+    return NULL;
+
+  ray_t *vec = unwrap_vec(ray_obj, "vec_set_null");
+  if (vec == NULL || check_vec_index(vec, idx, "vec_set_null") < 0)
+    return NULL;
+  ray_vec_set_null(vec, (int64_t)idx, is_null ? true : false);
+  Py_RETURN_NONE;
+}
+PyObject *raypy_vec_slice(PyObject *self, PyObject *args) {
+  (void)self;
+  CHECK_MAIN_THREAD();
+
+  RayObject *ray_obj;
+  Py_ssize_t offset;
+  Py_ssize_t length;
+  if (!PyArg_ParseTuple(args, "O!nn", &RayObjectType, &ray_obj, &offset,
+                        &length))
+    return NULL;
+
+  ray_t *vec = unwrap_vec(ray_obj, "vec_slice");
+  if (vec == NULL)
+    return NULL;
+  if (offset < 0 || length < 0 || offset > vec->len ||
+      length > vec->len - offset) {
+    PyErr_Format(PyExc_IndexError,
+                 "vec_slice: range [%zd, %zd) out of bounds (len %lld)", offset,
+                 offset + length, (long long)vec->len);
+    return NULL;
+  }
+
+  ray_t *slice = ray_vec_slice(vec, (int64_t)offset, (int64_t)length);
+  if (slice == NULL || RAY_IS_ERR(slice)) {
+    PyErr_SetString(PyExc_RuntimeError, "vec_slice: slice creation failed");
+    if (slice)
+      ray_release(slice);
+    return NULL;
+  }
+  return raypy_wrap_ray_object(slice);
 }

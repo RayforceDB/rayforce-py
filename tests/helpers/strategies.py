@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import typing as t
-
 from hypothesis import strategies as st
 
 from rayforce import I64, Symbol, Table, Vector

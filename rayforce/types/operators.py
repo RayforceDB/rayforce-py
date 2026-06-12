@@ -7,6 +7,9 @@ from rayforce import errors
 from rayforce.ffi import FFI
 from rayforce.types.registry import TypeRegistry
 
+_PRIMITIVE_REVERSE_MAP: dict[int, Operation] = {}
+_PRIMITIVE_KEEPALIVE: list[r.RayObject] = []
+
 
 class Operation(enum.StrEnum):
     # Arithmetic
@@ -42,7 +45,9 @@ class Operation(enum.StrEnum):
     FIRST = "first"
     LAST = "last"
     MEDIAN = "med"
-    DEVIATION = "dev"
+    DEVIATION = "dev"  # population std, ddof=0
+    STDDEV = "stddev"  # sample std, ddof=1 (matches polars/pandas)
+    PEARSON_CORR = "pearson_corr"
     ROW = "row"
 
     # Statistical
@@ -60,6 +65,8 @@ class Operation(enum.StrEnum):
     REVERSE = "reverse"
     GROUP = "group"
     TAKE = "take"
+    TOP = "top"
+    BOT = "bot"
     REMOVE = "remove"
     FILTER = "filter"
     FIND = "find"
@@ -117,7 +124,6 @@ class Operation(enum.StrEnum):
     SCAN_LEFT = "scan-left"
     SCAN_RIGHT = "scan-right"
     APPLY = "apply"
-    ARGS = "args"
     ALTER = "alter"
     MODIFY = "modify"
 
@@ -129,7 +135,6 @@ class Operation(enum.StrEnum):
     LIST = "list"
     TYPE = "type"
     AS = "as"
-    ENUM = "enum"
     GUID = "guid"
     NIL_Q = "nil?"
 
@@ -141,10 +146,6 @@ class Operation(enum.StrEnum):
     # I/O
     READ = "read"
     WRITE = "write"
-    READ_CSV = "read-csv"
-    WRITE_CSV = "write-csv"
-    HOPEN = "hopen"
-    HCLOSE = "hclose"
     SHOW = "show"
     FORMAT = "format"
     PRINT = "print"
@@ -179,23 +180,13 @@ class Operation(enum.StrEnum):
     CONCAT = "concat"
 
     # System
-    SYSTEM = "system"
-    OS_GET_VAR = "os-get-var"
-    OS_SET_VAR = "os-set-var"
     EXIT = "exit"
-    GC = "gc"
-    MEMSTAT = "memstat"
     TIMEIT = "timeit"
-    TIMER = "timer"
-    INTERNALS = "internals"
-    SYSINFO = "sysinfo"
-    LOADFN = "loadfn"
 
-    # Storage
-    SET_SPLAYED = "set-splayed"
-    GET_SPLAYED = "get-splayed"
-    SET_PARTED = "set-parted"
-    GET_PARTED = "get-parted"
+    # Storage (v2 namespaced names)
+    SET_SPLAYED = ".db.splayed.set"
+    GET_SPLAYED = ".db.splayed.get"
+    GET_PARTED = ".db.parted.get"
 
     # Metadata
     META = "meta"
@@ -235,7 +226,25 @@ class Operation(enum.StrEnum):
         ):
             raise errors.RayforceInitError(f"Object is not an operation (type: {obj_type})")
 
-        return Operation(FFI.env_get_internal_name_by_fn(obj))
+        addr = FFI.obj_addr(obj)
+        op = _build_primitive_reverse_map().get(addr)
+        if op is None:
+            raise errors.RayforceTypeRegistryError(
+                f"Object pointer {addr:#x} does not map to any known Operation"
+            )
+        return op
+
+
+def _build_primitive_reverse_map() -> dict[int, Operation]:
+    if _PRIMITIVE_REVERSE_MAP:
+        return _PRIMITIVE_REVERSE_MAP
+
+    for op in Operation:
+        primitive = FFI.env_get_internal_fn_by_name(op.value)
+        _PRIMITIVE_KEEPALIVE.append(primitive)
+        _PRIMITIVE_REVERSE_MAP[FFI.obj_addr(primitive)] = op
+
+    return _PRIMITIVE_REVERSE_MAP
 
 
 TypeRegistry.register(r.TYPE_UNARY, Operation)

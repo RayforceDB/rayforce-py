@@ -136,15 +136,15 @@ When called with a single argument, it takes the first `n` rows:
 
 >>> first_two = table.take(2)
 >>> print(first_two)
-┌────────┬────────┬────────────────────┐
-│   id   │  name  │        age         │
-│ SYMBOL │ SYMBOL │        I64         │
-├────────┼────────┼────────────────────┤
-│ 001    │ alice  │ 29                 │
-│ 002    │ bob    │ 34                 │
-├────────┴────────┴────────────────────┤
-│ 2 rows (2 shown) 3 columns (3 shown) │
-└──────────────────────────────────────┘
+┌─────┬───────┬───────────────────────┐
+│ id  │ name  │          age          │
+│ SYM │  SYM  │          I64          │
+├─────┼───────┼───────────────────────┤
+│ 001 │ alice │ 29                    │
+│ 002 │ bob   │ 34                    │
+├─────┴───────┴───────────────────────┤
+│ 2 rows (2 shown) 3 columns (3 shown)│
+└─────────────────────────────────────┘
 ```
 
 When called with an `offset` argument, it takes `n` rows starting from the offset:
@@ -152,15 +152,15 @@ When called with an `offset` argument, it takes `n` rows starting from the offse
 ```python
 >>> middle_rows = table.take(2, offset=1)
 >>> print(middle_rows)
-┌────────┬─────────┬───────────────────┐
-│   id   │  name   │        age        │
-│ SYMBOL │ SYMBOL  │        I64        │
-├────────┼─────────┼───────────────────┤
-│ 002    │ bob     │ 34                │
-│ 003    │ charlie │ 41                │
-├────────┴─────────┴───────────────────┤
-│ 2 rows (2 shown) 3 columns (3 shown) │
-└──────────────────────────────────────┘
+┌─────┬─────────┬─────────────────────┐
+│ id  │  name   │         age         │
+│ SYM │   SYM   │         I64         │
+├─────┼─────────┼─────────────────────┤
+│ 002 │ bob     │ 34                  │
+│ 003 │ charlie │ 41                  │
+├─────┴─────────┴─────────────────────┤
+│ 2 rows (2 shown) 3 columns (3 shown)│
+└─────────────────────────────────────┘
 ```
 
 When called with a negative number, it takes the last `n` rows:
@@ -168,15 +168,15 @@ When called with a negative number, it takes the last `n` rows:
 ```python
 >>> last_rows = table.take(-2)
 >>> print(last_rows)
-┌────────┬─────────┬───────────────────┐
-│   id   │  name   │        age        │
-│ SYMBOL │ SYMBOL  │        I64        │
-├────────┼─────────┼───────────────────┤
-│ 003    │ charlie │ 41                │
-│ 004    │ dana    │ 38                │
-├────────┴─────────┴───────────────────┤
-│ 2 rows (2 shown) 3 columns (3 shown) │
-└──────────────────────────────────────┘
+┌─────┬─────────┬─────────────────────┐
+│ id  │  name   │         age         │
+│ SYM │   SYM   │         I64         │
+├─────┼─────────┼─────────────────────┤
+│ 003 │ charlie │ 41                  │
+│ 004 │ dana    │ 38                  │
+├─────┴─────────┴─────────────────────┤
+│ 2 rows (2 shown) 3 columns (3 shown)│
+└─────────────────────────────────────┘
 ```
 
 ## Head and Tail
@@ -191,10 +191,10 @@ The `head()` and `tail()` methods provide convenient shortcuts for getting the f
 })
 
 >>> table.head(3)  # First 3 rows (default is 5)
-Table(columns=['id', 'name', 'age'])
+Table[Symbol('id'), Symbol('name'), Symbol('age')]
 
 >>> table.tail(2)  # Last 2 rows (default is 5)
-Table(columns=['id', 'name', 'age'])
+Table[Symbol('id'), Symbol('name'), Symbol('age')]
 ```
 
 ## Column Types

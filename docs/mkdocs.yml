@@ -116,7 +116,6 @@ nav:
       - Integers: content/documentation/data-types/integers.md
       - Float: content/documentation/data-types/float.md
       - Unsigned Integer: content/documentation/data-types/unsigned-integer.md
-      - Char: content/documentation/data-types/char.md
       - Symbol: content/documentation/data-types/symbol.md
       - Boolean: content/documentation/data-types/boolean.md
       - Temporal: content/documentation/data-types/temporal.md
@@ -137,7 +136,6 @@ nav:
       - Group By: content/documentation/query-guide/group-by.md
       - Pivot: content/documentation/query-guide/pivot.md
     - IPC: content/documentation/IPC.md
-    - Websocket: content/documentation/websocket.md
     - Plugins:
       - SQL: content/documentation/plugins/sql.md
       - Parquet: content/documentation/plugins/parquet.md

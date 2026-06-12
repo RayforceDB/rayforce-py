@@ -11,8 +11,16 @@ if t.TYPE_CHECKING:
 
 class RayforceError(Exception):
     @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        raise cls(f"{error}")
+    def serialize(cls, error: Dict) -> t.NoReturn:
+        # Core error objects carry exactly two fields: `code` and `message`
+        # (see capi build_err_dict). Earlier per-subclass overrides referenced
+        # fields like `expected`/`got` that the core never populates, yielding
+        # "expected: Null" messages — so decode uniformly off `message`.
+        code = error["code"]
+        message = error["message"]
+        code_s = getattr(code, "value", code)
+        msg_s = getattr(message, "value", message)
+        raise cls(f"{code_s}: {msg_s}" if msg_s else str(code_s))
 
 
 class RayforceInitError(RayforceError): ...
@@ -36,9 +44,6 @@ class RayforcePartedTableError(RayforceError): ...
 class RayforceTCPError(RayforceError): ...
 
 
-class RayforceWSError(RayforceError): ...
-
-
 class RayforceThreadError(RayforceError): ...
 
 
@@ -49,25 +54,13 @@ class RayforceOkError(RayforceError):
 class RayforceTypeError(RayforceError):
     """Core - EC_TYPE"""
 
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        raise cls(f"expected: {error['expected']}, got: {error['got']}")
-
 
 class RayforceArityError(RayforceError):
     """Core - EC_ARITY"""
 
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        raise cls(f"expected: {error['expected']}, got: {error['got']}")
-
 
 class RayforceLengthError(RayforceError):
     """Core - EC_LENGTH"""
-
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        raise cls(f"need: {error['need']}, given: {error['have']}")
 
 
 class RayforceDomainError(RayforceError):
@@ -77,39 +70,17 @@ class RayforceDomainError(RayforceError):
 class RayforceIndexError(RayforceError):
     """Core - EC_INDEX"""
 
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        raise cls(f"index: {error['index']}, bound: {error['bound']}")
-
 
 class RayforceValueError(RayforceError):
     """Core - EC_VALUE"""
-
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        if "name" in error:
-            raise cls(f"name: {error['name']}")
-        raise cls(f"{error}")
 
 
 class RayforceLimitError(RayforceError):
     """Core - EC_LIMIT"""
 
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        if "limit" in error:
-            raise cls(f"limit: {error['limit']}")
-        raise cls(f"{error}")
-
 
 class RayforceOSError(RayforceError):
     """Core - EC_OS"""
-
-    @classmethod
-    def serialize(cls, error: Dict) -> t.Self:
-        if "message" in error:
-            raise cls(f"message: {error['message']}")
-        raise cls(f"{error}")
 
 
 class RayforceParseError(RayforceError):

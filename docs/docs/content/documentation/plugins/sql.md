@@ -32,14 +32,16 @@ Use the `Table.sql()` method to execute SQL queries. Reference the table as `sel
 
 >>> result = employees.sql("SELECT * FROM self WHERE salary > 90000")
 >>> print(result)
-┌─────┬─────────┬────────┬────────┐
-│ id  │  name   │  dept  │ salary │
-│ I64 │ SYMBOL  │ SYMBOL │  I64   │
-├─────┼─────────┼────────┼────────┤
-│ 1   │ Alice   │ eng    │ 120000 │
-│ 3   │ Charlie │ eng    │ 95000  │
-│ 5   │ Eve     │ eng    │ 110000 │
-└─────┴─────────┴────────┴────────┘
+┌─────┬─────────┬──────┬──────────────┐
+│ id  │  name   │ dept │    salary    │
+│ I64 │   SYM   │ SYM  │     I64      │
+├─────┼─────────┼──────┼──────────────┤
+│ 1   │ Alice   │ eng  │ 120000       │
+│ 3   │ Charlie │ eng  │ 95000        │
+│ 5   │ Eve     │ eng  │ 110000       │
+├─────┴─────────┴──────┴──────────────┤
+│ 3 rows (3 shown) 4 columns (4 shown)│
+└─────────────────────────────────────┘
 ```
 
 ## Supported SQL Features
@@ -107,13 +109,15 @@ Group rows and apply aggregations:
 ...     GROUP BY dept
 ... """)
 >>> print(result)
-┌────────┬───────────┬────────────┬────────────┐
-│  dept  │ headcount │ avg_salary │ max_salary │
-│ SYMBOL │    I64    │    F64     │    I64     │
-├────────┼───────────┼────────────┼────────────┤
-│ eng    │ 3         │ 108333.33  │ 120000     │
-│ sales  │ 2         │ 77500.00   │ 80000      │
-└────────┴───────────┴────────────┴────────────┘
+┌───────┬───────────┬────────────┬────────────┐
+│ dept  │ headcount │ avg_salary │ max_salary │
+│  SYM  │    I64    │    F64     │    I64     │
+├───────┼───────────┼────────────┼────────────┤
+│ eng   │ 3         │ 108333.33  │ 120000     │
+│ sales │ 2         │ 77500.0    │ 80000      │
+├───────┴───────────┴────────────┴────────────┤
+│ 2 rows (2 shown) 4 columns (4 shown)        │
+└─────────────────────────────────────────────┘
 ```
 
 ### ORDER BY
@@ -192,7 +196,7 @@ Add new rows to a table using INSERT with VALUES:
 ...     VALUES (4, 'Diana', 55000.0), (5, 'Eve', 65000.0)
 ... """)
 >>> print(len(result))
-5
+4
 
 # Insert without column names (values must match table column order)
 >>> result = employees.sql("INSERT INTO self VALUES (6, 'Frank', 72000.0)")

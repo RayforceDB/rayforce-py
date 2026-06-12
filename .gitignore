@@ -16,7 +16,6 @@ coverage.xml
 
 # Binaries
 rayforce/bin/
-rayforce/rayforce/
 rayforce.so
 _rayforce_c.so
 _rayforce_c.dylib
@@ -47,3 +46,4 @@ tables/
 *.parquet
 .claude/
 db/
+CLAUDE.md

@@ -3,7 +3,11 @@ name: Build and publish wheels
 on:
   push:
     tags:
+      # Stable: X.Y.Z
       - '[0-9]+.[0-9]+.[0-9]+'
+      # Pre-release: 2.0.0a1, 2.0.0b1
+      - '[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+b[0-9]+'
 
 jobs:
   build_wheels:
@@ -20,7 +24,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
       MACOSX_DEPLOYMENT_TARGET: "11.0"
 
     steps:

@@ -15,20 +15,21 @@ The `Table` type represents a structured data table. It consists of columns and 
 
 >>> employee_table = Table(dict(zip(columns, values)))
 >>> employee_table
-Table(columns=['id', 'name', 'age', 'salary'])
+Table[Symbol('id'), Symbol('name'), Symbol('age'), Symbol('salary')]
 
 >>> print(employee_table)
-┌────┬─────────┬─────┬─────────────────┐
-│ id │ name    │ age │ salary          │
-├────┼─────────┼─────┼─────────────────┤
-│ 1  │ Alice   │ 25  │ 50000           │
-│ 2  │ Bob     │ 30  │ 60000           │
-│ 3  │ Charlie │ 35  │ 70000           │
-│ 4  │ Diana   │ 28  │ 55000           │
-│ 5  │ Eve     │ 32  │ 65000           │
-├────┴─────────┴─────┴─────────────────┤
-│ 5 rows (5 shown) 4 columns (4 shown) │
-└──────────────────────────────────────┘
+┌─────┬─────────┬─────┬───────────────┐
+│ id  │  name   │ age │    salary     │
+│ I64 │   SYM   │ I64 │      I64      │
+├─────┼─────────┼─────┼───────────────┤
+│ 1   │ Alice   │ 25  │ 50000         │
+│ 2   │ Bob     │ 30  │ 60000         │
+│ 3   │ Charlie │ 35  │ 70000         │
+│ 4   │ Diana   │ 28  │ 55000         │
+│ 5   │ Eve     │ 32  │ 65000         │
+├─────┴─────────┴─────┴───────────────┤
+│ 5 rows (5 shown) 4 columns (4 shown)│
+└─────────────────────────────────────┘
 ```
 
 ## :octicons-info-24: Details

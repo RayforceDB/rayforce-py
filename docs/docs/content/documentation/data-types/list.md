@@ -18,7 +18,7 @@ I64(1)
 
 >>> items[0] = 333
 >>> items
-[I64(333), Symbol('hello'), F64(3.14), B8(True)]
+List([I64(333), Symbol('hello'), F64(3.14), B8(True)])
 
 >>> items.append(123)
 >>> items

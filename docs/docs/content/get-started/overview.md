@@ -13,6 +13,7 @@ Rayforce-Py is a powerful library which allows you to effectively execute statem
 
 Out:┌──────────┬───────┬──────────────┬───────┐
     │ category │ total │ active_total │ count │
+    │   SYM    │  I64  │     I64      │  I64  │
     ├──────────┼───────┼──────────────┼───────┤
     │ A        │ 600   │ 100          │ 3     │
     │ B        │ 400   │ 400          │ 2     │
@@ -70,8 +71,8 @@ You can manually clone latest github repo and build it yourself
 # 2. Builds the Rayforce and it's plugins
 # 3. Moves binaries around so they become available to the library
 
-~/rayforce-py $ python -c "import rayforce; rayforce.I64(123)"
-I64(123)
+~/rayforce-py $ python -c "import rayforce; print(rayforce.I64(123))"
+123
 ```
 
 ## Discover

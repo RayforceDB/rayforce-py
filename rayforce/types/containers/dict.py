@@ -37,10 +37,15 @@ class Dict(
         from rayforce.types import Symbol
         from rayforce.types.containers import List, Vector
 
-        return FFI.init_dict(
-            keys=Vector(items=list(value.keys()), ray_type=Symbol).ptr,
-            values=List(list(value.values())).ptr,
-        )
+        keys = list(value.keys())
+        # All-string keys → symbol vector (rayforce convention). Otherwise build a
+        # type-inferred vector so int/float/etc. keys round-trip and look up by value
+        # (a Symbol vector would silently coerce them to symbols — see #M2).
+        if not keys or all(isinstance(k, str) for k in keys):
+            keys_ptr = Vector(items=keys, ray_type=Symbol).ptr
+        else:
+            keys_ptr = Vector(items=keys).ptr
+        return FFI.init_dict(keys=keys_ptr, values=List(list(value.values())).ptr)
 
     def to_python(self) -> dict:
         return {
@@ -58,13 +63,20 @@ class Dict(
         return FFI.get_obj_length(FFI.get_dict_keys(self.ptr))
 
     def __setitem__(self, key: t.Any, value: t.Any) -> None:
-        FFI.set_obj(
-            obj=self.ptr,
-            idx=python_to_ray(key),
-            value=python_to_ray(value),
-        )
+        new_dict = self.to_python()
+        if hasattr(key, "to_python"):
+            key = key.to_python()
+        if hasattr(value, "to_python"):
+            value = value.to_python()
+        new_dict[key] = value
+        self.ptr = self._create_from_value(new_dict)
 
     def __getitem__(self, key: t.Any) -> t.Any:
+        from rayforce.types.null import Null
+
+        keys = TypeRegistry.from_ptr(FFI.get_dict_keys(self.ptr))
+        if not keys.in_(key).to_python():  # type: ignore[union-attr]
+            return Null
         return ray_to_python(FFI.dict_get(self.ptr, python_to_ray(key)))
 
     def __iter__(self) -> t.Iterator[t.Any]:

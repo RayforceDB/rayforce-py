@@ -76,8 +76,9 @@ Rayforce-Py provides a number of aggregations you may use when querying computed
     ).execute()
 ┌────────────────┬────────────┬───────────┬──────────────┬───────────┬───────────┬───────────────┬──────────────┐
 │ total_students │ sum_scores │ avg_score │ median_score │ min_score │ max_score │ first_student │ last_subject │
+│      I64       │    I64     │    F64    │     F64      │    I64    │    I64    │      I64      │     SYM      │
 ├────────────────┼────────────┼───────────┼──────────────┼───────────┼───────────┼───────────────┼──────────────┤
-│ 10             │ 885        │ 88.50     │ 89.00        │ 78        │ 96        │ 1             │ Chemistry    │
+│ 10             │ 885        │ 88.5      │ 89.0         │ 78        │ 96        │ 1             │ Chemistry    │
 ├────────────────┴────────────┴───────────┴──────────────┴───────────┴───────────┴───────────────┴──────────────┤
 │ 1 rows (1 shown) 8 columns (8 shown)                                                                          │
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -85,15 +86,16 @@ Rayforce-Py provides a number of aggregations you may use when querying computed
 >>> unique_subjects = scores.select(
         subject=Column("subject").distinct()              # Distinct: unique values
     ).execute()
-┌──────────────────────────────────────┐
-│ subject                              │
-├──────────────────────────────────────┤
-│ Math                                 │
-│ Science                              │
-│ Chemistry                            │
-├──────────────────────────────────────┤
-│ 3 rows (3 shown) 1 columns (1 shown) │
-└──────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│               subject               │
+│                 SYM                 │
+├─────────────────────────────────────┤
+│ Math                                │
+│ Science                             │
+│ Chemistry                           │
+├─────────────────────────────────────┤
+│ 3 rows (3 shown) 1 columns (1 shown)│
+└─────────────────────────────────────┘
 ```
 
 
@@ -128,7 +130,7 @@ Check if a value is in a list:
 More complex example
 ```python
 >>> result = table.select("id", "name", "age").where(
-        (Column("age") >= 20) & Column("department").isin("IT", "HR", "Marketing")
+        (Column("age") >= 20) & Column("department").isin(["IT", "HR", "Marketing"])
     ).execute()
 ```
 

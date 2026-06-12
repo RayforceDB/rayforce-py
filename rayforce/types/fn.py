@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import itertools
 import typing as t
 
 from rayforce import _rayforce_c as r
 from rayforce import errors, utils
+from rayforce.ffi import FFI
 from rayforce.types import Dict, List
 from rayforce.types.base import RayObject
 from rayforce.types.operators import Operation
@@ -14,13 +16,15 @@ if t.TYPE_CHECKING:
     from rayforce.types.table import Expression
 
 
+_fn_bind_counter = itertools.count(1)
+
+
 class Fn(RayObject):
     ptr: r.RayObject
     type_code = r.TYPE_LAMBDA
     ray_name = "LAMBDA"
 
-    @classmethod
-    def _create_from_value(cls, value: str) -> r.RayObject:
+    def _create_from_value(self, value: str) -> r.RayObject:
         if not isinstance(value, str):
             raise errors.RayforceInitError(f"Expected string, got {type(value)}")
         if not value.startswith("(fn"):
@@ -28,14 +32,26 @@ class Fn(RayObject):
 
         return evaluation.eval_str(value, raw=True)
 
-    @classmethod
-    def from_ptr(cls, ptr: r.RayObject) -> Fn:
-        return cls(ptr=ptr)
+    def _bind_to_env(self) -> str:
+        # v2's DAG compiler (`compile_expr_dag` in src/ops/query.c) only
+        # accepts two lambda-call shapes: a literal `((fn [...] body) args)`
+        # in head position, or a named reference `(fname args)` where fname
+        # is globally env-bound to a RAY_LAMBDA with a single-expression body.
+        # A raw RAY_LAMBDA pointer in the head is rejected. We bind the
+        # lambda into the global env under a unique generated name so the
+        # named-reference branch triggers and β-reduces it.
+        name = getattr(self, "_bound_name", None)
+        if name is None:
+            name = f"__pyfn_{next(_fn_bind_counter):x}"
+            FFI.binary_set(FFI.init_symbol(name), self.ptr)
+            self._bound_name = name
+        return name
 
     def apply(self, *args: t.Any) -> Expression:
-        from rayforce.types.table import Expression
+        from rayforce.types.table import Expression, _make_name_sym
 
-        return Expression(self, *args)
+        head = _make_name_sym(self._bind_to_env())
+        return Expression(head, *args)
 
     def to_python(self) -> str:
         return str(self)
@@ -52,7 +68,10 @@ class Fn(RayObject):
         return f"Fn(args: {meta['args'].to_python()}; body: {meta['body'].to_python()})"
 
     def __call__(self, *args: t.Any) -> t.Any:
-        return utils.eval_obj(self.apply(*args).compile())
+        # Direct eval uses the literal `((fn …) args)` shape, which v2's
+        # evaluator accepts — so `__call__` bypasses `apply`'s env-binding
+        # and avoids leaking a `__pyfn_*` global on every direct call.
+        return utils.eval_obj(List([self, *args]))
 
 
 TypeRegistry.register(r.TYPE_LAMBDA, Fn)

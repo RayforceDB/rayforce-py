@@ -22,12 +22,12 @@ attributes which are called within the FFI module, and it is <b>highly not recom
 >>> I64(123)
 I64(123)
 
-# This is RayObject, which holds information 
-# about memory address of the underlying Rayforce object, 
+# This is RayObject, which holds information
+# about memory address of the underlying Rayforce object,
 # Not recommended to access and operate with directly,
 # unless you know what you're doing :)
 >>> I64(123).ptr
-<_rayforce_c.RayObject at 0x1095aadb0>
+<_rayforce_c.RayObject object at 0x1095aadb0>
 
 ```
 

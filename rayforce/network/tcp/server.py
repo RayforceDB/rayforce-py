@@ -4,28 +4,53 @@ import contextlib
 
 from rayforce import errors
 from rayforce.ffi import FFI
+from rayforce.network import utils
 
 
 class TCPServer:
+    """Blocking Rayforce IPC server (v2 native protocol)."""
+
+    DEFAULT_POLL_INTERVAL_MS = 100
+
     def __init__(self, port: int) -> None:
-        if not isinstance(port, int) or port < 1 or port > 65535:
-            raise errors.RayforceTCPError(f"Invalid port: {port}. Must be between 1 and 65535")
-
+        utils.validate_port(port)
         self.port = port
-        self._listener_id: int | None = None
+        self._handle: int | None = None
+        self._running = False
 
-    def listen(self) -> None:
-        self._listener_id = FFI.ipc_listen(self.port)
-        print(f"Rayforce IPC Server listening on {self.port} (id:{self._listener_id})", flush=True)
+    def listen(self, *, poll_interval_ms: int = DEFAULT_POLL_INTERVAL_MS) -> None:
+        if self._handle is not None:
+            raise errors.RayforceTCPError("Server already listening")
 
+        self._handle = FFI.ipc_server_init(self.port)
+        self._running = True
         try:
-            FFI.runtime_run()  # Start blocking event loop
-        except BaseException:
-            if self._listener_id is not None:
-                with contextlib.suppress(Exception):
-                    FFI.ipc_close_listener(self._listener_id)
-                self._listener_id = None
-            raise
+            while self._running:
+                FFI.ipc_server_poll(self._handle, poll_interval_ms)
+        finally:
+            self.close()
+
+    def stop(self) -> None:
+        self._running = False
+
+    def close(self) -> None:
+        self._running = False
+        if self._handle is None:
+            return
+        with contextlib.suppress(Exception):
+            FFI.ipc_server_destroy(self._handle)
+        self._handle = None
+
+    def __enter__(self) -> TCPServer:
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        with contextlib.suppress(Exception):
+            self.close()
 
     def __repr__(self) -> str:
-        return f"TCPServer(port={self.port})"
+        state = "listening" if self._handle is not None else "idle"
+        return f"TCPServer(port={self.port}, {state})"

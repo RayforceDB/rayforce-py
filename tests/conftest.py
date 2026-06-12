@@ -24,7 +24,7 @@ def _delete_saved_table(name: str) -> None:
     """Best-effort deletion of a saved table from the RayforceDB environment."""
     try:
         eval_str(f"![`.;enlist `{name}]")
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
 
 
@@ -33,7 +33,7 @@ def _delete_saved_table(name: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def table_name(request):
     """Generate a unique table name for the current test, cleaned up after use.
 
@@ -52,7 +52,7 @@ def table_name(request):
     _delete_saved_table(name)
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_table():
     """Factory fixture — create named tables that are automatically cleaned up.
 
@@ -86,7 +86,7 @@ def make_table():
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def employees_data():
     """Canonical employee dataset used across table operation tests.
 
@@ -102,7 +102,7 @@ def employees_data():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def small_table_data():
     """Minimal 2-row, 3-column dataset for simple operation tests.
 

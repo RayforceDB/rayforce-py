@@ -119,3 +119,34 @@ def test_ray_to_python_container():
 def test_ray_to_python_invalid():
     with pytest.raises(errors.RayforceConversionError, match="Expected RayObject"):
         ray_to_python("not a RayObject")
+
+
+# ── python_to_ray → ray_to_python round-trips per type (#L2) ──────────────────
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        True,
+        False,
+        0,
+        42,
+        -7,
+        3.14,
+        "hello",
+        dt.date(2024, 1, 1),
+        dt.time(9, 30, 0),
+        dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
+        uuid.UUID("12345678-1234-5678-1234-567812345678"),
+    ],
+)
+def test_python_to_ray_round_trip(value):
+    out = ray_to_python(python_to_ray(value))
+    back = out.value if hasattr(out, "value") else out
+    assert back == value
+
+
+def test_python_to_ray_bool_dispatches_before_int():
+    # bool is an int subclass; it must round-trip as a boolean, not an integer.
+    out = ray_to_python(python_to_ray(True))
+    assert out.value is True

@@ -1,171 +1,83 @@
 #include "rayforce_c.h"
 
-PyObject *raypy_init_vector_from_buffer(PyObject *self, PyObject *args) {
-  (void)self;
-  CHECK_MAIN_THREAD();
-
-  int type_code;
-  Py_ssize_t length;
-  PyObject *buffer_obj;
-  PyObject *null_bitmap_obj = NULL;
-
-  if (!PyArg_ParseTuple(args, "inO|O", &type_code, &length, &buffer_obj,
-                        &null_bitmap_obj))
-    return NULL;
-
-  if (length < 0) {
-    PyErr_SetString(PyExc_ValueError, "length must be non-negative");
-    return NULL;
-  }
-
-  Py_buffer buffer_view;
-  if (PyObject_GetBuffer(buffer_obj, &buffer_view, PyBUF_SIMPLE) < 0) {
-    return NULL;
-  }
-
-  size_t element_size;
-  int vector_type_code = type_code < 0 ? -type_code : type_code;
-
-  switch (vector_type_code) {
-  case TYPE_I16:
-    element_size = 2; // sizeof(int16_t)
-    break;
-  case TYPE_I32:
-    element_size = 4; // sizeof(int32_t)
-    break;
-  case TYPE_I64:
-    element_size = 8; // sizeof(int64_t)
-    break;
-  case TYPE_F64:
-    element_size = 8; // sizeof(double)
-    break;
-  case TYPE_B8:
-    element_size = 1; // sizeof(uint8_t)
-    break;
-  case TYPE_U8:
-    element_size = 1; // sizeof(uint8_t)
-    break;
-  default:
-    PyBuffer_Release(&buffer_view);
-    PyErr_SetString(PyExc_ValueError, "Unsupported type code for buffer");
-    return NULL;
-  }
-
-  size_t expected_size = (size_t)length * element_size;
-  if ((size_t)buffer_view.len < expected_size) {
-    PyBuffer_Release(&buffer_view);
-    PyErr_SetString(PyExc_ValueError, "Buffer too small for given length");
-    return NULL;
-  }
-
-  obj_p ray_obj = vector(vector_type_code, (u64_t)length);
-  if (ray_obj == NULL) {
-    PyBuffer_Release(&buffer_view);
-    PyErr_SetString(PyExc_RuntimeError, "Failed to create vector");
-    return NULL;
-  }
-
-  const void *src_data = buffer_view.buf;
-  int has_nulls = (null_bitmap_obj != NULL && null_bitmap_obj != Py_None);
-
-  Py_buffer null_bitmap_view = {0};
-  if (has_nulls) {
-    if (PyObject_GetBuffer(null_bitmap_obj, &null_bitmap_view, PyBUF_SIMPLE) <
-        0) {
-      drop_obj(ray_obj);
-      PyBuffer_Release(&buffer_view);
-      return NULL;
-    }
-    size_t min_bitmap_size = ((size_t)length + 7) / 8;
-    if ((size_t)null_bitmap_view.len < min_bitmap_size) {
-      drop_obj(ray_obj);
-      PyBuffer_Release(&null_bitmap_view);
-      PyBuffer_Release(&buffer_view);
-      PyErr_SetString(PyExc_ValueError, "Null bitmap too small");
-      return NULL;
-    }
-  }
-
+/* Apply an Arrow validity bitmap (1=valid, 0=null) to `vec` by setting null
+ * bits for entries whose bitmap position is zero. */
+static void apply_null_bitmap(ray_t *vec, const unsigned char *bitmap,
+                              Py_ssize_t length) {
   for (Py_ssize_t i = 0; i < length; i++) {
-    obj_p item = NULL;
-
-    // Check null bitmap if provided
-    if (has_nulls) {
-      size_t byte_idx = (size_t)i / 8;
-      size_t bit_idx = (size_t)i % 8;
-      const unsigned char *bitmap_bytes =
-          (const unsigned char *)null_bitmap_view.buf;
-      if (!(bitmap_bytes[byte_idx] & (1 << bit_idx))) {
-        continue;
-      }
-    }
-
-    switch (vector_type_code) {
-    case TYPE_I16: {
-      const short *data = (const short *)src_data;
-      item = i16(data[i]);
-      break;
-    }
-    case TYPE_I32: {
-      const int *data = (const int *)src_data;
-      item = i32(data[i]);
-      break;
-    }
-    case TYPE_I64: {
-      const long long *data = (const long long *)src_data;
-      item = i64(data[i]);
-      break;
-    }
-    case TYPE_F64: {
-      const double *data = (const double *)src_data;
-      item = f64(data[i]);
-      break;
-    }
-    case TYPE_B8: {
-      const unsigned char *data = (const unsigned char *)src_data;
-      item = b8(data[i] ? 1 : 0);
-      break;
-    }
-    case TYPE_U8: {
-      const unsigned char *data = (const unsigned char *)src_data;
-      item = u8(data[i]);
-      break;
-    }
-    default:
-      drop_obj(ray_obj);
-      if (has_nulls)
-        PyBuffer_Release(&null_bitmap_view);
-      PyBuffer_Release(&buffer_view);
-      PyErr_SetString(PyExc_ValueError, "Unsupported type code");
-      return NULL;
-    }
-
-    if (item == NULL) {
-      drop_obj(ray_obj);
-      if (has_nulls)
-        PyBuffer_Release(&null_bitmap_view);
-      PyBuffer_Release(&buffer_view);
-      PyErr_SetString(PyExc_RuntimeError, "Failed to create element");
-      return NULL;
-    }
-
-    if (ins_obj(&ray_obj, (i64_t)i, item) == NULL) {
-      drop_obj(item);
-      drop_obj(ray_obj);
-      if (has_nulls)
-        PyBuffer_Release(&null_bitmap_view);
-      PyBuffer_Release(&buffer_view);
-      PyErr_SetString(PyExc_RuntimeError, "Failed to insert element");
-      return NULL;
-    }
+    if (!(bitmap[(size_t)i / 8] & (1u << ((size_t)i % 8))))
+      ray_vec_set_null(vec, i, true);
   }
+}
 
-  PyBuffer_Release(&buffer_view);
-  if (has_nulls) {
-    PyBuffer_Release(&null_bitmap_view);
+/* Pull Arrow's (null_bitmap, offsets, data) trio of buffers from a PyArrow
+ * Array's `buffers()` sequence. On success returns 0 with `null_bitmap_py`
+ * owned by the caller (may be Py_None) and the two Py_buffers populated.
+ * On failure returns -1 with PyErr set and nothing to clean up. */
+static int acquire_arrow_string_buffers(PyObject *buffers,
+                                        PyObject **null_bitmap_py,
+                                        Py_buffer *offsets_view,
+                                        Py_buffer *data_view) {
+  PyObject *offsets_py = PySequence_GetItem(buffers, 1);
+  PyObject *data_py = PySequence_GetItem(buffers, 2);
+  *null_bitmap_py = PySequence_GetItem(buffers, 0);
+  if (offsets_py == NULL || data_py == NULL) {
+    Py_XDECREF(*null_bitmap_py);
+    Py_XDECREF(offsets_py);
+    Py_XDECREF(data_py);
+    return -1;
   }
+  if (PyObject_GetBuffer(offsets_py, offsets_view, PyBUF_SIMPLE) < 0) {
+    Py_DECREF(offsets_py);
+    Py_DECREF(data_py);
+    Py_XDECREF(*null_bitmap_py);
+    return -1;
+  }
+  Py_DECREF(offsets_py);
+  if (PyObject_GetBuffer(data_py, data_view, PyBUF_SIMPLE) < 0) {
+    PyBuffer_Release(offsets_view);
+    Py_DECREF(data_py);
+    Py_XDECREF(*null_bitmap_py);
+    return -1;
+  }
+  Py_DECREF(data_py);
+  return 0;
+}
 
-  return raypy_wrap_ray_object(ray_obj);
+/* Pull Arrow's (null_bitmap, data) pair from a PyArrow Array's `buffers()`
+ * sequence — fixed-width numeric/boolean form. Mirrors
+ * acquire_arrow_string_buffers; same ownership contract. */
+static int acquire_arrow_data_buffer(PyObject *buffers,
+                                     PyObject **null_bitmap_py,
+                                     Py_buffer *data_view) {
+  PyObject *data_py = PySequence_GetItem(buffers, 1);
+  *null_bitmap_py = PySequence_GetItem(buffers, 0);
+  if (data_py == NULL) {
+    Py_XDECREF(*null_bitmap_py);
+    return -1;
+  }
+  if (PyObject_GetBuffer(data_py, data_view, PyBUF_SIMPLE) < 0) {
+    Py_DECREF(data_py);
+    Py_XDECREF(*null_bitmap_py);
+    return -1;
+  }
+  Py_DECREF(data_py);
+  return 0;
+}
+
+/* Apply an optional Arrow validity bitmap held in a PyObject. No-op if py
+ * is NULL or Py_None. */
+static void apply_optional_null_bitmap_py(ray_t *vec, PyObject *py,
+                                          Py_ssize_t length) {
+  if (py == NULL || py == Py_None)
+    return;
+  Py_buffer view;
+  if (PyObject_GetBuffer(py, &view, PyBUF_SIMPLE) < 0) {
+    PyErr_Clear();
+    return;
+  }
+  apply_null_bitmap(vec, (const unsigned char *)view.buf, length);
+  PyBuffer_Release(&view);
 }
 
 // Bulk memcpy from raw buffer (numpy arrays, bytes, etc.)
@@ -185,10 +97,13 @@ PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args) {
     return NULL;
   }
 
+  int vector_type_code = ray_abs_type(type_code);
+
   if (length == 0) {
-    int vector_type_code = type_code < 0 ? -type_code : type_code;
-    obj_p ray_obj = vector(vector_type_code, 0);
-    if (ray_obj == NULL) {
+    ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, 0);
+    if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
+      if (ray_obj)
+        ray_release(ray_obj);
       PyErr_SetString(PyExc_RuntimeError, "Failed to create empty vector");
       return NULL;
     }
@@ -200,28 +115,8 @@ PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  int vector_type_code = type_code < 0 ? -type_code : type_code;
-  size_t element_size;
-
-  switch (vector_type_code) {
-  case TYPE_B8:
-  case TYPE_U8:
-    element_size = 1;
-    break;
-  case TYPE_I16:
-    element_size = 2;
-    break;
-  case TYPE_I32:
-  case TYPE_DATE:
-  case TYPE_TIME:
-    element_size = 4;
-    break;
-  case TYPE_I64:
-  case TYPE_F64:
-  case TYPE_TIMESTAMP:
-    element_size = 8;
-    break;
-  default:
+  size_t element_size = ray_scalar_elem_size((int8_t)vector_type_code);
+  if (element_size == 0 || vector_type_code == RAY_GUID) {
     PyBuffer_Release(&buffer_view);
     PyErr_SetString(PyExc_ValueError,
                     "Unsupported type code for raw buffer init");
@@ -235,44 +130,17 @@ PyObject *raypy_init_vector_from_raw_buffer(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  obj_p ray_obj = vector(vector_type_code, (u64_t)length);
-  if (ray_obj == NULL) {
+  ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
+  if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
+    if (ray_obj)
+      ray_release(ray_obj);
     PyBuffer_Release(&buffer_view);
     PyErr_SetString(PyExc_RuntimeError, "Failed to create vector");
     return NULL;
   }
 
-  void *dst_data = NULL;
-  switch (vector_type_code) {
-  case TYPE_B8:
-    dst_data = AS_B8(ray_obj);
-    break;
-  case TYPE_U8:
-    dst_data = AS_U8(ray_obj);
-    break;
-  case TYPE_I16:
-    dst_data = AS_I16(ray_obj);
-    break;
-  case TYPE_I32:
-  case TYPE_DATE:
-  case TYPE_TIME:
-    dst_data = AS_I32(ray_obj);
-    break;
-  case TYPE_I64:
-  case TYPE_TIMESTAMP:
-    dst_data = AS_I64(ray_obj);
-    break;
-  case TYPE_F64:
-    dst_data = AS_F64(ray_obj);
-    break;
-  default:
-    drop_obj(ray_obj);
-    PyBuffer_Release(&buffer_view);
-    PyErr_SetString(PyExc_ValueError, "Unsupported type code for bulk copy");
-    return NULL;
-  }
-
-  memcpy(dst_data, buffer_view.buf, expected_size);
+  memcpy(ray_data(ray_obj), buffer_view.buf, expected_size);
+  ray_obj->len = length;
 
   PyBuffer_Release(&buffer_view);
   return raypy_wrap_ray_object(ray_obj);
@@ -289,7 +157,7 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "iO", &type_code, &arrow_array_obj))
     return NULL;
 
-  int vector_type_code = type_code < 0 ? -type_code : type_code;
+  int vector_type_code = ray_abs_type(type_code);
 
   // Get buffers() method from PyArrow Array
   PyObject *buffers_method = PyObject_GetAttrString(arrow_array_obj, "buffers");
@@ -314,363 +182,172 @@ PyObject *raypy_init_vector_from_arrow_array(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  if (vector_type_code == TYPE_SYMBOL) {
+  if (vector_type_code == RAY_SYM) {
     if (num_buffers < 3) {
       Py_DECREF(buffers);
       PyErr_SetString(PyExc_ValueError, "Invalid Arrow string buffer");
       return NULL;
     }
-
     Py_ssize_t length = PyObject_Length(arrow_array_obj);
     if (length < 0) {
       Py_DECREF(buffers);
       return NULL;
     }
 
-    // buffers[0] = null bitmap, buffers[1] = offsets, buffers[2] = data
-    PyObject *null_bitmap_py = PySequence_GetItem(buffers, 0);
-    PyObject *offsets_buffer_py = PySequence_GetItem(buffers, 1);
-    PyObject *data_buffer_py = PySequence_GetItem(buffers, 2);
+    PyObject *null_bitmap_py;
+    Py_buffer offsets_view, data_view;
+    int rc = acquire_arrow_string_buffers(buffers, &null_bitmap_py,
+                                          &offsets_view, &data_view);
     Py_DECREF(buffers);
-
-    if (offsets_buffer_py == NULL || data_buffer_py == NULL) {
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      if (offsets_buffer_py != NULL)
-        Py_DECREF(offsets_buffer_py);
-      if (data_buffer_py != NULL)
-        Py_DECREF(data_buffer_py);
+    if (rc < 0)
       return NULL;
-    }
 
-    Py_buffer offsets_buffer_view;
-    if (PyObject_GetBuffer(offsets_buffer_py, &offsets_buffer_view,
-                           PyBUF_SIMPLE) < 0) {
-      Py_DECREF(offsets_buffer_py);
-      Py_DECREF(data_buffer_py);
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      return NULL;
-    }
-    Py_DECREF(offsets_buffer_py);
-
-    Py_buffer data_buffer_view;
-    if (PyObject_GetBuffer(data_buffer_py, &data_buffer_view, PyBUF_SIMPLE) <
-        0) {
-      PyBuffer_Release(&offsets_buffer_view);
-      Py_DECREF(data_buffer_py);
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      return NULL;
-    }
-    Py_DECREF(data_buffer_py);
-
-    const int32_t *offsets = (const int32_t *)offsets_buffer_view.buf;
-    const char *data = (const char *)data_buffer_view.buf;
-
-    obj_p ray_obj = vector(TYPE_SYMBOL, (u64_t)length);
-
-    if (ray_obj == NULL) {
-      PyBuffer_Release(&offsets_buffer_view);
-      PyBuffer_Release(&data_buffer_view);
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
+    const int32_t *offsets = (const int32_t *)offsets_view.buf;
+    const char *data = (const char *)data_view.buf;
+    ray_t *ray_obj = ray_sym_vec_new(RAY_SYM_W64, (int64_t)length);
+    if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
+      if (ray_obj)
+        ray_release(ray_obj);
+      PyBuffer_Release(&offsets_view);
+      PyBuffer_Release(&data_view);
+      Py_XDECREF(null_bitmap_py);
       PyErr_SetString(PyExc_RuntimeError, "Failed to create vector");
       return NULL;
     }
 
+    int64_t *ids = (int64_t *)ray_data(ray_obj);
     for (Py_ssize_t i = 0; i < length; i++) {
-      int32_t start = offsets[i];
-      int32_t end = offsets[i + 1];
-      int32_t str_len = end - start;
-
-      obj_p sym = symbol(data + start, (i64_t)str_len);
-      if (sym == NULL) {
-        drop_obj(ray_obj);
-        PyBuffer_Release(&offsets_buffer_view);
-        PyBuffer_Release(&data_buffer_view);
-        if (null_bitmap_py != NULL)
-          Py_DECREF(null_bitmap_py);
+      int64_t id = ray_sym_intern(data + offsets[i],
+                                  (size_t)(offsets[i + 1] - offsets[i]));
+      if (id < 0) {
+        ray_release(ray_obj);
+        PyBuffer_Release(&offsets_view);
+        PyBuffer_Release(&data_view);
+        Py_XDECREF(null_bitmap_py);
         PyErr_SetString(PyExc_RuntimeError,
-                        "Limit of 2^24 unique symbols reached.");
+                        "Failed to intern symbol from arrow data");
         return NULL;
       }
-
-      if (ins_obj(&ray_obj, (i64_t)i, sym) == NULL) {
-        drop_obj(sym);
-        drop_obj(ray_obj);
-        PyBuffer_Release(&offsets_buffer_view);
-        PyBuffer_Release(&data_buffer_view);
-        if (null_bitmap_py != NULL)
-          Py_DECREF(null_bitmap_py);
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Failed to insert symbol into vector");
-        return NULL;
-      }
+      ids[i] = id;
     }
+    ray_obj->len = length;
 
-    PyBuffer_Release(&offsets_buffer_view);
-    PyBuffer_Release(&data_buffer_view);
-    if (null_bitmap_py != NULL)
-      Py_DECREF(null_bitmap_py);
-
+    apply_optional_null_bitmap_py(ray_obj, null_bitmap_py, length);
+    PyBuffer_Release(&offsets_view);
+    PyBuffer_Release(&data_view);
+    Py_XDECREF(null_bitmap_py);
     return raypy_wrap_ray_object(ray_obj);
   }
 
-  if (vector_type_code == TYPE_C8) {
+  if (vector_type_code == RAY_STR) {
     if (num_buffers < 3) {
       Py_DECREF(buffers);
       PyErr_SetString(PyExc_ValueError, "Invalid Arrow string buffer");
       return NULL;
     }
-
-    // Get length first
     Py_ssize_t length = PyObject_Length(arrow_array_obj);
     if (length < 0) {
       Py_DECREF(buffers);
       return NULL;
     }
 
-    // buffers[0] = null bitmap, buffers[1] = offsets, buffers[2] = data
-    PyObject *null_bitmap_py = PySequence_GetItem(buffers, 0);
-    PyObject *offsets_buffer_py = PySequence_GetItem(buffers, 1);
-    PyObject *data_buffer_py = PySequence_GetItem(buffers, 2);
+    PyObject *null_bitmap_py;
+    Py_buffer offsets_view, data_view;
+    int rc = acquire_arrow_string_buffers(buffers, &null_bitmap_py,
+                                          &offsets_view, &data_view);
     Py_DECREF(buffers);
+    if (rc < 0)
+      return NULL;
 
-    if (offsets_buffer_py == NULL || data_buffer_py == NULL) {
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      if (offsets_buffer_py != NULL)
-        Py_DECREF(offsets_buffer_py);
-      if (data_buffer_py != NULL)
-        Py_DECREF(data_buffer_py);
+    const int32_t *offsets = (const int32_t *)offsets_view.buf;
+    const char *data = (const char *)data_view.buf;
+    ray_t *ray_obj = ray_vec_new(RAY_STR, (int64_t)length);
+    if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
+      if (ray_obj)
+        ray_release(ray_obj);
+      PyBuffer_Release(&offsets_view);
+      PyBuffer_Release(&data_view);
+      Py_XDECREF(null_bitmap_py);
+      PyErr_SetString(PyExc_RuntimeError, "Failed to create string vector");
       return NULL;
     }
 
-    Py_buffer offsets_buffer_view;
-    if (PyObject_GetBuffer(offsets_buffer_py, &offsets_buffer_view,
-                           PyBUF_SIMPLE) < 0) {
-      Py_DECREF(offsets_buffer_py);
-      Py_DECREF(data_buffer_py);
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      return NULL;
-    }
-    Py_DECREF(offsets_buffer_py);
-
-    Py_buffer data_buffer_view;
-    if (PyObject_GetBuffer(data_buffer_py, &data_buffer_view, PyBUF_SIMPLE) <
-        0) {
-      PyBuffer_Release(&offsets_buffer_view);
-      Py_DECREF(data_buffer_py);
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      return NULL;
-    }
-    Py_DECREF(data_buffer_py);
-
-    // Arrow offsets are int32 or int64, but typically int32 for strings
-    // offsets has (length + 1) elements: offsets[i] to offsets[i+1] defines
-    // string i
-    const int32_t *offsets = (const int32_t *)offsets_buffer_view.buf;
-    const char *data = (const char *)data_buffer_view.buf;
-
-    obj_p ray_obj = vector(TYPE_LIST, (i64_t)length);
-
-    if (ray_obj == NULL) {
-      PyBuffer_Release(&offsets_buffer_view);
-      PyBuffer_Release(&data_buffer_view);
-      if (null_bitmap_py != NULL)
-        Py_DECREF(null_bitmap_py);
-      PyErr_SetString(PyExc_RuntimeError, "Failed to create list");
-      return NULL;
-    }
-
-    // Direct access to list elements via AS_LIST macro
-    obj_p *list_ptr = AS_LIST(ray_obj);
     for (Py_ssize_t i = 0; i < length; i++) {
-      int32_t str_len = offsets[i + 1] - offsets[i];
-
-      obj_p str_obj = C8((i64_t)str_len);
-      if (str_obj == NULL) {
-        for (Py_ssize_t j = 0; j < i; j++) {
-          drop_obj(list_ptr[j]);
-        }
-        drop_obj(ray_obj);
-        PyBuffer_Release(&offsets_buffer_view);
-        PyBuffer_Release(&data_buffer_view);
-        if (null_bitmap_py != NULL)
-          Py_DECREF(null_bitmap_py);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to create string object");
+      ray_obj = ray_str_vec_append(ray_obj, data + offsets[i],
+                                   (size_t)(offsets[i + 1] - offsets[i]));
+      if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
+        if (ray_obj)
+          ray_release(ray_obj);
+        PyBuffer_Release(&offsets_view);
+        PyBuffer_Release(&data_view);
+        Py_XDECREF(null_bitmap_py);
+        PyErr_SetString(PyExc_RuntimeError, "Failed to append string");
         return NULL;
       }
-      memcpy(AS_C8(str_obj), data + offsets[i], str_len);
-
-      // Direct assignment to pre-allocated list
-      list_ptr[i] = str_obj;
     }
 
-    PyBuffer_Release(&offsets_buffer_view);
-    PyBuffer_Release(&data_buffer_view);
-    if (null_bitmap_py != NULL)
-      Py_DECREF(null_bitmap_py);
-
+    apply_optional_null_bitmap_py(ray_obj, null_bitmap_py, length);
+    PyBuffer_Release(&offsets_view);
+    PyBuffer_Release(&data_view);
+    Py_XDECREF(null_bitmap_py);
     return raypy_wrap_ray_object(ray_obj);
-  }
-
-  PyObject *null_bitmap_py = PySequence_GetItem(buffers, 0);
-  PyObject *data_buffer_py = PySequence_GetItem(buffers, 1);
-  Py_DECREF(buffers);
-
-  if (data_buffer_py == NULL) {
-    if (null_bitmap_py != NULL)
-      Py_DECREF(null_bitmap_py);
-    return NULL;
   }
 
   Py_ssize_t length = PyObject_Length(arrow_array_obj);
   if (length < 0) {
-    Py_DECREF(data_buffer_py);
-    if (null_bitmap_py != NULL)
-      Py_DECREF(null_bitmap_py);
+    Py_DECREF(buffers);
     return NULL;
   }
 
-  Py_buffer data_buffer_view;
-  if (PyObject_GetBuffer(data_buffer_py, &data_buffer_view, PyBUF_SIMPLE) < 0) {
-    Py_DECREF(data_buffer_py);
-    if (null_bitmap_py != NULL)
-      Py_DECREF(null_bitmap_py);
+  PyObject *null_bitmap_py;
+  Py_buffer data_view;
+  int rc = acquire_arrow_data_buffer(buffers, &null_bitmap_py, &data_view);
+  Py_DECREF(buffers);
+  if (rc < 0)
     return NULL;
-  }
-  Py_DECREF(data_buffer_py);
 
-  Py_buffer null_bitmap_view = {0};
-  int has_nulls = (null_bitmap_py != NULL && null_bitmap_py != Py_None);
-  if (has_nulls) {
-    if (PyObject_GetBuffer(null_bitmap_py, &null_bitmap_view, PyBUF_SIMPLE) <
-        0) {
-      PyBuffer_Release(&data_buffer_view);
-      Py_DECREF(null_bitmap_py);
-      return NULL;
-    }
-    Py_DECREF(null_bitmap_py);
-  }
-
-  size_t element_size;
-  switch (vector_type_code) {
-  case TYPE_I16:
-    element_size = 2;
-    break;
-  case TYPE_I32:
-    element_size = 4;
-    break;
-  case TYPE_I64:
-    element_size = 8;
-    break;
-  case TYPE_F64:
-    element_size = 8;
-    break;
-  case TYPE_B8:
-    element_size = 1;
-    break;
-  case TYPE_U8:
-    element_size = 1;
-    break;
-  case TYPE_TIMESTAMP:
-    element_size = 8;
-    break;
-  default:
-    PyBuffer_Release(&data_buffer_view);
-    if (has_nulls)
-      PyBuffer_Release(&null_bitmap_view);
+  size_t element_size = ray_scalar_elem_size((int8_t)vector_type_code);
+  if (element_size == 0 || vector_type_code == RAY_GUID) {
+    PyBuffer_Release(&data_view);
+    Py_XDECREF(null_bitmap_py);
     PyErr_SetString(PyExc_ValueError,
                     "Unsupported type code for Arrow array conversion");
     return NULL;
   }
 
-  int is_boolean_bitmap = (vector_type_code == TYPE_B8);
-  size_t expected_size;
+  int is_boolean_bitmap = (vector_type_code == RAY_BOOL);
+  size_t expected_size = is_boolean_bitmap ? ((size_t)length + 7) / 8
+                                           : (size_t)length * element_size;
 
-  if (is_boolean_bitmap) {
-    expected_size = ((size_t)length + 7) / 8;
-  } else {
-    expected_size = (size_t)length * element_size;
-  }
-
-  if (!is_boolean_bitmap && (size_t)data_buffer_view.len < expected_size) {
-    PyBuffer_Release(&data_buffer_view);
-    if (has_nulls)
-      PyBuffer_Release(&null_bitmap_view);
+  if ((size_t)data_view.len < expected_size) {
+    PyBuffer_Release(&data_view);
+    Py_XDECREF(null_bitmap_py);
     PyErr_SetString(PyExc_ValueError, "Arrow data buffer too small");
     return NULL;
-  } else if (is_boolean_bitmap &&
-             (size_t)data_buffer_view.len < expected_size) {
-    PyBuffer_Release(&data_buffer_view);
-    if (has_nulls)
-      PyBuffer_Release(&null_bitmap_view);
-    PyErr_SetString(PyExc_ValueError, "Arrow boolean bitmap too small");
-    return NULL;
   }
 
-  obj_p ray_obj = vector(vector_type_code, (u64_t)length);
-  if (ray_obj == NULL) {
-    PyBuffer_Release(&data_buffer_view);
-    if (has_nulls)
-      PyBuffer_Release(&null_bitmap_view);
+  ray_t *ray_obj = ray_vec_new((int8_t)vector_type_code, (int64_t)length);
+  if (ray_obj == NULL || RAY_IS_ERR(ray_obj)) {
+    if (ray_obj)
+      ray_release(ray_obj);
+    PyBuffer_Release(&data_view);
+    Py_XDECREF(null_bitmap_py);
     PyErr_SetString(PyExc_RuntimeError, "Failed to create vector");
     return NULL;
   }
 
-  const void *src_data = data_buffer_view.buf;
-  void *dst_data = NULL;
-
-  switch (vector_type_code) {
-  case TYPE_I16:
-    dst_data = AS_I16(ray_obj);
-    break;
-  case TYPE_I32:
-    dst_data = AS_I32(ray_obj);
-    break;
-  case TYPE_I64:
-    dst_data = AS_I64(ray_obj);
-    break;
-  case TYPE_F64:
-    dst_data = AS_F64(ray_obj);
-    break;
-  case TYPE_B8:
-    dst_data = AS_B8(ray_obj);
-    break;
-  case TYPE_U8:
-    dst_data = AS_U8(ray_obj);
-    break;
-  case TYPE_TIMESTAMP:
-    dst_data = AS_TIMESTAMP(ray_obj);
-    break;
-  default:
-    drop_obj(ray_obj);
-    if (has_nulls)
-      PyBuffer_Release(&null_bitmap_view);
-    PyBuffer_Release(&data_buffer_view);
-    PyErr_SetString(PyExc_ValueError, "Unsupported type code for bulk copy");
-    return NULL;
-  }
-
   if (is_boolean_bitmap) {
-    const unsigned char *bitmap = (const unsigned char *)src_data;
-    unsigned char *bytes = (unsigned char *)dst_data;
-    for (Py_ssize_t i = 0; i < length; i++) {
-      size_t byte_idx = (size_t)i / 8;
-      size_t bit_idx = (size_t)i % 8;
-      bytes[i] = (bitmap[byte_idx] >> bit_idx) & 1;
-    }
+    const unsigned char *bitmap = (const unsigned char *)data_view.buf;
+    unsigned char *bytes = (unsigned char *)ray_data(ray_obj);
+    for (Py_ssize_t i = 0; i < length; i++)
+      bytes[i] = (bitmap[(size_t)i / 8] >> ((size_t)i % 8)) & 1u;
   } else {
-    memcpy(dst_data, src_data, expected_size);
+    memcpy(ray_data(ray_obj), data_view.buf, expected_size);
   }
+  ray_obj->len = length;
 
-  PyBuffer_Release(&data_buffer_view);
-  if (has_nulls)
-    PyBuffer_Release(&null_bitmap_view);
-
+  apply_optional_null_bitmap_py(ray_obj, null_bitmap_py, length);
+  PyBuffer_Release(&data_view);
+  Py_XDECREF(null_bitmap_py);
   return raypy_wrap_ray_object(ray_obj);
 }

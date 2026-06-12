@@ -23,15 +23,15 @@ Functions can be called directly with scalar values:
 ```python
 >>> square = Fn("(fn [x] (* x x))")
 >>> square(5)
-25
+I64(25)
 >>> square(10)
-100
+I64(100)
 
 >>> add = Fn("(fn [x y] (+ x y))")
 >>> add(5, 3)
-8
+I64(8)
 >>> add(10, 20)
-30
+I64(30)
 ```
 
 ## Applying Functions to Columns

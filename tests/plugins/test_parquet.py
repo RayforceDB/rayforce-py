@@ -362,3 +362,55 @@ def test_compression_brotli(tmp_path: Path) -> None:
     table = load_parquet(str(path))
     assert_contains_columns(table, ["id", "name", "score"])
     assert len(table) == 3
+
+
+# ── int8 signedness + date32/time32 (#M10) ───────────────────────────────────
+
+
+def test_int8_negatives_preserved(tmp_path: Path) -> None:
+    """Signed int8 must widen to I16 so negatives don't wrap (was mapped to U8)."""
+    pa_table = pa.table({"i8_col": pa.array([-128, -1, 0, 1, 127], type=pa.int8())})
+    path = tmp_path / "int8.parquet"
+    pq.write_table(pa_table, str(path))
+
+    table = load_parquet(str(path))
+    col = table.at_column("i8_col")
+    assert [col[i].value for i in range(len(table))] == [-128, -1, 0, 1, 127]
+
+
+def test_uint8_still_unsigned(tmp_path: Path) -> None:
+    pa_table = pa.table({"u8_col": pa.array([0, 1, 200, 255], type=pa.uint8())})
+    path = tmp_path / "uint8.parquet"
+    pq.write_table(pa_table, str(path))
+
+    table = load_parquet(str(path))
+    col = table.at_column("u8_col")
+    assert [col[i].value for i in range(len(table))] == [0, 1, 200, 255]
+
+
+def test_date32_column_loads(tmp_path: Path) -> None:
+    import datetime as dt
+
+    pa_table = pa.table(
+        {"d": pa.array([dt.date(2024, 1, 1), dt.date(2024, 6, 15)], type=pa.date32())}
+    )
+    path = tmp_path / "date32.parquet"
+    pq.write_table(pa_table, str(path))
+
+    table = load_parquet(str(path))
+    assert_contains_columns(table, ["d"])
+    assert len(table) == 2
+
+
+def test_time32_column_loads(tmp_path: Path) -> None:
+    import datetime as dt
+
+    pa_table = pa.table(
+        {"t": pa.array([dt.time(9, 0, 0), dt.time(17, 30, 0)], type=pa.time32("ms"))}
+    )
+    path = tmp_path / "time32.parquet"
+    pq.write_table(pa_table, str(path))
+
+    table = load_parquet(str(path))
+    assert_contains_columns(table, ["t"])
+    assert len(table) == 2

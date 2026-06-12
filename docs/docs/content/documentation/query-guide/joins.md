@@ -34,12 +34,13 @@ Inner join combines two tables based on matching values in specified columns. On
 
 >>> result = trades.inner_join(quotes, on="sym").execute()
 ┌──────┬──────────────┬───────┬─────┬─────┐
-│ sym  │ time         │ price │ bid │ ask │
+│ sym  │     time     │ price │ bid │ ask │
+│ SYM  │     TIME     │  I64  │ I64 │ I64 │
 ├──────┼──────────────┼───────┼─────┼─────┤
 │ AAPL │ 09:00:00.100 │ 100   │ 50  │ 75  │
-│ AAPL │ 09:00:00.100 │ 100   │ 50  │ 75  │
-│ GOOG │ 09:00:00.200 │ 200   │ 100 │ 150 │
-│ GOOG │ 09:00:00.200 │ 200   │ 100 │ 150 │
+│ AAPL │ 09:00:00.200 │ 200   │ 50  │ 75  │
+│ GOOG │ 09:00:00.150 │ 300   │ 100 │ 150 │
+│ GOOG │ 09:00:00.250 │ 400   │ 100 │ 150 │
 ├──────┴──────────────┴───────┴─────┴─────┤
 │ 4 rows (4 shown) 5 columns (5 shown)    │
 └─────────────────────────────────────────┘
@@ -175,12 +176,15 @@ Window join matches records on specified columns and aggregates values from anot
         min_bid=Column("bid").min(),
         max_ask=Column("ask").max(),
     ).execute()
-┌──────┬──────────────┬────────┬─────────┬─────────┐
-│ sym  │ time         │ price  │ min_bid │ max_ask │
-├──────┼──────────────┼────────┼─────────┼─────────┤
-│ AAPL │ 09:00:00.100 │ 150.00 │ 99.00   │ 111.00  │
-│ GOOG │ 09:00:00.100 │ 200.00 │ 199.00  │ 211.00  │
-└──────┴──────────────┴────────┴─────────┴─────────┘
+┌──────┬──────────────┬───────┬─────────┬─────────┐
+│ sym  │     time     │ price │ min_bid │ max_ask │
+│ SYM  │     TIME     │  F64  │   F64   │   F64   │
+├──────┼──────────────┼───────┼─────────┼─────────┤
+│ AAPL │ 09:00:00.100 │ 150.0 │ 99.0    │ 111.0   │
+│ GOOG │ 09:00:00.100 │ 200.0 │ 199.0   │ 211.0   │
+├──────┴──────────────┴───────┴─────────┴─────────┤
+│ 2 rows (2 shown) 5 columns (5 shown)            │
+└─────────────────────────────────────────────────┘
 ```
 !!! note ""
     For the AAPL trade at `09:00:00.100`, the window `[090ms, 110ms]` captures quotes at 90ms, 95ms, and 105ms, aggregating them to find `min_bid=99.0` and `max_ask=111.0`.

@@ -10,7 +10,7 @@ from rayforce import F64, I64, Symbol, Table, Vector
 pytestmark = pytest.mark.benchmark
 
 
-@pytest.fixture()
+@pytest.fixture
 def large_table():
     """Create a table with 10,000 rows for benchmarking."""
     num_rows = 10_000

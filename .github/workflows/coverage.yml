@@ -2,15 +2,12 @@ name: Coverage
 
 on:
   push:
-    branches: [master]
+    branches: [master, rayforce2]
 
 jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-
-    env:
-      RAYFORCE_GITHUB: "https://github.com/RayforceDB/rayforce.git"
 
     steps:
       - name: Checkout repository

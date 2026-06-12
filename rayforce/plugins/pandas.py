@@ -11,39 +11,54 @@ if t.TYPE_CHECKING:
     from rayforce.types.base import RayObject
 
 
+_PANDAS_DTYPE_TO_RAY: dict[str, type[RayObject]] = {
+    "bool": B8,
+    "boolean": B8,
+    "bool_": B8,
+    "bool8": B8,
+    "int8": I16,
+    "int16": I16,
+    "int32": I32,
+    "int": I32,
+    "int64": I64,
+    "int_": I64,
+    "long": I64,
+    "float32": F64,
+    "float": F64,
+    "float_": F64,
+    "float64": F64,
+    "double": F64,
+    "object": Symbol,
+    "string": Symbol,
+    "str": Symbol,
+    "str[pyarrow]": Symbol,
+    "str[python]": Symbol,
+    "datetime64[ns]": Timestamp,
+    "datetime64": Timestamp,
+    "datetime": Timestamp,
+    "timestamp": Timestamp,
+    "date": Date,
+}
+
+# numpy dtype.kind → ray type, used when string lookup fails.
+_PANDAS_DTYPE_KIND_TO_RAY: dict[str, type[RayObject]] = {
+    "b": B8,
+    "i": I64,
+    "f": F64,
+    "O": Symbol,
+    "M": Timestamp,
+}
+
+
 def _infer_ray_type_from_pandas_dtype(dtype: t.Any) -> type[RayObject]:
-    dtype_str = str(dtype).lower()
-
-    if dtype_str in ("bool", "boolean", "bool_", "bool8"):
-        return B8
-
-    if dtype_str in ("int8", "int16"):
-        return I16
-    if dtype_str in ("int32", "int"):
-        return I32
-    if dtype_str in ("int64", "int_", "long"):
-        return I64
-    if dtype_str in ("float32", "float", "float_", "float64", "double"):
-        return F64
-    if dtype_str in ("object", "string", "str", "str[pyarrow]", "str[python]"):
-        return Symbol
-    if dtype_str in ("datetime64[ns]", "datetime64", "datetime", "timestamp"):
-        return Timestamp
-    if dtype_str in ("date"):
-        return Date
-
-    if hasattr(dtype, "kind"):
-        if dtype.kind == "b":
-            return B8
-        if dtype.kind == "i":
-            return I64
-        if dtype.kind == "f":
-            return F64
-        if dtype.kind == "O":
-            return Symbol
-        if dtype.kind == "M":
-            return Timestamp
-
+    ray_type = _PANDAS_DTYPE_TO_RAY.get(str(dtype).lower())
+    if ray_type is not None:
+        return ray_type
+    kind = getattr(dtype, "kind", None)
+    if kind is not None:
+        ray_type = _PANDAS_DTYPE_KIND_TO_RAY.get(kind)
+        if ray_type is not None:
+            return ray_type
     return Symbol
 
 

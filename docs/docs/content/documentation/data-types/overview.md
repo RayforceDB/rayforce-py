@@ -19,21 +19,21 @@ Rayforce-Py type system is built around two main categories:
 | [I16](integers.md) | 16-bit signed integer | -3 |
 | [I32](integers.md) | 32-bit signed integer | -4 |
 | [I64](integers.md) | 64-bit signed integer | -5 |
-| [F64](float.md) | 64-bit floating point | -10 |
+| [F32](float.md) | 32-bit floating point | -6 |
+| [F64](float.md) | 64-bit floating point | -7 |
 | [U8](unsigned-integer.md) | 8-bit unsigned integer | -2 |
-| [C8](char.md) | Single character | -12 |
-| [Symbol](symbol.md) | Symbolic identifier | -6 |
+| [Symbol](symbol.md) | Symbolic identifier | -12 |
 | [B8](boolean.md) | Boolean value | -1 |
-| [Date](temporal.md) | Calendar date | -7 |
-| [Time](temporal.md) | Time of day | -8 |
-| [Timestamp](temporal.md) | Date and time | -9 |
+| [Date](temporal.md) | Calendar date | -8 |
+| [Time](temporal.md) | Time of day | -9 |
+| [Timestamp](temporal.md) | Date and time | -10 |
+| [GUID](guid.md) | Globally unique identifier | -11 |
+| [String](string.md) | Character sequence | -13 |
 | [Vector](vector.md) | Homogeneous collection | Variable |
 | [List](list.md) | Heterogeneous collection | 0 |
-| [String](string.md) | Character sequence | 12 |
 | [Dict](dict.md) | Key-value mapping | 99 |
 | [Table](table/overview.md) | Columnar data | 98 |
-| [GUID](guid.md) | Globally unique identifier | -11 |
-| [Fn](function.md) | User defined function | 126 |
+| [Fn](function.md) | User defined function | 100 |
 
 ## Type Conversion and Compatibility
 

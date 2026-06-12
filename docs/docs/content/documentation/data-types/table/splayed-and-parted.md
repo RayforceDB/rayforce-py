@@ -1,4 +1,4 @@
-# :material-view-column: Set Splayed
+# :material-view-column: Splayed and Parted Tables
 
 In Rayforce-Py, you can set a table splayed to the disk and load it back.
 
@@ -22,7 +22,7 @@ In Rayforce-Py, you can set a table splayed to the disk and load it back.
 ```python
 >>> table = Table.from_splayed("path/to/directory/")
 >>> table.columns()
-[Symbol('category'), Symbol('amount'), Symbol('status')]
+Vector([Symbol('category'), Symbol('amount'), Symbol('status')])
 
 >>> result = table.select("*").execute()
 >>> result.values()
@@ -45,7 +45,7 @@ In Rayforce-Py, you can set a table splayed to the disk and load it back.
 
 >>> parted_table = Table.from_parted("./db/", "data")
 >>> parted_table.columns()
-[Symbol('Date'), Symbol('category'), Symbol('amount'), Symbol('status')]
+Vector([Symbol('Date'), Symbol('category'), Symbol('amount'), Symbol('status')])
 
 >>> result = parted_table.select("*").execute()
 >>> result.values()

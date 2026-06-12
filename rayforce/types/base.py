@@ -125,16 +125,16 @@ class _AriphmeticMixin:
     def __rmul__(self, other) -> t.Any:
         return _eval_operation("MULTIPLY", other, self)
 
-    def __floordiv__(self, other) -> t.Any:
+    def __truediv__(self, other) -> t.Any:
         return _eval_operation("DIVIDE", self, other)
 
-    def __rfloordiv__(self, other) -> t.Any:
+    def __rtruediv__(self, other) -> t.Any:
         return _eval_operation("DIVIDE", other, self)
 
-    def __truediv__(self, other) -> t.Any:
+    def __floordiv__(self, other) -> t.Any:
         return _eval_operation("DIV_INT", self, other)
 
-    def __rtruediv__(self, other) -> t.Any:
+    def __rfloordiv__(self, other) -> t.Any:
         return _eval_operation("DIV_INT", other, self)
 
     def __mod__(self, other) -> t.Any:
@@ -246,6 +246,14 @@ class AggContainerMixin(_AggMixin, Container):
     def deviation(self) -> t.Any:
         return _eval_operation("DEVIATION", self)
 
+    def std(self) -> t.Any:
+        # Sample std (ddof=1), matching polars/pandas. Engine verb
+        # `stddev`. For population std (ddof=0) use `.deviation()`.
+        return _eval_operation("STDDEV", self)
+
+    def pearson_corr(self, other: t.Any) -> t.Any:
+        return _eval_operation("PEARSON_CORR", self, other)
+
     def min(self) -> t.Any:
         return _eval_operation("MIN", self)
 
@@ -265,6 +273,14 @@ class ElementAccessContainerMixin(Container):
 
     def at(self, index: t.Any) -> t.Any:
         return _eval_operation("AT", self, index)
+
+    def top(self, n: int) -> t.Any:
+        # n largest values, descending. Per-group inside .by(...) gives
+        # canonical H2O q8 (largest-N per id6) without a full sort.
+        return _eval_operation("TOP", self, n)
+
+    def bot(self, n: int) -> t.Any:
+        return _eval_operation("BOT", self, n)
 
 
 class SetOperationContainerMixin(Container):
@@ -314,10 +330,4 @@ class _MappableMixin:
         return _eval_operation("VALUE", self)
 
 
-class MappableScalarMixin(_MappableMixin, Scalar): ...
-
-
 class MappableContainerMixin(_MappableMixin, Container): ...
-
-
-ValueAccessContainerMixin = ElementAccessContainerMixin  # backward compatibility

@@ -11,7 +11,7 @@ result = table.update(salary=150000).execute()
 ### Update rows matching the condition
 
 ```python
-result = table.update(salary=150000).where(table.dept == "IT").execute()
+result = table.update(salary=150000).where(Column("dept") == "IT").execute()
 ```
 
 !!! info "Inplace vs By Reference Operations"

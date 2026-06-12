@@ -32,7 +32,7 @@ SUPPORTED_TYPES = (
     r.TYPE_B8,
     r.TYPE_U8,
     r.TYPE_TIMESTAMP,
-    r.TYPE_C8,
+    r.TYPE_STR,
 )
 
 print("Warning: parquet read is in beta and may behave unexpectedly")
@@ -87,9 +87,14 @@ def load_parquet(path: str) -> Table:
     for field in _file.schema:
         if pa.types.is_boolean(field.type):
             column_types[field.name] = B8
-        elif pa.types.is_uint8(field.type) or pa.types.is_int8(field.type):
+        elif pa.types.is_uint8(field.type):
             column_types[field.name] = U8
-        elif pa.types.is_int16(field.type) or pa.types.is_uint16(field.type):
+        elif (
+            pa.types.is_int8(field.type)
+            or pa.types.is_int16(field.type)
+            or pa.types.is_uint16(field.type)
+        ):
+            # signed int8 widens to I16 (U8 is unsigned and would wrap negatives) — #M10
             column_types[field.name] = I16
         elif pa.types.is_int32(field.type) or pa.types.is_uint32(field.type):
             column_types[field.name] = I32

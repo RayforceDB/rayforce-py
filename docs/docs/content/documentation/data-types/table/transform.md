@@ -15,20 +15,20 @@ Use `Table.from_dict()` to create a table from a dictionary of Vectors, NumPy ar
     "score": np.array([95.5, 87.3, 92.1], dtype=np.float64),
 })
 >>> table
-Table(columns=['id', 'score'])
+Table[Symbol('id'), Symbol('score')]
 
 >>> Table.from_dict({
     "name": ["alice", "bob", "charlie"],
     "age": [25, 30, 35],
 })
-Table(columns=['name', 'age'])
+Table[Symbol('name'), Symbol('age')]
 
 >>> Table.from_dict({
     "np_col": np.arange(3, dtype=np.int64),
     "vec_col": Vector([10, 20, 30], ray_type=I64),
     "list_col": [1.0, 2.0, 3.0],
 })
-Table(columns=['np_col', 'vec_col', 'list_col'])
+Table[Symbol('np_col'), Symbol('vec_col'), Symbol('list_col')]
 ```
 
 ## Add Columns
@@ -45,14 +45,14 @@ Use `select("*", col=value)` to add new columns to a table while keeping all exi
 
 >>> age = Vector(items=[20, 42, 93], ray_type=I64)
 >>> table.select("*", age=age).execute()
-Table(columns=['name', 'id', 'age'])
+Table[Symbol('name'), Symbol('id'), Symbol('age')]
 ```
 
 You can also add computed columns using expressions:
 
 ```python
 >>> table.select("*", id_doubled=Column("id") * 2).execute()
-Table(columns=['name', 'id', 'id_doubled'])
+Table[Symbol('name'), Symbol('id'), Symbol('id_doubled')]
 ```
 
 If the keyword argument matches an existing column name, it replaces that column:
@@ -60,7 +60,7 @@ If the keyword argument matches an existing column name, it replaces that column
 ```python
 >>> new_ids = Vector(items=[10, 20, 30], ray_type=I64)
 >>> table.select("*", id=new_ids).execute()
-Table(columns=['name', 'id'])
+Table[Symbol('name'), Symbol('id')]
 ```
 
 ## Drop Columns
@@ -76,10 +76,10 @@ The `drop()` method removes one or more columns from a table:
 })
 
 >>> table.drop("salary")
-Table(columns=['id', 'name', 'age'])
+Table[Symbol('name'), Symbol('age'), Symbol('id')]
 
 >>> table.drop("age", "salary")
-Table(columns=['id', 'name'])
+Table[Symbol('name'), Symbol('id')]
 ```
 
 ## Rename Columns
@@ -94,10 +94,10 @@ The `rename()` method renames columns using a mapping dictionary:
 })
 
 >>> table.rename({"name": "employee_name", "age": "employee_age"})
-Table(columns=['id', 'employee_name', 'employee_age'])
+Table[Symbol('id'), Symbol('employee_name'), Symbol('employee_age')]
 
 >>> table.rename({"id": "employee_id"})
-Table(columns=['employee_id', 'name', 'age'])
+Table[Symbol('employee_id'), Symbol('name'), Symbol('age')]
 ```
 
 ## Cast Column Types
@@ -140,7 +140,7 @@ Common type conversions include:
 })
 
 >>> table.cast("price", I64)  # Truncates to 99, 149, 299
-Table(columns=['price'])
+Table[Symbol('price')]
 ```
 
 ## Export to Python and NumPy
