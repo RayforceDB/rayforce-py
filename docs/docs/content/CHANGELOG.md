@@ -5,6 +5,14 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+## **`2.0.1`**
+
+### Bug Fixes
+
+Fix Type error when attempting to insert/upsert into an empty table.
+
+2026-06-17 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.0.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.0.1)**
+
 ## **`2.0.0`**
 
 First release against the **Rayforce v2 C core**. This is a major release with
