@@ -5,6 +5,23 @@ All notable changes to Rayforce-Py will be documented in this file.
 !!! note ""
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
+
+## **`2.0.2`**
+
+### New Features
+
+- **Added the `ungroup` verb.** `Table.ungroup()` flattens nested `LIST` columns
+  into row form — each list cell expands to one row, with atom columns replicated
+  per element (the inverse of a `by`-grouping). Also available as a deferred step
+  on select queries: `t.select(...).by(...).ungroup().execute()`.
+
+### Bug fixes
+
+- Fixed a bug when the Timestamp type didn't account for TZ offset when using from_csv handler
+
+
+2026-06-18 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.0.2/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.0.2)**
+
 ## **`2.0.1`**
 
 ### Bug Fixes

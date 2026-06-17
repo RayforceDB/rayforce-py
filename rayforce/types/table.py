@@ -611,6 +611,15 @@ class TableValueAccessorMixin:
         return result
 
     @DestructiveOperationHandler()
+    def ungroup(self) -> Table:
+        # Flatten nested LIST columns to row form: each list cell expands to
+        # one row, with atom columns replicated per element (mirror of the
+        # engine's unary `ungroup` verb). Used to turn a grouped `top(k)`
+        # result (nested LIST<F64>[k] per group) into the 2-rows-per-group
+        # flat shape the SQL/polars reference emits.
+        return utils.eval_obj(List([Operation.UNGROUP, self.evaled_ptr]))
+
+    @DestructiveOperationHandler()
     def take(self, n: int, offset: int = 0) -> Table:
         if not isinstance(n, int) or not isinstance(offset, int):
             raise errors.RayforceConversionError("Number of rows has to be an integer")
@@ -1173,6 +1182,12 @@ class SelectQuery(IPCQueryMixin):
     def ipc(self) -> r.RayObject:  # type: ignore[override]
         return Expression(Operation.SELECT, self.compile()).compile()
 
+    def ungroup(self) -> _UngroupQuery:
+        # Defer the unary `ungroup` verb until execute(), so the grouped
+        # select runs first and its nested LIST columns are flattened to
+        # row form (one row per list element, atom columns replicated).
+        return _UngroupQuery(self)
+
     def _distinct_only_projection(self) -> tuple[str, str] | None:
         """Return (result_name, col_name) if this query is just a single
         `Expression(DISTINCT, Column(c))` projection with no where/by/order,
@@ -1232,6 +1247,23 @@ class SelectQuery(IPCQueryMixin):
         if isinstance(result, Table) and _is_aggregation_only_select(self):
             result = result.take(1)
         return result
+
+
+class _UngroupQuery(IPCQueryMixin):
+    """Deferred `ungroup` on a SelectQuery. Runs the wrapped select, then
+    applies the unary `ungroup` verb to flatten its nested LIST columns to
+    row form. Keeps the `t.select(...).by(...).ungroup().execute()` chain
+    fluent while reusing Table.ungroup() for the actual flattening."""
+
+    def __init__(self, query: SelectQuery) -> None:
+        self.query = query
+
+    @property
+    def ipc(self) -> r.RayObject:  # type: ignore[override]
+        return Expression(Operation.UNGROUP, self.query.ipc).compile()
+
+    def execute(self) -> Table:
+        return self.query.execute().ungroup()
 
 
 class UpdateQuery(IPCQueryMixin):
