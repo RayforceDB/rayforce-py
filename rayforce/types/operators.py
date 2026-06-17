@@ -75,6 +75,7 @@ class Operation(enum.StrEnum):
     EXCEPT = "except"
     UNION = "union"
     RAZE = "raze"
+    UNGROUP = "ungroup"
     DIVERSE = "diverse"
     UNIFY = "unify"
 
