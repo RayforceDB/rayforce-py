@@ -11,10 +11,23 @@
  */
 
 #include "core/ipc.h"
+#include "core/runtime.h"
 #include "rayforce_c.h"
 #include <stdlib.h>
 
 /* ---- Client ---- */
+
+static int ensure_runtime_poll(void) {
+  if (ray_runtime_get_poll() != NULL)
+    return 0;
+  ray_poll_t *poll = ray_poll_create();
+  if (poll == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "ipc: failed to create poll");
+    return -1;
+  }
+  ray_runtime_set_poll(poll);
+  return 0;
+}
 
 PyObject *raypy_ipc_connect(PyObject *self, PyObject *args) {
   (void)self;
@@ -31,6 +44,9 @@ PyObject *raypy_ipc_connect(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, "ipc: port must be in 1..65535");
     return NULL;
   }
+
+  if (ensure_runtime_poll() < 0)
+    return NULL;
 
   int64_t handle = ray_ipc_connect(host, (uint16_t)port, user, password);
   if (handle < 0) {
