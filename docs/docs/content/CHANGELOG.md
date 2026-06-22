@@ -6,6 +6,32 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.1.0`**
+
+### New Features
+
+- **Restored WebSocket support.** The `WSClient` / `WSServer` classes and the
+  `rayforce.network.websocket` module are back (they were removed in `2.0.0`).
+  The server is an async Python implementation, built on the `websockets`
+  library, that evaluates Rayforce queries in-process. Install with the
+  `websocket` extra (`pip install rayforce-py[websocket]`). See the
+  [WebSocket guide](./documentation/websocket.md).
+- **Added the PyArrow plugin.** `from_arrow()` converts a `pyarrow.Table` into a
+  Rayforce [`Table`](./documentation/data-types/table/overview.md), mirroring the
+  [Polars](./documentation/plugins/polars.md) /
+  [Pandas](./documentation/plugins/pandas.md) plugins. A column of strings maps to
+  `String` by default, or to `Symbol` via the opt-in `strings_as_symbols=True`
+  flag. Requires the `parquet` extra (`pip install rayforce-py[parquet]`).
+
+### Bug fixes
+
+- **Fixed mis-scaled Parquet timestamps.**
+  [`load_parquet()`](./documentation/plugins/parquet.md) now reads
+  microsecond- and millisecond-precision timestamp columns at the correct
+  precision; previously non-nanosecond units were mis-scaled. Parquet reading now
+  shares the PyArrow plugin's conversion path.
+
+
 ## **`2.0.2`**
 
 ### New Features
