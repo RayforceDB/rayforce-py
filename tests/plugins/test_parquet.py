@@ -271,6 +271,21 @@ def test_column_type_timestamp_preserved(tmp_path: Path) -> None:
     assert len(table) == 2
 
 
+def test_column_timestamp_us_values_preserved(tmp_path: Path) -> None:
+    """Microsecond-precision timestamps must round-trip to correct values, not
+    just the right type — the buffer fast path mis-scaled non-ns units."""
+    import datetime as dt
+
+    expected = [dt.datetime(2023, 1, 1, 12, 0, 0), dt.datetime(2023, 6, 15, 8, 30, 0)]
+    pa_table = pa.table({"ts": pa.array(expected, type=pa.timestamp("us"))})
+    path = tmp_path / "timestamp_us.parquet"
+    pq.write_table(pa_table, str(path))
+
+    table = load_parquet(str(path))
+    ts_col = table.values()[0]
+    assert [v.to_python().replace(tzinfo=None) for v in ts_col] == expected
+
+
 def test_mixed_column_types(tmp_path: Path) -> None:
     """Parquet file with a mix of all common types."""
     pa_table = pa.table(
