@@ -229,7 +229,7 @@ class Vector(
                 adjusted = raw.copy()
                 adjusted[null_mask] = 0
                 result = (adjusted + _EPOCH_OFFSET_NS).view("datetime64[ns]").copy()
-                result[null_mask] = np.datetime64("NaT")
+                result[null_mask] = np.datetime64("NaT", "ns")
                 return result
             return (raw + _EPOCH_OFFSET_NS).view("datetime64[ns]")
         if type_code == r.TYPE_DATE:
@@ -238,14 +238,14 @@ class Vector(
                 safe = raw.astype(np.int64)
                 safe[null_mask] = 0
                 result = (safe + _EPOCH_OFFSET_DAYS).astype("datetime64[D]")
-                result[null_mask] = np.datetime64("NaT")
+                result[null_mask] = np.datetime64("NaT", "D")
                 return result
             return (raw.astype(np.int64) + _EPOCH_OFFSET_DAYS).astype("datetime64[D]")
         if type_code == r.TYPE_TIME:
             null_mask = self._null_mask()
             if null_mask.any():
                 result = raw.astype("timedelta64[ms]").copy()
-                result[null_mask] = np.timedelta64("NaT")
+                result[null_mask] = np.timedelta64("NaT", "ms")
                 return result
             return raw.astype("timedelta64[ms]")
         return raw
