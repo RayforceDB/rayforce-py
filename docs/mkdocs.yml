@@ -136,6 +136,7 @@ nav:
       - Group By: content/documentation/query-guide/group-by.md
       - Pivot: content/documentation/query-guide/pivot.md
     - IPC: content/documentation/IPC.md
+    - WebSocket: content/documentation/websocket.md
     - Plugins:
       - SQL: content/documentation/plugins/sql.md
       - Parquet: content/documentation/plugins/parquet.md
