@@ -6,6 +6,19 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.1.1`**
+
+### New Features
+
+- **Rebuilt against the latest Rayforce C core**, picking up a batch of engine
+  fixes and improvements. Highlights: new partitioned-store helpers
+  (`.db.parted.fill`, `.db.parted.tables`) and journal `.log.purge`; an
+  `.ipc.open` connect timeout plus fixes for `localhost` / lazy-result IPC
+  hangs; and a broad reliability sweep (silent-failure hardening, durable
+  column-store format versioning, and a worker-heap teardown crash fix).
+
+2026-06-24 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.1.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.1.1)**
+
 ## **`2.1.0`**
 
 ### New Features
@@ -31,6 +44,7 @@ All notable changes to Rayforce-Py will be documented in this file.
   precision; previously non-nanosecond units were mis-scaled. Parquet reading now
   shares the PyArrow plugin's conversion path.
 
+2026-06-19 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.1.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.1.0)**
 
 ## **`2.0.2`**
 
