@@ -48,7 +48,9 @@ PyObject *raypy_ipc_connect(PyObject *self, PyObject *args) {
   if (ensure_runtime_poll() < 0)
     return NULL;
 
-  int64_t handle = ray_ipc_connect(host, (uint16_t)port, user, password);
+  /* timeout_ms <= 0 uses the core's default connect/handshake budget,
+   * preserving the pre-timeout behavior of this binding. */
+  int64_t handle = ray_ipc_connect(host, (uint16_t)port, user, password, 0);
   if (handle < 0) {
     PyErr_Format(PyExc_RuntimeError, "ipc: connect to %s:%d failed", host,
                  port);
