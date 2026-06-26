@@ -251,7 +251,8 @@ static PyMethodDef rayforce_methods[] = {
     {"ipc_server_destroy", raypy_ipc_server_destroy, METH_VARARGS,
      "Shut down an IPC server bound by ipc_server_init"},
     {"kdb_connect", raypy_kdb_connect, METH_VARARGS,
-     "Open a KDB+ IPC connection: (host, port) -> handle"},
+     "Open a KDB+ IPC connection: (host, port, [user], [password], "
+     "[timeout_ms]) -> handle"},
     {"kdb_close", raypy_kdb_close, METH_VARARGS,
      "Close a KDB+ IPC connection by handle"},
     {"kdb_send", raypy_kdb_send, METH_VARARGS,

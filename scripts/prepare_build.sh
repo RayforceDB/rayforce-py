@@ -4,12 +4,17 @@ set -e -x
 EXEC_DIR=$(pwd)
 RAYFORCE_GITHUB="${RAYFORCE_GITHUB:-https://github.com/RayforceDB/rayforce.git}"
 RAYFORCE_LOCAL_PATH="${RAYFORCE_LOCAL_PATH:-}"
+# KDB+ wire-format plugin, shared across bindings. Pinned by ref.
+RAYFORCE_KX_GITHUB="${RAYFORCE_KX_GITHUB:-https://github.com/RayforceDB/rayforce-kx.git}"
+RAYFORCE_KX_REF="${RAYFORCE_KX_REF:-v0.2.0}"
+RAYFORCE_KX_LOCAL_PATH="${RAYFORCE_KX_LOCAL_PATH:-}"
 
 PYTHON_BIN="${PYTHON_BIN:-python}"
 PYTHON_VERSION=$($PYTHON_BIN --version 2>&1 | awk '{print $2}')
 
 echo "Cleaning previous build artifacts..."
 rm -rf "${EXEC_DIR}/tmp/rayforce-c"
+rm -rf "${EXEC_DIR}/tmp/rayforce-kx"
 rm -rf "${EXEC_DIR}/rayforce/bin"
 rm -rf "${EXEC_DIR}/rayforce/_rayforce_c.so"
 rm -rf "${EXEC_DIR}/build"
@@ -28,6 +33,17 @@ if [[ -n "${RAYFORCE_LOCAL_PATH}" ]]; then
 else
     echo "Cloning rayforce2 repo from GitHub..."
     git clone "${RAYFORCE_GITHUB}" "${EXEC_DIR}/tmp/rayforce-c"
+fi
+
+if [[ -n "${RAYFORCE_KX_LOCAL_PATH}" ]]; then
+    echo "Copying rayforce-kx from ${RAYFORCE_KX_LOCAL_PATH}..."
+    mkdir -p "${EXEC_DIR}/tmp"
+    rsync -a --exclude='.git' \
+        "${RAYFORCE_KX_LOCAL_PATH}/" "${EXEC_DIR}/tmp/rayforce-kx/"
+else
+    echo "Cloning rayforce-kx (${RAYFORCE_KX_REF}) from GitHub..."
+    git clone --depth 1 --branch "${RAYFORCE_KX_REF}" \
+        "${RAYFORCE_KX_GITHUB}" "${EXEC_DIR}/tmp/rayforce-kx"
 fi
 
 UNAME_S=$(uname -s)
@@ -52,6 +68,8 @@ echo "Copying pyext sources..."
 mkdir -p "${EXEC_DIR}/tmp/rayforce-c/pyext"
 cp "${EXEC_DIR}"/rayforce/capi/*.c "${EXEC_DIR}/tmp/rayforce-c/pyext/"
 cp "${EXEC_DIR}"/rayforce/capi/*.h "${EXEC_DIR}/tmp/rayforce-c/pyext/"
+cp "${EXEC_DIR}"/tmp/rayforce-kx/*.c "${EXEC_DIR}/tmp/rayforce-c/pyext/"
+cp "${EXEC_DIR}"/tmp/rayforce-kx/*.h "${EXEC_DIR}/tmp/rayforce-c/pyext/"
 
 echo "Patching v2 Makefile for Python extension target..."
 # PY_SRC = wildcard so any new pyext/*.c is picked up automatically and stays

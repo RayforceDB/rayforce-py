@@ -184,15 +184,28 @@ def test_kdb_mixed_general_list(q_server):
         assert vals[2] == 1.5
 
 
-@pytest.mark.xfail(
-    reason="kdb dict decodes as RAY_LIST+ATTR_DICT (type 99) but dict_keys/__getitem__ "
-    "expect a native dict layout → 'dict has no keys'. Pre-existing decode/accessor "
-    "mismatch, separate from the #H4 ref-leak fix.",
-    strict=False,
-)
 def test_kdb_dict_decode(q_server):
     host, port = q_server
     with KDBEngine(host, port).acquire() as c:
+        # kx now decodes a kdb dict into a native rayforce dict (ray_dict_new).
         result = c.execute("`a`b!1 2")
         assert result["a"] == 1
         assert result["b"] == 2
+
+
+def test_kdb_connect_passes_credentials(q_server):
+    # A server without auth ignores credentials, but they must flow through the
+    # (host, port, user, password) path without breaking the connection.
+    host, port = q_server
+    with KDBEngine(host, port, user="ignored", password="ignored").acquire() as c:
+        assert c.execute("1+1") == 2
+
+
+def test_kdb_connect_timeout_raises():
+    # A non-routable address makes connect() hang; a short timeout must surface
+    # as a connection error rather than blocking indefinitely.
+    engine = KDBEngine("10.255.255.1", 5000, timeout_ms=300)
+    start = time.monotonic()
+    with pytest.raises(errors.KDBConnectionError):
+        engine.acquire()
+    assert time.monotonic() - start < 5.0

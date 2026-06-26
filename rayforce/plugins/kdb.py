@@ -67,9 +67,19 @@ class KDBConnection:
 
 
 class KDBEngine:
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        user: str = "",
+        password: str = "",
+        timeout_ms: int = 0,
+    ) -> None:
         self.host = host
         self.port = port
+        self.user = user
+        self.password = password
+        self.timeout_ms = timeout_ms
         self.pool: weakref.WeakValueDictionary[int, KDBConnection] = weakref.WeakValueDictionary()
 
     @property
@@ -78,8 +88,8 @@ class KDBEngine:
 
     def acquire(self) -> KDBConnection:
         try:
-            handle = r.kdb_connect(self.host, self.port)
-        except RuntimeError as exc:
+            handle = r.kdb_connect(self.host, self.port, self.user, self.password, self.timeout_ms)
+        except (RuntimeError, TimeoutError) as exc:
             raise errors.KDBConnectionError(f"Error when establishing connection: {exc}") from exc
         conn = KDBConnection(handle=handle)
         self.pool[id(conn)] = conn

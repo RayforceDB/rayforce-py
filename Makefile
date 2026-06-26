@@ -2,6 +2,12 @@ UNAME_S := $(shell uname -s)
 
 RAYFORCE_GITHUB ?= https://github.com/RayforceDB/rayforce.git
 RAYFORCE_LOCAL_PATH ?=
+# KDB+ wire-format plugin, shared across bindings. Pinned by ref so every
+# binding builds the identical version. Override RAYFORCE_KX_LOCAL_PATH to
+# build against a local checkout instead of cloning.
+RAYFORCE_KX_GITHUB ?= https://github.com/RayforceDB/rayforce-kx.git
+RAYFORCE_KX_REF ?= v0.2.0
+RAYFORCE_KX_LOCAL_PATH ?=
 EXEC_DIR = $(shell pwd)
 LIBNAME = _rayforce.so
 PYTHON_VERSION = $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -30,6 +36,19 @@ pull_rayforce_from_github:
 	else \
 		echo "⬇️  Cloning rayforce repo from $(RAYFORCE_GITHUB)..."; \
 		git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c; \
+	fi
+
+pull_rayforce_kx:
+	@rm -rf $(EXEC_DIR)/tmp/rayforce-kx
+	@if [ -n "$(RAYFORCE_KX_LOCAL_PATH)" ]; then \
+		echo "📂 Copying rayforce-kx from $(RAYFORCE_KX_LOCAL_PATH)..."; \
+		mkdir -p $(EXEC_DIR)/tmp && \
+		rsync -a --exclude='.git' \
+			"$(RAYFORCE_KX_LOCAL_PATH)/" "$(EXEC_DIR)/tmp/rayforce-kx/"; \
+	else \
+		echo "⬇️  Cloning rayforce-kx ($(RAYFORCE_KX_REF)) from $(RAYFORCE_KX_GITHUB)..."; \
+		git clone --depth 1 --branch $(RAYFORCE_KX_REF) \
+			$(RAYFORCE_KX_GITHUB) $(EXEC_DIR)/tmp/rayforce-kx; \
 	fi
 
 patch_rayforce_makefile:
@@ -61,6 +80,8 @@ rayforce_binaries:
 	@mkdir -p tmp/rayforce-c/pyext
 	@cp rayforce/capi/*.c tmp/rayforce-c/pyext/
 	@cp rayforce/capi/*.h tmp/rayforce-c/pyext/
+	@cp tmp/rayforce-kx/*.c tmp/rayforce-c/pyext/
+	@cp tmp/rayforce-kx/*.h tmp/rayforce-c/pyext/
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
@@ -68,7 +89,7 @@ rayforce_binaries:
 	@cp tmp/rayforce-c/rayforce rayforce/bin/rayforce
 	@chmod +x rayforce/bin/rayforce
 
-app: pull_rayforce_from_github patch_rayforce_makefile rayforce_binaries
+app: pull_rayforce_from_github pull_rayforce_kx patch_rayforce_makefile rayforce_binaries
 
 test:
 	python3 -u -m pytest -x -vv tests/
