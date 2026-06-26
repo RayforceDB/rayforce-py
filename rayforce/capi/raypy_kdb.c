@@ -1,16 +1,16 @@
 /*
  * raypy_kdb.c — CPython glue for the KDB+ IPC client.
  *
- * The wire-format core lives in the standalone `rayforce-kx` repo (kx.c/kx.h),
+ * The wire-format core lives in the standalone `rayforce-q` repo (q.c/q.h),
  * shared across language bindings. This file is the thin Python layer: it
- * parses arguments, calls kx_connect/kx_close/kx_send, and maps their return
+ * parses arguments, calls q_connect/q_close/q_send, and maps their return
  * codes / error strings onto Python exceptions. The blocking network round-trip
  * runs with the GIL released so other Python threads stay live.
  */
 
 #include "rayforce_c.h"
 
-#include "kx.h"
+#include "q.h"
 
 PyObject *raypy_kdb_connect(PyObject *self, PyObject *args) {
   (void)self;
@@ -29,14 +29,14 @@ PyObject *raypy_kdb_connect(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  int fd = kx_connect(host, port, user, password, timeout_ms);
+  int fd = q_connect(host, port, user, password, timeout_ms);
   if (fd < 0) {
     switch (fd) {
-    case KX_ERR_TIMEOUT:
+    case Q_ERR_TIMEOUT:
       PyErr_Format(PyExc_TimeoutError, "kdb: connect to %s:%d timed out", host,
                    port);
       break;
-    case KX_ERR_HANDSHAKE:
+    case Q_ERR_HANDSHAKE:
       PyErr_SetString(PyExc_RuntimeError, "kdb: handshake/auth failed");
       break;
     default:
@@ -56,7 +56,7 @@ PyObject *raypy_kdb_close(PyObject *self, PyObject *args) {
   int fd;
   if (!PyArg_ParseTuple(args, "i", &fd))
     return NULL;
-  if (kx_close(fd) < 0) {
+  if (q_close(fd) < 0) {
     PyErr_SetString(PyExc_RuntimeError, "kdb: invalid handle");
     return NULL;
   }
@@ -78,7 +78,7 @@ PyObject *raypy_kdb_send(PyObject *self, PyObject *args) {
    * those; release it only around the blocking server round-trip. */
   uint8_t *req = NULL;
   int64_t req_len = 0;
-  if (kx_encode(msg->obj, &req, &req_len, err, sizeof err) < 0) {
+  if (q_encode(msg->obj, &req, &req_len, err, sizeof err) < 0) {
     PyErr_SetString(PyExc_RuntimeError, err[0] ? err : "kdb: encode failed");
     return NULL;
   }
@@ -88,8 +88,8 @@ PyObject *raypy_kdb_send(PyObject *self, PyObject *args) {
   int compressed = 0;
   int rc;
   Py_BEGIN_ALLOW_THREADS;
-  rc = kx_exchange(fd, req, req_len, &resp, &resp_len, &compressed, err,
-                   sizeof err);
+  rc = q_exchange(fd, req, req_len, &resp, &resp_len, &compressed, err,
+                  sizeof err);
   Py_END_ALLOW_THREADS;
   free(req);
   if (rc < 0) {
@@ -97,7 +97,7 @@ PyObject *raypy_kdb_send(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  ray_t *result = kx_decode(resp, resp_len, compressed, err, sizeof err);
+  ray_t *result = q_decode(resp, resp_len, compressed, err, sizeof err);
   free(resp);
   if (result == NULL) {
     PyErr_SetString(PyExc_RuntimeError, err[0] ? err : "kdb: decode failed");
