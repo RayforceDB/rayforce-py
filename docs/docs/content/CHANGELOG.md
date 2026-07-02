@@ -6,6 +6,26 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.2.0`**
+
+### New Features
+
+- **Q connection authentication and connect timeout.**
+  [`KDBEngine`](./documentation/plugins/kdb.md) now accepts `user`, `password`,
+  and `timeout_ms` arguments. Credentials are sent during the Q login handshake,
+  and `timeout_ms` bounds the connect attempt. Both default to off, so existing
+  code is unaffected.
+
+### Improvements
+
+- **Q client rebuilt on the shared `rayforce-q` core.** The Q wire-format
+  implementation moved out of the Python extension into the standalone,
+  language-neutral [`rayforce-q`](https://github.com/RayforceDB/rayforce-q) C
+  library (pinned to `v2.0.0`), shared across Rayforce language bindings. The
+  blocking network round-trip now releases the GIL, so other Python threads keep
+  running while a query is in flight, and KDB+ dictionaries decode natively.
+
+
 ## **`2.1.1`**
 
 ### New Features
