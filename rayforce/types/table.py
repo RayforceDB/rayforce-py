@@ -1190,11 +1190,13 @@ class SelectQuery(IPCQueryMixin):
 
     def _distinct_only_projection(self) -> tuple[str, str] | None:
         """Return (result_name, col_name) if this query is just a single
-        `Expression(DISTINCT, Column(c))` projection with no where/by/order,
+        `Expression(DISTINCT, Column(c))` projection with no where/by,
         else None. The v2 DAG compiler rejects `distinct` in a SELECT
         projection; for this shape we evaluate `(distinct (at T 'c))`
-        Python-side and materialize a single-column table."""
-        if self._where_conditions or self._order_by_cols:
+        Python-side and materialize a single-column table. A trailing
+        `order_by` is permitted — it sorts the distinct result and is
+        applied to the materialized table by `execute`."""
+        if self._where_conditions:
             return None
         if self._by_cols and (self._by_cols[0] or self._by_cols[1]):
             return None
@@ -1222,7 +1224,19 @@ class SelectQuery(IPCQueryMixin):
                     ]
                 )
             )
-            return Table({result_name: distinct_vec})
+            result = Table({result_name: distinct_vec})
+            if self._order_by_cols:
+                cols, desc = self._order_by_cols
+                result = utils.eval_obj(
+                    List(
+                        [
+                            Operation.XDESC if desc else Operation.XASC,
+                            result.evaled_ptr,
+                            Vector(list(cols), ray_type=Symbol),
+                        ]
+                    )
+                )
+            return result
 
         if self._order_by_cols:
             cols, desc = self._order_by_cols
