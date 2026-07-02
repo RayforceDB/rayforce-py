@@ -305,6 +305,29 @@ def test_select_distinct():
     assert set(v.value for v in salary_vals) == {100, 200}
 
 
+def test_select_distinct_order_by():
+    """DISTINCT projection chained with order_by must sort the distinct
+    values instead of pushing `distinct` into the DAG SELECT projection
+    (which errors: distinct expects a list, not a scalar). Regression for
+    ordering distinct results in a single fluent chain."""
+    table = Table(
+        {
+            "dept": Vector(items=["eng", "eng", "hr", "hr", "eng"], ray_type=Symbol),
+            "salary": Vector(items=[300, 100, 200, 100, 300], ray_type=I64),
+        },
+    )
+
+    asc = table.select(vals=Column("salary").distinct()).order_by("vals").execute()
+    assert [v.value for v in asc.at_column("vals")] == [100, 200, 300]
+
+    desc = (
+        table.select(vals=Column("salary").distinct())
+        .order_by("vals", desc=True)
+        .execute()
+    )
+    assert [v.value for v in desc.at_column("vals")] == [300, 200, 100]
+
+
 def test_shift_tz_positive_offset():
     """shift_tz with +5h offset shifts timestamps forward by 5 hours."""
     table = Table(
