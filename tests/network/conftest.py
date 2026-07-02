@@ -31,6 +31,7 @@ def rayforce_binary() -> str:
     """Path to a rayforce binary that can serve IPC. Skip if unavailable."""
     candidates = [
         os.environ.get("RAYFORCE_BINARY"),
+        "/Users/karim/rayforce-q/rayforce",
         "/Users/karim/rayforce/rayforce",
         shutil.which("rayforce"),
     ]

@@ -6,7 +6,7 @@ RAYFORCE_LOCAL_PATH ?=
 # binding builds the identical version. Override RAYFORCE_Q_LOCAL_PATH to
 # build against a local checkout instead of cloning.
 RAYFORCE_Q_GITHUB ?= https://github.com/RayforceDB/rayforce-q.git
-RAYFORCE_Q_REF ?= v1.0.0
+RAYFORCE_Q_REF ?= 2.0.0
 RAYFORCE_Q_LOCAL_PATH ?=
 EXEC_DIR = $(shell pwd)
 LIBNAME = _rayforce.so
