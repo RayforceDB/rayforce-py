@@ -770,9 +770,9 @@ class TableValueAccessorMixin:
 
     @DestructiveOperationHandler()
     def drop(self, *cols: str) -> Table:
-        current_cols = {_col_name(c) for c in self.columns()}
+        current_cols = [_col_name(c) for c in self.columns()]
         cols_to_drop = set(cols)
-        if unknown := (cols_to_drop - current_cols):
+        if unknown := (cols_to_drop - set(current_cols)):
             raise errors.RayforceConversionError(f"Columns not found: {', '.join(sorted(unknown))}")
         if keep := [c for c in current_cols if c not in cols_to_drop]:
             return t.cast("Table", self).select(*keep).execute()
