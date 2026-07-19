@@ -55,6 +55,49 @@ def test_select_with_alias(sqlglot, sample_table):
 
 
 # ---------------------------------------------------------------------------
+# SELECT DISTINCT tests
+# ---------------------------------------------------------------------------
+
+
+def test_select_distinct_single_column(sqlglot, sample_table):
+    # Regression: the DISTINCT flag used to be dropped by the parser, so the
+    # query silently returned all rows with duplicates.
+    result = sample_table.sql("SELECT DISTINCT dept FROM self")
+    assert_column_values(result, "dept", ["eng", "sales"])
+
+
+def test_select_distinct_parenthesized(sqlglot, sample_table):
+    # sqlglot parses `DISTINCT(col)` as DISTINCT + parenthesized column.
+    result = sample_table.sql("SELECT DISTINCT(dept) FROM self")
+    assert_column_values(result, "dept", ["eng", "sales"])
+
+
+def test_select_distinct_with_alias(sqlglot, sample_table):
+    result = sample_table.sql("SELECT DISTINCT dept AS d FROM self")
+    assert_column_values(result, "d", ["eng", "sales"])
+
+
+def test_select_distinct_with_where(sqlglot, sample_table):
+    result = sample_table.sql("SELECT DISTINCT dept FROM self WHERE age >= 30")
+    assert_column_values(result, "dept", ["sales", "eng"])
+
+
+def test_select_distinct_with_order_by(sqlglot, sample_table):
+    result = sample_table.sql("SELECT DISTINCT dept FROM self ORDER BY dept DESC")
+    assert_column_values(result, "dept", ["sales", "eng"])
+
+
+def test_select_distinct_multiple_columns_not_supported(sqlglot, sample_table):
+    with pytest.raises(NotImplementedError, match="single plain column"):
+        sample_table.sql("SELECT DISTINCT dept, name FROM self")
+
+
+def test_select_distinct_with_group_by_not_supported(sqlglot, sample_table):
+    with pytest.raises(NotImplementedError, match="GROUP BY"):
+        sample_table.sql("SELECT DISTINCT dept FROM self GROUP BY dept")
+
+
+# ---------------------------------------------------------------------------
 # WHERE tests
 # ---------------------------------------------------------------------------
 
@@ -527,24 +570,6 @@ def test_select_limit(sqlglot, sample_table):
 def test_select_limit_offset(sqlglot, sample_table):
     """LIMIT with OFFSET — also silently ignored."""
     result = sample_table.sql("SELECT * FROM self LIMIT 2 OFFSET 1")
-    assert len(result) == 5
-
-
-# ---------------------------------------------------------------------------
-# DISTINCT tests
-# ---------------------------------------------------------------------------
-
-
-def test_select_distinct_not_enforced(sqlglot, sample_table):
-    """SELECT DISTINCT is parsed but not enforced — all rows are returned."""
-    result = sample_table.sql("SELECT DISTINCT dept FROM self")
-    # DISTINCT is not enforced, so duplicates are present.
-    assert len(result) == 5
-
-
-def test_select_distinct_multiple_columns(sqlglot, sample_table):
-    """SELECT DISTINCT with multiple columns — also not enforced."""
-    result = sample_table.sql("SELECT DISTINCT dept, age FROM self")
     assert len(result) == 5
 
 

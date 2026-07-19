@@ -103,6 +103,7 @@ class ParsedSelect:
     where_clause: ParsedExpr | None = None
     group_by: list[str] = field(default_factory=list)
     order_by: list[tuple[str, bool]] = field(default_factory=list)  # (col, is_desc)
+    distinct: bool = False
 
 
 @dataclass
@@ -171,7 +172,11 @@ class SQLParser:
                     order_by.append((str(col_expr), is_desc))
 
         return ParsedSelect(
-            columns=columns, where_clause=where_clause, group_by=group_by, order_by=order_by
+            columns=columns,
+            where_clause=where_clause,
+            group_by=group_by,
+            order_by=order_by,
+            distinct=bool(node.args.get("distinct")),
         )
 
     def _parse_update(self, node: exp.Expression) -> ParsedUpdate:
@@ -370,23 +375,26 @@ class SQLCompiler:
         return query.execute()
 
     def _compile_select(self, parsed: ParsedSelect, table: Table) -> Table:
-        select_args: list[str] = []
-        select_kwargs: dict[str, t.Any] = {}
+        if parsed.distinct:
+            query = self._compile_distinct_projection(parsed, table)
+        else:
+            select_args: list[str] = []
+            select_kwargs: dict[str, t.Any] = {}
 
-        for alias, expr in parsed.columns:
-            if expr.type == ExprType.STAR:
-                select_args.append("*")
-            elif expr.type == ExprType.COLUMN and alias is None:
-                select_args.append(expr.value)
-            else:
-                name = alias if alias else self._infer_name(expr)
-                select_kwargs[name] = self._compile_expr(expr)
+            for alias, expr in parsed.columns:
+                if expr.type == ExprType.STAR:
+                    select_args.append("*")
+                elif expr.type == ExprType.COLUMN and alias is None:
+                    select_args.append(expr.value)
+                else:
+                    name = alias if alias else self._infer_name(expr)
+                    select_kwargs[name] = self._compile_expr(expr)
 
-        query = (
-            table.select(*select_args, **select_kwargs)
-            if select_args or select_kwargs
-            else table.select("*")
-        )
+            query = (
+                table.select(*select_args, **select_kwargs)
+                if select_args or select_kwargs
+                else table.select("*")
+            )
 
         if _where := parsed.where_clause:
             query = query.where(self._compile_expr(_where))
@@ -404,6 +412,23 @@ class SQLCompiler:
             query = query.order_by(*[col for col, _ in _order], desc=desc)
 
         return self._finalize_select(query)
+
+    def _compile_distinct_projection(self, parsed: ParsedSelect, table: Table):
+        # `SELECT DISTINCT col` lowers to the engine's `distinct` projection
+        # (same path as `Column(col).distinct()`). Only the single-plain-column
+        # form maps onto it; anything wider must fail loudly — the parser used
+        # to drop the DISTINCT flag entirely and return duplicate rows.
+        from rayforce.types.operators import Operation
+        from rayforce.types.table import Column, Expression
+
+        if parsed.group_by:
+            raise NotImplementedError("SELECT DISTINCT with GROUP BY is not supported")
+        if len(parsed.columns) != 1 or parsed.columns[0][1].type != ExprType.COLUMN:
+            raise NotImplementedError("SELECT DISTINCT is only supported for a single plain column")
+
+        alias, expr = parsed.columns[0]
+        name = alias if alias else expr.value
+        return table.select(**{name: Expression(Operation.DISTINCT, Column(expr.value))})
 
     def _compile_update(self, parsed: ParsedUpdate, table: Table) -> Table:
         update_kwargs: dict[str, t.Any] = {
