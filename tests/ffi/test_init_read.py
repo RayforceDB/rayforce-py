@@ -370,3 +370,22 @@ def test_large_list_stress():
     # Spot-check first and last.
     assert FFI.read_i64(FFI.at_idx(lst, 0)) == 0
     assert FFI.read_i64(FFI.at_idx(lst, count - 1)) == count - 1
+
+
+def test_read_vector_raw_rejects_non_vectors():
+    """Regression: read_vector_raw / read_u8_vector used to dereference the
+    underlying pointer without checks, so a bare RayObject() (obj == NULL)
+    segfaulted the interpreter and an atom read garbage length bytes."""
+    with pytest.raises(RuntimeError, match="not a vector"):
+        r.read_vector_raw(r.RayObject())
+
+    with pytest.raises(RuntimeError, match="not a u8 vector"):
+        r.read_u8_vector(r.RayObject())
+
+    # Atoms alias `len` with their payload — must be rejected, not read.
+    with pytest.raises(RuntimeError, match="not a vector"):
+        r.read_vector_raw(FFI.init_i64(5))
+
+    # Real vectors still read fine.
+    vec = FFI.init_vector(r.TYPE_I64, [1, 2, 3])
+    assert len(FFI.read_vector_raw(vec)) == 3 * 8
