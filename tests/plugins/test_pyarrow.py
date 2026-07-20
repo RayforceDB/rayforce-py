@@ -91,6 +91,39 @@ def test_from_arrow_uint8_type(pyarrow):
     assert_column_values(result, "u8", [0, 1, 200, 255])
 
 
+def test_from_arrow_unsigned_types_preserve_values(pyarrow):
+    # Regression: uint16/uint32 used to map to the same-width signed type, so
+    # the zero-copy buffer path reinterpreted values >= 2^(n-1) as negative
+    # (e.g. uint16 40000 -> -25536).
+    table = pyarrow.table(
+        {
+            "u16": pyarrow.array([0, 1, 40000, 65535], pyarrow.uint16()),
+            "u32": pyarrow.array([0, 1, 3_000_000_000, 4_294_967_295], pyarrow.uint32()),
+            "u64": pyarrow.array([0, 1, 42, 2**63 - 1], pyarrow.uint64()),
+        }
+    )
+
+    result = from_arrow(table)
+    values = result.values()
+
+    assert all(isinstance(v, I32) for v in values[0])  # u16 -> I32
+    assert all(isinstance(v, I64) for v in values[1])  # u32 -> I64
+    assert all(isinstance(v, I64) for v in values[2])  # u64 -> I64
+
+    assert_column_values(result, "u16", [0, 1, 40000, 65535])
+    assert_column_values(result, "u32", [0, 1, 3_000_000_000, 4_294_967_295])
+    assert_column_values(result, "u64", [0, 1, 42, 2**63 - 1])
+
+
+def test_from_arrow_uint64_overflow_raises(pyarrow):
+    # I64 cannot represent uint64 values >= 2^63 — conversion must fail
+    # loudly instead of silently flipping the sign.
+    table = pyarrow.table({"u64": pyarrow.array([1, 2**63], pyarrow.uint64())})
+
+    with pytest.raises(Exception):
+        from_arrow(table)
+
+
 def test_from_arrow_float_types(pyarrow):
     table = pyarrow.table(
         {

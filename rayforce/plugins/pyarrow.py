@@ -57,15 +57,20 @@ def _infer_ray_type_from_arrow_type(pa: t.Any, arrow_type: t.Any) -> type[RayObj
         return B8
     if pa.types.is_uint8(arrow_type):
         return U8
-    if (
-        pa.types.is_int8(arrow_type)
-        or pa.types.is_int16(arrow_type)
-        or pa.types.is_uint16(arrow_type)
-    ):
+    if pa.types.is_int8(arrow_type) or pa.types.is_int16(arrow_type):
         # signed int8 widens to I16 (U8 is unsigned and would wrap negatives) — #M10
         return I16
-    if pa.types.is_int32(arrow_type) or pa.types.is_uint32(arrow_type):
+    # Unsigned types widen to the next signed width: mapping them to the
+    # same-width signed type would let the raw-buffer fast path memcpy the
+    # payload verbatim, silently flipping values >= 2^(n-1) negative. The
+    # widened target has a larger element size, so the fast path rejects the
+    # buffer and conversion falls back to exact per-value copying.
+    if pa.types.is_uint16(arrow_type):
         return I32
+    if pa.types.is_int32(arrow_type):
+        return I32
+    if pa.types.is_uint32(arrow_type):
+        return I64
     if pa.types.is_int64(arrow_type) or pa.types.is_uint64(arrow_type):
         return I64
     if pa.types.is_float32(arrow_type) or pa.types.is_float64(arrow_type):
@@ -108,6 +113,14 @@ def _table_from_arrow(pa: t.Any, table: t.Any, *, strings_as_symbols: bool = Fal
 
         if ray_type in _TEMPORAL_TYPES:
             vectors[field.name] = Vector(items=arr.to_pylist(), ray_type=ray_type)
+            del arr
+            continue
+
+        if pa.types.is_uint64(field.type):
+            # uint64 shares I64's byte width, so the raw-buffer fast path
+            # would reinterpret values >= 2^63 as negative. Convert via
+            # Python ints instead; out-of-range values then raise loudly.
+            vectors[field.name] = Vector(items=arr.to_pylist(), ray_type=I64)
             del arr
             continue
 
