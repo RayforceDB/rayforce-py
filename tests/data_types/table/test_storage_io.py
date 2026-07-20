@@ -885,6 +885,26 @@ def test_drop_multiple_columns():
     assert Symbol("name") in columns
 
 
+def test_drop_preserves_column_order():
+    # Regression: drop() used to collect the remaining columns into a set,
+    # so the result order depended on string-hash randomization.
+    table = Table(
+        {
+            "alpha": Vector(items=[1, 2], ray_type=I64),
+            "beta": Vector(items=[3, 4], ray_type=I64),
+            "gamma": Vector(items=[5.0, 6.0], ray_type=F64),
+            "delta": Vector(items=["x", "y"], ray_type=Symbol),
+            "epsilon": Vector(items=[7, 8], ray_type=I64),
+        }
+    )
+
+    result = table.drop("beta")
+    assert [str(c) for c in result.columns()] == ["alpha", "gamma", "delta", "epsilon"]
+
+    result = table.drop("alpha", "epsilon")
+    assert [str(c) for c in result.columns()] == ["beta", "gamma", "delta"]
+
+
 def test_drop_unknown_column_raises():
     table = Table(
         {
