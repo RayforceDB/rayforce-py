@@ -49,7 +49,7 @@ PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &obj))
     return NULL;
 
-  if (obj->obj->type != RAY_U8) {
+  if (obj->obj == NULL || obj->obj->type != RAY_U8 || !ray_is_vec(obj->obj)) {
     PyErr_SetString(PyExc_RuntimeError, "read: object is not a u8 vector");
     return NULL;
   }
@@ -64,6 +64,12 @@ PyObject *raypy_read_vector_raw(PyObject *self, PyObject *args) {
   RayObject *obj;
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &obj))
     return NULL;
+
+  /* Atoms alias `len` with their payload, so only true vecs are readable. */
+  if (obj->obj == NULL || !ray_is_vec(obj->obj)) {
+    PyErr_SetString(PyExc_RuntimeError, "read_vector_raw: object is not a vector");
+    return NULL;
+  }
 
   size_t elem_size = ray_scalar_elem_size(obj->obj->type);
   if (elem_size == 0) {
