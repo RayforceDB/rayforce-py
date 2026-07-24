@@ -386,6 +386,9 @@ def test_read_vector_raw_rejects_non_vectors():
     with pytest.raises(RuntimeError, match="not a vector"):
         r.read_vector_raw(FFI.init_i64(5))
 
+    with pytest.raises(RuntimeError, match="not a u8 vector"):
+        r.read_u8_vector(FFI.init_u8(5))
+
     # Real vectors still read fine.
     vec = FFI.init_vector(r.TYPE_I64, [1, 2, 3])
     assert len(FFI.read_vector_raw(vec)) == 3 * 8

@@ -49,7 +49,7 @@ PyObject *raypy_read_u8_vector(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "O!", &RayObjectType, &obj))
     return NULL;
 
-  if (obj->obj == NULL || obj->obj->type != RAY_U8) {
+  if (obj->obj == NULL || obj->obj->type != RAY_U8 || !ray_is_vec(obj->obj)) {
     PyErr_SetString(PyExc_RuntimeError, "read: object is not a u8 vector");
     return NULL;
   }
