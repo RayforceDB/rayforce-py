@@ -47,6 +47,11 @@ class RayforceTCPError(RayforceError): ...
 class RayforceWSError(RayforceError): ...
 
 
+class RayforceCloudAuthError(RayforceError):
+    """A cloud instance refused the rf_ token. Distinct from RayforceWSError
+    because retrying will not help — the credential is the problem."""
+
+
 class RayforceThreadError(RayforceError): ...
 
 

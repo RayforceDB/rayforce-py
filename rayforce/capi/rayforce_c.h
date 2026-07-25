@@ -232,5 +232,13 @@ PyObject *raypy_ipc_server_destroy(PyObject *self, PyObject *args);
 PyObject *raypy_kdb_connect(PyObject *self, PyObject *args);
 PyObject *raypy_kdb_close(PyObject *self, PyObject *args);
 PyObject *raypy_kdb_send(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_connect(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_submit(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_submit_expr(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_fetch_page(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_bind_result(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_cancel(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_job_free(PyObject *self, PyObject *args);
+PyObject *raypy_cloud_close(PyObject *self, PyObject *args);
 
 #endif
