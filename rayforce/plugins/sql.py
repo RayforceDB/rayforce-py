@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 import functools
+import operator
 import typing as t
 
 from rayforce.types.table import _is_aggregation_only_select
@@ -48,20 +49,25 @@ def _sqlglot_op_maps() -> tuple[dict[type, str], dict[type, str]]:
     return cmp_map, arith_map
 
 
+# SQL binary op -> the Python operator that builds the query node. Calling the
+# real operator (rather than a hard-coded ``left.__op__(right)``) lets Python's
+# reflected-dispatch protocol engage, so a literal-on-left expression such as
+# ``WHERE 100 < price`` falls back to ``price.__gt__(100)`` instead of leaving a
+# bare ``NotImplemented`` to blow up downstream.
 OP_MAP = {
-    "=": "__eq__",
-    "!=": "__ne__",
-    ">": "__gt__",
-    ">=": "__ge__",
-    "<": "__lt__",
-    "<=": "__le__",
-    "+": "__add__",
-    "-": "__sub__",
-    "*": "__mul__",
-    "/": "__truediv__",
-    "%": "__mod__",
-    "AND": "__and__",
-    "OR": "__or__",
+    "=": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "<": operator.lt,
+    "<=": operator.le,
+    "+": operator.add,
+    "-": operator.sub,
+    "*": operator.mul,
+    "/": operator.truediv,
+    "%": operator.mod,
+    "AND": operator.and_,
+    "OR": operator.or_,
 }
 
 FUNC_MAP = {
@@ -501,11 +507,17 @@ class SQLCompiler:
             assert expr.op is not None
             left, right = self._compile_expr(expr.left), self._compile_expr(expr.right)
 
-            op_method = OP_MAP.get(expr.op)
-            if op_method and hasattr(left, op_method):
-                return getattr(left, op_method)(right)
+            op_func = OP_MAP.get(expr.op)
+            if op_func is None:
+                raise ValueError(f"Unsupported binary operator: {expr.op}")
 
-            raise ValueError(f"Unsupported binary operator: {expr.op}")
+            result = op_func(left, right)
+            if result is NotImplemented:
+                raise ValueError(
+                    f"Operator '{expr.op}' is not supported between "
+                    f"{type(left).__name__} and {type(right).__name__}"
+                )
+            return result
 
         if expr.type == ExprType.UNARY_OP:
             assert expr.left is not None

@@ -133,6 +133,33 @@ def test_where_in(sqlglot, sample_table):
     assert len(result) == 3
 
 
+def test_where_literal_on_left_comparison(sqlglot, sample_table):
+    # Regression: `WHERE <literal> <op> <column>` used to compile to a bare
+    # NotImplemented (int.__lt__ cannot handle a Column), which then blew up
+    # with an opaque "failed to create list" RuntimeError. Reflected dispatch
+    # now routes it to Column.__gt__, mirroring the column-on-left form.
+    lit_left = sample_table.sql("SELECT * FROM self WHERE 30 < age")
+    col_left = sample_table.sql("SELECT * FROM self WHERE age > 30")
+    assert len(lit_left) == len(col_left) == 2  # Charlie (35), Eve (32)
+    assert_column_values(lit_left, "name", ["Charlie", "Eve"])
+
+
+def test_where_literal_on_left_all_comparisons(sqlglot, sample_table):
+    # ages: Alice 25, Bob 30, Charlie 35, Diana 28, Eve 32
+    assert len(sample_table.sql("SELECT * FROM self WHERE 30 <= age")) == 3  # 30, 35, 32
+    assert len(sample_table.sql("SELECT * FROM self WHERE 30 > age")) == 2  # 25, 28
+    assert len(sample_table.sql("SELECT * FROM self WHERE 30 >= age")) == 3  # 25, 30, 28
+    assert len(sample_table.sql("SELECT * FROM self WHERE 30 = age")) == 1  # Bob
+    assert len(sample_table.sql("SELECT * FROM self WHERE 30 != age")) == 4
+
+
+def test_select_literal_on_left_arithmetic(sqlglot, sample_table):
+    # `<literal> - <column>` must route through the column's reflected operator
+    # (__rsub__) and compute per row rather than raise.
+    result = sample_table.sql("SELECT id, 100 - age AS remaining FROM self")
+    assert_column_values(result, "remaining", [75, 70, 65, 72, 68])
+
+
 def test_parenthesized_or(sqlglot, sample_table):
     result = sample_table.sql(
         "SELECT * FROM self WHERE (dept = 'eng' OR dept = 'sales') AND age > 28"
@@ -622,7 +649,7 @@ def test_window_row_number(sqlglot, sample_table):
     try:
         result = sample_table.sql("SELECT name, ROW_NUMBER() OVER (ORDER BY age) AS rn FROM self")
         assert_contains_columns(result, ["name", "rn"])
-    except (ValueError, NotImplementedError, KeyError, AttributeError):
+    except ValueError, NotImplementedError, KeyError, AttributeError:
         pytest.skip("Window functions not supported by SQL plugin")
 
 
@@ -633,7 +660,7 @@ def test_window_rank(sqlglot, sample_table):
             "SELECT name, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk FROM self"
         )
         assert_contains_columns(result, ["name", "rnk"])
-    except (ValueError, NotImplementedError, KeyError, AttributeError):
+    except ValueError, NotImplementedError, KeyError, AttributeError:
         pytest.skip("Window functions not supported by SQL plugin")
 
 
