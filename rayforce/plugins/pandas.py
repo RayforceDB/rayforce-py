@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import typing as t
 
-from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp, Vector
+from rayforce.types import B8, F64, I16, I32, I64, U8, Date, Symbol, Table, Timestamp, Vector
 
 if t.TYPE_CHECKING:
     import pandas as pd  # type: ignore[import-untyped]
@@ -23,6 +23,13 @@ _PANDAS_DTYPE_TO_RAY: dict[str, type[RayObject]] = {
     "int64": I64,
     "int_": I64,
     "long": I64,
+    # Unsigned ints widen to the next signed width so values never wrap
+    # (mirrors the pyarrow plugin); uint64 has no lossless target and maps to
+    # I64 (values >= 2**63 overflow, same as pyarrow).
+    "uint8": U8,
+    "uint16": I32,
+    "uint32": I64,
+    "uint64": I64,
     "float32": F64,
     "float": F64,
     "float_": F64,
@@ -44,6 +51,7 @@ _PANDAS_DTYPE_TO_RAY: dict[str, type[RayObject]] = {
 _PANDAS_DTYPE_KIND_TO_RAY: dict[str, type[RayObject]] = {
     "b": B8,
     "i": I64,
+    "u": I64,
     "f": F64,
     "O": Symbol,
     "M": Timestamp,
