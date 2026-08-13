@@ -3,7 +3,7 @@ from __future__ import annotations
 import platform
 import typing as t
 
-from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Table, Timestamp, Vector
+from rayforce.types import B8, F64, I16, I32, I64, U8, Date, Symbol, Table, Timestamp, Vector
 
 if t.TYPE_CHECKING:
     import polars as pl  # type: ignore[import-not-found]
@@ -29,6 +29,17 @@ _POLARS_DTYPE_TO_RAY: dict[str, type[RayObject]] = {
     "i64": I64,
     "int64": I64,
     "int": I64,
+    # Unsigned ints widen to the next signed width so values never wrap
+    # (mirrors the pyarrow plugin); uint64 has no lossless target and maps to
+    # I64 (values >= 2**63 overflow, same as pyarrow).
+    "u8": U8,
+    "uint8": U8,
+    "u16": I32,
+    "uint16": I32,
+    "u32": I64,
+    "uint32": I64,
+    "u64": I64,
+    "uint64": I64,
     "f32": F64,
     "float32": F64,
     "f64": F64,

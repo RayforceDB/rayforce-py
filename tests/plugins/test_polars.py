@@ -4,7 +4,7 @@ import platform
 import pytest
 
 from rayforce.plugins.polars import from_polars
-from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Timestamp
+from rayforce.types import B8, F64, I16, I32, I64, U8, Date, Symbol, Timestamp
 from rayforce.types.null import Null
 from tests.helpers.assertions import (
     assert_column_values,
@@ -387,3 +387,32 @@ def test_from_polars_all_null_column(polars):
     assert values[2][0].value == 1
     assert values[2][1] == Null
     assert values[2][2].value == 3
+
+
+def test_from_polars_unsigned_ints(polars):
+    # Unsigned columns used to fall through to Symbol and crash the converter
+    # with a TypeError. They now widen to a signed type wide enough to hold
+    # every value without wrapping: uint8 -> U8, uint16 -> I32, uint32 -> I64
+    # (mirrors the pyarrow plugin).
+    df = polars.DataFrame(
+        {
+            "u8": polars.Series([0, 200, 255], dtype=polars.UInt8),
+            "u16": polars.Series([0, 40000, 65535], dtype=polars.UInt16),
+            "u32": polars.Series([0, 3_000_000_000, 4_294_967_295], dtype=polars.UInt32),
+            "u64": polars.Series([0, 1, 9_000_000_000_000_000_000], dtype=polars.UInt64),
+        }
+    )
+
+    table = from_polars(df)
+    values = table.values()
+
+    assert all(isinstance(v, U8) for v in values[0])
+    assert all(isinstance(v, I32) for v in values[1])
+    assert all(isinstance(v, I64) for v in values[2])
+    assert all(isinstance(v, I64) for v in values[3])
+
+    # Values above each signed type's midpoint must not wrap negative.
+    assert_column_values(table, "u8", [0, 200, 255])
+    assert_column_values(table, "u16", [0, 40000, 65535])
+    assert_column_values(table, "u32", [0, 3_000_000_000, 4_294_967_295])
+    assert_column_values(table, "u64", [0, 1, 9_000_000_000_000_000_000])

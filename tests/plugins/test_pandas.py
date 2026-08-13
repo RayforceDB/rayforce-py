@@ -3,7 +3,7 @@ import datetime as dt
 import pytest
 
 from rayforce.plugins.pandas import from_pandas
-from rayforce.types import B8, F64, I16, I32, I64, Date, Symbol, Timestamp
+from rayforce.types import B8, F64, I16, I32, I64, U8, Date, Symbol, Timestamp
 from rayforce.types.null import Null
 from tests.helpers.assertions import (
     assert_column_values,
@@ -343,3 +343,32 @@ def test_from_pandas_single_row(pandas):
 
     table = from_pandas(df)
     assert_table_shape(table, rows=1, cols=3)
+
+
+def test_from_pandas_unsigned_ints(pandas):
+    # Unsigned columns used to fall through to Symbol and crash the converter
+    # with a TypeError. They now widen to a signed type wide enough to hold
+    # every value without wrapping: uint8 -> U8, uint16 -> I32, uint32 -> I64
+    # (mirrors the pyarrow plugin).
+    df = pandas.DataFrame(
+        {
+            "u8": pandas.array([0, 200, 255], dtype="uint8"),
+            "u16": pandas.array([0, 40000, 65535], dtype="uint16"),
+            "u32": pandas.array([0, 3_000_000_000, 4_294_967_295], dtype="uint32"),
+            "u64": pandas.array([0, 1, 9_000_000_000_000_000_000], dtype="uint64"),
+        }
+    )
+
+    table = from_pandas(df)
+    values = table.values()
+
+    assert all(isinstance(v, U8) for v in values[0])
+    assert all(isinstance(v, I32) for v in values[1])
+    assert all(isinstance(v, I64) for v in values[2])
+    assert all(isinstance(v, I64) for v in values[3])
+
+    # Values above each signed type's midpoint must not wrap negative.
+    assert_column_values(table, "u8", [0, 200, 255])
+    assert_column_values(table, "u16", [0, 40000, 65535])
+    assert_column_values(table, "u32", [0, 3_000_000_000, 4_294_967_295])
+    assert_column_values(table, "u64", [0, 1, 9_000_000_000_000_000_000])
