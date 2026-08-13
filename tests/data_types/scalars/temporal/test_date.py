@@ -24,19 +24,16 @@ def test_date_invalid_string_raises():
         t.Date("not-a-date")
 
 
-def test_date_invalid_month_string_normalizes():
-    """The C library normalizes out-of-range months rather than rejecting them."""
-    # Month 13 is treated as month 1 of the next year minus one day
-    result = t.Date("2025-13-01")
-    # C library produces 2024-12-31 for this input
-    assert isinstance(result.value, dt.date)
+def test_date_invalid_month_string_raises():
+    """The C library rejects out-of-range months rather than normalizing them."""
+    with pytest.raises(RuntimeError):
+        t.Date("2025-13-01")
 
 
-def test_date_invalid_day_string_normalizes():
-    """The C library normalizes out-of-range days rather than rejecting them."""
-    # Feb 30 rolls over to March
-    result = t.Date("2025-02-30")
-    assert result.value == dt.date(2025, 3, 2)
+def test_date_invalid_day_string_raises():
+    """The C library rejects out-of-range days rather than normalizing them."""
+    with pytest.raises(RuntimeError):
+        t.Date("2025-02-30")
 
 
 # --- Date: leap year edge cases ---
@@ -48,9 +45,10 @@ def test_date_leap_year_feb29():
     assert t.Date(dt.date(2024, 2, 29)).value == dt.date(2024, 2, 29)
 
 
-def test_date_non_leap_year_feb29_normalizes():
-    """2023 is not a leap year; C library normalizes Feb 29 to March 1."""
-    assert t.Date("2023-02-29").value == dt.date(2023, 3, 1)
+def test_date_non_leap_year_feb29_raises():
+    """2023 is not a leap year; C library rejects Feb 29."""
+    with pytest.raises(RuntimeError):
+        t.Date("2023-02-29")
 
 
 def test_date_century_leap_year():
@@ -60,8 +58,8 @@ def test_date_century_leap_year():
 
 def test_date_century_non_leap_year():
     """Year 1900 is divisible by 100 but not 400, so NOT a leap year."""
-    # C library normalizes to March 1
-    assert t.Date("1900-02-29").value == dt.date(1900, 3, 1)
+    with pytest.raises(RuntimeError):
+        t.Date("1900-02-29")
 
 
 def test_date_from_int_days():

@@ -6,6 +6,41 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.2.1`**
+
+### Bug fixes
+
+- **`Table.drop()` no longer reorders the surviving columns.** The columns left
+  behind now keep the order they had before the drop.
+  ([#19](https://github.com/RayforceDB/rayforce-py/pull/19))
+- **SQL `SELECT DISTINCT` now deduplicates** instead of returning every matching
+  row. ([#20](https://github.com/RayforceDB/rayforce-py/pull/20))
+- **SQL `WHERE` clauses accept a literal on the left of a comparison.**
+  `WHERE 100 < price` now compiles the same as `WHERE price > 100`; previously
+  the literal-on-left form produced a broken query.
+  ([#23](https://github.com/RayforceDB/rayforce-py/pull/23))
+- **Unsigned integer columns no longer wrap to negative values.** The
+  [PyArrow](./documentation/plugins/parquet.md) plugin was sign-flipping
+  `uint16` / `uint32` / `uint64` values, and the
+  [Pandas](./documentation/plugins/pandas.md) and
+  [Polars](./documentation/plugins/polars.md) converters had the same gap. All
+  three now widen an unsigned column to the next signed width, so the values
+  survive the conversion. `uint64` has no lossless target and still maps to
+  `I64`. ([#18](https://github.com/RayforceDB/rayforce-py/pull/18),
+  [#22](https://github.com/RayforceDB/rayforce-py/pull/22))
+- **Raw vector readers reject nulls and atoms** rather than reading past the
+  object header. ([#21](https://github.com/RayforceDB/rayforce-py/pull/21))
+
+### Notes
+
+- **Out-of-range date strings now raise instead of rolling over.** Rebuilding
+  against the current Rayforce C core picks up bounds validation in the `DATE`
+  string cast, so `Date("2025-02-30")`, `Date("2023-02-29")` and
+  `Date("2025-13-01")` raise rather than silently normalizing into the following
+  month. Valid dates, including leap days such as `Date("2024-02-29")`, are
+  unaffected.
+
+
 ## **`2.2.0`**
 
 ### New Features
