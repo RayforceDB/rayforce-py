@@ -258,27 +258,6 @@ static PyMethodDef rayforce_methods[] = {
     {"kdb_send", raypy_kdb_send, METH_VARARGS,
      "Send a sync KDB+ request: (handle, msg) -> response"},
 
-    {"cloud_connect", raypy_cloud_connect, METH_VARARGS,
-     "Connect to a cloud instance: (url, rf_token, [binary], "
-     "[connect_timeout], [request_timeout]) -> client"},
-    {"cloud_submit", raypy_cloud_submit, METH_VARARGS,
-     "Run a query: (client, source, page_size) -> (job, (value, offset, "
-     "returned, total, unit))"},
-    {"cloud_submit_expr", raypy_cloud_submit_expr, METH_VARARGS,
-     "Run a serialized expression: (client, expr_bytes, page_size) -> (job, "
-     "(value, offset, returned, total, unit))"},
-    {"cloud_fetch_page", raypy_cloud_fetch_page, METH_VARARGS,
-     "Fetch a later page: (client, job, offset, limit) -> (value, offset, "
-     "returned, total, unit)"},
-    {"cloud_bind_result", raypy_cloud_bind_result, METH_VARARGS,
-     "Name a retained result: (client, job, name) -> qualified name"},
-    {"cloud_cancel", raypy_cloud_cancel, METH_VARARGS,
-     "Ask the instance to stop a running job: (client, job)"},
-    {"cloud_job_free", raypy_cloud_job_free, METH_VARARGS,
-     "Release a result on the instance and free the job: (client, job)"},
-    {"cloud_close", raypy_cloud_close, METH_VARARGS,
-     "Close a cloud client: (client)"},
-
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef rayforce_module = {

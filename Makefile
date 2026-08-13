@@ -8,16 +8,7 @@ RAYFORCE_LOCAL_PATH ?=
 RAYFORCE_Q_GITHUB ?= https://github.com/RayforceDB/rayforce-q.git
 RAYFORCE_Q_REF ?= 2.0.0
 RAYFORCE_Q_LOCAL_PATH ?=
-# RayforceDB Cloud client, shared across bindings the same way. It owns the
-# transport and job protocol; this binding links it and decodes the pages.
-# libcurl comes with it — it carries the TLS and RFC 6455 framing.
-RFCLOUD_GITHUB ?= https://github.com/RayforceDB/rayforce-cloud-sdk.git
-RFCLOUD_REF ?= main
-RFCLOUD_LOCAL_PATH ?=
 EXEC_DIR = $(shell pwd)
-# librfcloud brings libcurl with it. macOS needs a Homebrew curl: Apple's has no
-# WebSocket support, and the SDK's own build refuses to proceed without it.
-CURL_LIBS := $(shell pkg-config --libs libcurl 2>/dev/null || echo -lcurl)
 LIBNAME = _rayforce.so
 PYTHON_VERSION = $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 PYTHON_INCLUDE = $(shell python3 -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))")
@@ -60,21 +51,6 @@ pull_rayforce_q:
 			$(RAYFORCE_Q_GITHUB) $(EXEC_DIR)/tmp/rayforce-q; \
 	fi
 
-pull_rfcloud:
-	@rm -rf $(EXEC_DIR)/tmp/rayforce-cloud-sdk
-	@if [ -n "$(RFCLOUD_LOCAL_PATH)" ]; then \
-		echo "📂 Copying rayforce-cloud-sdk from $(RFCLOUD_LOCAL_PATH)..."; \
-		mkdir -p $(EXEC_DIR)/tmp && \
-		rsync -a --exclude='.git' --exclude='*.o' --exclude='*.a' --exclude='*.dylib' \
-			"$(RFCLOUD_LOCAL_PATH)/" "$(EXEC_DIR)/tmp/rayforce-cloud-sdk/"; \
-	else \
-		echo "⬇️  Cloning rayforce-cloud-sdk ($(RFCLOUD_REF)) from $(RFCLOUD_GITHUB)..."; \
-		git clone --depth 1 --branch $(RFCLOUD_REF) \
-			$(RFCLOUD_GITHUB) $(EXEC_DIR)/tmp/rayforce-cloud-sdk; \
-	fi
-	@echo "🔨 Building librfcloud..."
-	@cd $(EXEC_DIR)/tmp/rayforce-cloud-sdk && $(MAKE) librfcloud.a
-
 patch_rayforce_makefile:
 	@echo "🔧 Patching Makefile for Python support..."
 	@mkdir -p $(EXEC_DIR)/tmp/rayforce-c/pyext
@@ -84,7 +60,7 @@ patch_rayforce_makefile:
 	@printf 'python: CFLAGS = $$(RELEASE_CFLAGS) -DPY_SSIZE_T_CLEAN -I$(PYTHON_INCLUDE) -Ipyext -Wno-macro-redefined -Wno-unused-variable -Wno-unused-function\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@printf 'python: LDFLAGS = $$(RELEASE_LDFLAGS) $(RELEASE_LDFLAGS_PY)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 	@printf 'python: $$(LIB_OBJ) $$(PY_OBJ)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
-	@printf '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(LIB_OBJ) $$(PY_OBJ) librfcloud.a $(CURL_LIBS) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
+	@printf '\t$$(CC) -shared -o $(LIBNAME) $$(CFLAGS) $$(LIB_OBJ) $$(PY_OBJ) $$(LIBS) $$(LDFLAGS) $(SHARED_COMPILE_FLAGS)\n' >> $(EXEC_DIR)/tmp/rayforce-c/Makefile
 
 clean:
 	@echo "🧹 Cleaning cache and generated files..."
@@ -106,8 +82,6 @@ rayforce_binaries:
 	@cp rayforce/capi/*.h tmp/rayforce-c/pyext/
 	@cp tmp/rayforce-q/*.c tmp/rayforce-c/pyext/
 	@cp tmp/rayforce-q/*.h tmp/rayforce-c/pyext/
-	@cp tmp/rayforce-cloud-sdk/include/rfcloud.h tmp/rayforce-c/pyext/
-	@cp tmp/rayforce-cloud-sdk/librfcloud.a tmp/rayforce-c/
 	@cd tmp/rayforce-c && $(MAKE) python
 	@cd tmp/rayforce-c && $(MAKE) release
 	@cp tmp/rayforce-c/$(LIBNAME) rayforce/_rayforce_c.so
@@ -115,7 +89,7 @@ rayforce_binaries:
 	@cp tmp/rayforce-c/rayforce rayforce/bin/rayforce
 	@chmod +x rayforce/bin/rayforce
 
-app: pull_rayforce_from_github pull_rayforce_q pull_rfcloud patch_rayforce_makefile rayforce_binaries
+app: pull_rayforce_from_github pull_rayforce_q patch_rayforce_makefile rayforce_binaries
 
 test:
 	python3 -u -m pytest -x -vv tests/

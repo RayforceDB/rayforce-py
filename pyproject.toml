@@ -176,7 +176,6 @@ markers = [
     "plugin: marks tests that require optional dependencies (pandas, polars, pyarrow, etc.)",
     "ffi: marks tests that exercise the C FFI layer directly",
     "benchmark: marks benchmark tests (deselect with '-m \"not benchmark\"')",
-    "cloud: marks tests for the RayforceDB Cloud client",
 ]
 addopts = [
     "--strict-markers",
