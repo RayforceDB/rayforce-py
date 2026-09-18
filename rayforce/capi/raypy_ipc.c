@@ -4,16 +4,17 @@
  * Client side (rayforce.h public API): ray_ipc_connect / ray_ipc_send /
  * ray_ipc_send_async / ray_ipc_close.
  *
- * Server side (core/ipc.h legacy API): ray_ipc_server_init / ray_ipc_poll /
- * ray_ipc_server_destroy. The struct is heap-allocated here and handed to
- * Python as an integer pointer; Python drives the poll loop so Ctrl-C and
- * Python-level cancellation work naturally.
+ * Server side (core/ipc.h + core/poll.h): the server owns a dedicated poll
+ * with an IPC listener registered on it (ray_poll_create / ray_ipc_listen),
+ * handed to Python as an integer pointer. Python drives the loop with bounded
+ * ray_poll_run_for passes so Ctrl-C and Python-level cancellation work
+ * naturally; ray_poll_destroy tears the listener and its connections down.
  */
 
 #include "core/ipc.h"
+#include "core/poll.h"
 #include "core/runtime.h"
 #include "rayforce_c.h"
-#include <stdlib.h>
 
 /* ---- Client ---- */
 
@@ -107,7 +108,7 @@ PyObject *raypy_ipc_send_async(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
-/* ---- Server (legacy blocking poll API) ---- */
+/* ---- Server (poll-based API) ---- */
 
 PyObject *raypy_ipc_server_init(PyObject *self, PyObject *args) {
   (void)self;
@@ -122,18 +123,18 @@ PyObject *raypy_ipc_server_init(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  ray_ipc_server_t *srv = calloc(1, sizeof(ray_ipc_server_t));
-  if (srv == NULL)
-    return PyErr_NoMemory();
-
-  ray_err_t err = ray_ipc_server_init(srv, (uint16_t)port);
-  if (err != RAY_OK) {
-    free(srv);
-    PyErr_Format(PyExc_RuntimeError, "ipc: server bind on :%d failed (%s)",
-                 port, ray_err_code_str(err));
+  ray_poll_t *poll = ray_poll_create();
+  if (poll == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "ipc: failed to create poll");
     return NULL;
   }
-  return PyLong_FromVoidPtr(srv);
+
+  if (ray_ipc_listen(poll, (uint16_t)port) < 0) {
+    ray_poll_destroy(poll);
+    PyErr_Format(PyExc_RuntimeError, "ipc: server bind on :%d failed", port);
+    return NULL;
+  }
+  return PyLong_FromVoidPtr(poll);
 }
 
 PyObject *raypy_ipc_server_poll(PyObject *self, PyObject *args) {
@@ -145,8 +146,10 @@ PyObject *raypy_ipc_server_poll(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "Ki", &srv_addr, &timeout_ms))
     return NULL;
 
-  int n = ray_ipc_poll((ray_ipc_server_t *)(uintptr_t)srv_addr, timeout_ms);
-  return PyLong_FromLong((long)n);
+  /* One bounded pass: serves whatever is ready within timeout_ms, then
+   * returns to Python so the loop stays interruptible. */
+  int64_t rc = ray_poll_run_for((ray_poll_t *)(uintptr_t)srv_addr, timeout_ms);
+  return PyLong_FromLongLong((long long)rc);
 }
 
 PyObject *raypy_ipc_server_destroy(PyObject *self, PyObject *args) {
@@ -157,10 +160,8 @@ PyObject *raypy_ipc_server_destroy(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "K", &srv_addr))
     return NULL;
 
-  ray_ipc_server_t *srv = (ray_ipc_server_t *)(uintptr_t)srv_addr;
-  if (srv != NULL) {
-    ray_ipc_server_destroy(srv);
-    free(srv);
-  }
+  ray_poll_t *poll = (ray_poll_t *)(uintptr_t)srv_addr;
+  if (poll != NULL)
+    ray_poll_destroy(poll);
   Py_RETURN_NONE;
 }

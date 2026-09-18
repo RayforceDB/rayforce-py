@@ -324,12 +324,14 @@ class TestFromNumpyStrings:
         assert v[1].value == "bar"
 
     def test_empty_strings(self):
+        # Since core v2.6.0 the empty symbol is the SYM null, so an empty
+        # string element reads back as Null rather than Symbol("").
         arr = np.array(["", "hello", ""])
         v = t.Vector.from_numpy(arr)
         assert len(v) == 3
-        assert v[0].value == ""
+        assert v[0] is t.Null
         assert v[1].value == "hello"
-        assert v[2].value == ""
+        assert v[2] is t.Null
 
     def test_single_string(self):
         arr = np.array(["only_one"])

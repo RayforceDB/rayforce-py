@@ -6,6 +6,44 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.3.0`**
+
+### Improvements
+
+- **Rebuilt against Rayforce C core `v2.8.0`**, up from the `2.5.x` line
+  `2.2.1` shipped with. The core is now pinned by tag — `RAYFORCE_REF`
+  (default `v2.8.0`) in the `Makefile` and `scripts/prepare_build.sh`, next to
+  the existing `RAYFORCE_Q_REF` — so a wheel is built from a known core rather
+  than from whatever `master` holds on release day. Engine highlights since
+  `2.5.x`: a grouped `select` that matches no row keeps every aggregate and
+  literal projection column; every sort path keeps equal keys in source order,
+  and `pivot` emits rows and columns in first-seen order; grouped `var` /
+  `stddev` are computed numerically stably and `pearson_corr` is null when a
+  side has no variance; `count (distinct …)` accepts a symbol-vector `by:`; the
+  key map a keyed `upsert` builds is kept on the table and maintained across
+  in-place writes, and a new in-place `delete` keeps it too; integer partitions
+  of a parted table are ordered by value; `.ipc.open` takes an options dict
+  with a `compress` threshold and loopback links are never compressed; plus a
+  broad grouped-aggregate performance sweep. See the core release notes for
+  [`v2.6.0`](https://github.com/RayforceDB/rayforce/releases/tag/v2.6.0)
+  through [`v2.8.0`](https://github.com/RayforceDB/rayforce/releases/tag/v2.8.0).
+- **`TCPServer` runs on the core's poll-based IPC server.** The legacy blocking
+  server API the extension used was removed from the core in `v2.8.0`; the
+  server now owns a dedicated core poll with an IPC listener registered on it
+  and drives it in bounded passes. The Python API and its blocking,
+  interruptible `listen()` loop are unchanged.
+
+### Notes
+
+- **Empty symbols are nulls.** Since core `v2.6.0` the engine recognises
+  in-band nulls at construction and treats the empty symbol and the empty
+  string as their types' nulls. Reading such an element out of a `Symbol`
+  [`Vector`](./documentation/data-types/vector.md) (`v[i]`, `to_python()`) or a
+  [`Table`](./documentation/data-types/table/overview.md) row now yields `Null`
+  where it used to yield `Symbol("")`. Atoms are unaffected: `Symbol("").value`
+  is still `""`, and `String("")` still round-trips as `""`.
+
+
 ## **`2.2.1`**
 
 ### Bug fixes

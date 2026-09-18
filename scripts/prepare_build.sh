@@ -3,6 +3,7 @@ set -e -x
 
 EXEC_DIR=$(pwd)
 RAYFORCE_GITHUB="${RAYFORCE_GITHUB:-https://github.com/RayforceDB/rayforce.git}"
+RAYFORCE_REF="${RAYFORCE_REF:-v2.8.0}"
 RAYFORCE_LOCAL_PATH="${RAYFORCE_LOCAL_PATH:-}"
 # KDB+ wire-format plugin, shared across bindings. Pinned by ref.
 RAYFORCE_Q_GITHUB="${RAYFORCE_Q_GITHUB:-https://github.com/RayforceDB/rayforce-q.git}"
@@ -31,8 +32,9 @@ if [[ -n "${RAYFORCE_LOCAL_PATH}" ]]; then
         --exclude='*.o' --exclude='*.so' --exclude='*.a' --exclude='*.dylib' \
         "${RAYFORCE_LOCAL_PATH}/" "${EXEC_DIR}/tmp/rayforce-c/"
 else
-    echo "Cloning rayforce2 repo from GitHub..."
-    git clone "${RAYFORCE_GITHUB}" "${EXEC_DIR}/tmp/rayforce-c"
+    echo "Cloning rayforce (${RAYFORCE_REF}) from GitHub..."
+    git clone --depth 1 --branch "${RAYFORCE_REF}" \
+        "${RAYFORCE_GITHUB}" "${EXEC_DIR}/tmp/rayforce-c"
 fi
 
 if [[ -n "${RAYFORCE_Q_LOCAL_PATH}" ]]; then

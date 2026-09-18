@@ -1,6 +1,7 @@
 UNAME_S := $(shell uname -s)
 
 RAYFORCE_GITHUB ?= https://github.com/RayforceDB/rayforce.git
+RAYFORCE_REF ?= v2.8.0
 RAYFORCE_LOCAL_PATH ?=
 # KDB+ wire-format plugin, shared across bindings. Pinned by ref so every
 # binding builds the identical version. Override RAYFORCE_Q_LOCAL_PATH to
@@ -34,8 +35,9 @@ pull_rayforce_from_github:
 			--exclude='*.o' --exclude='*.so' --exclude='*.a' --exclude='*.dylib' \
 			"$(RAYFORCE_LOCAL_PATH)/" "$(EXEC_DIR)/tmp/rayforce-c/"; \
 	else \
-		echo "⬇️  Cloning rayforce repo from $(RAYFORCE_GITHUB)..."; \
-		git clone $(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c; \
+		echo "⬇️  Cloning rayforce ($(RAYFORCE_REF)) from $(RAYFORCE_GITHUB)..."; \
+		git clone --depth 1 --branch $(RAYFORCE_REF) \
+			$(RAYFORCE_GITHUB) $(EXEC_DIR)/tmp/rayforce-c; \
 	fi
 
 pull_rayforce_q:
