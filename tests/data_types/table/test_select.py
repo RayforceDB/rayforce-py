@@ -320,11 +320,7 @@ def test_select_distinct_order_by():
     asc = table.select(vals=Column("salary").distinct()).order_by("vals").execute()
     assert [v.value for v in asc.at_column("vals")] == [100, 200, 300]
 
-    desc = (
-        table.select(vals=Column("salary").distinct())
-        .order_by("vals", desc=True)
-        .execute()
-    )
+    desc = table.select(vals=Column("salary").distinct()).order_by("vals", desc=True).execute()
     assert [v.value for v in desc.at_column("vals")] == [300, 200, 100]
 
 
