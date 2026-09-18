@@ -50,10 +50,12 @@ fi
 
 UNAME_S=$(uname -s)
 
-echo "Patching Makefile to use portable CPU target instead of -march=native..."
+# Portable CPU target for Linux wheels. The core's Makefile defaults to
+# RAY_MARCH=native, and a wheel built on an AVX-512 runner then dies with
+# SIGILL on a plain AVX2 machine. x86-64-v3 is the AVX2 baseline.
+RAY_MARCH_ARGS=()
 if [[ "$UNAME_S" != "Darwin" ]]; then
-    # Replace -march=native with -march=x86-64-v3 (AVX2 baseline) for portable Linux builds
-    sed -i 's/-march=native/-march=x86-64-v3/g' "${EXEC_DIR}/tmp/rayforce-c/Makefile"
+    RAY_MARCH_ARGS=(RAY_MARCH=x86-64-v3)
 fi
 PYTHON_INCLUDE=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))")
 PYTHON_PYVER=$($PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -89,12 +91,12 @@ python: \$(LIB_OBJ) \$(PY_OBJ)
 EOF
 
 cd "${EXEC_DIR}/tmp/rayforce-c"
-make python
+make python "${RAY_MARCH_ARGS[@]}"
 cp "${EXEC_DIR}/tmp/rayforce-c/_rayforce.so" "${EXEC_DIR}/rayforce/_rayforce_c.so"
 
 echo "Building Rayforce executable..."
 cd "${EXEC_DIR}/tmp/rayforce-c"
-make release
+make release "${RAY_MARCH_ARGS[@]}"
 mkdir -p "${EXEC_DIR}/rayforce/bin"
 cp "${EXEC_DIR}/tmp/rayforce-c/rayforce" "${EXEC_DIR}/rayforce/bin/rayforce"
 chmod +x "${EXEC_DIR}/rayforce/bin/rayforce"

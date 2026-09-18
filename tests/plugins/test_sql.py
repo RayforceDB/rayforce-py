@@ -649,7 +649,7 @@ def test_window_row_number(sqlglot, sample_table):
     try:
         result = sample_table.sql("SELECT name, ROW_NUMBER() OVER (ORDER BY age) AS rn FROM self")
         assert_contains_columns(result, ["name", "rn"])
-    except ValueError, NotImplementedError, KeyError, AttributeError:
+    except (ValueError, NotImplementedError, KeyError, AttributeError):
         pytest.skip("Window functions not supported by SQL plugin")
 
 
@@ -660,7 +660,7 @@ def test_window_rank(sqlglot, sample_table):
             "SELECT name, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk FROM self"
         )
         assert_contains_columns(result, ["name", "rnk"])
-    except ValueError, NotImplementedError, KeyError, AttributeError:
+    except (ValueError, NotImplementedError, KeyError, AttributeError):
         pytest.skip("Window functions not supported by SQL plugin")
 
 
