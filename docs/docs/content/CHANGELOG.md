@@ -6,6 +6,25 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.3.1`**
+
+### Bug fixes
+
+- **Symbol columns retain their type through fallback projections.** Adding a
+  computed column with `select("*", new_col=...)` no longer converts an
+  existing `Symbol` column into a `List` when the expression uses temporal
+  arithmetic. Joins on the projected symbol column therefore continue to
+  match correctly. ([#24](https://github.com/RayforceDB/rayforce-py/issues/24))
+
+### Improvements
+
+- **Rebuilt against Rayforce C core `v2.11.0`**, up from `v2.8.0`, including
+  the engine-side fix for preserving typed passthrough columns in the query
+  evaluator's fallback path.
+
+2026-10-06 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.3.1/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.3.1)**
+
+
 ## **`2.3.0`**
 
 ### Improvements
