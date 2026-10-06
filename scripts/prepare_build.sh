@@ -3,7 +3,7 @@ set -e -x
 
 EXEC_DIR=$(pwd)
 RAYFORCE_GITHUB="${RAYFORCE_GITHUB:-https://github.com/RayforceDB/rayforce.git}"
-RAYFORCE_REF="${RAYFORCE_REF:-v2.8.0}"
+RAYFORCE_REF="${RAYFORCE_REF:-v2.11.0}"
 RAYFORCE_LOCAL_PATH="${RAYFORCE_LOCAL_PATH:-}"
 # KDB+ wire-format plugin, shared across bindings. Pinned by ref.
 RAYFORCE_Q_GITHUB="${RAYFORCE_Q_GITHUB:-https://github.com/RayforceDB/rayforce-q.git}"

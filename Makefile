@@ -1,7 +1,7 @@
 UNAME_S := $(shell uname -s)
 
 RAYFORCE_GITHUB ?= https://github.com/RayforceDB/rayforce.git
-RAYFORCE_REF ?= v2.8.0
+RAYFORCE_REF ?= v2.11.0
 RAYFORCE_LOCAL_PATH ?=
 # KDB+ wire-format plugin, shared across bindings. Pinned by ref so every
 # binding builds the identical version. Override RAYFORCE_Q_LOCAL_PATH to

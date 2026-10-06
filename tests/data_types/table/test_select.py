@@ -490,3 +490,46 @@ def test_select_star_with_expression():
 
     assert_columns(result, ["price", "qty", "total"])
     assert_column_values(result, "total", [20, 60, 30])
+
+
+def test_select_star_with_temporal_expression_preserves_symbol_for_join():
+    names = Vector(items=["Alice", "Bob", "Carol"], ray_type=Symbol)
+    table = Table(
+        {
+            "name": names,
+            "start_date": Vector(
+                items=[
+                    dt.datetime(2001, 1, 1, 1, 1, 1),
+                    dt.datetime(2002, 2, 2, 2, 2, 2),
+                    dt.datetime(2003, 3, 3, 3, 3, 3),
+                ]
+            ),
+            "end_date": Vector(
+                items=[
+                    dt.datetime(2004, 4, 4, 4, 4, 4),
+                    dt.datetime(2005, 5, 5, 5, 5, 5),
+                    dt.datetime(2006, 6, 6, 6, 6, 6),
+                ]
+            ),
+        }
+    )
+    surnames = Table(
+        {
+            "name": names,
+            "last_name": Vector(
+                items=["Cooper", "Belcher", "Of The Bells"],
+                ray_type=Symbol,
+            ),
+        }
+    )
+
+    projected = table.select(
+        "*",
+        duration=Column("end_date") - Column("start_date"),
+    ).execute()
+    joined = projected.inner_join(surnames, "name").execute()
+
+    assert projected.dtypes["name"] == "SYMBOL"
+    assert_table_shape(joined, rows=3, cols=5)
+    assert_column_values(joined, "name", ["Alice", "Bob", "Carol"])
+    assert_column_values(joined, "last_name", ["Cooper", "Belcher", "Of The Bells"])
