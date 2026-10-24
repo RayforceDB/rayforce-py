@@ -6,6 +6,37 @@ All notable changes to Rayforce-Py will be documented in this file.
     You can also subscribe for release notifications by joining our [:simple-zulip: Zulip](https://rayforcedb.zulipchat.com/#narrow/channel/549008-Discuss)!
 
 
+## **`2.4.0`**
+
+### Improvements
+
+- **Rebuilt against Rayforce C core `v3.0.1`**, up from `v2.11.0`. Engine
+  highlights since `v2.11.0`: a replaced splayed table keeps one copy of itself
+  on disk, and a reader keeps up with a table that is being rewritten; hash
+  indexes store their slot table, group offsets and row ids as 32-bit values
+  and are built partition by partition within the memory budget; a Parquet
+  import goes column by column when memory is short; `not in` excludes null
+  symbols and ordered symbols compare by lexical value; nested `select`s are
+  composed before planning, and query helpers run as bytecode with row
+  provenance. See the core's
+  [`v2.11.0...v3.0.1`](https://github.com/RayforceDB/rayforce/compare/v2.11.0...v3.0.1)
+  comparison.
+- **Rebuilt against `rayforce-q` `2.5.0`**, up from `2.0.0`: q connections on
+  the event loop with pushed frames dispatched to `upd`, so Rayforce can be a q
+  subscriber; `(.q.handle)` names the connection a frame came in on;
+  `q_decode_cols` decodes only the named columns of a table; and a pushed frame
+  is no longer read as the next response. See the
+  [rayforce-q changelog](https://github.com/RayforceDB/rayforce-q/blob/master/docs/CHANGELOG.md).
+
+### Notes
+
+- **A recursive `self` inside a `Fn` is bound during DAG reduction** on the
+  new core, so `test_fn_fibonacci_with_aggregation` no longer carries its
+  `xfail` marker.
+
+2026-10-24 | **[🔗 PyPI](https://pypi.org/project/rayforce-py/2.4.0/)** | **[🔗 GitHub](https://github.com/RayforceDB/rayforce-py/releases/tag/2.4.0)**
+
+
 ## **`2.3.1`**
 
 ### Bug fixes

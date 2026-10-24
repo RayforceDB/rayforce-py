@@ -3,11 +3,11 @@ set -e -x
 
 EXEC_DIR=$(pwd)
 RAYFORCE_GITHUB="${RAYFORCE_GITHUB:-https://github.com/RayforceDB/rayforce.git}"
-RAYFORCE_REF="${RAYFORCE_REF:-v2.11.0}"
+RAYFORCE_REF="${RAYFORCE_REF:-v3.0.1}"
 RAYFORCE_LOCAL_PATH="${RAYFORCE_LOCAL_PATH:-}"
 # KDB+ wire-format plugin, shared across bindings. Pinned by ref.
 RAYFORCE_Q_GITHUB="${RAYFORCE_Q_GITHUB:-https://github.com/RayforceDB/rayforce-q.git}"
-RAYFORCE_Q_REF="${RAYFORCE_Q_REF:-2.0.0}"
+RAYFORCE_Q_REF="${RAYFORCE_Q_REF:-2.5.0}"
 RAYFORCE_Q_LOCAL_PATH="${RAYFORCE_Q_LOCAL_PATH:-}"
 
 PYTHON_BIN="${PYTHON_BIN:-python}"

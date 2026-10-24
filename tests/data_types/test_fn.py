@@ -1,16 +1,8 @@
-import pytest
-
 from rayforce import I64, Column, Fn, Symbol, Table, Vector
 from tests.helpers.assertions import (
     assert_column_values,
     assert_contains_columns,
     assert_table_shape,
-)
-
-_RECURSIVE_SELF_IN_DAG = pytest.mark.xfail(
-    reason="recursive `self` not bound during DAG β-reduction; see "
-    "docs/core_bugs/recursive_self_in_dag.md",
-    strict=False,
 )
 
 
@@ -113,7 +105,6 @@ def test_fn_normalize_with_multiple_args():
     assert_column_values(result, "normalized", [0.5, 0.75, 1.0])
 
 
-@_RECURSIVE_SELF_IN_DAG
 def test_fn_fibonacci_with_aggregation():
     table = Table(
         {
